@@ -1,0 +1,154 @@
+/* ========================================
+   ESTILOS BASE - HEADER, FOOTER, GENERALES
+   ======================================== */
+
+/* Configuraciones globales */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ========== COMPONENTES del HEADER ========== */
+.nav-link {
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.auth-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0 auto;
+    padding: 0.5rem 1rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+    max-width: 12rem;
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.auth-desktop,
+.auth-desktop-greeting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    color: white;
+}
+
+.auth-desktop:hover,
+.auth-desktop-greeting:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.show {
+    display: flex !important;
+}
+
+/* ========== COMPONENTES DE WHATSAPP ========== */
+.w-90 {
+    width: 360px;
+}
+
+.w-15 {
+    width: 60px;
+}
+
+.h-15 {
+    height: 60px;
+}
+
+.whatsapp-shadow {
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.whatsapp-chat-shadow {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== COMPONENTES GENERALES ========== */
+/* Botones generales (que se usan en múltiples secciones) */
+.btn-primary {
+    background-color: #C8B39B;
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border: 2px solid #C8B39B;
+    color: #C8B39B;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-secondary:hover {
+    background-color: #C8B39B;
+    color: white;
+}
+
+/* ========== AJUSTES RESPONSIVOS ========== */
+@media (max-width: 768px) {
+    .w-90 {
+        width: 300px;
+    }
+    
+    .nav-link {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+    .nav-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .w-90 {
+        width: 300px;
+    }
+    
+    .nav-link {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+    .nav-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}

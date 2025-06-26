@@ -1,0 +1,62 @@
+{% load static %}
+
+<footer class="bg-principal text-white py-12">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <!-- Brand -->
+            <div class="text-center md:text-left">
+                <div class="flex justify-center md:justify-start mb-4">
+                    <img src="{% static 'img/logo_gravity.webp' %}" alt="Logo Pilates Gravity" class="h-16 w-auto">
+                </div>
+                <p class="text-gray-200 leading-relaxed">
+                    Transforma tu cuerpo, equilibra tu mente y eleva tu bienestar con nuestro método único de Pilates.
+                </p>
+            </div>
+
+            <!-- Clases -->
+            <div class="text-center md:text-left">
+                <h3 class="text-xl font-bold mb-4 text-secundario">Clases</h3>
+                <ul class="space-y-2 text-gray-200">
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">Cadillac</li>
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">Pilates Reformer</li>
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">Pilates Terapéutico</li>
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">Pilates Prenatal</li>
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">Pilates para Deportistas</li>
+                </ul>
+            </div>
+
+            <!-- Contacto -->
+            <div class="text-center md:text-left">
+                <h3 class="text-xl font-bold mb-4 text-secundario">Contacto</h3>
+                <ul class="space-y-2 text-gray-200">
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">La Rioja 3044, Santa Fe Capital</li>
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">+54 342 511 4448</li>
+                    <li class="hover:text-secundario transition-colors duration-300 cursor-default">pilatesgravity@gmail.com</li>
+                    <li>
+                        <a 
+                            href="https://www.instagram.com/pilatesgravity/" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            class="hover:text-secundario transition-colors duration-300 no-underline"
+                        >
+                            @PilatesGravity
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer bottom -->
+        <div class="border-t border-gray-600 pt-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+            <p class="text-gray-300 mb-4 md:mb-0">&copy; 2025 Pilates Gravity. Todos los derechos reservados.</p>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <a href="{% url 'gravity:terminos_condiciones' %}" class="text-gray-300 hover:text-secundario transition-colors duration-300 no-underline">
+                    Términos y Condiciones
+                </a>
+                <a href="{% url 'gravity:politica_privacidad' %}" class="text-gray-300 hover:text-secundario transition-colors duration-300 no-underline">
+                    Política de Privacidad
+                </a>
+            </div>
+        </div>
+    </div>
+</footer>

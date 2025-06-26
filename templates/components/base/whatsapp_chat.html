@@ -1,0 +1,129 @@
+{% load static %}
+
+<!-- Botón flotante de WhatsApp -->
+<div class="fixed bottom-6 right-6 z-50 font-sans">
+    <!-- Botón de apertura -->
+    <div class="relative bg-principal w-14 h-14 rounded-full whatsapp-shadow flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300" id="openChat">
+        <img src="{% static 'icons/whatsapp.png' %}" alt="WhatsApp" class="w-14 h-14">
+        <span class="absolute -top-0.5 right-0.5 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold hidden z-50" id="whatsappNotification">1</span>
+    </div>
+
+    <!-- Ventana de chat -->
+    <div class="hidden w-90 bg-white rounded-lg overflow-hidden whatsapp-chat-shadow absolute bottom-2 right-0 animate-fadeInUp" id="chatBox">
+        <!-- Header -->
+        <div class="bg-principal text-white p-4 flex justify-between items-start">
+            <div class="flex items-start">
+                <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="Logo Pilates Gravity" class="w-15 h-15 p-0.5 rounded-full mr-4 bg-black">
+                <div class="text-sm">
+                    <strong class="block text-base">Pilates Gravity</strong>
+                    <span class="text-gray-200">Eleva tu bienestar con nuestro método de Pilates</span>
+                </div>
+            </div>
+            <button class="bg-transparent border-none text-white text-2xl cursor-pointer hover:bg-white hover:bg-opacity-20 rounded px-2" id="closeChat">
+                &times;
+            </button>
+        </div>
+        
+        <!-- Messages -->
+        <div class="bg-gray-100 p-4 flex flex-col" style="background-color: #ece5dd;">
+            <div class="bg-white rounded-lg p-3 mb-2 max-w-4/5 self-start text-sm leading-relaxed">
+                👋 Hola, ¿cómo estás? 👋<br>
+                ¿En qué podemos ayudarte?
+            </div>
+            <div class="bg-secundario rounded-lg p-3 mb-2 max-w-4/5 self-end">
+                <textarea 
+                    id="whatsappMessage" 
+                    placeholder="Escribe tu mensaje aquí..." 
+                    rows="3"
+                    class="w-full border-none resize-none bg-secundario font-inherit text-sm p-1 outline-none rounded-md placeholder-gray-700"
+                ></textarea>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="bg-principal flex justify-center items-center p-4">
+            <a
+                id="startWhatsapp"
+                class="bg-secundario w-3/4 text-center text-white py-3 px-4 no-underline font-bold text-base rounded-2xl hover:bg-opacity-90 transition-colors duration-300"
+                target="_blank"
+                href="https://wa.me/5493425114448?text=%C2%A1Hola!%20Quiero%20saber%20m%C3%A1s%20sobre%20Pilates%20Gravity"
+            >
+                Iniciar chat
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Script para manejar el chat de WhatsApp
+    document.addEventListener('DOMContentLoaded', function() {
+        const openChatBtn = document.getElementById('openChat');
+        const chatBox = document.getElementById('chatBox');
+        const closeChatBtn = document.getElementById('closeChat');
+        const notification = document.getElementById('whatsappNotification');
+        const messageTextarea = document.getElementById('whatsappMessage');
+        const startWhatsappBtn = document.getElementById('startWhatsapp');
+        
+        // Mostrar/ocultar notificación
+        function showNotification() {
+            if (notification) {
+                notification.classList.remove('hidden');
+            }
+        }
+        
+        function hideNotification() {
+            if (notification) {
+                notification.classList.add('hidden');
+            }
+        }
+        
+        // Abrir chat
+        if (openChatBtn && chatBox) {
+            openChatBtn.addEventListener('click', function() {
+                chatBox.classList.toggle('hidden');
+                hideNotification();
+            });
+        }
+        
+        // Cerrar chat
+        if (closeChatBtn && chatBox) {
+            closeChatBtn.addEventListener('click', function() {
+                chatBox.classList.add('hidden');
+            });
+        }
+        
+        // Actualizar enlace de WhatsApp con mensaje personalizado
+        if (messageTextarea && startWhatsappBtn) {
+            messageTextarea.addEventListener('input', function() {
+                const customMessage = this.value.trim();
+                const baseUrl = "https://wa.me/5493425114448?text=";
+                const defaultMessage = "¡Hola! Quiero saber más sobre Pilates Gravity";
+                const finalMessage = customMessage || defaultMessage;
+                startWhatsappBtn.href = baseUrl + encodeURIComponent(finalMessage);
+            });
+        }
+        
+        // Mostrar notificación después de un tiempo (opcional)
+        setTimeout(showNotification, 5000);
+    });
+</script>
+
+<style>
+    .w-90 {
+        width: 360px;
+    }
+    
+    .w-15 {
+        width: 60px;
+    }
+    
+    .h-15 {
+        height: 60px;
+    }
+    
+    @media (max-width: 480px) {
+        .w-90 {
+            width: 300px;
+        }
+    }
+</style>

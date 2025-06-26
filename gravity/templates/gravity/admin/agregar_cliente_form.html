@@ -1,0 +1,578 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}Agregar Cliente No Registrado - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}">Clientes No Registrados</a></li>
+    <li class="breadcrumb-item active">Agregar Cliente</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="fas fa-user-plus me-2"></i>
+                            Agregar Cliente No Registrado
+                        </h2>
+                        <p class="text-muted mb-0">
+                            Agrega un cliente directamente a una clase sin necesidad de registro previo
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-2"></i>Ver Lista
+                            </a>
+                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-info">
+                                <i class="fas fa-calendar-alt me-2"></i>Ver Clases
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <div class="row align-items-center">
+                <div class="col-md-1 text-center">
+                    <i class="fas fa-info-circle fa-2x"></i>
+                </div>
+                <div class="col-md-11">
+                    <h6 class="alert-heading mb-1">¿Cuándo usar esta función?</h6>
+                    <p class="mb-0">
+                        <strong>Úsala para:</strong> Clientes que prefieren no registrarse, reservas telefónicas, clases de prueba, o situaciones especiales donde necesitas agregar rápidamente a alguien a una clase.
+                        El email es opcional pero recomendado para futuras comunicaciones.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Form -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>
+                    <i class="fas fa-user-edit me-2"></i>
+                    Datos del Cliente
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="clienteForm">
+                    {% csrf_token %}
+                    
+                    <!-- Client Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-user me-2"></i>Información Personal
+                            </h6>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">
+                                <i class="fas fa-user me-1"></i>Nombre *
+                            </label>
+                            <input type="text" 
+                                   name="nombre" 
+                                   id="nombre" 
+                                   class="form-control" 
+                                   placeholder="Ej: María"
+                                   value="{{ form_data.nombre|default:'' }}"
+                                   required>
+                            <div class="form-text">
+                                <small class="text-muted">Nombre de pila del cliente</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="apellido" class="form-label">
+                                <i class="fas fa-user me-1"></i>Apellido *
+                            </label>
+                            <input type="text" 
+                                   name="apellido" 
+                                   id="apellido" 
+                                   class="form-control" 
+                                   placeholder="Ej: González"
+                                   value="{{ form_data.apellido|default:'' }}"
+                                   required>
+                            <div class="form-text">
+                                <small class="text-muted">Apellido del cliente</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">
+                                <i class="fas fa-phone me-1"></i>Teléfono *
+                            </label>
+                            <input type="tel" 
+                                   name="telefono" 
+                                   id="telefono" 
+                                   class="form-control" 
+                                   placeholder="Ej: +54 11 1234-5678"
+                                   value="{{ form_data.telefono|default:'' }}"
+                                   required>
+                            <div class="form-text">
+                                <small class="text-muted">Número de contacto del cliente</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email (Opcional)
+                            </label>
+                            <input type="email" 
+                                   name="email" 
+                                   id="email" 
+                                   class="form-control" 
+                                   placeholder="Ej: maria@email.com"
+                                   value="{{ form_data.email|default:'' }}">
+                            <div class="form-text">
+                                <small class="text-muted">Para enviar confirmaciones y recordatorios</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Class Selection -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-success mb-3">
+                                <i class="fas fa-calendar-alt me-2"></i>Selección de Clase
+                            </h6>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="clase_id" class="form-label">
+                                <i class="fas fa-dumbbell me-1"></i>Clase *
+                            </label>
+                            <select name="clase_id" id="clase_id" class="form-select" required>
+                                <option value="">Selecciona una clase disponible</option>
+                                {% for item in clases_disponibles %}
+                                    <option value="{{ item.clase.id }}" 
+                                            data-tipo="{{ item.clase.tipo }}" 
+                                            data-dia="{{ item.clase.dia }}" 
+                                            data-horario="{{ item.clase.horario|time:'H:i' }}" 
+                                            data-cupos="{{ item.cupos_disponibles }}">
+                                        {{ item.clase.get_tipo_display }} - {{ item.clase.dia }} {{ item.clase.horario|time:"H:i" }} 
+                                        ({{ item.cupos_disponibles }} cupos disponibles)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <small class="text-muted">Solo se muestran clases activas con cupos disponibles</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Class Preview -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-light border-0" id="clasePreview" style="display: none;">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-eye me-2"></i>Vista Previa de la Reserva
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="previewContent" class="text-center">
+                                        <!-- Preview content will be inserted here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-warning mb-3">
+                                <i class="fas fa-sticky-note me-2"></i>Información Adicional (Opcional)
+                            </h6>
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="notas" class="form-label">
+                                <i class="fas fa-comment me-1"></i>Notas
+                            </label>
+                            <textarea name="notas" 
+                                      id="notas" 
+                                      class="form-control" 
+                                      rows="3" 
+                                      placeholder="Notas adicionales sobre este cliente (ej: derivado por..., primera vez, necesidades especiales, etc.)">{{ form_data.notas|default:'' }}</textarea>
+                            <div class="form-text">
+                                <small class="text-muted">Información que puede ser útil para las clases</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-info mb-3">
+                                <i class="fas fa-cog me-2"></i>Opciones
+                            </h6>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="enviar_confirmacion" 
+                                       id="enviar_confirmacion" 
+                                       checked>
+                                <label class="form-check-label" for="enviar_confirmacion">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    Enviar confirmación por email (si se proporcionó email)
+                                </label>
+                            </div>
+                            
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="crear_como_recurrente" 
+                                       id="crear_como_recurrente" 
+                                       checked>
+                                <label class="form-check-label" for="crear_como_recurrente">
+                                    <i class="fas fa-repeat me-2"></i>
+                                    Crear como reserva recurrente (cada semana en el mismo horario)
+                                </label>
+                            </div>
+                            
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="sugerir_registro" 
+                                       id="sugerir_registro">
+                                <label class="form-check-label" for="sugerir_registro">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Sugerir al cliente que se registre en el sistema (en email de confirmación)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Warning Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Importante:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Este cliente será agregado al sistema pero sin cuenta de usuario</li>
+                                    <li>No podrá modificar ni cancelar su reserva por sí mismo</li>
+                                    <li>Todas las modificaciones deberán hacerse desde el panel de administración</li>
+                                    <li>Si posteriormente se registra, podrás vincular ambas cuentas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex gap-3 justify-content-end">
+                                <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                
+                                <button type="submit" 
+                                        class="btn btn-success" 
+                                        id="submitBtn">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    <span id="submitText">Agregar Cliente y Reservar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Tips -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Consejos Rápidos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="fas fa-check text-success me-2"></i>
+                    <strong>Datos mínimos:</strong>
+                    <small class="d-block text-muted">Solo necesitas nombre, apellido y teléfono</small>
+                </div>
+                
+                <div class="mb-3">
+                    <i class="fas fa-envelope text-primary me-2"></i>
+                    <strong>Email opcional:</strong>
+                    <small class="d-block text-muted">Pero muy recomendado para confirmaciones</small>
+                </div>
+                
+                <div class="mb-3">
+                    <i class="fas fa-repeat text-warning me-2"></i>
+                    <strong>Reservas recurrentes:</strong>
+                    <small class="d-block text-muted">El cliente asistirá cada semana hasta cancelar</small>
+                </div>
+                
+                <div class="mb-0">
+                    <i class="fas fa-user-cog text-info me-2"></i>
+                    <strong>Gestión posterior:</strong>
+                    <small class="d-block text-muted">Podrás modificar o cancelar desde la lista de clientes</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Classes Summary -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Estado de las Clases
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if clases_disponibles %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Clases disponibles:</span>
+                            <strong class="text-success">{{ clases_disponibles|length }}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">Por tipo:</small>
+                        <div class="mt-1">
+                            {% regroup clases_disponibles by clase.tipo as clases_por_tipo %}
+                            {% for tipo in clases_por_tipo %}
+                                <div class="d-flex justify-content-between">
+                                    <small>{{ tipo.grouper }}</small>
+                                    <small class="text-primary">{{ tipo.list|length }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <a href="{% url 'PilatesGravity:admin_clase_crear' %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Crear Nueva Clase
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                        <p class="text-muted mb-3">No hay clases disponibles con cupos libres</p>
+                        <a href="{% url 'PilatesGravity:admin_clase_crear' %}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Crear Clase
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Non-Registered Clients -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-history me-2"></i>Últimos Clientes Agregados
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="recentClients">
+                    <div class="text-center">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <br>
+                        <small class="text-muted">Cargando últimos clientes...</small>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="text-center">
+                    <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" 
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list me-1"></i>Ver Todos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('clienteForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const claseSelect = document.getElementById('clase_id');
+    const previewCard = document.getElementById('clasePreview');
+    const previewContent = document.getElementById('previewContent');
+    const emailInput = document.getElementById('email');
+    const enviarConfirmacion = document.getElementById('enviar_confirmacion');
+    
+    // Update preview when class changes
+    claseSelect.addEventListener('change', function() {
+        updateClassPreview();
+        updateEmailOptions();
+    });
+    
+    // Update email options when email changes
+    emailInput.addEventListener('input', updateEmailOptions);
+    
+    function updateClassPreview() {
+        const selectedOption = claseSelect.options[claseSelect.selectedIndex];
+        
+        if (selectedOption.value) {
+            const tipo = selectedOption.dataset.tipo;
+            const dia = selectedOption.dataset.dia;
+            const horario = selectedOption.dataset.horario;
+            const cupos = selectedOption.dataset.cupos;
+            
+            const iconClass = tipo === 'Reformer' ? 'fas fa-dumbbell fa-2x text-primary' : 'fas fa-bed fa-2x text-info';
+            const tipoDisplay = selectedOption.textContent.split(' - ')[0];
+            
+            previewContent.innerHTML = 
+                '<div class="row align-items-center">' +
+                    '<div class="col-md-4 text-center">' +
+                        '<i class="' + iconClass + ' mb-2"></i>' +
+                        '<h6>' + tipoDisplay + '</h6>' +
+                    '</div>' +
+                    '<div class="col-md-8">' +
+                        '<h6 class="text-success mb-2">Detalles de la Reserva:</h6>' +
+                        '<div class="text-start">' +
+                            '<div class="mb-1"><i class="fas fa-calendar me-2"></i><strong>Día:</strong> ' + dia + '</div>' +
+                            '<div class="mb-1"><i class="fas fa-clock me-2"></i><strong>Horario:</strong> ' + horario + '</div>' +
+                            '<div class="mb-1"><i class="fas fa-users me-2"></i><strong>Cupos disponibles:</strong> ' + cupos + '</div>' +
+                            '<div class="mb-0"><i class="fas fa-repeat me-2"></i><strong>Recurrencia:</strong> Cada ' + dia + ' a las ' + horario + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            
+            previewCard.style.display = 'block';
+        } else {
+            previewCard.style.display = 'none';
+        }
+    }
+    
+    function updateEmailOptions() {
+        const hasEmail = emailInput.value.trim() !== '';
+        enviarConfirmacion.disabled = !hasEmail;
+        
+        const label = document.querySelector('label[for="enviar_confirmacion"]');
+        if (hasEmail) {
+            label.classList.remove('text-muted');
+            enviarConfirmacion.checked = true;
+        } else {
+            label.classList.add('text-muted');
+            enviarConfirmacion.checked = false;
+        }
+    }
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate required fields
+        const requiredFields = ['nombre', 'apellido', 'telefono', 'clase_id'];
+        let isValid = true;
+        
+        requiredFields.forEach(function(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // Validate email format if provided
+        const email = emailInput.value.trim();
+        if (email && !isValidEmail(email)) {
+            emailInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            emailInput.classList.remove('is-invalid');
+        }
+        
+        if (!isValid) {
+            alert('Por favor, completa todos los campos obligatorios correctamente.');
+            return;
+        }
+        
+        // Show loading state
+        submitText.textContent = 'Procesando...';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>' + submitText.textContent;
+        
+        // Submit form
+        setTimeout(function() {
+            form.submit();
+        }, 1000);
+    });
+    
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    // Load recent clients
+    loadRecentClients();
+    
+    function loadRecentClients() {
+        // Simulated data loading - in real implementation, this would fetch from an API
+        setTimeout(function() {
+            const recentClientsDiv = document.getElementById('recentClients');
+            recentClientsDiv.innerHTML = 
+                '<div class="small">' +
+                    '<div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">' +
+                        '<div>' +
+                            '<div class="fw-bold">Ana Martínez</div>' +
+                            '<small class="text-muted">Reformer - Lunes 09:00</small>' +
+                        '</div>' +
+                        '<small class="text-muted">Hoy</small>' +
+                    '</div>' +
+                    '<div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">' +
+                        '<div>' +
+                            '<div class="fw-bold">Carlos López</div>' +
+                            '<small class="text-muted">Cadillac - Martes 18:00</small>' +
+                        '</div>' +
+                        '<small class="text-muted">Ayer</small>' +
+                    '</div>' +
+                    '<div class="text-center mt-2">' +
+                        '<small class="text-muted">Últimos 2 de 15 clientes</small>' +
+                    '</div>' +
+                '</div>';
+        }, 1500);
+    }
+    
+    // Auto-focus first field
+    document.getElementById('nombre').focus();
+    
+    // Initialize email options
+    updateEmailOptions();
+});
+</script>
+{% endblock %}

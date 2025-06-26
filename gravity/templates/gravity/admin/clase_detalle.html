@@ -1,0 +1,560 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}Detalle de Clase - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'PilatesGravity:admin_clases_lista' %}">Clases</a></li>
+    <li class="breadcrumb-item active">Detalle</li>
+{% endblock %}
+
+{% block content %}
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Detalle de Clase
+                            </h2>
+                            <p class="text-muted mb-0">
+                                Información completa y reservas de la clase
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver
+                                </a>
+                                <a href="{% url 'PilatesGravity:admin_clase_editar' clase.id %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Editar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Information -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información de la Clase
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center mb-4">
+                                {% if clase.tipo == 'Reformer' %}
+                                    <i class="fas fa-dumbbell fa-4x text-primary mb-3"></i>
+                                {% else %}
+                                    <i class="fas fa-bed fa-4x text-info mb-3"></i>
+                                {% endif %}
+                                <h3 class="mb-1">{{ clase.get_tipo_display }}</h3>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-calendar me-1"></i>{{ clase.dia }} - 
+                                    <i class="fas fa-clock me-1"></i>{{ clase.horario|time:"H:i" }}
+                                </p>
+                                {% if clase.activa %}
+                                    <span class="badge bg-success mt-2">Clase Activa</span>
+                                {% else %}
+                                    <span class="badge bg-danger mt-2">Clase Inactiva</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Datos Generales:</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>ID de Clase:</strong></td>
+                                    <td><span class="badge bg-secondary">#{{ clase.id }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tipo:</strong></td>
+                                    <td>{{ clase.get_tipo_display }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Día de la Semana:</strong></td>
+                                    <td>{{ clase.dia }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Horario:</strong></td>
+                                    <td>{{ clase.horario|time:"H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cupo Máximo:</strong></td>
+                                    <td>{{ clase.cupo_maximo }} personas</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        {% if clase.activa %}
+                                            <span class="badge bg-success">Activa</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactiva</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha de Creación:</strong></td>
+                                    <td>{{ clase.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Última Modificación:</strong></td>
+                                    <td>{{ clase.fecha_modificacion|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="col-lg-4">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <h3 class="mb-1">{{ total_reservas }}</h3>
+                            <small>Reservas Activas</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h3 class="mb-1">{{ cupos_disponibles }}</h3>
+                            <small>Cupos Disponibles</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-pie fa-2x mb-2"></i>
+                            <h3 class="mb-1">{{ porcentaje_ocupacion }}%</h3>
+                            <small>Ocupación</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Occupancy Visual -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Estado de Ocupación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>Ocupación Actual</span>
+                                    <span><strong>{{ total_reservas }}/{{ clase.cupo_maximo }}</strong></span>
+                                </div>
+                            </div>
+                            <div class="progress mb-3" style="height: 20px;">
+                                <div class="progress-bar 
+                                    {% if porcentaje_ocupacion >= 90 %}bg-danger
+                                    {% elif porcentaje_ocupacion >= 75 %}bg-warning
+                                    {% elif porcentaje_ocupacion >= 50 %}bg-info
+                                    {% else %}bg-success{% endif %}"
+                                    data-width="{{ porcentaje_ocupacion|default:0 }}">
+                                    {{ porcentaje_ocupacion|default:0 }}%
+                                </div>
+                            </div>
+                            
+                            <div class="row text-center">
+                                <div class="col-3">
+                                    <small class="text-muted">Excelente</small><br>
+                                    <div class="bg-success" style="height: 10px; border-radius: 3px;"></div>
+                                    <small>0-49%</small>
+                                </div>
+                                <div class="col-3">
+                                    <small class="text-muted">Bueno</small><br>
+                                    <div class="bg-info" style="height: 10px; border-radius: 3px;"></div>
+                                    <small>50-74%</small>
+                                </div>
+                                <div class="col-3">
+                                    <small class="text-muted">Alto</small><br>
+                                    <div class="bg-warning" style="height: 10px; border-radius: 3px;"></div>
+                                    <small>75-89%</small>
+                                </div>
+                                <div class="col-3">
+                                    <small class="text-muted">Completo</small><br>
+                                    <div class="bg-danger" style="height: 10px; border-radius: 3px;"></div>
+                                    <small>90-100%</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 text-center">
+                            {% if porcentaje_ocupacion >= 90 %}
+                                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-2"></i>
+                                <h6 class="text-danger">Clase Casi Llena</h6>
+                                <small class="text-muted">Considera abrir otra clase</small>
+                            {% elif porcentaje_ocupacion >= 75 %}
+                                <i class="fas fa-chart-line fa-3x text-warning mb-2"></i>
+                                <h6 class="text-warning">Alta Demanda</h6>
+                                <small class="text-muted">Monitorea la ocupación</small>
+                            {% elif porcentaje_ocupacion >= 50 %}
+                                <i class="fas fa-thumbs-up fa-3x text-info mb-2"></i>
+                                <h6 class="text-info">Buena Ocupación</h6>
+                                <small class="text-muted">Clase en buen estado</small>
+                            {% else %}
+                                <i class="fas fa-seedling fa-3x text-success mb-2"></i>
+                                <h6 class="text-success">Cupos Disponibles</h6>
+                                <small class="text-muted">Acepta más reservas</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Reservations -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>
+                        <i class="fas fa-bookmark me-2"></i>
+                        Reservas Activas
+                        {% if total_reservas %}
+                            <span class="badge bg-secondary">{{ total_reservas }}</span>
+                        {% endif %}
+                    </h5>
+                    
+                    {% if total_reservas %}
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="exportReservas()">
+                                <i class="fas fa-download me-1"></i>Exportar
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="printReservas()">
+                                <i class="fas fa-print me-1"></i>Imprimir
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if reservas %}
+                        <!-- Desktop Table -->
+                        <div class="table-responsive d-none d-md-block">
+                            <table class="table table-hover align-middle" id="reservasTable">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Contacto</th>
+                                        <th>Reserva</th>
+                                        <th>Fecha de Reserva</th>
+                                        <th>Próxima Clase</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reserva in reservas %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="user-avatar me-3">
+                                                        {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold">{{ reserva.get_nombre_completo_usuario }}</div>
+                                                        <small class="text-muted">@{{ reserva.usuario.username }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div class="mb-1">
+                                                        <i class="fas fa-envelope me-1"></i>
+                                                        <small>{{ reserva.usuario.email }}</small>
+                                                    </div>
+                                                    {% if reserva.usuario.profile.telefono %}
+                                                        <div>
+                                                            <i class="fas fa-phone me-1"></i>
+                                                            <small>{{ reserva.usuario.profile.telefono }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ reserva.numero_reserva }}</span>
+                                            </td>
+                                            <td>
+                                                <small>{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}</small>
+                                            </td>
+                                            <td>
+                                                <small class="text-success">
+                                                    <i class="fas fa-calendar-check me-1"></i>
+                                                    {{ reserva.get_proxima_clase_info }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1 justify-content-center">
+                                                    <a href="{% url 'PilatesGravity:admin_usuario_detalle' reserva.usuario.id %}" 
+                                                    class="btn btn-sm btn-outline-info" 
+                                                    title="Ver usuario">
+                                                        <i class="fas fa-user"></i>
+                                                    </a>
+                                                    <a href="{% url 'PilatesGravity:admin_reserva_cancelar' reserva.id %}" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    title="Cancelar reserva"
+                                                    onclick="return confirm('¿Estás seguro de cancelar la reserva de {{ reserva.get_nombre_completo_usuario }}?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mobile Cards -->
+                        <div class="d-md-none">
+                            {% for reserva in reservas %}
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-3 text-center">
+                                                <div class="user-avatar mb-2">
+                                                    {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
+                                                </div>
+                                                <span class="badge bg-info">{{ reserva.numero_reserva }}</span>
+                                            </div>
+                                            <div class="col-9">
+                                                <h6 class="card-title mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
+                                                <p class="card-text mb-2">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-envelope me-1"></i>{{ reserva.usuario.email }}<br>
+                                                        {% if reserva.usuario.profile.telefono %}
+                                                            <i class="fas fa-phone me-1"></i>{{ reserva.usuario.profile.telefono }}<br>
+                                                        {% endif %}
+                                                        <i class="fas fa-calendar me-1"></i>{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}
+                                                    </small>
+                                                </p>
+                                                
+                                                <div class="d-flex gap-1">
+                                                    <a href="{% url 'PilatesGravity:admin_usuario_detalle' reserva.usuario.id %}" 
+                                                    class="btn btn-sm btn-outline-info">
+                                                        <i class="fas fa-user"></i>
+                                                    </a>
+                                                    <a href="{% url 'PilatesGravity:admin_reserva_cancelar' reserva.id %}" 
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <!-- Empty State -->
+                        <div class="text-center py-5">
+                            <i class="fas fa-bookmark fa-4x text-muted mb-4"></i>
+                            <h4 class="text-muted mb-3">No hay reservas activas</h4>
+                            <p class="text-muted mb-4">Esta clase aún no tiene usuarios inscritos.</p>
+                            
+                            {% if not clase.activa %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Nota:</strong> Esta clase está inactiva, por lo que los usuarios no pueden hacer nuevas reservas.
+                                </div>
+                            {% endif %}
+                            
+                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}?clase_id={{ clase.id }}" 
+                            class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Agregar Cliente Manualmente
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-bolt me-2"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Gestión de Clase:</h6>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'PilatesGravity:admin_clase_editar' clase.id %}" 
+                                class="btn btn-outline-primary">
+                                    <i class="fas fa-edit me-2"></i>Editar Información
+                                </a>
+                                
+                                {% if clase.activa %}
+                                    <button class="btn btn-outline-warning" 
+                                            onclick="toggleClaseStatus(false)">
+                                        <i class="fas fa-pause me-2"></i>Desactivar Clase
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-outline-success" 
+                                            onclick="toggleClaseStatus(true)">
+                                        <i class="fas fa-play me-2"></i>Activar Clase
+                                    </button>
+                                {% endif %}
+                                
+                                {% if clase.puede_eliminarse %}
+                                    <a href="{% url 'PilatesGravity:admin_clase_eliminar' clase.id %}" 
+                                    class="btn btn-outline-danger">
+                                        <i class="fas fa-trash me-2"></i>Eliminar Clase
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Gestión de Usuarios:</h6>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}?clase_id={{ clase.id }}" 
+                                class="btn btn-outline-success">
+                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                                </a>
+                                
+                                <a href="{% url 'PilatesGravity:admin_reservas_lista' %}?tipo_clase={{ clase.tipo }}&dia={{ clase.dia }}" 
+                                class="btn btn-outline-info">
+                                    <i class="fas fa-bookmark me-2"></i>Ver Todas las Reservas
+                                </a>
+                                
+                                <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" 
+                                class="btn btn-outline-secondary">
+                                    <i class="fas fa-users me-2"></i>Gestionar Usuarios
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate progress bar
+            const progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                const width = progressBar.dataset.width + '%';
+                progressBar.style.width = '0%';
+                setTimeout(function() {
+                    progressBar.style.transition = 'width 1.5s ease-in-out';
+                    progressBar.style.width = width;
+                }, 500);
+            }
+            
+            // Add tooltips to action buttons
+            const actionButtons = document.querySelectorAll('[title]');
+            actionButtons.forEach(function(button) {
+                new bootstrap.Tooltip(button);
+            });
+            
+            // Auto-refresh data every 5 minutes
+            setInterval(function() {
+                location.reload();
+            }, 300000);
+        });
+
+        // Function to toggle class status
+        function toggleClaseStatus(newStatus) {
+            const action = newStatus ? 'activar' : 'desactivar';
+            const className = '{{ clase.get_tipo_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
+            
+            if (confirm('¿Estás seguro de que quieres ' + action + ' la clase "' + className + '"?')) {
+                window.location.href = '{% url "PilatesGravity:admin_clase_editar" clase.id %}';
+            }
+        }
+
+        // Function to export reservations
+        function exportReservas() {
+            const table = document.getElementById('reservasTable');
+            if (!table) return;
+            
+            let csv = 'Usuario,Email,Teléfono,Número de Reserva,Fecha de Reserva\n';
+            
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(function(row) {
+                const cells = row.querySelectorAll('td');
+                const usuario = cells[0].querySelector('.fw-bold').textContent;
+                const email = cells[1].querySelector('small').textContent.replace('✉ ', '');
+                const telefono = cells[1].querySelectorAll('small')[1] ? 
+                                cells[1].querySelectorAll('small')[1].textContent.replace('📞 ', '') : 'N/A';
+                const reserva = cells[2].textContent.trim();
+                const fecha = cells[3].textContent.trim();
+                
+                csv += usuario + ',' + email + ',' + telefono + ',' + reserva + ',' + fecha + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'reservas_{{ clase.tipo }}_{{ clase.dia }}_{{ clase.horario|time:"H-i" }}.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Function to print reservations
+        function printReservas() {
+            const printWindow = window.open('', '_blank');
+            const className = '{{ clase.get_tipo_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
+            
+            let printContent = '<html><head><title>Reservas - ' + className + '</title>';
+            printContent += '<style>body{font-family:Arial,sans-serif;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background-color:#f2f2f2;}</style>';
+            printContent += '</head><body>';
+            printContent += '<h1>Reservas - ' + className + '</h1>';
+            printContent += '<p>Fecha de impresión: ' + new Date().toLocaleDateString() + '</p>';
+            
+            const table = document.getElementById('reservasTable');
+            if (table) {
+                printContent += table.outerHTML;
+            }
+            
+            printContent += '</body></html>';
+            
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+{% endblock %}

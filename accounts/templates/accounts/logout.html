@@ -1,0 +1,36 @@
+{% extends 'accounts/base.html' %}
+
+{% load static %}
+
+{% block title %}Cerrar Sesión - Pilates Gravity{% endblock %}
+
+{% block content %}
+    <!-- Mostrar solo mensajes relacionados con logout -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if "sesión" in message.message|lower or "logout" in message.message|lower or "cerrado" in message.message|lower or "desconectado" in message.message|lower %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <div class="auth-header">
+        <h2>Cerrar Sesión</h2>
+        <p>¿Estás seguro de que quieres cerrar tu sesión?</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="d-grid mb-4">
+            <button type="submit" class="btn btn-primary">Sí, Cerrar Sesión</button>
+        </div>
+    </form>
+
+    <div class="auth-links">
+        <p><a href="{% url 'PilatesGravity:home' %}">Cancelar y volver al inicio</a></p>
+    </div>
+{% endblock %}

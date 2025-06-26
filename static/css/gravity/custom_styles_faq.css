@@ -1,0 +1,13 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE FAQ SECTION
+   ======================================== */
+
+/* Clase para rotar el ícono */
+.faq-icon.rotate {
+    transform: rotate(180deg);
+}
+
+/* Clase para mostrar/ocultar respuestas */
+.faq-answer.show {
+    display: block;
+}

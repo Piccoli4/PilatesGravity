@@ -1,0 +1,49 @@
+{% load static %}
+
+<!-- Sección Clases -->
+<section id="Clases" class="py-20 px-5 bg-white">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-4">
+            <h2 class="text-4xl font-bold text-principal mt-2 mb-2">Nuestras Clases</h2>
+            <div class="w-24 h-1 bg-secundario mx-auto"></div>
+            <p class="max-w-2xl mx-auto mt-5 text-gray-600">
+                Ofrecemos una variedad de clases para todos los niveles, desde principiantes hasta avanzados.
+            </p>
+        </div>
+
+        <div class="classes-cards-grid">
+            <!-- Clase 1 -->
+            <div class="classes-card">
+                <div class="classes-image-container">
+                    <img src="{% static 'img/clases_cadillac.webp' %}" alt="Imagen de Pilates" class="classes-img-card">
+                </div>
+                <div class="classes-card-content">
+                    <h3>Cadillac</h3>
+                    <p>
+                        Es una clase diseñada para fortalecer y estirar el cuerpo con mayor control y soporte, 
+                        ideal para rehabilitación y ejercicios avanzados.
+                    </p>
+                    <div class="card-footer">
+                        <span>50 minutos</span>
+                        <a href="{% url 'gravity:reservar_clase' %}?tipo=Cadillac" class="btn-reservar">Reservar</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clase 2 -->
+            <div class="classes-card">
+                <div class="classes-image-container">
+                    <img src="{% static 'img/clases_reformer.webp' %}" alt="Imagen de Pilates" class="classes-img-card">
+                </div>
+                <div class="classes-card-content">
+                    <h3>Pilates Reformer / Terapéutico / Prenatal / Deportivo</h3>
+                    <p>Sesiones personalizadas enfocadas en rehabilitación y corrección postural.</p>
+                    <div class="card-footer">
+                        <span>45 minutos</span>
+                        <a href="{% url 'gravity:reservar_clase' %}?tipo=Reformer" class="btn-reservar">Reservar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

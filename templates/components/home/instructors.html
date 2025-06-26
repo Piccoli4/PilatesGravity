@@ -1,0 +1,47 @@
+{% load static %}
+
+<!-- Sección Instructores -->
+<section id="Instructores" class="bg-[#F8EFE5] py-20 px-5">
+    <div class="container mx-auto">
+        <div class="section-title text-center mb-12">
+            <h2 class="text-3xl font-bold text-[#5D768B] mt-2 mb-4">Nuestros Instructores</h2>
+            <div class="divider w-16 h-1 bg-[#C8B39B] mx-auto mb-4"></div>
+            <p class="subtitle text-gray-600 max-w-2xl mx-auto">
+                Conoce a nuestro equipo de profesionales certificados que te guiarán en tu práctica de Pilates.
+            </p>
+        </div>
+
+        <div class="instructors-grid grid gap-[30px] md:grid-cols-2">
+            <!-- Instructor 1 -->
+            <div class="card_instructors flex flex-row bg-white rounded-xl overflow-hidden shadow-[0_10px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-in-out h-[400px] hover:scale-105">
+                <div class="image_instructors_container h-full bg-[#5D768B] flex items-center justify-center flex-1">
+                    <img src="{% static 'img/cami.webp' %}" alt="Instructora Cami" class="w-full h-full object-cover">
+                </div>
+                <div class="instructors-card-content py-[30px] px-[20px] flex-1">
+                    <h3 class="text-[1.2rem] font-semibold text-[#5D768B] mb-[5px]">Cami</h3>
+                    <p class="cargo text-[0.95rem] font-medium text-[#C8B39B] mb-[15px]">+3 años de experiencia</p>
+                    <p class="text-[0.95rem] text-[#666]">Motivadora, paciente, empática, perseverante y siempre atenta.<br>
+                        Hace 8 años que practica el método, y desde hace 3 lo transmite como instructora.<br>
+                        Además, es profe de danza desde los 17 años. Su pasión por el movimiento se nota en cada clase.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Instructor 2 -->
+            <div class="card_instructors flex flex-row bg-white rounded-xl overflow-hidden shadow-[0_10px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-in-out h-[400px] hover:scale-105">
+                <div class="image_instructors_container h-full bg-[#5D768B] flex items-center justify-center flex-1">
+                    <img src="{% static 'img/nico.webp' %}" alt="Instructor Nico" class="w-full h-full object-cover">
+                </div>
+                <div class="instructors-card-content py-[30px] px-[20px] flex-1">
+                    <h3 class="text-[1.2rem] font-semibold text-[#5D768B] mb-[5px]">Nico</h3>
+                    <p class="cargo text-[0.95rem] font-medium text-[#C8B39B] mb-[15px]">+5 años de experiencia</p>
+                    <p class="text-[0.95rem] text-[#666]">Divertido, charlatan y siempre con la mejor energía.<br>
+                       Motivador, inspirador y un gran guía en cada clase.<br>
+                       con 5 años como instructor de pilates y 7 años de experiencia como profesor de educación física,
+                       sabe como acompañarte y hacerte disfrutar el proceso. 
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,80 @@
+{% load static %}
+
+<header class="sticky top-0 z-50 bg-principal text-white py-1 flex flex-row items-center justify-between">
+    <!-- Logo -->
+    <div class="flex-none w-35 text-left pl-1">
+        <a href="{% url 'gravity:home' %}">
+            <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="Logo Pilates Gravity" class="w-20 h-auto">
+        </a>
+    </div>
+    
+    <!-- Header Content -->
+    <div class="flex flex-col items-center justify-center text-center flex-1">
+        <h1 class="m-0 text-2xl sm:text-4xl font-bold">Pilates Gravity</h1>
+        
+        <!-- Navigation -->
+        <nav class="w-full">
+            <ul id="navMenu" class="hidden lg:flex list-none p-0 mt-1 justify-center gap-6 flex-wrap 
+                           lg:relative lg:top-0 lg:w-auto lg:bg-transparent lg:flex-row lg:p-0
+                           absolute top-full left-0 w-full bg-principal flex-col py-2 z-40">
+                <li class="inline"><a href="{% url 'gravity:home' %}" class="nav-link">Inicio</a></li>
+                <li class="inline"><a href="{% url 'gravity:home' %}#Nosotros" class="nav-link">Nosotros</a></li>
+                <li class="inline"><a href="{% url 'gravity:home' %}#Beneficios" class="nav-link">Beneficios</a></li>
+                <li class="inline"><a href="{% url 'gravity:home' %}#Clases" class="nav-link">Clases</a></li>
+                <li class="inline"><a href="{% url 'gravity:home' %}#Instructores" class="nav-link">Instructores</a></li>
+                <li class="inline"><a href="{% url 'gravity:home' %}#Contacto" class="nav-link">Contacto</a></li>
+                <li class="inline"><a href="{% url 'gravity:home' %}#Normas" class="nav-link">Normas</a></li>
+
+                <!-- Botones de autenticación para móviles -->
+                {% if user.is_authenticated %}
+                    <li class="lg:hidden flex justify-center">
+                        <a href="{% url 'accounts:profile' %}" class="auth-mobile">
+                            <img src="{% static 'icons/profile.png' %}" alt="Perfil" class="w-8 h-8 mr-2">
+                            <span>Hola, {{ user.first_name|default:user.username }}</span>
+                        </a>
+                    </li>
+                    <li class="lg:hidden flex justify-center">
+                        <a href="{% url 'accounts:logout' %}" class="auth-mobile">
+                            <img src="{% static 'icons/logout.png' %}" alt="Cerrar Sesión" class="w-8 h-8 mr-2">
+                            <span>Cerrar Sesión</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="lg:hidden flex justify-center">
+                        <a href="{% url 'accounts:login' %}" class="auth-mobile">
+                            <img src="{% static 'icons/login.png' %}" alt="Iniciar Sesión" class="w-8 h-8 mr-2">
+                            <span>Iniciar Sesión</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    
+    <!-- Menu Toggle y Auth Buttons -->
+    <div class="flex-none w-35 flex justify-center items-center gap-2">
+        <!-- Botones de autenticación para desktop -->
+        {% if user.is_authenticated %}
+            <div class="hidden lg:flex flex-row items-center gap-2">
+                <a href="{% url 'accounts:profile' %}" class="auth-desktop-greeting">
+                    <img src="{% static 'icons/profile.png' %}" alt="Perfil" class="w-9 h-9">
+                    <span class="text-xs font-semibold">Hola, {{ user.first_name|default:user.username }}</span>
+                </a>
+                <a href="{% url 'accounts:logout' %}" class="auth-desktop">
+                    <img src="{% static 'icons/logout.png' %}" alt="Cerrar Sesión" class="w-9 h-9">
+                    <span class="text-xs font-semibold">Cerrar Sesión</span>
+                </a>
+            </div>
+        {% else %}
+            <a href="{% url 'accounts:login' %}" class="hidden lg:flex auth-desktop">
+                <img src="{% static 'icons/login.png' %}" alt="Iniciar Sesión" class="w-9 h-9">
+                <span class="text-xs font-semibold">Iniciar Sesión</span>
+            </a>
+        {% endif %}
+        
+        <!-- Menu Toggle Button -->
+        <button class="lg:hidden bg-transparent border-none text-white text-3xl cursor-pointer" id="menuToggle">
+            &#9776;
+        </button>
+    </div>
+</header>

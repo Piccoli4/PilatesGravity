@@ -1,0 +1,73 @@
+{% load static %}
+
+<!-- Sección Nosotros/About -->
+<section id="Nosotros" class="py-20 px-5 bg-white">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-4 pt-9">
+            <h2 class="text-4xl font-bold text-principal mb-2">Sobre Nosotros</h2>
+            <div class="w-24 h-1 bg-secundario mx-auto"></div>
+        </div>
+        
+        <div class="flex flex-col md:flex-row items-center gap-5 min-h-96">
+            <!-- Contenedor de imágenes -->
+            <div class="flex-1 flex justify-center about-image-mobile md:about-image-tablet">
+                <div class="stacked-images carousel">
+                    <img src="{% static 'img/nosotros.webp' %}" alt="Pilates Gravity" class="img-stacked img-1">
+                    <img src="{% static 'img/nosotros2.webp' %}" alt="Pilates Gravity" class="img-stacked img-2">
+                    <img src="{% static 'img/nosotros3.webp' %}" alt="Pilates Gravity" class="img-stacked img-3">
+                </div>
+            </div>
+            
+            <!-- Contenido de texto -->
+            <div class="flex-1 pl-0 md:pl-5 flex flex-col justify-center text-center md:text-left">
+                <h3 class="text-3xl font-semibold text-principal mb-5">Nuestra Filosofía</h3>
+                <p class="text-gray-600 mb-5">
+                    En Pilates Gravity, creemos que el verdadero bienestar surge cuando el cuerpo y la mente trabajan en perfecta sincronía...
+                </p>
+                <p class="text-gray-600 mb-5">
+                    Con más de 5 años de experiencia, nuestro equipo de instructores certificados te guiará en un viaje de autodescubrimiento...
+                </p>
+                
+                <!-- Estadísticas -->
+                <div class="flex items-center justify-between gap-5 mt-8">
+                    <div class="text-center">
+                        <span class="text-3xl font-bold text-principal block">+5</span>
+                        <span class="text-sm text-gray-500">Años de experiencia</span>
+                    </div>
+                    <div class="divider-vertical"></div>
+                    <div class="text-center">
+                        <span class="text-3xl font-bold text-principal block">+200</span>
+                        <span class="text-sm text-gray-500">Clientes satisfechos</span>
+                    </div>
+                    <div class="divider-vertical"></div>
+                    <div class="text-center">
+                        <span class="text-3xl font-bold text-principal block">+10</span>
+                        <span class="text-sm text-gray-500">Clases semanales</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Script para el carrusel de imágenes apiladas
+    document.addEventListener('DOMContentLoaded', () => {
+        const carousel = document.querySelector('.carousel');
+        if (!carousel) return;
+
+        const count = carousel.querySelectorAll('.img-stacked').length;
+        let idx = 0;
+
+        // Siempre partimos mostrando la 1ª
+        carousel.scrollTo({ left: 0, behavior: 'auto' });
+
+        setInterval(() => {
+            idx = (idx + 1) % count;
+            carousel.scrollTo({
+                left: idx * carousel.clientWidth,
+                behavior: 'smooth'
+            });
+        }, 2000);
+    });
+</script>

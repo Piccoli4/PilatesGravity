@@ -1,0 +1,46 @@
+{% load static %}
+
+<!-- Sección Hero/Inicio -->
+<section id="Inicio" class="relative min-h-[90vh] bg-fondo overflow-hidden flex items-center justify-center py-1 px-2">
+    <!-- Fondo decorativo con ondas -->
+    <div class="hero-background">
+        <svg viewBox="0 0 1440 320" class="wave wave1 wave-animation">
+            <path fill="#5D768B" fill-opacity="0.1"
+                d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,197.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L0,320Z" />
+        </svg>
+        <svg viewBox="0 0 1440 320" class="wave wave2 wave-animation">
+            <path fill="#C8B39B" fill-opacity="0.15"
+                d="M0,288L48,272C96,256,192,224,288,213.3C384,203,480,213,576,229.3C672,245,768,267,864,261.3C960,256,1056,224,1152,213.3C1248,203,1344,213,1392,218.7L1440,224L1440,320L0,320Z" />
+        </svg>
+    </div>
+
+    <!-- Contenido principal del Hero --> 
+    <div class="relative z-10 flex flex-col md:flex-row items-center justify-center gap-16 md:gap-20 max-w-6xl mx-auto">
+        <!-- Texto del Hero -->
+        <div class="text-center max-w-lg">
+            <h1 class="text-5xl md:text-6xl text-gray-800 mb-4 font-cinzel">
+                Descubre<br><span class="text-principal">Pilates Gravity</span>
+            </h1>
+            <p class="text-lg md:text-xl text-gray-800 mb-6">
+                Transforma tu cuerpo, equilibra tu mente y eleva tu bienestar con nuestro método único de Pilates.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{% url 'gravity:reservar_clase' %}" class="hero-btn-primary">
+                    Reserva tu clase
+                </a>
+                <a href="{% url 'gravity:conoce_mas' %}" class="hero-btn-secondary">
+                    Conoce más
+                </a>
+            </div>
+        </div>
+        
+        <!-- Imagen del Hero -->
+        <div class="max-w-sm w-full">
+            <img 
+                src="{% static 'img/inicio.webp' %}" 
+                alt="Imagen de Pilates" 
+                class="w-full h-auto rounded-lg shadow-lg"
+            >
+        </div>
+    </div>
+</section>

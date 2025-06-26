@@ -1,0 +1,121 @@
+{% load static %}
+
+<!-- Contenido de Contacto -->
+<section id="Contacto" class="bg-[#fdfdfd] py-20 px-5 relative">
+    <div class="container mx-auto">
+        <div class="section-title text-center mb-12">
+            <h2 class="text-3xl font-bold text-[#5D768B] mt-2 mb-4">Contáctanos</h2>
+            <div class="divider w-16 h-1 bg-[#C8B39B] mx-auto mb-4"></div>
+            <p class="max-w-[1200px] my-5 mx-auto text-[#666]">¿Tienes alguna pregunta o quieres reservar una clase? Estamos aquí para ayudarte.</p>
+        </div>
+
+        <div class="contact-content flex flex-col gap-[10px] lg:flex-row">
+            <div class="contact-info flex-1 bg-[#F8EFE5] p-[30px] rounded-[10px] shadow-[0_10px_25px_rgba(0,0,0,0.05)] text-center">
+                <h3 class="text-2xl text-[#5d768b] mb-6">Información de Contacto</h3>
+                <div class="contact-cards-container flex flex-row justify-center content-center">
+                    <a href="https://www.google.com/maps/place/La+Rioja+3044,+S3000+Santa+Fe+de+la+Vera+Cruz,+Santa+Fe" 
+                       target="_blank" 
+                       rel="noopener noreferrer" 
+                       class="no-underline hover:scale-105 transition-transform duration-300 ease-in-ou"
+                    >
+                        <div class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+                            <img src="{% static 'icons/location.png' %}" alt="Icono de ubicación" class="w-[50px] h-auto mb-[3px]">
+                            <h4 class="my-[2px] text-black">Dirección</h4>
+                            <p class="my-[2px] text-black">La Rioja 3044, Santa Fe Capital</p>
+                        </div>
+                    </a>
+                    <a href="#" 
+                       id="openChatFromPhone"
+                       class="no-underline hover:scale-105 transition-transform duration-300 ease-in-ou"
+                    >
+                        <div class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+                            <img src="{% static 'icons/telefono.png' %}" alt="Icono de teléfono" class="w-[50px] h-auto mb-[3px]">
+                            <h4 class="my-[2px] text-black">Teléfono</h4>
+                            <p class="my-[2px] text-black">+54 342 511 4448</p>
+                        </div>
+                    </a>
+                    <a href="mailto:gravity@gmail.com?subject=Consulta&body=Hola, quiero hacer una consulta sobre..." 
+                       target="_blank" 
+                       rel="noopener noreferrer" 
+                       class="no-underline hover:scale-105 transition-transform duration-300 ease-in-ou"
+                    >
+                        <div class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+                            <img src="{% static 'icons/email.png' %}" alt="Icono de email" class="w-[50px] h-auto mb-[3px]">
+                            <h4 class="my-[2px] text-black">E-mail</h4>
+                            <p class="my-[2px] text-black">pilatesgravity@gmail.com</p>
+                        </div>
+                    </a>
+                    <a href="https://www.instagram.com/pilatesgravity/" target="_blank" rel="noopener noreferrer" class="no-underline hover:scale-105 transition-transform duration-300 ease-in-out">
+                        <div class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+                            <img src="{% static 'icons/instagram.png' %}" alt="Icono de email" class="w-[50px] h-auto mb-[3px]">
+                            <h4 class="my-[2px] text-black">Instagram</h4>
+                            <p class="my-[2px] text-black">@pilatesgravity</p>
+                        </div>
+                    </a>
+                    <a href="#" id="open-schedule-modal" class="no-underline hover:scale-105 transition-transform duration-300 ease-in-out">
+                        <div class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
+                            <img src="{% static 'icons/clock.png' %}" alt="Icono de horarios" class="w-[50px] h-auto mb-[3px]">
+                            <h4 class="my-[2px] text-black">Horarios</h4>
+                            <p class="my-[2px] text-black">
+                                Lunes a Viernes<br>
+                                Sabados y Domingos Cerrados
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de horarios-->
+        <div id="schedule-modal" class="modal hidden fixed z-[999] left-0 top-0 w-full h-full overflow-auto bg-black bg-opacity-60">
+            <div class="modal-content bg-[#F8EFE5] my-[10%] mx-auto p-[30px] rounded-[10px] max-w-[500px] relative text-left">
+                <span class="close-modal absolute right-5 top-[10px] text-[28px] cursor-pointer text-[#5D768B]">&times;</span>
+                <h3 class="text-center text-[#5D768B] font-black mb-4">Horarios de Clases</h3>
+                <p class="font-bold">Turnos por la mañana:</p>
+                <ul class="mb-4">
+                    <li>07:00 - 08:00</li>
+                    <li>08:00 - 09:00</li>
+                    <li>09:00 - 10:00</li>
+                    <li>10:00 - 11:00</li>
+                </ul>
+                <p class="font-bold">Turnos por la tarde:</p>
+                <ul>
+                    <li>13:30 - 14:30</li>
+                    <li>14:30 - 15:30</li>
+                    <li>15:30 - 16:30</li>
+                    <li>16:30 - 17:30</li>
+                    <li>17:30 - 18:30</li>
+                    <li>18:30 - 19:30</li>
+                    <li>19:30 - 20:30</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="map mt-[50px] h-[300px] bg-[#e8e8e8] rounded-xl overflow-hidden">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2124.077530150579!2d-60.71308093941145!3d-31.644436912417746!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b5a9b0f73ec06d%3A0xcd46785c2438f588!2sLa%20Rioja%203044%2C%20S3000%20Santa%20Fe%20de%20la%20Vera%20Cruz%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1747926163998!5m2!1ses-419!2sar" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+    </div>
+</section>
+
+<!-- Script para el modal de horarios -->
+<script>
+    // Script para el modal de horarios
+    const openModal = document.getElementById('open-schedule-modal');
+    const modal = document.getElementById('schedule-modal');
+    const closeModal = modal.querySelector('.close-modal');
+
+    openModal.addEventListener('click', function (e) {
+        e.preventDefault();
+        modal.classList.remove('hidden');
+    });
+
+    closeModal.addEventListener('click', function () {
+        modal.classList.add('hidden');
+    });
+
+    window.addEventListener('click', function (e) {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+</script>

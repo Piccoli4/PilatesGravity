@@ -1,0 +1,659 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}Clientes No Registrados - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Clientes No Registrados</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="fas fa-address-book me-2"></i>
+                            Clientes No Registrados
+                        </h2>
+                        <p class="text-muted mb-0">
+                            Gestiona clientes agregados directamente por el administrador sin registro previo
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success" onclick="exportarClientes()">
+                                <i class="fas fa-download me-2"></i>Exportar
+                            </button>
+                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <div class="row align-items-center">
+                <div class="col-md-1 text-center">
+                    <i class="fas fa-info-circle fa-2x"></i>
+                </div>
+                <div class="col-md-11">
+                    <h6 class="alert-heading mb-1">¿Qué son los clientes no registrados?</h6>
+                    <p class="mb-0">
+                        Son clientes agregados directamente por el administrador que <strong>no tienen cuenta de usuario</strong> en el sistema. 
+                        Utilizan el sistema legacy de turnos y solo pueden ser gestionados desde el panel de administración.
+                        Si posteriormente se registran, podrás vincular sus datos.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-search me-2"></i>Búsqueda de Clientes</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" id="searchForm">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="busqueda" class="form-label">Buscar Cliente</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" 
+                                       name="busqueda" 
+                                       id="busqueda" 
+                                       class="form-control" 
+                                       placeholder="Nombre, apellido, email, teléfono o número de cliente..."
+                                       value="{{ busqueda }}">
+                                <button type="submit" class="btn btn-primary">
+                                    Buscar
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Busca por cualquier campo del cliente
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Filtros Rápidos</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterBy('con_turnos')">
+                                    <i class="fas fa-calendar-check me-1"></i>Con Turnos
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="filterBy('con_email')">
+                                    <i class="fas fa-envelope me-1"></i>Con Email
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterBy('sin_email')">
+                                    <i class="fas fa-envelope-open me-1"></i>Sin Email
+                                </button>
+                                <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-times me-1"></i>Limpiar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Summary -->
+{% if page_obj.object_list %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Resultados: {{ page_obj.paginator.count }} cliente{{ page_obj.paginator.count|pluralize }}
+                    {% if busqueda %}
+                        <span class="badge bg-info">Búsqueda activa</span>
+                    {% endif %}
+                </h6>
+                <small class="text-muted">
+                    Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                </small>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="d-flex gap-3">
+                <div class="text-center">
+                    <div class="fw-bold text-primary">{{ page_obj.object_list|length }}</div>
+                    <small class="text-muted">En esta página</small>
+                </div>
+                <div class="text-center">
+                    <div class="fw-bold text-success">{{ page_obj.paginator.count }}</div>
+                    <small class="text-muted">Total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Results Section -->
+<div class="row">
+    <div class="col-12">
+        {% if page_obj.object_list %}
+            <!-- Desktop Table -->
+            <div class="card d-none d-lg-block">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="clientesTable">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Contacto</th>
+                                    <th>Número de Cliente</th>
+                                    <th>Turnos</th>
+                                    <th>Fecha de Registro</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in page_obj.object_list %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar me-3">
+                                                    {{ item.cliente.nombre.0|upper }}{{ item.cliente.apellido.0|upper }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ item.cliente.nombre }} {{ item.cliente.apellido }}</div>
+                                                    <small class="text-muted">Cliente No Registrado</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                {% if item.cliente.email %}
+                                                    <div class="mb-1">
+                                                        <i class="fas fa-envelope text-primary me-1"></i>
+                                                        <small>{{ item.cliente.email }}</small>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="mb-1">
+                                                    <i class="fas fa-phone text-success me-1"></i>
+                                                    <small>{{ item.cliente.telefono }}</small>
+                                                </div>
+                                                {% if not item.cliente.email %}
+                                                    <small class="text-muted">Sin email registrado</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ item.cliente.numero_cliente }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if item.total_turnos > 0 %}
+                                                <div class="fw-bold text-primary">{{ item.total_turnos }}</div>
+                                                <small class="text-muted">turno{{ item.total_turnos|pluralize }}</small>
+                                            {% else %}
+                                                <div class="text-muted">Sin turnos</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div class="fw-bold">{{ item.cliente.id|date:"d/m/Y" }}</div>
+                                                <small class="text-muted">Agregado por admin</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if item.cliente.email %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-envelope me-1"></i>Con Email
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-exclamation me-1"></i>Sin Email
+                                                </span>
+                                            {% endif %}
+                                            {% if item.cliente.usuario %}
+                                                <br><span class="badge bg-info mt-1">
+                                                    <i class="fas fa-link me-1"></i>Vinculado
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 justify-content-center">
+                                                <button class="btn btn-sm btn-outline-info" 
+                                                        onclick="verDetalleCliente('{{ item.cliente.id }}')"
+                                                        title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if item.cliente.email %}
+                                                    <a href="mailto:{{ item.cliente.email }}" 
+                                                       class="btn btn-sm btn-outline-success" 
+                                                       title="Enviar email">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </a>
+                                                {% endif %}
+                                                <a href="tel:{{ item.cliente.telefono }}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="Llamar">
+                                                    <i class="fas fa-phone"></i>
+                                                </a>
+                                                <button class="btn btn-sm btn-outline-warning" 
+                                                        onclick="editarCliente('{{ item.cliente.id }}')"
+                                                        title="Editar datos">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                {% if item.total_turnos == 0 %}
+                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                            onclick="eliminarCliente('{{ item.cliente.id }}')"
+                                                            title="Eliminar cliente"
+                                                            data-cliente="{{ item.cliente.nombre }} {{ item.cliente.apellido }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile/Tablet Cards -->
+            <div class="d-lg-none">
+                {% for item in page_obj.object_list %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <div class="user-avatar mb-2" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                                        {{ item.cliente.nombre.0|upper }}{{ item.cliente.apellido.0|upper }}
+                                    </div>
+                                    <span class="badge bg-secondary">{{ item.cliente.numero_cliente }}</span>
+                                </div>
+                                <div class="col-8">
+                                    <h6 class="card-title mb-1">{{ item.cliente.nombre }} {{ item.cliente.apellido }}</h6>
+                                    <p class="card-text mb-2">
+                                        <small class="text-muted">
+                                            {% if item.cliente.email %}
+                                                <i class="fas fa-envelope me-1"></i>{{ item.cliente.email }}<br>
+                                            {% endif %}
+                                            <i class="fas fa-phone me-1"></i>{{ item.cliente.telefono }}<br>
+                                            <i class="fas fa-calendar me-1"></i>{{ item.total_turnos }} turno{{ item.total_turnos|pluralize }}
+                                        </small>
+                                    </p>
+                                    
+                                    <div class="mb-2">
+                                        {% if item.cliente.email %}
+                                            <span class="badge bg-success">Con Email</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Sin Email</span>
+                                        {% endif %}
+                                        {% if item.cliente.usuario %}
+                                            <span class="badge bg-info">Vinculado</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="verDetalleCliente('{{ item.cliente.id }}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if item.cliente.email %}
+                                            <a href="mailto:{{ item.cliente.email }}" 
+                                               class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-envelope"></i>
+                                            </a>
+                                        {% endif %}
+                                        <a href="tel:{{ item.cliente.telefono }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-phone"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-warning" 
+                                                onclick="editarCliente('{{ item.cliente.id }}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        {% if item.total_turnos == 0 %}
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="eliminarCliente('{{ item.cliente.id }}')"
+                                                    data-cliente="{{ item.cliente.nombre }} {{ item.cliente.apellido }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación de clientes" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center py-5">
+                        <i class="fas fa-address-book fa-4x text-muted mb-4"></i>
+                        <h4 class="text-muted mb-3">No se encontraron clientes</h4>
+                        {% if busqueda %}
+                            <p class="text-muted mb-4">
+                                No hay clientes que coincidan con la búsqueda: 
+                                <strong>"{{ busqueda }}"</strong>
+                            </p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Limpiar Búsqueda
+                                </a>
+                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                                </a>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-4">Aún no has agregado ningún cliente no registrado.</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Agregar Primer Cliente
+                                </a>
+                                <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" class="btn btn-outline-info">
+                                    <i class="fas fa-users me-2"></i>Ver Usuarios Registrados
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal for Client Details -->
+<div class="modal fade" id="clienteDetalleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user me-2"></i>Detalle del Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalClienteContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Edit Client -->
+<div class="modal fade" id="editarClienteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Editar Cliente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalEditContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add tooltips to action buttons
+    const actionButtons = document.querySelectorAll('[title]');
+    actionButtons.forEach(function(button) {
+        new bootstrap.Tooltip(button);
+    });
+    
+    // Highlight search term in results
+    const searchTerm = document.getElementById('busqueda').value;
+    if (searchTerm.trim()) {
+        highlightSearchTerm(searchTerm);
+    }
+    
+    // Auto-focus search input
+    document.getElementById('busqueda').focus();
+});
+
+// Function to view client details
+function verDetalleCliente(clienteId) {
+    const modal = new bootstrap.Modal(document.getElementById('clienteDetalleModal'));
+    const modalContent = document.getElementById('modalClienteContent');
+    
+    // Show loading
+    modalContent.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+    modal.show();
+    
+    // Simulate loading client details
+    setTimeout(function() {
+        modalContent.innerHTML = 
+            '<div class="row">' +
+                '<div class="col-md-6">' +
+                    '<h6>Información Personal:</h6>' +
+                    '<table class="table table-borderless table-sm">' +
+                        '<tr><td><strong>Número:</strong></td><td><span class="badge bg-secondary">' + clienteId + '</span></td></tr>' +
+                        '<tr><td><strong>Nombre:</strong></td><td>Cliente de Ejemplo</td></tr>' +
+                        '<tr><td><strong>Email:</strong></td><td>cliente@email.com</td></tr>' +
+                        '<tr><td><strong>Teléfono:</strong></td><td>+54 11 1234-5678</td></tr>' +
+                    '</table>' +
+                '</div>' +
+                '<div class="col-md-6">' +
+                    '<h6>Turnos:</h6>' +
+                    '<div class="alert alert-info">' +
+                        '<i class="fas fa-calendar me-2"></i>' +
+                        'Este cliente tiene turnos activos en el sistema legacy.' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    }, 1000);
+}
+
+// Function to edit client
+function editarCliente(clienteId) {
+    const modal = new bootstrap.Modal(document.getElementById('editarClienteModal'));
+    const modalContent = document.getElementById('modalEditContent');
+    
+    // Show loading
+    modalContent.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+    modal.show();
+    
+    // Simulate loading edit form
+    setTimeout(function() {
+        modalContent.innerHTML = 
+            '<form id="editForm">' +
+                '<div class="mb-3">' +
+                    '<label class="form-label">Nombre</label>' +
+                    '<input type="text" class="form-control" value="Nombre actual">' +
+                '</div>' +
+                '<div class="mb-3">' +
+                    '<label class="form-label">Apellido</label>' +
+                    '<input type="text" class="form-control" value="Apellido actual">' +
+                '</div>' +
+                '<div class="mb-3">' +
+                    '<label class="form-label">Email</label>' +
+                    '<input type="email" class="form-control" value="email@actual.com">' +
+                '</div>' +
+                '<div class="mb-3">' +
+                    '<label class="form-label">Teléfono</label>' +
+                    '<input type="tel" class="form-control" value="+54 11 1234-5678">' +
+                '</div>' +
+                '<div class="d-flex gap-2 justify-content-end">' +
+                    '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>' +
+                    '<button type="submit" class="btn btn-primary">Guardar Cambios</button>' +
+                '</div>' +
+            '</form>';
+    }, 1000);
+}
+
+// Function to delete client
+function eliminarCliente(clienteId) {
+    const button = event.target.closest('button');
+    const clienteNombre = button.dataset.cliente;
+    
+    if (confirm('¿Estás seguro de que quieres eliminar el cliente "' + clienteNombre + '"?\n\nEsta acción no se puede deshacer.')) {
+        // Show loading state
+        button.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div>';
+        button.disabled = true;
+        
+        // Simulate deletion
+        setTimeout(function() {
+            alert('Cliente eliminado exitosamente');
+            location.reload();
+        }, 2000);
+    }
+}
+
+// Function to filter clients
+function filterBy(filterType) {
+    const baseUrl = '{% url "PilatesGravity:admin_clientes_no_registrados_lista" %}';
+    let url = baseUrl;
+    
+    switch(filterType) {
+        case 'con_turnos':
+            alert('Filtro en desarrollo: clientes con turnos activos');
+            break;
+        case 'con_email':
+            alert('Filtro en desarrollo: clientes con email');
+            break;
+        case 'sin_email':
+            alert('Filtro en desarrollo: clientes sin email');
+            break;
+        default:
+            window.location.href = url;
+    }
+}
+
+// Function to export clients
+function exportarClientes() {
+    const table = document.getElementById('clientesTable');
+    if (!table) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    let csv = 'Nombre,Apellido,Email,Teléfono,Número de Cliente,Turnos\n';
+    
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(function(row) {
+        const cells = row.querySelectorAll('td');
+        const nombreCompleto = cells[0].querySelector('.fw-bold').textContent.trim();
+        const [nombre, ...apellidoParts] = nombreCompleto.split(' ');
+        const apellido = apellidoParts.join(' ');
+        const emailEl = cells[1].querySelector('.fa-envelope');
+        const email = emailEl ? emailEl.parentNode.textContent.trim() : 'Sin email';
+        const telefonoEl = cells[1].querySelector('.fa-phone');
+        const telefono = telefonoEl ? telefonoEl.parentNode.textContent.trim() : 'N/A';
+        const numeroCliente = cells[2].querySelector('.badge').textContent.trim();
+        const turnos = cells[3].querySelector('.fw-bold') ? 
+                      cells[3].querySelector('.fw-bold').textContent.trim() : '0';
+        
+        csv += '"' + nombre + '","' + apellido + '","' + email + '","' + telefono + 
+               '","' + numeroCliente + '","' + turnos + '"\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'clientes_no_registrados_' + new Date().toISOString().split('T')[0] + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Function to highlight search terms
+function highlightSearchTerm(term) {
+    const regex = new RegExp('(' + term + ')', 'gi');
+    const textNodes = document.querySelectorAll('.fw-bold, td small');
+    
+    textNodes.forEach(function(node) {
+        if (node.textContent.toLowerCase().includes(term.toLowerCase())) {
+            node.innerHTML = node.innerHTML.replace(regex, '<mark>$1</mark>');
+        }
+    });
+}
+
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+/* ==========================================
+   ANIMACIONES HERO - EFECTO TYPEWRITER
+   ========================================== */
+
+.typewriter-container {
+    position: relative;
+    display: inline-block;
+}
+
+.typewriter-text {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+    opacity: 1;
+}
+
+.typewriter-text span {
+    opacity: 0;
+    animation: letterReveal 0.1s ease-in-out forwards;
+}
+
+.typewriter-cursor {
+    display: inline-block;
+    background-color: #5D768B;
+    margin-left: 0.1em;
+    width: 3px;
+    height: 1.2em;
+    animation: blink 1.2s infinite;
+    vertical-align: top;
+}
+
+.typewriter-line {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.typewriter-line.second-line {
+    margin-top: 0.2em;
+}
+
+/* Keyframes para la animación letra por letra */
+@keyframes letterReveal {
+    0% { 
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes blink {
+    0%, 50% { 
+        opacity: 1;
+    }
+    51%, 100% { 
+        opacity: 0;
+    }
+}
+
+/* ==========================================
+   ANIMACIONES HERO - ELEMENTOS ADICIONALES
+   ========================================== */
+
+/* Animación para el párrafo descriptivo */
+.fade-in-up {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 1s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.typewriter-line.second-line span {
+    color: #5D768B !important;
+}
+
+/* Animación para los botones */
+.slide-in-buttons {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: slideInButtons 0.8s ease-out forwards;
+}
+
+@keyframes slideInButtons {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animación para la imagen */
+.scale-in-image {
+    opacity: 0;
+    transform: scale(0.8);
+    animation: scaleInImage 1.2s ease-out forwards;
+}
+
+@keyframes scaleInImage {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Animación para las ondas del fondo */
+.wave-animation {
+    animation: waveFloat 6s ease-in-out infinite;
+}
+
+.wave-animation.wave2 {
+    animation: waveFloat 8s ease-in-out infinite reverse;
+}
+
+@keyframes waveFloat {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* ==========================================
+   RESPONSIVE PARA ANIMACIONES HERO
+   ========================================== */
+
+@media (max-width: 640px) {
+    .typewriter-text {
+        font-size: 2rem !important; 
+    }
+    
+    .typewriter-cursor {
+        height: 1em;
+        width: 2px; 
+    }
+    
+    .typewriter-line.second-line {
+        margin-top: 0.1em; 
+    }
+}
+
+@media (max-width: 480px) {
+    .typewriter-text {
+        font-size: 1.8rem !important; 
+    }
+    
+    .typewriter-cursor {
+        height: 0.9em;
+        width: 2px;
+    }
+}
+
+@media (max-width: 768px) {
+    .fade-in-up {
+        transform: translateY(20px);
+    }
+    
+    .slide-in-buttons {
+        transform: translateY(15px); 
+    }
+    
+    .scale-in-image {
+        transform: scale(0.9);
+    }
+}

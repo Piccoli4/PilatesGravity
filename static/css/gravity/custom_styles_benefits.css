@@ -1,0 +1,100 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE BENEFITS SECTION
+   ======================================== */
+
+/* Cards de beneficios con imágenes de fondo */
+.benefit-card {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 40px 30px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.benefit-card:hover {
+    transform: scale(1.05);
+}
+
+.benefit-card:hover .benefit-icon {
+    fill: #5D768B;
+}
+
+.benefit-card:hover h3 {
+    color: #5D768B;
+}
+
+/* Overlay semi-transparente */
+.benefit-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.4);
+    z-index: 0;
+}
+
+.benefit-card * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Imágenes de fondo específicas para cada tarjeta */
+.card-1 {
+    background-image: url('/static/img/beneficios.webp');
+}
+
+.card-2 {
+    background-image: url('/static/img/beneficios2.webp');
+}
+
+.card-3 {
+    background-image: url('/static/img/beneficios3.webp');
+}
+
+/* Estilos del icono */
+.benefit-icon {
+    width: 48px;
+    height: 48px;
+}
+
+/* Estilos del texto */
+.benefit-card h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #C8B39B;
+    margin-bottom: 15px;
+    text-shadow: #000 0.6px 0.6px 1px;
+}
+
+.benefit-card p {
+    color: #000;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-shadow: #FFF 0.6px 0.6px 1px;
+}
+
+/* Responsive para tablets */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .benefit-card {
+        padding: 20px 10px;
+    }
+
+    .card-2 {
+        background-image: url('/static/img/beneficios4.webp');
+    }
+
+    .card-3 {
+        background-image: url('/static/img/beneficios5.webp');
+    }
+}
+
+/* Responsive para desktop pequeño */
+@media (min-width: 1024px) and (max-width: 1280px) {
+    .benefit-card {
+        padding: 20px 10px;
+    }
+}

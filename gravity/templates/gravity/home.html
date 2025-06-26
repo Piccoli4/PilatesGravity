@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+    <!-- Contenido de Inicio --> 
+    {% include 'components/home/hero.html' %}
+
+    <!-- Contenido de Nosotros -->
+    {% include 'components/home/about.html' %} 
+
+    <!-- Contenido de Beneficios -->
+    {% include 'components/home/benefits.html' %}
+
+    <!-- Contenido de Clases -->
+    {% include 'components/home/classes.html' %}
+
+    <!-- Contenido de Instructores -->
+    {% include 'components/home/instructors.html' %}
+
+    <!-- Contenido de Contacto -->
+    {% include 'components/home/contact.html' %}
+
+    <!-- Contenido de Normas -->
+    {% include 'components/home/norm.html' %}
+
+    <!-- Contenido de Preguntas Frecuentes -->
+    {% include 'components/home/faq.html' %}
+
+    <!-- Script para manejar funcionalidades -->
+    <script src="{% static 'js/modal_contact_scripts.js' %}"></script>
+
+{% endblock %}

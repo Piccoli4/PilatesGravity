@@ -1,0 +1,72 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE CONTACT SECTION
+   ======================================== */
+
+/* Media queries específicas que no existen por defecto en Tailwind */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .contact-card {
+        padding: 10px;
+    }  
+
+    .contact-card img {
+        width: 30px;
+    }
+
+    .contact-card h4 {
+        font-size: 0.9em;
+    }
+
+    .contact-card p {
+        font-size: 0.8em;
+    }
+
+    .modal-content {
+        margin: 15% auto;
+    }
+}
+
+@media (min-width: 485px) and (max-width: 768px) {
+    .contact-cards-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .contact-cards-container a {
+        flex: 1 1 calc(50% - 20px); /* dos columnas */
+        max-width: calc(50% - 20px);
+        text-align: center;
+    }
+
+    /* Centra el último item si hay número impar */
+    .contact-cards-container a:nth-child(5) {
+        flex: 1 1 100%;
+        max-width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .modal-content {
+        margin: 20% auto;
+    }
+}
+
+@media (max-width: 484px) {
+    .contact-cards-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .modal-content {
+        margin: 30% auto;
+    }
+}
+
+/* Clase de utilidad para text-decoration: none */
+.no-underline {
+    text-decoration: none;
+}

@@ -1,0 +1,39 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE INSTRUCTORS SECTION
+   ======================================== */
+
+/* Media query específica para max-width: 1280px que no existe en Tailwind por defecto */
+@media (max-width: 1280px) {
+    .instructors-grid {
+        gap: 15px;
+    }
+
+    .card_instructors {
+        height: 300px;
+    }
+
+    .image_instructors_container {
+        flex: 0 0 40%;
+        max-width: 40%;
+    }
+
+    .instructors-card-content {
+        flex: 0 0 60%;
+        max-width: 60%;
+        padding: 15px 10px;
+    }
+
+    .instructors-card-content h3 {
+        font-size: 1rem;
+        margin-bottom: 3px;
+    }
+
+    .instructors-card-content .cargo {
+        font-size: 0.75rem;
+        margin-bottom: 10px;
+    }
+
+    .instructors-card-content p {
+        font-size: 0.75rem;
+    }
+}

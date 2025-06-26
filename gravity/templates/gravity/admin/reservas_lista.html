@@ -1,0 +1,532 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}Gestión de Reservas - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Reservas</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="fas fa-bookmark me-2"></i>
+                            Gestión de Reservas
+                        </h2>
+                        <p class="text-muted mb-0">Administra todas las reservas del sistema</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success" onclick="exportReservas()">
+                                <i class="fas fa-download me-2"></i>Exportar
+                            </button>
+                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" id="filterForm">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="estado" class="form-label">Estado de Reserva</label>
+                            <select name="estado" id="estado" class="form-select">
+                                <option value="">Todos los estados</option>
+                                <option value="activas" {% if estado_filtro == 'activas' %}selected{% endif %}>
+                                    Solo Activas
+                                </option>
+                                <option value="canceladas" {% if estado_filtro == 'canceladas' %}selected{% endif %}>
+                                    Solo Canceladas
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label for="tipo_clase" class="form-label">Tipo de Clase</label>
+                            <select name="tipo_clase" id="tipo_clase" class="form-select">
+                                <option value="">Todos los tipos</option>
+                                {% for value, label in tipos_clases %}
+                                    <option value="{{ value }}" {% if tipo_clase_filtro == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label for="dia" class="form-label">Día de la Semana</label>
+                            <select name="dia" id="dia" class="form-select">
+                                <option value="">Todos los días</option>
+                                {% for value, label in dias_semana %}
+                                    <option value="{{ value }}" {% if dia_filtro == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label for="usuario" class="form-label">Buscar Usuario</label>
+                            <input type="text" 
+                                   name="usuario" 
+                                   id="usuario" 
+                                   class="form-control" 
+                                   placeholder="Nombre o email..."
+                                   value="{{ usuario_filtro }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Buscar
+                                </button>
+                                <a href="{% url 'PilatesGravity:admin_reservas_lista' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Limpiar
+                                </a>
+                                <button type="button" class="btn btn-outline-info" onclick="toggleAdvancedFilters()">
+                                    <i class="fas fa-cog me-2"></i>Filtros Avanzados
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Filters (Hidden by default) -->
+                    <div id="advancedFilters" class="row mt-3" style="display: none;">
+                        <div class="col-md-4 mb-3">
+                            <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                            <input type="date" name="fecha_desde" id="fecha_desde" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                            <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="ordenar" class="form-label">Ordenar Por</label>
+                            <select name="ordenar" id="ordenar" class="form-select">
+                                <option value="">Fecha de reserva (más reciente)</option>
+                                <option value="fecha_asc">Fecha de reserva (más antigua)</option>
+                                <option value="usuario">Usuario (A-Z)</option>
+                                <option value="clase">Clase</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Summary -->
+{% if page_obj.object_list %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Resultados: {{ page_obj.paginator.count }} reserva{{ page_obj.paginator.count|pluralize }}
+                    {% if estado_filtro or tipo_clase_filtro or dia_filtro or usuario_filtro %}
+                        <span class="badge bg-info">Filtrado</span>
+                    {% endif %}
+                </h6>
+                <small class="text-muted">
+                    Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                </small>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="d-flex gap-3">
+                <div class="text-center">
+                    <div class="fw-bold text-success">{{ page_obj.object_list|length }}</div>
+                    <small class="text-muted">En esta página</small>
+                </div>
+                <div class="text-center">
+                    <div class="fw-bold text-primary">{{ page_obj.paginator.count }}</div>
+                    <small class="text-muted">Total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Results Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if page_obj.object_list %}
+                    <!-- Desktop Table -->
+                    <div class="table-responsive d-none d-lg-block">
+                        <table class="table table-hover align-middle" id="reservasTable">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Contacto</th>
+                                    <th>Clase</th>
+                                    <th>Reserva</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Próxima Clase</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reserva in page_obj.object_list %}
+                                    <tr {% if not reserva.activa %}class="table-secondary"{% endif %}>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="user-avatar me-3">
+                                                    {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ reserva.get_nombre_completo_usuario }}</div>
+                                                    <small class="text-muted">@{{ reserva.usuario.username }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div class="mb-1">
+                                                    <i class="fas fa-envelope me-1"></i>
+                                                    <small>{{ reserva.usuario.email }}</small>
+                                                </div>
+                                                {% if reserva.usuario.profile.telefono %}
+                                                    <div>
+                                                        <i class="fas fa-phone me-1"></i>
+                                                        <small>{{ reserva.usuario.profile.telefono }}</small>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if reserva.clase.tipo == 'Reformer' %}
+                                                    <i class="fas fa-dumbbell me-2 text-primary"></i>
+                                                {% else %}
+                                                    <i class="fas fa-bed me-2 text-info"></i>
+                                                {% endif %}
+                                                <div>
+                                                    <div class="fw-bold">{{ reserva.clase.get_tipo_display }}</div>
+                                                    <small class="text-muted">
+                                                        {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ reserva.numero_reserva }}</span>
+                                            {% if reserva.notas %}
+                                                <br><small class="text-muted">{{ reserva.notas|truncatechars:30 }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if reserva.activa %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Activa
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Cancelada
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div class="fw-bold">{{ reserva.fecha_reserva|date:"d/m/Y" }}</div>
+                                                <small class="text-muted">{{ reserva.fecha_reserva|date:"H:i" }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if reserva.activa %}
+                                                <small class="text-success">
+                                                    <i class="fas fa-calendar-check me-1"></i>
+                                                    {{ reserva.get_proxima_clase_info }}
+                                                </small>
+                                            {% else %}
+                                                <small class="text-muted">-</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 justify-content-center">
+                                                <a href="{% url 'PilatesGravity:admin_usuario_detalle' reserva.usuario.id %}" 
+                                                   class="btn btn-sm btn-outline-info" 
+                                                   title="Ver usuario">
+                                                    <i class="fas fa-user"></i>
+                                                </a>
+                                                <a href="{% url 'PilatesGravity:admin_clase_detalle' reserva.clase.id %}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="Ver clase">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                </a>
+                                                {% if reserva.activa %}
+                                                    <a href="{% url 'PilatesGravity:admin_reserva_cancelar' reserva.id %}" 
+                                                       class="btn btn-sm btn-outline-danger" 
+                                                       title="Cancelar reserva"
+                                                       onclick="return confirm('¿Estás seguro de cancelar la reserva de {{ reserva.get_nombre_completo_usuario }}?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tablet/Mobile Cards -->
+                    <div class="d-lg-none">
+                        {% for reserva in page_obj.object_list %}
+                            <div class="card mb-3 {% if not reserva.activa %}border-secondary{% endif %}">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-4 text-center">
+                                            <div class="user-avatar mb-2">
+                                                {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
+                                            </div>
+                                            {% if reserva.activa %}
+                                                <span class="badge bg-success">Activa</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Cancelada</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-8">
+                                            <h6 class="card-title mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
+                                            <p class="card-text mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-envelope me-1"></i>{{ reserva.usuario.email }}<br>
+                                                    {% if reserva.usuario.profile.telefono %}
+                                                        <i class="fas fa-phone me-1"></i>{{ reserva.usuario.profile.telefono }}<br>
+                                                    {% endif %}
+                                                    {% if reserva.clase.tipo == 'Reformer' %}
+                                                        <i class="fas fa-dumbbell me-1"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-bed me-1"></i>
+                                                    {% endif %}
+                                                    {{ reserva.clase.get_tipo_display }} - {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}<br>
+                                                    <i class="fas fa-calendar me-1"></i>{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}
+                                                </small>
+                                            </p>
+                                            
+                                            <div class="mb-2">
+                                                <span class="badge bg-info">{{ reserva.numero_reserva }}</span>
+                                            </div>
+                                            
+                                            <div class="d-flex gap-1">
+                                                <a href="{% url 'PilatesGravity:admin_usuario_detalle' reserva.usuario.id %}" 
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-user"></i>
+                                                </a>
+                                                <a href="{% url 'PilatesGravity:admin_clase_detalle' reserva.clase.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                </a>
+                                                {% if reserva.activa %}
+                                                    <a href="{% url 'PilatesGravity:admin_reserva_cancelar' reserva.id %}" 
+                                                       class="btn btn-sm btn-outline-danger"
+                                                       onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                                                        <i class="fas fa-times"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginación de reservas" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                                {{ num }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-bookmark fa-4x text-muted mb-4"></i>
+                        <h4 class="text-muted mb-3">No se encontraron reservas</h4>
+                        {% if estado_filtro or tipo_clase_filtro or dia_filtro or usuario_filtro %}
+                            <p class="text-muted mb-4">No hay reservas que coincidan con los filtros seleccionados.</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="{% url 'PilatesGravity:admin_reservas_lista' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Limpiar Filtros
+                                </a>
+                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                                </a>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-4">Aún no hay reservas en el sistema.</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus me-2"></i>Crear Clase
+                                </a>
+                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when selects change
+    const filterSelects = document.querySelectorAll('#filterForm select');
+    filterSelects.forEach(function(select) {
+        select.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+    
+    // Add tooltips to action buttons
+    const actionButtons = document.querySelectorAll('[title]');
+    actionButtons.forEach(function(button) {
+        new bootstrap.Tooltip(button);
+    });
+    
+    // Highlight search term in results
+    const searchTerm = document.getElementById('usuario').value;
+    if (searchTerm.trim()) {
+        highlightSearchTerm(searchTerm);
+    }
+});
+
+// Function to toggle advanced filters
+function toggleAdvancedFilters() {
+    const advancedFilters = document.getElementById('advancedFilters');
+    const isVisible = advancedFilters.style.display !== 'none';
+    
+    if (isVisible) {
+        advancedFilters.style.display = 'none';
+    } else {
+        advancedFilters.style.display = 'flex';
+    }
+}
+
+// Function to export reservations
+function exportReservas() {
+    const table = document.getElementById('reservasTable');
+    if (!table) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    
+    let csv = 'Usuario,Email,Teléfono,Clase,Tipo,Día,Horario,Número de Reserva,Estado,Fecha de Reserva\n';
+    
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(function(row) {
+        const cells = row.querySelectorAll('td');
+        const usuario = cells[0].querySelector('.fw-bold').textContent.trim();
+        const emailEl = cells[1].querySelector('small');
+        const email = emailEl ? emailEl.textContent.replace('✉ ', '').trim() : 'N/A';
+        const telefonoEls = cells[1].querySelectorAll('small');
+        const telefono = telefonoEls.length > 1 ? 
+                        telefonoEls[1].textContent.replace('📞 ', '').trim() : 'N/A';
+        const claseNombre = cells[2].querySelector('.fw-bold').textContent.trim();
+        const claseDetalle = cells[2].querySelector('small').textContent.trim();
+        const [dia, horario] = claseDetalle.split(' ');
+        const reserva = cells[3].querySelector('.badge').textContent.trim();
+        const estado = cells[4].querySelector('.badge').textContent.trim();
+        const fecha = cells[5].querySelector('.fw-bold').textContent.trim() + ' ' + 
+                     cells[5].querySelector('small').textContent.trim();
+        
+        csv += '"' + usuario + '","' + email + '","' + telefono + '","' + claseNombre + 
+               '","' + claseNombre + '","' + dia + '","' + horario + '","' + reserva + 
+               '","' + estado + '","' + fecha + '"\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'reservas_' + new Date().toISOString().split('T')[0] + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Function to highlight search terms
+function highlightSearchTerm(term) {
+    const regex = new RegExp('(' + term + ')', 'gi');
+    const textNodes = document.querySelectorAll('.fw-bold, td small');
+    
+    textNodes.forEach(function(node) {
+        if (node.textContent.toLowerCase().includes(term.toLowerCase())) {
+            node.innerHTML = node.innerHTML.replace(regex, '<mark>$1</mark>');
+        }
+    });
+}
+</script>
+{% endblock %}

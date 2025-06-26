@@ -1,0 +1,17 @@
+{
+  "name": "pilatesgravity",
+  "version": "1.0.0",
+  "description": "App Web para el estudio de Pilates Gravity",
+  "main": "index.js",
+  "scripts": {
+    "build-css": "tailwindcss -i ./static/css/tailwind-input.css -o ./static/css/tailwind-output.css --watch",
+    "build-css-prod": "tailwindcss -i ./static/css/tailwind-input.css -o ./static/css/tailwind-output.css --minify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section id="ReservarTurno" class="reservation-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>Reservá tu Clase</h2>
+            <div class="divider"></div>
+            <p>Completá el formulario para reservar tu lugar fijo. Tu reserva será recurrente, asistirás todas las semanas al mismo día y horario.</p>
+        </div>
+
+        <div class="reservation-form">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <!-- Datos del Usuario (Solo lectura) -->
+                <div class="form-section">
+                    <h3>Datos Personales</h3>
+                    <div class="user-info-display">
+                        <!-- Primera fila: Nombre y Apellido -->
+                        <div class="info-row">
+                            <div class="info-item">
+                                <label>Nombre:</label>
+                                <span class="user-data">{{ user_info.first_name|default:"No registrado" }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Apellido:</label>
+                                <span class="user-data">{{ user_info.last_name|default:"No registrado" }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Segunda fila: Usuario (ancho completo) -->
+                        <div class="info-row single-column">
+                            <div class="info-item">
+                                <label>Usuario:</label>
+                                <span class="user-data">{{ user_info.username }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Tercera fila: Email y Teléfono -->
+                        <div class="info-row">
+                            <div class="info-item">
+                                <label>Email:</label>
+                                <span class="user-data">{{ user_info.email|default:"No registrado" }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Teléfono:</label>
+                                <span class="user-data">{{ user_info.telefono|default:"No registrado" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if not user_info.telefono or not user_info.email %}
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i>
+                        <strong>Información incompleta:</strong> 
+                        Te recomendamos completar tu información en tu 
+                        <a href="{% url 'accounts:profile' %}" class="alert-link">perfil de usuario</a> 
+                        para recibir notificaciones sobre tus clases.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- Selección de Clase -->
+                <div class="form-section">
+                    <h3>Selección de Clase</h3>
+                    <div class="form-group">
+                        {{ form.tipo_clase.label_tag }}
+                        {{ form.tipo_clase }}
+                        {% for error in form.tipo_clase.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.dia.label_tag }}
+                        {{ form.dia }}
+                        {% for error in form.dia.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.horario.label_tag }}
+                        {{ form.horario }}
+                        {% for error in form.horario.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Indicador de disponibilidad -->
+                    <div id="disponibilidad-info" class="availability-info" style="display: none;">
+                        <div class="alert" id="disponibilidad-mensaje"></div>
+                    </div>
+                </div>
+
+                <!-- Mostrar errores generales del formulario -->
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        <strong>Error en la reserva:</strong>
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-actions" style="text-align: center">
+                    <button type="submit" class="btn-reserve btn-primary-reserve" id="btn-reservar">
+                        Reservar Clase
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elementos del formulario
+        const tipoClase = document.getElementById('id_tipo_clase');
+        const dia = document.getElementById('id_dia');
+        const horario = document.getElementById('id_horario');
+        const disponibilidadInfo = document.getElementById('disponibilidad-info');
+        const disponibilidadMensaje = document.getElementById('disponibilidad-mensaje');
+        const btnReservar = document.getElementById('btn-reservar');
+        const form = document.querySelector('form');
+
+        // Configuración
+        const API_ENDPOINTS = {
+            diasDisponibles: '/api/dias-disponibles/',
+            horariosDisponibles: '/api/horarios-disponibles/',
+            verificarDisponibilidad: '/api/verificar-disponibilidad/'
+        };
+
+        // Clase principal para manejar el formulario
+        class ReservaFormHandler {
+            constructor() {
+                this.opcionesOriginales = {
+                    dias: this.guardarOpciones(dia),
+                    horarios: this.guardarOpciones(horario)
+                };
+                this.initEventListeners();
+                // Manejar preselección si existe
+                this.manejarPreseleccion();
+            }
+
+            // Guarda las opciones originales de un select
+            guardarOpciones(selectElement) {
+                if (!selectElement || !selectElement.options) return [];
+                return Array.from(selectElement.options).map(option => ({
+                    value: option.value,
+                    text: option.text
+                }));
+            }
+
+            // Inicializa los event listeners
+            initEventListeners() {
+                if (tipoClase) {
+                    tipoClase.addEventListener('change', () => this.onTipoClaseChange());
+                }
+                if (dia) {
+                    dia.addEventListener('change', () => this.onDiaChange());
+                }
+                if (horario) {
+                    horario.addEventListener('change', () => this.onHorarioChange());
+                }
+                if (form) {
+                    form.addEventListener('submit', (e) => this.onFormSubmit(e));
+                }
+            }
+
+            // Maneja el cambio de tipo de clase
+            async onTipoClaseChange() {
+                const tipoSeleccionado = tipoClase.value;
+                
+                if (!tipoSeleccionado) {
+                    this.resetearFormulario();
+                    return;
+                }
+
+                try {
+                    this.mostrarCargando('Cargando días disponibles...');
+                    const diasDisponibles = await this.obtenerDiasDisponibles(tipoSeleccionado);
+                    this.actualizarSelectDias(diasDisponibles);
+                    this.resetearSelectHorario();
+                    this.ocultarDisponibilidad();
+                } catch (error) {
+                    console.error('Error al obtener días disponibles:', error);
+                    this.mostrarError('Error al cargar días disponibles');
+                }
+            }
+
+            // Maneja la preselección de tipo de clase desde la URL
+            manejarPreseleccion() {
+                // Obtiene el tipo preseleccionado del template (se pasa desde Django)
+                const tipoPreseleccionado = '{{ tipo_preseleccionado|default:"" }}';
+                
+                if (tipoPreseleccionado && tipoClase) {
+                    // Busca la opción correspondiente en el select
+                    const opciones = tipoClase.options;
+                    for (let i = 0; i < opciones.length; i++) {
+                        if (opciones[i].value === tipoPreseleccionado) {
+                            tipoClase.selectedIndex = i;
+                            // Dispara el evento change para cargar los días disponibles
+                            tipoClase.dispatchEvent(new Event('change'));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Maneja el cambio de día
+            async onDiaChange() {
+                const tipoSeleccionado = tipoClase.value;
+                const diaSeleccionado = dia.value;
+
+                if (!tipoSeleccionado || !diaSeleccionado) {
+                    this.resetearSelectHorario();
+                    this.ocultarDisponibilidad();
+                    return;
+                }
+
+                try {
+                    this.mostrarCargando('Cargando horarios disponibles...');
+                    const horariosDisponibles = await this.obtenerHorariosDisponibles(tipoSeleccionado, diaSeleccionado);
+                    this.actualizarSelectHorarios(horariosDisponibles);
+                    this.ocultarDisponibilidad();
+                } catch (error) {
+                    console.error('Error al obtener horarios disponibles:', error);
+                    this.mostrarError('Error al cargar horarios disponibles');
+                }
+            }
+
+            // Maneja el cambio de horario
+            async onHorarioChange() {
+                const tipoSeleccionado = tipoClase.value;
+                const diaSeleccionado = dia.value;
+                const horarioSeleccionado = horario.value;
+
+                if (!tipoSeleccionado || !diaSeleccionado || !horarioSeleccionado) {
+                    this.ocultarDisponibilidad();
+                    return;
+                }
+
+                try {
+                    this.mostrarCargando('Verificando disponibilidad...');
+                    const disponibilidad = await this.verificarDisponibilidad(tipoSeleccionado, diaSeleccionado, horarioSeleccionado);
+                    this.mostrarDisponibilidad(disponibilidad);
+                } catch (error) {
+                    console.error('Error al verificar disponibilidad:', error);
+                    this.mostrarError('Error al verificar disponibilidad');
+                }
+            }
+
+            // Maneja el envío del formulario
+            onFormSubmit(e) {
+                if (!this.validarFormulario()) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Deshabilita el botón y muestra indicador de carga
+                btnReservar.disabled = true;
+                btnReservar.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Procesando reserva...';
+            }
+
+            // Obtiene días disponibles para un tipo de clase
+            async obtenerDiasDisponibles(tipo) {
+                const response = await fetch(API_ENDPOINTS.diasDisponibles, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify({ tipo })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+
+                const data = await response.json();
+                return data.dias || [];
+            }
+
+            // Obtiene horarios disponibles para un tipo de clase y día
+            async obtenerHorariosDisponibles(tipo, dia) {
+                const response = await fetch(API_ENDPOINTS.horariosDisponibles, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify({ tipo, dia })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+
+                const data = await response.json();
+                return data.horarios || [];
+            }
+
+            // Verifica disponibilidad de una combinación específica
+            async verificarDisponibilidad(tipo, dia, horario) {
+                const response = await fetch(API_ENDPOINTS.verificarDisponibilidad, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify({ tipo, dia, horario })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+
+                return await response.json();
+            }
+
+            // Actualiza el select de días
+            actualizarSelectDias(diasDisponibles) {
+                this.limpiarSelect(dia, 'Selecciona el día');
+                
+                diasDisponibles.forEach(diaDisponible => {
+                    const option = document.createElement('option');
+                    option.value = diaDisponible;
+                    option.textContent = diaDisponible;
+                    dia.appendChild(option);
+                });
+
+                this.aplicarEstiloDisponibilidad(dia, diasDisponibles.length);
+            }
+
+            // Actualiza el select de horarios
+            actualizarSelectHorarios(horariosDisponibles) {
+                this.limpiarSelect(horario, 'Selecciona el horario');
+                
+                horariosDisponibles.forEach(horarioInfo => {
+                    const option = document.createElement('option');
+                    option.value = horarioInfo.value;
+                    option.textContent = horarioInfo.text;
+                    
+                    // Aplicar estilos según cupos disponibles
+                    if (horarioInfo.cupos <= 2) {
+                        option.style.color = '#dc3545'; // Rojo para pocos cupos
+                    } else if (horarioInfo.cupos <= 5) {
+                        option.style.color = '#ffc107'; // Amarillo para cupos medios
+                    }
+                    
+                    horario.appendChild(option);
+                });
+
+                this.aplicarEstiloDisponibilidad(horario, horariosDisponibles.length);
+            }
+
+            // Limpia un select y añade la opción por defecto
+            limpiarSelect(selectElement, placeholderText) {
+                selectElement.innerHTML = '';
+                const placeholderOption = document.createElement('option');
+                placeholderOption.value = '';
+                placeholderOption.textContent = placeholderText;
+                selectElement.appendChild(placeholderOption);
+            }
+
+            // Aplica estilos según la disponibilidad
+            aplicarEstiloDisponibilidad(selectElement, cantidadOpciones) {
+                selectElement.style.borderColor = '';
+                selectElement.title = '';
+                
+                if (cantidadOpciones <= 2) {
+                    selectElement.style.borderColor = '#ffc107';
+                    selectElement.title = 'Pocas opciones disponibles';
+                }
+            }
+
+            // Resetea el select de horarios
+            resetearSelectHorario() {
+                this.limpiarSelect(horario, 'Selecciona el horario');
+                horario.style.borderColor = '';
+                horario.title = '';
+            }
+
+            // Resetea todo el formulario de selección
+            resetearFormulario() {
+                dia.selectedIndex = 0;
+                horario.selectedIndex = 0;
+                this.resetearSelectHorario();
+                this.ocultarDisponibilidad();
+                
+                // Limpiar estilos
+                dia.style.borderColor = '';
+                horario.style.borderColor = '';
+                dia.title = '';
+                horario.title = '';
+            }
+
+            // Muestra información de disponibilidad
+            mostrarDisponibilidad(disponibilidad) {
+                disponibilidadInfo.style.display = 'block';
+                disponibilidadMensaje.className = 'alert';
+                
+                if (disponibilidad.disponible) {
+                    disponibilidadMensaje.className += ' alert-success';
+                    disponibilidadMensaje.innerHTML = `
+                        <i class="fa fa-check-circle"></i> 
+                        ¡Disponible! ${disponibilidad.cupos_disponibles} lugares restantes
+                    `;
+                } else {
+                    disponibilidadMensaje.className += ' alert-warning';
+                    disponibilidadMensaje.innerHTML = `
+                        <i class="fa fa-exclamation-triangle"></i> 
+                        ${disponibilidad.mensaje}
+                    `;
+                }
+            }
+
+            // Muestra mensaje de carga
+            mostrarCargando(mensaje) {
+                disponibilidadInfo.style.display = 'block';
+                disponibilidadMensaje.className = 'alert alert-info';
+                disponibilidadMensaje.innerHTML = `
+                    <i class="fa fa-spinner fa-spin"></i> ${mensaje}
+                `;
+            }
+
+            // Muestra mensaje de error
+            mostrarError(mensaje) {
+                disponibilidadInfo.style.display = 'block';
+                disponibilidadMensaje.className = 'alert alert-danger';
+                disponibilidadMensaje.innerHTML = `
+                    <i class="fa fa-exclamation-circle"></i> ${mensaje}
+                `;
+            }
+
+            // Oculta información de disponibilidad
+            ocultarDisponibilidad() {
+                disponibilidadInfo.style.display = 'none';
+            }
+
+            // Valida el formulario antes del envío
+            validarFormulario() {
+                const campos = [
+                    { element: tipoClase, nombre: 'tipo de clase' },
+                    { element: dia, nombre: 'día' },
+                    { element: horario, nombre: 'horario' }
+                ];
+
+                for (const campo of campos) {
+                    if (!campo.element.value) {
+                        alert(`Por favor selecciona el ${campo.nombre}.`);
+                        campo.element.focus();
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            // Obtiene el token CSRF
+            getCSRFToken() {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                return csrfToken ? csrfToken.value : '';
+            }
+        }
+
+        // Inicializar el manejador del formulario
+        new ReservaFormHandler();
+    });
+</script>
+
+{% endblock %}

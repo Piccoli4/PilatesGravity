@@ -1,0 +1,104 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DEL HERO SECTION
+   ======================================== */
+
+/* Fondo decorativo con ondas */
+.hero-background svg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+}
+
+.wave1 { 
+    z-index: 1; 
+}
+
+.wave2 { 
+    z-index: 2; 
+}
+
+/* Animaciones de las ondas */
+.wave-animation {
+    animation: waveFloat 6s ease-in-out infinite;
+}
+
+.wave-animation.wave2 {
+    animation: waveFloat 8s ease-in-out infinite reverse;
+}
+
+@keyframes waveFloat {
+    0%, 100% { 
+        transform: translateY(0px); 
+    }
+    50% { 
+        transform: translateY(-10px); 
+    }
+}
+
+/* Estilos específicos de botones del hero */
+.hero-btn-primary {
+    background-color: #C8B39B;
+    color: white;
+    border: 2px solid #FFF;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.hero-btn-primary:hover {
+    background-color: #FFF;
+    color: #C8B39B;
+    border: 2px solid #C8B39B;
+}
+
+.hero-btn-secondary {
+    border: 2px solid #C8B39B;
+    color: #C8B39B;
+    background-color: white;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.hero-btn-secondary:hover {
+    background-color: #C8B39B;
+    color: white;
+}
+
+/* Responsive específico del hero */
+@media (max-width: 768px) {
+    #Inicio {
+        min-height: 100vh; /* En móvil permitir scroll si es necesario */
+    }
+    
+    .hero-btn-primary,
+    .hero-btn-secondary {
+        padding: 10px 20px; 
+        font-size: 0.9rem; 
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-btn-primary,
+    .hero-btn-secondary {
+        padding: 10px 20px; 
+        font-size: 0.9rem; 
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-btn-primary,
+    .hero-btn-secondary {
+        padding: 9px 18px;
+        font-size: 0.85rem;
+    }
+}

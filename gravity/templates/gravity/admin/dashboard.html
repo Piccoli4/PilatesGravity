@@ -1,0 +1,473 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}Panel de Administración - Pilates Gravity{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block extra_css %}
+    <style>
+        :root {
+            --principal: #5D768B;
+            --secundario: #C8B39B;
+            --fondo: #F8EFE5;
+            --principal-claro: #7B94A9;
+            --principal-oscuro: #4A5E6D;
+            --secundario-claro: #D6C7B3;
+            --secundario-oscuro: #B5A084;
+        }
+
+        /* Tarjetas de estadísticas con colores del proyecto */
+        .stat-card-primary {
+            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+        }
+
+        .stat-card-secondary {
+            background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.3);
+        }
+
+        .stat-card-accent {
+            background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(74, 94, 109, 0.3);
+        }
+
+        .stat-card-light {
+            background: var(--fondo);
+            color: var(--principal);
+            border: 2px solid var(--secundario);
+            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.2);
+        }
+
+        /* Botones de acción principales */
+        .btn-pilates-primary {
+            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+        }
+
+        .btn-pilates-primary:hover {
+            background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(93, 118, 139, 0.4);
+            color: white;
+        }
+
+        .btn-pilates-secondary {
+            background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.3);
+        }
+
+        .btn-pilates-secondary:hover {
+            background: linear-gradient(135deg, var(--secundario-oscuro) 0%, var(--secundario) 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(200, 179, 155, 0.4);
+            color: white;
+        }
+
+        .btn-pilates-accent {
+            background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 94, 109, 0.3);
+        }
+
+        .btn-pilates-accent:hover {
+            background: linear-gradient(135deg, #3A4A56 0%, var(--principal-oscuro) 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(74, 94, 109, 0.4);
+            color: white;
+        }
+
+        .btn-pilates-light {
+            background: var(--fondo);
+            border: 2px solid var(--secundario);
+            color: var(--principal);
+            transition: all 0.3s ease;
+        }
+
+        .btn-pilates-light:hover {
+            background: var(--secundario);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(200, 179, 155, 0.3);
+        }
+
+        /* Headers de tarjetas con colores del proyecto */
+        .card-header-primary {
+            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
+            color: white;
+            border: none;
+        }
+
+        .card-header-secondary {
+            background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
+            color: white;
+            border: none;
+        }
+
+        /* Badges con colores del proyecto */
+        .badge-pilates-primary {
+            background-color: var(--principal);
+            color: white;
+        }
+
+        .badge-pilates-secondary {
+            background-color: var(--secundario);
+            color: white;
+        }
+
+        /* Alertas con colores del proyecto */
+        .alert-pilates {
+            background-color: var(--fondo);
+            border: 2px solid var(--secundario);
+            color: var(--principal);
+        }
+
+        .alert-pilates h5 {
+            color: var(--principal-oscuro);
+        }
+
+        /* Botones outline con colores del proyecto */
+        .btn-outline-pilates {
+            border: 2px solid var(--principal);
+            color: var(--principal);
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-pilates:hover {
+            background: var(--principal);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-secondary-pilates {
+            border: 2px solid var(--secundario);
+            color: var(--secundario-oscuro);
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-secondary-pilates:hover {
+            background: var(--secundario);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Iconos con colores del proyecto */
+        .text-pilates-primary {
+            color: var(--principal) !important;
+        }
+
+        .text-pilates-secondary {
+            color: var(--secundario) !important;
+        }
+
+        /* Animaciones compatibles con el proyecto */
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(93, 118, 139, 0.1);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Bienvenida Simple -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <h1 class="mb-3">
+                        <i class="fas fa-dumbbell me-3 text-pilates-primary"></i>
+                        Panel de Administración
+                    </h1>
+                    <h4 class="text-muted mb-3">¡Hola {{ user.get_username|default:user.username }}!</h4>
+                    <p class="lead">Gestiona tu estudio de Pilates de forma simple y eficiente</p>
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Última actualización: {% now "d/m/Y H:i" %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card-primary h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                    <h2 class="mb-1">{{ total_clases }}</h2>
+                    <p class="mb-0">Clases Activas</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card-secondary h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bookmark fa-3x mb-3"></i>
+                    <h2 class="mb-1">{{ total_reservas_activas }}</h2>
+                    <p class="mb-0">Reservas Activas</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card-accent h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-3"></i>
+                    <h2 class="mb-1">{{ total_usuarios }}</h2>
+                    <p class="mb-0">Usuarios</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card-light h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-plus fa-3x mb-3"></i>
+                    <h2 class="mb-1">{{ usuarios_nuevos }}</h2>
+                    <p class="mb-0">Nuevos (últimos 7 días)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Principales -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header card-header-primary">
+                    <h3 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Acciones Principales
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-pilates-primary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-plus fa-2x mb-2"></i>
+                                <span>Nueva Clase</span>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-pilates-secondary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                <span>Ver Clases</span>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" class="btn btn-pilates-accent btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <span>Ver Usuarios</span>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-light btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                                <span>Agregar Cliente</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Rápida -->
+    <div class="row">
+        <!-- Clases Populares Simplificado -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header card-header-primary">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star me-2"></i>
+                        Clases Más Populares
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if clases_populares %}
+                        {% for clase in clases_populares|slice:":3" %}
+                            <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div>
+                                    <h6 class="mb-1">{{ clase.get_tipo_display }}</h6>
+                                    <small class="text-muted">{{ clase.dia }} - {{ clase.horario|time:"H:i" }}</small>
+                                </div>
+                                <span class="badge badge-pilates-primary">{{ clase.total_reservas }}</span>
+                            </div>
+                        {% endfor %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-pilates btn-sm">
+                                Ver Todas las Clases
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay clases creadas</p>
+                            <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-pilates-primary">
+                                Crear Primera Clase
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservas Recientes Simplificado -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header card-header-secondary">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        Reservas Recientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if reservas_recientes %}
+                        {% for reserva in reservas_recientes|slice:":3" %}
+                            <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div>
+                                    <h6 class="mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
+                                    <small class="text-muted">{{ reserva.clase.get_tipo_display }} - {{ reserva.clase.dia }}</small>
+                                </div>
+                                <small class="text-muted">{{ reserva.fecha_reserva|date:"d/m" }}</small>
+                            </div>
+                        {% endfor %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'PilatesGravity:admin_reservas_lista' %}" class="btn btn-outline-secondary-pilates btn-sm">
+                                Ver Todas las Reservas
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No hay reservas aún</p>
+                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-secondary">
+                                Agregar Primer Cliente
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas Importantes (Solo si hay) -->
+    {% if clases_casi_llenas %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-pilates">
+                <h5>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ¡Atención! Clases Casi Llenas
+                </h5>
+                <p class="mb-3">Las siguientes clases tienen más del 80% de ocupación:</p>
+                <div class="row">
+                    {% for item in clases_casi_llenas|slice:":4" %}
+                        <div class="col-md-3 mb-2">
+                            <div class="badge badge-pilates-secondary text-dark">
+                                {{ item.clase.get_tipo_display }} - {{ item.clase.dia }}
+                                ({{ item.porcentaje_ocupacion }}%)
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Enlaces Rápidos -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="mb-3">Enlaces Rápidos</h5>
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a href="{% url 'PilatesGravity:admin_reportes' %}" class="btn btn-outline-pilates">
+                            <i class="fas fa-chart-bar me-1"></i>
+                            Reportes
+                        </a>
+                        <a href="{% url 'PilatesGravity:home' %}" class="btn btn-outline-pilates">
+                            <i class="fas fa-home me-1"></i>
+                            Ver Sitio Web
+                        </a>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary-pilates">
+                            <i class="fas fa-user me-1"></i>
+                            Mi Perfil
+                        </a>
+                        <a href="{% url 'accounts:logout' %}" class="btn btn-outline-secondary-pilates">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación simple para las estadísticas
+            const statNumbers = document.querySelectorAll('.card h2');
+            statNumbers.forEach(function(stat) {
+                const finalValue = parseInt(stat.textContent);
+                if (!isNaN(finalValue)) {
+                    let currentValue = 0;
+                    const increment = Math.ceil(finalValue / 20);
+                    const timer = setInterval(function() {
+                        currentValue += increment;
+                        if (currentValue >= finalValue) {
+                            currentValue = finalValue;
+                            clearInterval(timer);
+                        }
+                        stat.textContent = currentValue;
+                    }, 50);
+                }
+            });
+
+            // Efecto hover suave en botones
+            const actionButtons = document.querySelectorAll('.btn-lg');
+            actionButtons.forEach(function(button) {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px)';
+                    this.style.transition = 'all 0.3s ease';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            // Actualización automática cada 5 minutos
+            setInterval(function() {
+                location.reload();
+            }, 300000);
+        });
+    </script>
+{% endblock %}

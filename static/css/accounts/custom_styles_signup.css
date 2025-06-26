@@ -1,0 +1,70 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE SIGNUP
+   ======================================== */
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Mejora para los inputs de Django */
+input[type="text"], 
+input[type="email"], 
+input[type="password"], 
+input[type="tel"] {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background-color: #f8fafc;
+    color: #0f172a;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus, 
+input[type="email"]:focus, 
+input[type="password"]:focus, 
+input[type="tel"]:focus {
+    border-color: #5D768B;
+    background-color: white;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(93, 118, 139, 0.2);
+}
+
+input[type="text"]:hover, 
+input[type="email"]:hover, 
+input[type="password"]:hover, 
+input[type="tel"]:hover {
+    border-color: #C8B39B;
+}
+
+input[type="text"]::placeholder, 
+input[type="email"]::placeholder, 
+input[type="password"]::placeholder, 
+input[type="tel"]::placeholder {
+    color: #94a3b8;
+}
+
+/* Animación del ícono principal */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Efecto de resplandor para elementos importantes */
+.glow-on-hover {
+    transition: all 0.3s ease;
+}
+
+.glow-on-hover:hover {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+}

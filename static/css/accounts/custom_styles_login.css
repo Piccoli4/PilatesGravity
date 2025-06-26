@@ -1,0 +1,71 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE LOGIN
+   ======================================== */
+
+/* Anillo pulsante para el icono */
+.login-icon-container::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    background: linear-gradient(135deg, #C8B39B, #5D768B);
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.3;
+    animation: pulse-ring 2s ease-in-out infinite;
+}
+
+/* Placeholder animado */
+.animated-placeholder:focus::placeholder {
+    opacity: 0.7;
+    transform: translateX(5px);
+    transition: all 0.3s ease;
+}
+
+/* Línea de enfoque para inputs */
+.input-focus-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #C8B39B, #5D768B);
+    transition: width 0.4s ease;
+    border-radius: 0 0 10px 10px;
+}
+
+.group:focus-within .input-focus-line {
+    width: 100%;
+}
+
+/* Efecto de brillo en botón */
+.btn-shine::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.btn-shine:hover::before {
+    left: 100%;
+}
+
+/* Animación de shimmer para el divisor */
+@keyframes shimmer-bg {
+    0%, 100% { 
+        background: linear-gradient(90deg, #C8B39B, #5D768B);
+    }
+    50% { 
+        background: linear-gradient(90deg, #5D768B, #C8B39B);
+    }
+}
+
+.animate-shimmer {
+    animation: shimmer-bg 2s ease-in-out infinite;
+}

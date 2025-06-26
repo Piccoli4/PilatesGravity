@@ -1,0 +1,8 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE NORM SECTION
+   ======================================== */
+
+/* Hacer que los marcadores de la lista numerada sean bold */
+.rules-list li::marker {
+    font-weight: bold;
+}

@@ -1,0 +1,416 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}Gestión de Clases - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Clases</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="mb-2">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Gestión de Clases
+                        </h2>
+                        <p class="text-muted mb-0">Administra todas las clases del estudio</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Nueva Clase
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter me-2"></i>Filtros</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" id="filterForm">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="tipo" class="form-label">Tipo de Clase</label>
+                            <select name="tipo" id="tipo" class="form-select">
+                                <option value="">Todos los tipos</option>
+                                {% for value, label in tipos_clases %}
+                                    <option value="{{ value }}" {% if tipo_filtro == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label for="dia" class="form-label">Día de la Semana</label>
+                            <select name="dia" id="dia" class="form-select">
+                                <option value="">Todos los días</option>
+                                {% for value, label in dias_semana %}
+                                    <option value="{{ value }}" {% if dia_filtro == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select name="estado" id="estado" class="form-select">
+                                <option value="">Todos los estados</option>
+                                <option value="activas" {% if estado_filtro == 'activas' %}selected{% endif %}>
+                                    Activas
+                                </option>
+                                <option value="inactivas" {% if estado_filtro == 'inactivas' %}selected{% endif %}>
+                                    Inactivas
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <div class="d-grid gap-2 w-100">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Filtrar
+                                </button>
+                                <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Limpiar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>
+                    <i class="fas fa-list me-2"></i>
+                    Lista de Clases 
+                    {% if page_obj.paginator.count %}
+                        <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+                    {% endif %}
+                </h5>
+                
+                <!-- Quick Stats -->
+                <div class="d-flex gap-3">
+                    {% if page_obj.paginator.count %}
+                        <small class="text-muted">
+                            <i class="fas fa-eye me-1"></i>
+                            Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if page_obj.object_list %}
+                    <!-- Desktop Table -->
+                    <div class="table-responsive d-none d-md-block">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Día y Horario</th>
+                                    <th>Cupos</th>
+                                    <th>Ocupación</th>
+                                    <th>Estado</th>
+                                    <th>Reservas</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in page_obj.object_list %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    {% if item.clase.tipo == 'Reformer' %}
+                                                        <i class="fas fa-dumbbell fa-lg text-primary"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-bed fa-lg text-info"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ item.clase.get_tipo_display }}</div>
+                                                    <small class="text-muted">ID: {{ item.clase.id }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div class="fw-bold">{{ item.clase.dia }}</div>
+                                                <small class="text-muted">{{ item.clase.horario|time:"H:i" }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="text-center">
+                                                <span class="fw-bold">{{ item.cupos_disponibles }}</span>/{{ item.clase.cupo_maximo }}
+                                                <br>
+                                                <small class="text-muted">disponibles</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress me-2" style="width: 80px; height: 8px;">
+                                                    <div class="progress-bar 
+                                                        {% if item.porcentaje_ocupacion >= 90 %}bg-danger
+                                                        {% elif item.porcentaje_ocupacion >= 75 %}bg-warning
+                                                        {% elif item.porcentaje_ocupacion >= 50 %}bg-info
+                                                        {% else %}bg-success{% endif %}"
+                                                        data-width="{{ item.porcentaje_ocupacion|default:0 }}">
+                                                    </div>
+                                                </div>
+                                                <small>{{ item.porcentaje_ocupacion|default:0 }}%</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if item.clase.activa %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>Activa
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-times me-1"></i>Inactiva
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">
+                                                {{ item.total_reservas }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1 justify-content-center">
+                                                <a href="{% url 'PilatesGravity:admin_clase_detalle' item.clase.id %}" 
+                                                   class="btn btn-sm btn-outline-info" 
+                                                   title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'PilatesGravity:admin_clase_editar' item.clase.id %}" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% if item.puede_eliminarse %}
+                                                    <a href="{% url 'PilatesGravity:admin_clase_eliminar' item.clase.id %}" 
+                                                       class="btn btn-sm btn-outline-danger" 
+                                                       title="Eliminar"
+                                                       onclick="return confirm('¿Estás seguro de que quieres eliminar esta clase?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                {% else %}
+                                                    <button class="btn btn-sm btn-outline-secondary" 
+                                                            title="No se puede eliminar (tiene reservas activas)" 
+                                                            disabled>
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards -->
+                    <div class="d-md-none">
+                        {% for item in page_obj.object_list %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-3 text-center">
+                                            {% if item.clase.tipo == 'Reformer' %}
+                                                <i class="fas fa-dumbbell fa-2x text-primary mb-2"></i>
+                                            {% else %}
+                                                <i class="fas fa-bed fa-2x text-info mb-2"></i>
+                                            {% endif %}
+                                            <br>
+                                            {% if item.clase.activa %}
+                                                <span class="badge bg-success">Activa</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactiva</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-9">
+                                            <h6 class="card-title mb-1">{{ item.clase.get_tipo_display }}</h6>
+                                            <p class="card-text mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>{{ item.clase.dia }} - 
+                                                    <i class="fas fa-clock me-1"></i>{{ item.clase.horario|time:"H:i" }}
+                                                </small>
+                                            </p>
+                                            
+                                            <div class="row text-center mb-2">
+                                                <div class="col-4">
+                                                    <small class="text-muted">Cupos</small><br>
+                                                    <strong>{{ item.cupos_disponibles }}/{{ item.clase.cupo_maximo }}</strong>
+                                                </div>
+                                                <div class="col-4">
+                                                    <small class="text-muted">Ocupación</small><br>
+                                                    <strong>{{ item.porcentaje_ocupacion|default:0 }}%</strong>
+                                                </div>
+                                                <div class="col-4">
+                                                    <small class="text-muted">Reservas</small><br>
+                                                    <strong>{{ item.total_reservas }}</strong>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-flex gap-1">
+                                                <a href="{% url 'PilatesGravity:admin_clase_detalle' item.clase.id %}" 
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'PilatesGravity:admin_clase_editar' item.clase.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% if item.puede_eliminarse %}
+                                                    <a href="{% url 'PilatesGravity:admin_clase_eliminar' item.clase.id %}" 
+                                                       class="btn btn-sm btn-outline-danger"
+                                                       onclick="return confirm('¿Estás seguro de que quieres eliminar esta clase?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginación de clases" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
+                                                {{ num }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times fa-4x text-muted mb-4"></i>
+                        <h4 class="text-muted mb-3">No se encontraron clases</h4>
+                        {% if tipo_filtro or dia_filtro or estado_filtro %}
+                            <p class="text-muted mb-4">No hay clases que coincidan con los filtros seleccionados.</p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Limpiar Filtros
+                                </a>
+                                <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Crear Nueva Clase
+                                </a>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-4">Aún no has creado ninguna clase en el sistema.</p>
+                            <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Crear Primera Clase
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when filters change
+    const filterSelects = document.querySelectorAll('#filterForm select');
+    filterSelects.forEach(function(select) {
+        select.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+
+    // Enhance progress bars with animation
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(function(bar) {
+        const width = bar.dataset.width + '%';
+        bar.style.width = '0%';
+        setTimeout(function() {
+            bar.style.transition = 'width 1s ease-in-out';
+            bar.style.width = width;
+        }, 100);
+    });
+
+    // Add tooltips to action buttons
+    const actionButtons = document.querySelectorAll('[title]');
+    actionButtons.forEach(function(button) {
+        new bootstrap.Tooltip(button);
+    });
+
+    // Highlight rows on hover
+    const tableRows = document.querySelectorAll('tbody tr');
+    tableRows.forEach(function(row) {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil - Pilates Gravity{% endblock %}
+
+{% block content %}
+
+    <!-- Mostrar solo mensajes relacionados con perfil -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if "perfil" in message.message|lower or "actualizado" in message.message|lower or "guardado" in message.message|lower or "modificado" in message.message|lower or "cambiado" in message.message|lower %}
+                <div class="profile-alert profile-alert-{{ message.tags }} profile-fade-in">
+                    {{ message }}
+                    <button type="button" class="profile-alert-close" onclick="this.parentElement.style.display='none'">X</button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Sección del perfil integrada con el sitio -->
+    <section class="profile-section" id="Profile">
+        <div class="container">
+            
+            <div class="section-title">
+                <h2>Mi Perfil</h2>
+                <div class="divider"></div>
+                <p>Gestiona tu información personal y configuración de cuenta</p>
+            </div>
+
+            <div class="profile-main-content">
+                
+                <!-- Tarjeta principal del perfil -->
+                <div class="profile-user-card">
+                    <div class="profile-avatar">
+                        {% if user_profile and user_profile.avatar %}
+                            <img src="{{ user_profile.avatar.url }}" alt="Avatar actual">
+                        {% else %}
+                            {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="profile-user-info">
+                        <h3 class="profile-username">
+                            {% if user.first_name and user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% elif user.first_name %}
+                                {{ user.first_name }}
+                            {% elif user.last_name %}
+                                {{ user.last_name }}
+                            {% else %}
+                                {{ user.username }}
+                            {% endif %}
+                        </h3>
+                        <p class="profile-handle">@{{ user.username }}</p>
+                        <small class="profile-member-since">Miembro desde {{ user.date_joined|date:"F Y" }}</small>
+                    </div>
+                    
+                    <!-- Estadísticas del usuario -->
+                    {% if user_profile %}
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ user_profile.get_total_reservas }}</span>
+                            <span class="stat-label">Reservas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ user_profile.get_reservas_activas.count }}</span>
+                            <span class="stat-label">Activas</span>
+                        </div>
+                        {% if user_profile.get_tiempo_en_estudio %}
+                        <div class="stat-item">
+                            <span class="stat-number">{{ user_profile.get_tiempo_en_estudio }}</span>
+                            <span class="stat-label">En el estudio</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Navegación rápida del perfil -->
+                <div class="profile-quick-nav">
+                    <!-- NUEVO: Botón del Admin Panel - Solo visible para administradores -->
+                    {% if user.is_staff %}
+                        <a href="{% url 'PilatesGravity:admin_dashboard' %}" class="profile-nav-card admin-card">
+                            <div class="nav-icon-wrapper admin-icon">
+                                <span class="nav-icon">⚙️</span>
+                            </div>
+                            <div class="nav-content">
+                                <h4>Panel de Administración</h4>
+                                <p>Gestionar estudio</p>
+                            </div>
+                            <span class="nav-arrow">→</span>
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'accounts:profile_complete' %}" class="profile-nav-card">
+                        <div class="nav-icon-wrapper">
+                            <span class="nav-icon">🎯</span>
+                        </div>
+                        <div class="nav-content">
+                            <h4>Completar Perfil</h4>
+                            <p>Información paso a paso</p>
+                        </div>
+                        <span class="nav-arrow">→</span>
+                    </a>
+                    
+                    <a href="{% url 'accounts:cambiar_password' %}" class="profile-nav-card">
+                        <div class="nav-icon-wrapper">
+                            <span class="nav-icon">🔒</span>
+                        </div>
+                        <div class="nav-content">
+                            <h4>Cambiar Contraseña</h4>
+                            <p>Seguridad de cuenta</p>
+                        </div>
+                        <span class="nav-arrow">→</span>
+                    </a>
+                </div>
+
+                <!-- Formulario de información básica -->
+                <div class="profile-form-container">
+                    <div class="profile-form-header">
+                        <h3>Información Básica</h3>
+                        <p>Actualiza tus datos personales</p>
+                    </div>
+                    
+                    <form method="post" class="profile-basic-form">
+                        {% csrf_token %}
+                        
+                        <div class="profile-form-grid">
+                            <div class="profile-field-group">
+                                <label for="id_first_name" class="profile-field-label">
+                                    <span class="field-icon">👤</span>
+                                    Nombre
+                                </label>
+                                <div class="profile-input-container">
+                                    {{ form.first_name }}
+                                    <div class="field-focus-line"></div>
+                                </div>
+                                {% if form.first_name.errors %}
+                                    <div class="profile-field-error">
+                                        {% for error in form.first_name.errors %}
+                                            <span class="error-text">⚠️ {{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="profile-field-group">
+                                <label for="id_last_name" class="profile-field-label">
+                                    <span class="field-icon">👤</span>
+                                    Apellido
+                                </label>
+                                <div class="profile-input-container">
+                                    {{ form.last_name }}
+                                    <div class="field-focus-line"></div>
+                                </div>
+                                {% if form.last_name.errors %}
+                                    <div class="profile-field-error">
+                                        {% for error in form.last_name.errors %}
+                                            <span class="error-text">⚠️ {{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="profile-field-group">
+                                <label for="id_telefono" class="profile-field-label">
+                                    <span class="field-icon">📞</span>
+                                    Teléfono
+                                </label>
+                                <div class="profile-input-container">
+                                    {{ form.telefono }}
+                                    <div class="field-focus-line"></div>
+                                </div>
+                                {% if form.telefono.errors %}
+                                    <div class="profile-field-error">
+                                        {% for error in form.telefono.errors %}
+                                            <span class="error-text">⚠️ {{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.telefono.help_text %}
+                                    <div class="profile-field-help">{{ form.telefono.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="profile-field-group">
+                                <label for="id_email" class="profile-field-label">
+                                    <span class="field-icon">📧</span>
+                                    Email
+                                </label>
+                                <div class="profile-input-container">
+                                    {{ form.email }}
+                                    <div class="field-focus-line"></div>
+                                </div>
+                                {% if form.email.errors %}
+                                    <div class="profile-field-error">
+                                        {% for error in form.email.errors %}
+                                            <span class="error-text">⚠️ {{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="profile-form-actions">
+                            <button type="submit" class="profile-update-btn">
+                                <span class="btn-text">Actualizar Perfil</span>
+                                <span class="btn-icon">💾</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Enlaces adicionales -->
+                <div class="profile-additional-links">
+                    <a href="{% url 'accounts:logout' %}" class="profile-logout-btn">
+                        <span class="logout-icon">🚪</span>
+                        Cerrar Sesión
+                    </a>
+                </div>
+            
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Animaciones y efectos para el perfil
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de entrada
+            const elements = document.querySelectorAll('.profile-user-card, .profile-nav-card, .profile-form-container');
+            elements.forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    element.style.transition = 'all 0.6s ease';
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, 200 * index);
+            });
+
+            // Efecto hover en estadísticas
+            const statItems = document.querySelectorAll('.stat-item');
+            statItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.05)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Auto-hide de alertas después de 5 segundos
+            const alerts = document.querySelectorAll('.profile-alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 300);
+                }, 5000);
+            });
+
+            // NUEVO: Efecto especial para el botón de admin
+            const adminCard = document.querySelector('.admin-card');
+            if (adminCard) {
+                adminCard.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                adminCard.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+
+                // Notificación sutil para el admin
+                setTimeout(() => {
+                    const adminBadge = document.querySelector('.admin-badge');
+                    if (adminBadge) {
+                        adminBadge.style.animation = 'adminGlow 1s ease-in-out 3';
+                    }
+                }, 2000);
+            }
+        });
+    </script>
+    
+{% endblock %}

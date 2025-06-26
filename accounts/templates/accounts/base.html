@@ -1,0 +1,68 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Pilates Gravity{% endblock %}</title>  
+        
+        <!-- Tailwind CSS compilado -->
+        <link rel="stylesheet" href="{% static 'css/tailwind-output.css' %}">
+        
+        <!-- CSS personalizado adicional -->
+        <link rel="stylesheet" href="{% static 'css/accounts/custom_styles_base.css' %}">
+        <link rel="stylesheet" href="{% static 'css/accounts/custom_styles_login.css' %}">
+        <link rel="stylesheet" href="{% static 'css/accounts/custom_styles_signup.css' %}">
+    </head>
+    <body class="font-cinzel bg-fondo text-gray-800 leading-relaxed m-0 p-0 overflow-x-hidden">
+        <!-- Enlace de regreso al inicio -->
+        <a href="{% url 'gravity:home' %}" 
+           class="fixed top-5 left-5 bg-gradient-to-br from-secundario to-principal text-white no-underline px-5 py-2.5 rounded-full font-semibold text-sm z-50 transition-all duration-300 shadow-btn-primary hover:shadow-btn-primary-hover hover:-translate-y-0.5 hover:text-white hover:no-underline">
+            ← Volver al Inicio
+        </a>
+        
+        <!-- Contenedor principal de autenticación -->
+        <div class="max-w-screen-2xl mx-auto px-5 min-h-screen flex items-center justify-center">
+            <div class="w-full">
+                <div class="flex flex-wrap -mx-4 justify-center">
+                    <div class="w-full md:w-1/2 lg:w-5/12 px-4">
+                        <!-- Tarjeta de autenticación -->
+                        <div class="bg-blanco rounded-2xl mt-4 mb-4 pt-8 pb-5 px-5 md:px-12 shadow-auth border border-principal/10 relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-auth-hover group">
+                            <!-- Borde superior decorativo -->
+                            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-secundario to-principal rounded-t-2xl"></div>
+                            
+                            <!-- Mensajes de sistema -->
+                            {% if messages %}
+                                {% for message in messages %}
+                                    {% if "cerrado sesión exitosamente" not in message.message and "logged out" not in message.message %}
+                                        <div class="mb-5 px-5 py-4 rounded-xl border-none border-l-4 relative animate-slideInRight
+                                                    {% if message.tags == 'success' %}
+                                                        bg-gradient-to-r from-green-100 to-green-50 border-l-green-500 text-green-800
+                                                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                                        bg-gradient-to-r from-red-100 to-red-50 border-l-red-500 text-red-800
+                                                    {% elif message.tags == 'warning' %}
+                                                        bg-gradient-to-r from-yellow-100 to-yellow-50 border-l-yellow-500 text-yellow-800
+                                                    {% elif message.tags == 'info' %}
+                                                        bg-gradient-to-r from-blue-100 to-blue-50 border-l-blue-500 text-blue-800
+                                                    {% endif %}
+                                                    " role="alert">
+                                            {{ message }}
+                                            <button type="button" 
+                                                    class="absolute top-1/2 right-4 -translate-y-1/2 bg-none border-none text-xl font-bold text-current cursor-pointer opacity-70 hover:opacity-100 transition-opacity duration-300 w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/10"
+                                                    onclick="this.parentElement.style.display='none'">×</button>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <!-- Contenido del bloque -->
+                            {% block content %}
+                            {% endblock %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,481 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}{% if clase %}Editar{% else %}Crear{% endif %} Clase - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'PilatesGravity:admin_clases_lista' %}">Clases</a></li>
+    <li class="breadcrumb-item active">{% if clase %}Editar{% else %}Crear{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h2 class="mb-2">
+                                <i class="fas fa-{% if clase %}edit{% else %}plus{% endif %} me-2"></i>
+                                {% if clase %}Editar{% else %}Crear{% endif %} Clase
+                            </h2>
+                            <p class="text-muted mb-0">
+                                {% if clase %}
+                                    Modifica los datos de la clase existente
+                                {% else %}
+                                    Completa los datos para crear una nueva clase
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Información de la Clase
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="claseForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Tipo de Clase -->
+                            <div class="col-md-6 mb-4">
+                                <label for="tipo" class="form-label">
+                                    <i class="fas fa-tag me-2"></i>Tipo de Clase *
+                                </label>
+                                <select name="tipo" id="tipo" class="form-select" required>
+                                    <option value="">Selecciona un tipo</option>
+                                    {% for value, label in tipos_clases %}
+                                        <option value="{{ value }}" 
+                                            {% if clase and clase.tipo == value %}selected{% endif %}
+                                            {% if form_data.tipo == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Selecciona el tipo de equipo de Pilates
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Día de la Semana -->
+                            <div class="col-md-6 mb-4">
+                                <label for="dia" class="form-label">
+                                    <i class="fas fa-calendar-day me-2"></i>Día de la Semana *
+                                </label>
+                                <select name="dia" id="dia" class="form-select" required>
+                                    <option value="">Selecciona un día</option>
+                                    {% for value, label in dias_semana %}
+                                        <option value="{{ value }}" 
+                                            {% if clase and clase.dia == value %}selected{% endif %}
+                                            {% if form_data.dia == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Día de la semana para la clase recurrente
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Horario -->
+                            <div class="col-md-6 mb-4">
+                                <label for="horario" class="form-label">
+                                    <i class="fas fa-clock me-2"></i>Horario *
+                                </label>
+                                <input type="time" 
+                                    name="horario" 
+                                    id="horario" 
+                                    class="form-control" 
+                                    value="{% if clase %}{{ clase.horario|time:'H:i' }}{% endif %}{% if form_data.horario %}{{ form_data.horario }}{% endif %}"
+                                    min="06:00" 
+                                    max="22:00" 
+                                    required>
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Horario entre 06:00 y 22:00 hrs
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Cupo Máximo -->
+                            <div class="col-md-6 mb-4">
+                                <label for="cupo_maximo" class="form-label">
+                                    <i class="fas fa-users me-2"></i>Cupo Máximo *
+                                </label>
+                                <input type="number" 
+                                    name="cupo_maximo" 
+                                    id="cupo_maximo" 
+                                    class="form-control" 
+                                    value="{% if clase %}{{ clase.cupo_maximo }}{% endif %}{% if form_data.cupo_maximo %}{{ form_data.cupo_maximo }}{% endif %}"
+                                    min="1" 
+                                    max="20" 
+                                    required>
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Número máximo de personas por clase (1-20)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado (solo para edición) -->
+                        {% if clase %}
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" 
+                                        type="checkbox" 
+                                        name="activa" 
+                                        id="activa" 
+                                        {% if clase.activa %}checked{% endif %}>
+                                    <label class="form-check-label" for="activa">
+                                        <i class="fas fa-toggle-on me-2"></i>Clase Activa
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Las clases inactivas no aparecerán disponibles para reservar
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Preview Section -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card bg-light border-0">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-eye me-2"></i>Vista Previa de la Clase
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="preview-content" class="text-center text-muted">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Completa los campos para ver la vista previa
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Warning for existing class -->
+                        {% if clase and not clase.puede_eliminarse %}
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Atención:</strong> Esta clase tiene {{ clase.reserva_set.filter|length }} reservas activas. 
+                                    Si cambias el horario o día, afectarás a todos los usuarios con reservas.
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex gap-3 justify-content-end">
+                                    <a href="{% url 'PilatesGravity:admin_clases_lista' %}" 
+                                    class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    </a>
+                                    
+                                    <button type="submit" 
+                                            class="btn btn-primary" 
+                                            id="submitBtn">
+                                        <i class="fas fa-{% if clase %}save{% else %}plus{% endif %} me-2"></i>
+                                        <span id="submitText">
+                                            {% if clase %}Guardar Cambios{% else %}Crear Clase{% endif %}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Sidebar -->
+        <div class="col-lg-4">
+            <!-- Tips Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Consejos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <small>Verifica que no exista una clase igual antes de crear</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <small>El cupo máximo depende del equipo disponible</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <small>Los horarios deben estar en el rango laboral</small>
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <small>Las clases inactivas no son visibles para usuarios</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Current Classes Info (only for create) -->
+            {% if not clase %}
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Clases Existentes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-muted">
+                        <small>
+                            <i class="fas fa-info-circle me-2"></i>
+                            Asegúrate de no crear duplicados
+                        </small>
+                    </div>
+                    <div id="existing-classes" class="mt-3">
+                        <div class="text-center">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <br>
+                            <small class="text-muted">Cargando clases existentes...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Current Class Info (only for edit) -->
+            {% if clase %}
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información Actual
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Reservas Activas:</strong>
+                        <span class="badge bg-info ms-2">{{ clase.reserva_set.filter.count|default:0 }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Cupos Disponibles:</strong>
+                        <span class="badge bg-success ms-2">{{ clase.cupos_disponibles|default:0 }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Ocupación:</strong>
+                        <span class="badge bg-primary ms-2">{{ clase.get_porcentaje_ocupacion|default:0 }}%</span>
+                    </div>
+                    <div class="mb-0">
+                        <strong>Estado:</strong>
+                        {% if clase.activa %}
+                            <span class="badge bg-success ms-2">Activa</span>
+                        {% else %}
+                            <span class="badge bg-danger ms-2">Inactiva</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('claseForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const previewContent = document.getElementById('preview-content');
+            
+            // Form fields
+            const tipoSelect = document.getElementById('tipo');
+            const diaSelect = document.getElementById('dia');
+            const horarioInput = document.getElementById('horario');
+            const cupoInput = document.getElementById('cupo_maximo');
+            
+            // Update preview when fields change
+            function updatePreview() {
+                const tipo = tipoSelect.value;
+                const dia = diaSelect.value;
+                const horario = horarioInput.value;
+                const cupo = cupoInput.value;
+                
+                if (tipo && dia && horario && cupo) {
+                    const tipoText = tipoSelect.options[tipoSelect.selectedIndex].text;
+                    const diaText = diaSelect.options[diaSelect.selectedIndex].text;
+                    const iconClass = (tipo === 'Reformer') ? 'fas fa-dumbbell fa-2x text-primary' : 'fas fa-bed fa-2x text-info';
+                    
+                    previewContent.innerHTML = 
+                        '<div class="d-flex align-items-center justify-content-center">' +
+                            '<div class="me-3">' +
+                                '<i class="' + iconClass + '"></i>' +
+                            '</div>' +
+                            '<div class="text-start">' +
+                                '<h6 class="mb-1">' + tipoText + '</h6>' +
+                                '<small class="text-muted">' +
+                                    '<i class="fas fa-calendar me-1"></i>' + diaText + ' - ' +
+                                    '<i class="fas fa-clock me-1"></i>' + horario + ' - ' +
+                                    '<i class="fas fa-users me-1"></i>' + cupo + ' cupos' +
+                                '</small>' +
+                            '</div>' +
+                        '</div>';
+                } else {
+                    previewContent.innerHTML = '<i class="fas fa-info-circle me-2"></i>Completa los campos para ver la vista previa';
+                }
+            }
+            
+            // Add event listeners
+            [tipoSelect, diaSelect, horarioInput, cupoInput].forEach(function(field) {
+                field.addEventListener('change', updatePreview);
+                field.addEventListener('input', updatePreview);
+            });
+            
+            // Initial preview update
+            updatePreview();
+            
+            // Form validation
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loading state
+                const originalText = submitText.textContent;
+                submitText.textContent = 'Guardando...';
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>' + submitText.textContent;
+                
+                // Validate form
+                let isValid = true;
+                const requiredFields = [tipoSelect, diaSelect, horarioInput, cupoInput];
+                
+                requiredFields.forEach(function(field) {
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+                
+                // Validate time range
+                if (horarioInput.value) {
+                    const time = horarioInput.value;
+                    const timeParts = time.split(':');
+                    const hours = parseInt(timeParts[0]);
+                    const minutes = parseInt(timeParts[1]);
+                    const totalMinutes = hours * 60 + minutes;
+                    
+                    if (totalMinutes < 6 * 60 || totalMinutes > 22 * 60) {
+                        horarioInput.classList.add('is-invalid');
+                        isValid = false;
+                        alert('El horario debe estar entre las 06:00 y las 22:00');
+                    }
+                }
+                
+                // Validate cupo range
+                if (cupoInput.value) {
+                    const cupo = parseInt(cupoInput.value);
+                    if (cupo < 1 || cupo > 20) {
+                        cupoInput.classList.add('is-invalid');
+                        isValid = false;
+                        alert('El cupo máximo debe estar entre 1 y 20');
+                    }
+                }
+                
+                if (isValid) {
+                    // Submit form
+                    this.submit();
+                } else {
+                    // Reset button state
+                    submitText.textContent = originalText;
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>' + submitText.textContent;
+                }
+            });
+            
+            // Load existing classes for create mode (only if we're in create mode)
+            const existingClassesDiv = document.getElementById('existing-classes');
+            if (existingClassesDiv) {
+                fetch('/api/clases-disponibles/')
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        if (data.length > 0) {
+                            let html = '<div class="small">';
+                            data.forEach(function(clase) {
+                                html += 
+                                    '<div class="d-flex justify-content-between align-items-center mb-1 p-1 bg-light rounded">' +
+                                        '<div>' +
+                                            '<strong>' + clase.tipo_display + '</strong><br>' +
+                                            '<small class="text-muted">' + clase.dia + ' ' + clase.horario_display + '</small>' +
+                                        '</div>' +
+                                        '<small class="badge bg-secondary">' + clase.cupos_disponibles + '/' + clase.cupo_maximo + '</small>' +
+                                    '</div>';
+                            });
+                            html += '</div>';
+                            existingClassesDiv.innerHTML = html;
+                        } else {
+                            existingClassesDiv.innerHTML = '<small class="text-muted">No hay clases creadas aún</small>';
+                        }
+                    })
+                    .catch(function(error) {
+                        existingClassesDiv.innerHTML = '<small class="text-danger">Error al cargar clases</small>';
+                    });
+            }
+            
+            // Add input animations
+            const inputs = document.querySelectorAll('.form-control, .form-select');
+            inputs.forEach(function(input) {
+                input.addEventListener('focus', function() {
+                    this.parentElement.style.transform = 'scale(1.02)';
+                    this.parentElement.style.transition = 'transform 0.2s ease';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.style.transform = 'scale(1)';
+                });
+            });
+        });
+    </script>
+{% endblock %}

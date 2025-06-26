@@ -1,0 +1,623 @@
+{% extends 'PilatesGravity/admin/base_admin.html' %}
+
+{% block title %}Gestión de Usuarios - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Usuarios</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="fas fa-users me-2"></i>
+                            Gestión de Usuarios
+                        </h2>
+                        <p class="text-muted mb-0">Administra todos los usuarios registrados en el sistema</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success" onclick="exportUsuarios()">
+                                <i class="fas fa-download me-2"></i>Exportar
+                            </button>
+                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-search me-2"></i>Búsqueda y Filtros</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" id="searchForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="busqueda" class="form-label">Buscar Usuario</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" 
+                                       name="busqueda" 
+                                       id="busqueda" 
+                                       class="form-control" 
+                                       placeholder="Nombre, apellido, email o username..."
+                                       value="{{ busqueda }}">
+                                <button type="submit" class="btn btn-primary">
+                                    Buscar
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Busca por nombre, apellido, email o nombre de usuario
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Filtros Rápidos</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterBy('con_reservas')">
+                                    <i class="fas fa-bookmark me-1"></i>Con Reservas
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="filterBy('nuevos')">
+                                    <i class="fas fa-star me-1"></i>Nuevos (7 días)
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="filterBy('activos')">
+                                    <i class="fas fa-check-circle me-1"></i>Activos
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterBy('sin_perfil')">
+                                    <i class="fas fa-user-edit me-1"></i>Sin Perfil
+                                </button>
+                                <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-times me-1"></i>Limpiar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Summary -->
+{% if page_obj.object_list %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Resultados: {{ page_obj.paginator.count }} usuario{{ page_obj.paginator.count|pluralize }}
+                    {% if busqueda %}
+                        <span class="badge bg-info">Búsqueda activa</span>
+                    {% endif %}
+                </h6>
+                <small class="text-muted">
+                    Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                </small>
+            </div>
+            
+            <!-- Display Options -->
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary active" onclick="toggleView('cards')">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleView('table')">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Results Section -->
+<div class="row">
+    <div class="col-12">
+        {% if page_obj.object_list %}
+            <!-- Cards View (Default) -->
+            <div id="cardsView">
+                <div class="row">
+                    {% for item in page_obj.object_list %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card h-100 user-card">
+                                <div class="card-body">
+                                    <!-- User Header -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="user-avatar me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                                            {{ item.usuario.first_name.0|default:item.usuario.username.0|upper }}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title mb-1">{{ item.usuario.get_full_name|default:item.usuario.username }}</h6>
+                                            <small class="text-muted">@{{ item.usuario.username }}</small>
+                                            {% if not item.usuario.is_active %}
+                                                <span class="badge bg-danger ms-2">Inactivo</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    type="button" 
+                                                    data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" 
+                                                       href="{% url 'PilatesGravity:admin_usuario_detalle' item.usuario.id %}">
+                                                        <i class="fas fa-eye me-2"></i>Ver Detalle
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" 
+                                                       href="{% url 'PilatesGravity:admin_reservas_lista' %}?usuario={{ item.usuario.username }}">
+                                                        <i class="fas fa-bookmark me-2"></i>Ver Reservas
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="mailto:{{ item.usuario.email }}">
+                                                        <i class="fas fa-envelope me-2"></i>Enviar Email
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- User Info -->
+                                    <div class="mb-3">
+                                        <div class="mb-2">
+                                            <i class="fas fa-envelope text-primary me-2"></i>
+                                            <small>{{ item.usuario.email }}</small>
+                                        </div>
+                                        {% if item.profile.telefono %}
+                                            <div class="mb-2">
+                                                <i class="fas fa-phone text-success me-2"></i>
+                                                <small>{{ item.profile.telefono }}</small>
+                                            </div>
+                                        {% endif %}
+                                        <div class="mb-2">
+                                            <i class="fas fa-calendar text-info me-2"></i>
+                                            <small>Miembro desde {{ item.usuario.date_joined|date:"d/m/Y" }}</small>
+                                        </div>
+                                        {% if item.profile.nivel_experiencia %}
+                                            <div>
+                                                <i class="fas fa-star text-warning me-2"></i>
+                                                <small>{{ item.profile.get_nivel_experiencia_display }}</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Stats -->
+                                    <div class="row text-center mb-3">
+                                        <div class="col-6">
+                                            <div class="fw-bold text-primary">{{ item.total_reservas }}</div>
+                                            <small class="text-muted">Reservas</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="fw-bold {% if item.fecha_ultima_reserva %}text-success{% else %}text-muted{% endif %}">
+                                                {% if item.fecha_ultima_reserva %}
+                                                    {{ item.fecha_ultima_reserva.fecha_reserva|timesince|truncatechars:10 }}
+                                                {% else %}
+                                                    Nunca
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted">Última reserva</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Health Alert -->
+                                    {% if item.profile.tiene_lesiones %}
+                                        <div class="alert alert-warning py-1 px-2 mb-3">
+                                            <i class="fas fa-medical me-1"></i>
+                                            <small>Tiene condiciones médicas</small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Profile Status -->
+                                    <div class="mb-3">
+                                        {% if item.profile.perfil_completado %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Perfil Completo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-exclamation me-1"></i>Perfil Incompleto
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if item.profile.acepta_marketing %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-envelope me-1"></i>Marketing
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'PilatesGravity:admin_usuario_detalle' item.usuario.id %}" 
+                                           class="btn btn-outline-primary btn-sm flex-grow-1">
+                                            <i class="fas fa-eye me-1"></i>Ver Detalle
+                                        </a>
+                                        {% if item.total_reservas > 0 %}
+                                            <a href="{% url 'PilatesGravity:admin_reservas_lista' %}?usuario={{ item.usuario.username }}" 
+                                               class="btn btn-outline-info btn-sm">
+                                                <i class="fas fa-bookmark"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Table View (Hidden by default) -->
+            <div id="tableView" style="display: none;">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="usuariosTable">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Contacto</th>
+                                        <th>Registro</th>
+                                        <th>Perfil</th>
+                                        <th>Reservas</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in page_obj.object_list %}
+                                        <tr {% if not item.usuario.is_active %}class="table-secondary"{% endif %}>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="user-avatar me-3">
+                                                        {{ item.usuario.first_name.0|default:item.usuario.username.0|upper }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold">{{ item.usuario.get_full_name|default:item.usuario.username }}</div>
+                                                        <small class="text-muted">@{{ item.usuario.username }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div class="mb-1">
+                                                        <i class="fas fa-envelope me-1"></i>
+                                                        <small>{{ item.usuario.email }}</small>
+                                                    </div>
+                                                    {% if item.profile.telefono %}
+                                                        <div>
+                                                            <i class="fas fa-phone me-1"></i>
+                                                            <small>{{ item.profile.telefono }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div class="fw-bold">{{ item.usuario.date_joined|date:"d/m/Y" }}</div>
+                                                    <small class="text-muted">{{ item.usuario.date_joined|timesince }} atrás</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if item.profile.perfil_completado %}
+                                                    <span class="badge bg-success">Completo</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Incompleto</span>
+                                                {% endif %}
+                                                {% if item.profile.tiene_lesiones %}
+                                                    <br><span class="badge bg-danger mt-1">Lesiones</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="fw-bold text-primary">{{ item.total_reservas }}</div>
+                                                {% if item.fecha_ultima_reserva %}
+                                                    <small class="text-success">Última: {{ item.fecha_ultima_reserva.fecha_reserva|date:"d/m" }}</small>
+                                                {% else %}
+                                                    <small class="text-muted">Sin reservas</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if item.usuario.is_active %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i>Activo
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-times me-1"></i>Inactivo
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1 justify-content-center">
+                                                    <a href="{% url 'PilatesGravity:admin_usuario_detalle' item.usuario.id %}" 
+                                                       class="btn btn-sm btn-outline-primary" 
+                                                       title="Ver detalle">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if item.total_reservas > 0 %}
+                                                        <a href="{% url 'PilatesGravity:admin_reservas_lista' %}?usuario={{ item.usuario.username }}" 
+                                                           class="btn btn-sm btn-outline-info" 
+                                                           title="Ver reservas">
+                                                            <i class="fas fa-bookmark"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    <a href="mailto:{{ item.usuario.email }}" 
+                                                       class="btn btn-sm btn-outline-success" 
+                                                       title="Enviar email">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación de usuarios" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Empty State -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-4x text-muted mb-4"></i>
+                        <h4 class="text-muted mb-3">No se encontraron usuarios</h4>
+                        {% if busqueda %}
+                            <p class="text-muted mb-4">
+                                No hay usuarios que coincidan con la búsqueda: 
+                                <strong>"{{ busqueda }}"</strong>
+                            </p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Limpiar Búsqueda
+                                </a>
+                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                                </a>
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-4">Aún no hay usuarios registrados en el sistema.</p>
+                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Agregar Primer Cliente
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add tooltips to action buttons
+    const actionButtons = document.querySelectorAll('[title]');
+    actionButtons.forEach(function(button) {
+        new bootstrap.Tooltip(button);
+    });
+    
+    // Highlight search term in results
+    const searchTerm = document.getElementById('busqueda').value;
+    if (searchTerm.trim()) {
+        highlightSearchTerm(searchTerm);
+    }
+    
+    // Auto-focus search input
+    document.getElementById('busqueda').focus();
+});
+
+// Function to toggle between card and table view
+function toggleView(viewType) {
+    const cardsView = document.getElementById('cardsView');
+    const tableView = document.getElementById('tableView');
+    const buttons = document.querySelectorAll('.btn-group button');
+    
+    buttons.forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    
+    if (viewType === 'cards') {
+        cardsView.style.display = 'block';
+        tableView.style.display = 'none';
+        buttons[0].classList.add('active');
+    } else {
+        cardsView.style.display = 'none';
+        tableView.style.display = 'block';
+        buttons[1].classList.add('active');
+    }
+    
+    // Save preference
+    localStorage.setItem('userViewPreference', viewType);
+}
+
+// Function to filter users
+function filterBy(filterType) {
+    const baseUrl = '{% url "PilatesGravity:admin_usuarios_lista" %}';
+    let url = baseUrl;
+    
+    switch(filterType) {
+        case 'con_reservas':
+            // This would need backend support
+            alert('Filtro en desarrollo: usuarios con reservas');
+            break;
+        case 'nuevos':
+            // This would need backend support  
+            alert('Filtro en desarrollo: usuarios nuevos');
+            break;
+        case 'activos':
+            // This would need backend support
+            alert('Filtro en desarrollo: usuarios activos');
+            break;
+        case 'sin_perfil':
+            // This would need backend support
+            alert('Filtro en desarrollo: usuarios sin perfil completo');
+            break;
+        default:
+            window.location.href = url;
+    }
+}
+
+// Function to export users
+function exportUsuarios() {
+    const table = document.getElementById('usuariosTable');
+    if (!table) {
+        // If table view is not active, gather data from cards
+        const userCards = document.querySelectorAll('.user-card');
+        if (userCards.length === 0) {
+            alert('No hay datos para exportar');
+            return;
+        }
+        
+        let csv = 'Nombre,Username,Email,Teléfono,Fecha de Registro,Reservas,Estado\n';
+        
+        userCards.forEach(function(card) {
+            const nombre = card.querySelector('.card-title').textContent.trim();
+            const username = card.querySelector('small').textContent.replace('@', '').trim();
+            const email = card.querySelector('.fa-envelope').parentNode.textContent.trim();
+            const telefonoEl = card.querySelector('.fa-phone');
+            const telefono = telefonoEl ? telefonoEl.parentNode.textContent.trim() : 'N/A';
+            const fechaEl = card.querySelector('.fa-calendar');
+            const fecha = fechaEl ? fechaEl.parentNode.textContent.replace('Miembro desde ', '').trim() : 'N/A';
+            const reservas = card.querySelector('.text-primary').textContent.trim();
+            const estadoEl = card.querySelector('.badge');
+            const estado = estadoEl ? estadoEl.textContent.trim() : 'Activo';
+            
+            csv += '"' + nombre + '","' + username + '","' + email + '","' + telefono + 
+                   '","' + fecha + '","' + reservas + '","' + estado + '"\n';
+        });
+        
+        downloadCSV(csv, 'usuarios_cards.csv');
+        return;
+    }
+    
+    let csv = 'Nombre,Username,Email,Teléfono,Fecha de Registro,Perfil,Reservas,Estado\n';
+    
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(function(row) {
+        const cells = row.querySelectorAll('td');
+        const nombre = cells[0].querySelector('.fw-bold').textContent.trim();
+        const username = cells[0].querySelector('small').textContent.replace('@', '').trim();
+        const emailEl = cells[1].querySelector('.fa-envelope');
+        const email = emailEl ? emailEl.parentNode.textContent.trim() : 'N/A';
+        const telefonoEl = cells[1].querySelector('.fa-phone');
+        const telefono = telefonoEl ? telefonoEl.parentNode.textContent.trim() : 'N/A';
+        const fecha = cells[2].querySelector('.fw-bold').textContent.trim();
+        const perfil = cells[3].querySelector('.badge').textContent.trim();
+        const reservas = cells[4].querySelector('.fw-bold').textContent.trim();
+        const estado = cells[5].querySelector('.badge').textContent.trim();
+        
+        csv += '"' + nombre + '","' + username + '","' + email + '","' + telefono + 
+               '","' + fecha + '","' + perfil + '","' + reservas + '","' + estado + '"\n';
+    });
+    
+    downloadCSV(csv, 'usuarios_table.csv');
+}
+
+// Function to download CSV
+function downloadCSV(csv, filename) {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Function to highlight search terms
+function highlightSearchTerm(term) {
+    const regex = new RegExp('(' + term + ')', 'gi');
+    const textNodes = document.querySelectorAll('.card-title, .fw-bold, td small');
+    
+    textNodes.forEach(function(node) {
+        if (node.textContent.toLowerCase().includes(term.toLowerCase())) {
+            node.innerHTML = node.innerHTML.replace(regex, '<mark>$1</mark>');
+        }
+    });
+}
+
+// Load saved view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('userViewPreference');
+    if (savedView === 'table') {
+        toggleView('table');
+    }
+});
+</script>
+{% endblock %}

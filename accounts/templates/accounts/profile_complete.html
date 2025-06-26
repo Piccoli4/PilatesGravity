@@ -1,0 +1,583 @@
+{% extends 'base.html' %}
+
+{% block title %}Completar Perfil - Pilates Gravity{% endblock %}
+
+{% block content %}
+
+    <!-- Mostrar mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="wizard-container">
+        
+        {% if is_new_profile %}
+        <div class="welcome-message">
+            <div class="avatar-preview">
+                {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+            </div>
+            <h3>¡Bienvenido {{ user.first_name }}!</h3>
+            <p>Completa tu perfil para personalizar tu experiencia en Pilates Gravity</p>
+        </div>
+        {% endif %}
+
+        <div class="wizard-header">
+            <h2>{% if is_new_profile %}Completar Perfil{% else %}Actualizar Perfil{% endif %}</h2>
+            <p>Ayúdanos a conocerte mejor para brindarte la mejor experiencia</p>
+        </div>
+
+        <!-- Barra de progreso corregida -->
+        <div class="wizard-progress">
+            <div class="step active" data-step="1">1</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="2">2</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="3">3</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="4">4</div>
+            <div class="step-line"></div>
+            <div class="step" data-step="5">5</div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="profileForm">
+            {% csrf_token %}
+            
+            <div class="wizard-content">
+                
+                <!-- Paso 1: Información básica -->
+                <div class="step-content active" data-step="1">
+                    <h3 class="step-title">Información Básica</h3>
+                    <p class="step-description">Empecemos con tu información de contacto y datos básicos.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
+                                {{ form.telefono }}
+                                {% if form.telefono.errors %}
+                                    <div class="error-message">
+                                        {% for error in form.telefono.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">Fecha de Nacimiento</label>
+                                {{ form.fecha_nacimiento }}
+                                {% if form.fecha_nacimiento.errors %}
+                                    <div class="error-message">
+                                        {% for error in form.fecha_nacimiento.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.nivel_experiencia.id_for_label }}" class="form-label">Nivel de Experiencia en Pilates</label>
+                        {{ form.nivel_experiencia }}
+                        {% if form.nivel_experiencia.errors %}
+                            <div class="error-message">
+                                {% for error in form.nivel_experiencia.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Paso 2: Información médica -->
+                <div class="step-content" data-step="2">
+                    <h3 class="step-title">Información de Salud</h3>
+                    <p class="step-description">Esta información nos ayuda a adaptar las clases a tus necesidades específicas.</p>
+                    
+                    <div class="form-check">
+                        {{ form.tiene_lesiones }}
+                        <label for="{{ form.tiene_lesiones.id_for_label }}" class="form-check-label">
+                            {{ form.tiene_lesiones.label }}
+                        </label>
+                        {% if form.tiene_lesiones.errors %}
+                            <div class="error-message">
+                                {% for error in form.tiene_lesiones.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="lesiones-container" id="lesionesContainer">
+                        <label for="{{ form.descripcion_lesiones.id_for_label }}" class="form-label">Descripción de Lesiones</label>
+                        {{ form.descripcion_lesiones }}
+                        <small class="form-text">
+                            Por favor describe brevemente cualquier lesión o condición médica que debamos conocer.
+                        </small>
+                        {% if form.descripcion_lesiones.errors %}
+                            <div class="error-message">
+                                {% for error in form.descripcion_lesiones.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Paso 3: Preferencias -->
+                <div class="step-content" data-step="3">
+                    <h3 class="step-title">Preferencias de Comunicación</h3>
+                    <p class="step-description">Configura cómo te gustaría que nos comuniquemos contigo.</p>
+                    
+                    <div class="form-check">
+                        {{ form.acepta_recordatorios }}
+                        <label for="{{ form.acepta_recordatorios.id_for_label }}" class="form-check-label">
+                            {{ form.acepta_recordatorios.label }}
+                        </label>
+                        <small class="form-text text-muted d-block mt-2">
+                            Te enviaremos recordatorios de tus clases reservadas.
+                        </small>
+                    </div>
+
+                    <div class="form-check">
+                        {{ form.acepta_marketing }}
+                        <label for="{{ form.acepta_marketing.id_for_label }}" class="form-check-label">
+                            {{ form.acepta_marketing.label }}
+                        </label>
+                        <small class="form-text text-muted d-block mt-2">
+                            Recibe información sobre promociones, eventos especiales y novedades del estudio.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Paso 4: Historial en el Estudio -->
+                <div class="step-content" data-step="4">
+                    <h3 class="section-title">
+                        <span class="section-icon">📅</span>
+                        Tu Historial en Pilates Gravity
+                    </h3>
+                    <p class="step-description">Completa tu información histórica y revisa tus estadísticas.</p>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.fecha_primera_clase.id_for_label }}" class="form-label">Fecha de Primera Clase (opcional)</label>
+                        {{ form.fecha_primera_clase }}
+                        <small class="form-text">
+                            Si ya has tomado clases con nosotros, indica cuándo fue tu primera vez.
+                        </small>
+                        {% if form.fecha_primera_clase.errors %}
+                            <div class="error-message">
+                                {% for error in form.fecha_primera_clase.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Estadísticas del usuario mejoradas -->
+                    {% if user.profile %}
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ user.profile.get_total_reservas }}</span>
+                            <span class="stat-label">Total Reservas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ user.profile.get_reservas_activas.count }}</span>
+                            <span class="stat-label">Reservas Activas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">
+                                {% if user.profile.get_tiempo_en_estudio %}
+                                    {{ user.profile.get_tiempo_en_estudio }}
+                                {% else %}
+                                    Nuevo
+                                {% endif %}
+                            </span>
+                            <span class="stat-label">Tiempo en el Estudio</span>
+                        </div>
+                        {% if user.profile.get_edad %}
+                        <div class="stat-item">
+                            <span class="stat-number">{{ user.profile.get_edad }}</span>
+                            <span class="stat-label">Años</span>
+                        </div>
+                    {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-number">0</span>
+                            <span class="stat-label">Total Reservas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">0</span>
+                            <span class="stat-label">Reservas Activas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">Nuevo</span>
+                            <span class="stat-label">En el Estudio</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Paso 5: Foto de Perfil -->
+                <div class="step-content" data-step="5">
+                    <h3 class="section-title">
+                        <span class="section-icon">📸</span>
+                        Foto de Perfil
+                    </h3>
+                    <p class="step-description">Opcional: Agrega una foto para personalizar tu perfil y que nuestro equipo te reconozca fácilmente.</p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <div class="file-input-container">
+                                <div class="file-input-custom" onclick="document.getElementById('{{ form.avatar.id_for_label }}').click()">
+                                    {{ form.avatar }}
+                                    <div>
+                                        <div style="font-size: 3rem; margin-bottom: 1rem; color: #5D768B;">📷</div>
+                                        <div style="font-weight: 600; color: #5D768B; font-size: 1.2rem; margin-bottom: 0.5rem;">
+                                            Hacer clic para seleccionar imagen
+                                        </div>
+                                        <div style="font-size: 0.95rem; color: #666; line-height: 1.4;">
+                                            JPG, PNG o GIF<br>
+                                            <strong>Máximo 5MB</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if form.avatar.errors %}
+                                <div class="error-message">
+                                    {% for error in form.avatar.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="file-preview">
+                                <div class="avatar-preview" id="avatarPreview">
+                                    {% if user.profile.avatar %}
+                                        <img src="{{ user.profile.avatar.url }}" alt="Avatar actual">
+                                    {% else %}
+                                        {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+                                    {% endif %}
+                                </div>
+                                <div style="margin-top: 1rem; font-size: 0.95rem; color: #666; font-weight: 500;">
+                                    {% if user.profile.avatar %}
+                                        Imagen actual
+                                    {% else %}
+                                        Vista previa
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje de finalización -->
+                    <div class="completion-message">
+                        <h5>¡Ya casi terminamos!</h5>
+                        <p>
+                            Una vez completado tu perfil, podrás empezar a reservar tus clases de Pilates y 
+                            disfrutar de una experiencia personalizada en nuestro estudio.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Navegación -->
+            <div class="wizard-navigation">
+                <button type="button" class="btn-wizard btn-prev" id="prevBtn" style="display: none;">
+                    ← Anterior
+                </button>
+                <button type="button" class="btn-wizard btn-next" id="nextBtn">
+                    Siguiente →
+                </button>
+                <button type="submit" class="btn-wizard btn-submit" id="submitBtn" style="display: none;">
+                    ✓ Completar Perfil
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentStep = 1;
+            const totalSteps = 5;
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const lesionesCheckbox = document.getElementById('{{ form.tiene_lesiones.id_for_label }}');
+            const lesionesContainer = document.getElementById('lesionesContainer');
+            const avatarInput = document.getElementById('{{ form.avatar.id_for_label }}');
+            const avatarPreview = document.getElementById('avatarPreview');
+
+            // Manejar checkbox de lesiones
+            if (lesionesCheckbox) {
+                lesionesCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        lesionesContainer.style.display = 'block';
+                    } else {
+                        lesionesContainer.style.display = 'none';
+                        document.getElementById('{{ form.descripcion_lesiones.id_for_label }}').value = '';
+                    }
+                });
+                
+                // Verificar estado inicial
+                if (lesionesCheckbox.checked) {
+                    lesionesContainer.style.display = 'block';
+                }
+            }
+
+            // Manejar preview del avatar
+            if (avatarInput && avatarPreview) {
+                avatarInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Validar tipo de archivo
+                        if (!file.type.match('image.*')) {
+                            alert('Por favor selecciona una imagen válida (JPG, PNG, GIF)');
+                            this.value = '';
+                            return;
+                        }
+
+                        // Validar tamaño (5MB máximo)
+                        if (file.size > 5 * 1024 * 1024) {
+                            alert('La imagen es demasiado grande. El tamaño máximo es 5MB.');
+                            this.value = '';
+                            return;
+                        }
+
+                        // Mostrar preview
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Preview del avatar">`;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            function updateWizard() {
+                // Actualizar pasos visuales
+                document.querySelectorAll('.step').forEach((step, index) => {
+                    const stepNumber = index + 1;
+                    step.classList.remove('active', 'completed');
+                    
+                    if (stepNumber < currentStep) {
+                        step.classList.add('completed');
+                    } else if (stepNumber === currentStep) {
+                        step.classList.add('active');
+                    }
+                });
+
+                // Actualizar líneas de progreso
+                document.querySelectorAll('.step-line').forEach((line, index) => {
+                    if (index + 1 < currentStep) {
+                        line.classList.add('completed');
+                    } else {
+                        line.classList.remove('completed');
+                    }
+                });
+
+                // Mostrar/ocultar contenido de pasos
+                document.querySelectorAll('.step-content').forEach((content, index) => {
+                    const stepNumber = index + 1;
+                    if (stepNumber === currentStep) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
+
+                // Actualizar botones de navegación
+                const prevBtnVisible = currentStep > 1;
+                const isLastStep = currentStep === totalSteps;
+                
+                if (prevBtnVisible) {
+                    prevBtn.style.display = 'inline-flex';
+                    document.querySelector('.wizard-navigation').style.justifyContent = 'space-between';
+                } else {
+                    prevBtn.style.display = 'none';
+                    document.querySelector('.wizard-navigation').style.justifyContent = 'flex-end';
+                }
+                
+                if (isLastStep) {
+                    nextBtn.style.display = 'none';
+                    submitBtn.style.display = 'inline-flex';
+                } else {
+                    nextBtn.style.display = 'inline-flex';
+                    submitBtn.style.display = 'none';
+                }
+            }
+
+            function validateCurrentStep() {
+                const currentStepContent = document.querySelector(`.step-content[data-step="${currentStep}"]`);
+                const inputs = currentStepContent.querySelectorAll('input[required], select[required], textarea[required]');
+                
+                for (let input of inputs) {
+                    if (!input.value.trim()) {
+                        input.focus();
+                        // Agregar efecto visual de error
+                        input.style.borderColor = '#dc3545';
+                        setTimeout(() => {
+                            input.style.borderColor = '';
+                        }, 3000);
+                        return false;
+                    }
+                }
+                
+                // Validación especial para lesiones
+                if (currentStep === 2) {
+                    const lesionesCheckbox = document.getElementById('{{ form.tiene_lesiones.id_for_label }}');
+                    const descripcionLesiones = document.getElementById('{{ form.descripcion_lesiones.id_for_label }}');
+                    
+                    if (lesionesCheckbox && lesionesCheckbox.checked && !descripcionLesiones.value.trim()) {
+                        descripcionLesiones.focus();
+                        descripcionLesiones.style.borderColor = '#dc3545';
+                        setTimeout(() => {
+                            descripcionLesiones.style.borderColor = '';
+                        }, 3000);
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+
+            // Event listeners para navegación
+            nextBtn.addEventListener('click', function() {
+                if (validateCurrentStep() && currentStep < totalSteps) {
+                    currentStep++;
+                    updateWizard();
+                }
+            });
+
+            prevBtn.addEventListener('click', function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateWizard();
+                }
+            });
+
+            // Permitir navegación con teclado
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.target.type !== 'textarea') {
+                    e.preventDefault();
+                    if (currentStep < totalSteps && validateCurrentStep()) {
+                        nextBtn.click();
+                    } else if (currentStep === totalSteps) {
+                        submitBtn.click();
+                    }
+                } else if (e.key === 'ArrowLeft' && currentStep > 1) {
+                    prevBtn.click();
+                } else if (e.key === 'ArrowRight' && currentStep < totalSteps && validateCurrentStep()) {
+                    nextBtn.click();
+                }
+            });
+
+            // Validación en tiempo real para mejorar UX
+            document.querySelectorAll('input, select, textarea').forEach(input => {
+                input.addEventListener('input', function() {
+                    // Remover estilo de error cuando el usuario empiece a escribir
+                    if (this.style.borderColor === 'rgb(220, 53, 69)') {
+                        this.style.borderColor = '';
+                    }
+                });
+
+                input.addEventListener('blur', function() {
+                    // Validación suave al perder el foco
+                    if (this.hasAttribute('required') && !this.value.trim()) {
+                        this.style.borderColor = '#ffc107';
+                    }
+                });
+
+                input.addEventListener('focus', function() {
+                    // Limpiar estilos de validación al enfocar
+                    this.style.borderColor = '';
+                });
+            });
+
+            // Prevenir envío accidental del formulario
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                if (currentStep !== totalSteps) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Mostrar indicador de carga
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Guardando perfil...';
+                
+                // Opcional: Agregar un timeout para re-habilitar el botón si falla
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '✓ Completar Perfil';
+                }, 10000);
+            });
+
+            // Animaciones suaves entre pasos
+            function animateStepTransition() {
+                const activeContent = document.querySelector('.step-content.active');
+                if (activeContent) {
+                    activeContent.style.opacity = '0';
+                    activeContent.style.transform = 'translateX(30px)';
+                    
+                    setTimeout(() => {
+                        activeContent.style.opacity = '1';
+                        activeContent.style.transform = 'translateX(0)';
+                    }, 150);
+                }
+            }
+
+            // Mejorar la función updateWizard para incluir animaciones
+            const originalUpdateWizard = updateWizard;
+            updateWizard = function() {
+                originalUpdateWizard();
+                animateStepTransition();
+            };
+
+            // Inicializar wizard
+            updateWizard();
+
+            // Auto-scroll suave al cambiar de paso
+            function scrollToTop() {
+                const wizardContainer = document.querySelector('.wizard-container');
+                if (wizardContainer) {
+                    wizardContainer.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }
+            }
+
+            // Agregar scroll suave a los event listeners
+            const originalNext = nextBtn.onclick;
+            nextBtn.addEventListener('click', function() {
+                setTimeout(scrollToTop, 200);
+            });
+
+            const originalPrev = prevBtn.onclick;
+            prevBtn.addEventListener('click', function() {
+                setTimeout(scrollToTop, 200);
+            });
+
+            // Mostrar progreso en el título de la página
+            function updatePageTitle() {
+                const stepTitles = [
+                    'Información Básica',
+                    'Información de Salud', 
+                    'Preferencias',
+                    'Historial',
+                    'Foto de Perfil'
+                ];
+                document.title = `${stepTitles[currentStep - 1]} - Completar Perfil - Pilates Gravity`;
+            }
+
+            // Agregar actualización de título a updateWizard
+            const originalUpdateWizard2 = updateWizard;
+            updateWizard = function() {
+                originalUpdateWizard2();
+                updatePageTitle();
+            };
+
+            // Inicialización final
+            updateWizard();
+        });
+    </script>
+
+{% endblock %}
