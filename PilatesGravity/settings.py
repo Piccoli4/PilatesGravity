@@ -8,6 +8,14 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
+
+
+PilatesGravity - Sistema de Gestión de Reservas
+Desarrollado por: Piccoli Guido Augusto
+Email: piccoli_44@hotmail.com
+Versión: 1.0.0
+Año: 2025
+
 """
 
 from pathlib import Path
@@ -154,3 +162,12 @@ EMAIL_SUBJECT_PREFIX = '[Pilates Gravity] '
 
 # URLs para reset de contraseña
 PASSWORD_RESET_TIMEOUT = 900  # 15 minutos en segundos
+
+# Información del desarrollador
+DEVELOPER_INFO = {
+    'name': 'Piccoli Guido Augusto',
+    'email': 'piccoli_44@hotmail.com',
+    'github': 'https://github.com/Piccoli4',
+    'version': '1.0.0',
+    'year': '2025'
+}
