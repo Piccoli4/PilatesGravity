@@ -1,4 +1,4 @@
-{% extends 'PilatesGravity/admin/base_admin.html' %}
+{% extends 'gravity/admin/base_admin.html' %}
 
 {% block title %}Clientes No Registrados - Panel de Administración{% endblock %}
 
@@ -27,7 +27,7 @@
                             <button type="button" class="btn btn-outline-success" onclick="exportarClientes()">
                                 <i class="fas fa-download me-2"></i>Exportar
                             </button>
-                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
                                 <i class="fas fa-user-plus me-2"></i>Agregar Cliente
                             </a>
                         </div>
@@ -105,7 +105,7 @@
                                 <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterBy('sin_email')">
                                     <i class="fas fa-envelope-open me-1"></i>Sin Email
                                 </button>
-                                <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary btn-sm">
+                                <a href="{% url 'gravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-times me-1"></i>Limpiar
                                 </a>
                             </div>
@@ -406,20 +406,20 @@
                                 <strong>"{{ busqueda }}"</strong>
                             </p>
                             <div class="d-flex gap-2 justify-content-center">
-                                <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary">
+                                <a href="{% url 'gravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary">
                                     <i class="fas fa-times me-2"></i>Limpiar Búsqueda
                                 </a>
-                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
                                     <i class="fas fa-user-plus me-2"></i>Agregar Cliente
                                 </a>
                             </div>
                         {% else %}
                             <p class="text-muted mb-4">Aún no has agregado ningún cliente no registrado.</p>
                             <div class="d-flex gap-2 justify-content-center">
-                                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
                                     <i class="fas fa-user-plus me-2"></i>Agregar Primer Cliente
                                 </a>
-                                <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" class="btn btn-outline-info">
+                                <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn btn-outline-info">
                                     <i class="fas fa-users me-2"></i>Ver Usuarios Registrados
                                 </a>
                             </div>
@@ -586,7 +586,7 @@ function eliminarCliente(clienteId) {
 
 // Function to filter clients
 function filterBy(filterType) {
-    const baseUrl = '{% url "PilatesGravity:admin_clientes_no_registrados_lista" %}';
+    const baseUrl = '{% url "gravity:admin_clientes_no_registrados_lista" %}';
     let url = baseUrl;
     
     switch(filterType) {

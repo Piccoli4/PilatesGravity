@@ -1,0 +1,182 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE LOGOUT
+   ======================================== */
+
+/* Animaciones para logout.html */
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Animación del ícono principal */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Animación de entrada suave */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Efecto de resplandor suave para el botón de logout */
+.logout-glow {
+    transition: all 0.3s ease;
+}
+
+.logout-glow:hover {
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+}
+
+/* Efecto de hover para elementos informativos */
+.info-card {
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+/* Animación para iconos en hover */
+.hover-bounce:hover {
+    animation: bounce 0.6s ease-in-out;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Efectos para botones de acción */
+.action-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.action-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.action-button:hover::before {
+    left: 100%;
+}
+
+/* Estilos específicos para elementos de información */
+.contact-info {
+    transition: all 0.3s ease;
+}
+
+.contact-info:hover {
+    color: #5D768B;
+    transform: scale(1.05);
+}
+
+/* Mejoras para responsive */
+@media (max-width: 768px) {
+    .grid-responsive {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .button-mobile {
+        padding: 0.875rem 1.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .icon-mobile {
+        width: 1rem;
+        height: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .title-mobile {
+        font-size: 1.8rem;
+    }
+    
+    .subtitle-mobile {
+        font-size: 1rem;
+    }
+    
+    .card-mobile {
+        padding: 1rem;
+    }
+    
+    .icon-container-mobile {
+        width: 4rem;
+        height: 4rem;
+    }
+    
+    .icon-container-mobile svg {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* Efectos de transición suaves para todos los elementos interactivos */
+a, button, .interactive {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sombras personalizadas */
+.shadow-soft {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-medium {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-strong {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Estados de focus mejorados */
+.focus-visible:focus {
+    outline: 2px solid #5D768B;
+    outline-offset: 2px;
+}
+
+/* Animación de pulsación para elementos importantes */
+@keyframes pulse-soft {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.animate-pulse-soft {
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

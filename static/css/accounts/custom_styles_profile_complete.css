@@ -1,0 +1,337 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE PROFILE_COMPLETE
+   ======================================== */
+
+/* Animaciones de entrada */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 300px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+}
+
+@keyframes shimmer {
+    from {
+        left: -100%;
+    }
+    to {
+        left: 100%;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Clases de animación personalizadas */
+.custom-fade-in {
+    opacity: 0;
+    animation: fadeInUp 1s ease-out forwards;
+}
+
+.custom-fade-in-message {
+    opacity: 0;
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.custom-fade-in-delayed {
+    opacity: 0;
+    animation: fadeInUp 1s ease-out 0.6s forwards;
+}
+
+.custom-slide-up-delayed-1 {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.8s ease-out 0.2s forwards;
+}
+
+.custom-slide-up-delayed-2 {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.8s ease-out 0.4s forwards;
+}
+
+.custom-slide-down {
+    animation: slideDown 0.4s ease-in-out forwards;
+}
+
+.custom-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Estados del wizard */
+.wizard-step.active {
+    background: linear-gradient(135deg, #5D768B, #4a6375) !important;
+    color: white !important;
+    transform: scale(1.15) !important;
+    border-color: #C8B39B !important;
+    box-shadow: 0 8px 20px rgba(93, 118, 139, 0.3) !important;
+}
+
+.wizard-step.completed {
+    background: linear-gradient(135deg, #C8B39B, #b8a189) !important;
+    color: white !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 5px 15px rgba(200, 179, 155, 0.3) !important;
+}
+
+.wizard-step-line.completed {
+    background: linear-gradient(90deg, #C8B39B, #5D768B) !important;
+}
+
+.wizard-step-line.completed::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.5s ease-in-out;
+}
+
+/* Botones del wizard con efectos especiales */
+.btn-wizard-prev, .btn-wizard-next, .btn-wizard-submit {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-wizard-prev::before, .btn-wizard-next::before, .btn-wizard-submit::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-wizard-prev:hover::before, .btn-wizard-next:hover::before, .btn-wizard-submit:hover::before {
+    left: 100%;
+}
+
+.btn-wizard-prev {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.btn-wizard-prev:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+}
+
+.btn-wizard-next {
+    background: linear-gradient(135deg, #5D768B, #4a6375);
+    box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+}
+
+.btn-wizard-next:hover {
+    background: linear-gradient(135deg, #4a6375, #3d5563);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(93, 118, 139, 0.4);
+}
+
+.btn-wizard-submit {
+    background: linear-gradient(135deg, #C8B39B, #5D768B);
+    box-shadow: 0 6px 20px rgba(93, 118, 139, 0.4);
+}
+
+.btn-wizard-submit:hover {
+    background: linear-gradient(135deg, #b8a189, #4a6375);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(93, 118, 139, 0.5);
+}
+
+/* Efectos especiales para estadísticas */
+.custom-stat-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #C8B39B, #5D768B);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.custom-stat-item:hover::before {
+    transform: scaleX(1);
+}
+
+/* Efectos especiales para el input de archivo */
+.file-input-custom::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(200, 179, 155, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.file-input-custom:hover::before {
+    opacity: 1;
+}
+
+/* Mejora visual para checkboxes */
+input[type="checkbox"]:checked {
+    background-color: #5D768B !important;
+    border-color: #5D768B !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e") !important;
+}
+
+input[type="checkbox"]:focus {
+    box-shadow: 0 0 0 0.2rem rgba(93, 118, 139, 0.25) !important;
+}
+
+/* Animación suave para contenido de pasos */
+.step-content {
+    transition: all 0.5s ease;
+}
+
+.step-content.active {
+    animation: slideInContent 0.6s ease-out forwards;
+}
+
+@keyframes slideInContent {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Efecto de hover para elementos interactivos */
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(93, 118, 139, 0.15);
+}
+
+/* Responsive - ajustes específicos que complementan Tailwind */
+@media (max-width: 768px) {
+    .wizard-step {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1rem !important;
+    }
+
+    .wizard-step-line {
+        margin: 0 10px !important;
+    }
+
+    .btn-wizard-prev, .btn-wizard-next, .btn-wizard-submit {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 1rem 2rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .wizard-step {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .wizard-step-line {
+        margin: 0 5px !important;
+        height: 3px !important;
+    }
+
+    input, select, textarea {
+        padding: 0.875rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    .btn-wizard-prev, .btn-wizard-next, .btn-wizard-submit {
+        padding: 0.875rem 1.5rem !important;
+        font-size: 1rem !important;
+    }
+}
+
+/* Efectos de focus mejorados */
+input:focus, select:focus, textarea:focus {
+    transform: translateY(-1px);
+    transition: all 0.3s ease;
+}
+
+/* Animación para el contenedor de lesiones */
+.lesiones-container {
+    overflow: hidden;
+    transition: all 0.4s ease-in-out;
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Estado de carga para el botón submit */
+.btn-wizard-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Mejora del indicador de progreso */
+.wizard-step {
+    position: relative;
+}
+
+.wizard-step::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, transparent, #C8B39B, transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.wizard-step.active::after {
+    opacity: 0.3;
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}

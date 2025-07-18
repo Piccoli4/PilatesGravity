@@ -393,7 +393,7 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">Principal</div>
-                <a href="{% url 'PilatesGravity:admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                <a href="{% url 'gravity:admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
                     <i class="fas fa-tachometer-alt"></i>
                     Dashboard
                 </a>
@@ -401,15 +401,15 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">Gestión</div>
-                <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="nav-link {% if 'clases' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'gravity:admin_clases_lista' %}" class="nav-link {% if 'clases' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-calendar-alt"></i>
                     Clases
                 </a>
-                <a href="{% url 'PilatesGravity:admin_reservas_lista' %}" class="nav-link {% if 'reservas' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'gravity:admin_reservas_lista' %}" class="nav-link {% if 'reservas' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-bookmark"></i>
                     Reservas
                 </a>
-                <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" class="nav-link {% if 'usuarios' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'gravity:admin_usuarios_lista' %}" class="nav-link {% if 'usuarios' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-users"></i>
                     Usuarios
                 </a>
@@ -417,11 +417,11 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">Clientes</div>
-                <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="nav-link {% if 'agregar_cliente' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="nav-link {% if 'agregar_cliente' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-user-plus"></i>
                     Agregar Cliente
                 </a>
-                <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" class="nav-link {% if 'clientes_no_registrados' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'gravity:admin_clientes_no_registrados_lista' %}" class="nav-link {% if 'clientes_no_registrados' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-address-book"></i>
                     Clientes No Registrados
                 </a>
@@ -429,7 +429,7 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">Reportes</div>
-                <a href="{% url 'PilatesGravity:admin_reportes' %}" class="nav-link {% if 'reportes' in request.resolver_match.url_name %}active{% endif %}">
+                <a href="{% url 'gravity:admin_reportes' %}" class="nav-link {% if 'reportes' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-chart-bar"></i>
                     Estadísticas
                 </a>
@@ -437,7 +437,7 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">Sistema</div>
-                <a href="{% url 'PilatesGravity:home' %}" class="nav-link">
+                <a href="{% url 'gravity:home' %}" class="nav-link">
                     <i class="fas fa-home"></i>
                     Ir al Sitio Web
                 </a>
@@ -458,7 +458,7 @@
                     </button>
                     <nav aria-label="breadcrumb" class="ms-3">
                         <ol class="breadcrumb breadcrumb-custom">
-                            <li class="breadcrumb-item"><a href="{% url 'PilatesGravity:admin_dashboard' %}">Admin</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'gravity:admin_dashboard' %}">Admin</a></li>
                             {% block breadcrumb %}{% endblock %}
                         </ol>
                     </nav>

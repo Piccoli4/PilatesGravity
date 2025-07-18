@@ -1,9 +1,9 @@
-{% extends 'PilatesGravity/admin/base_admin.html' %}
+{% extends 'gravity/admin/base_admin.html' %}
 
 {% block title %}Cancelar Reserva - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{% url 'PilatesGravity:admin_reservas_lista' %}">Reservas</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'gravity:admin_reservas_lista' %}">Reservas</a></li>
     <li class="breadcrumb-item active">Cancelar</li>
 {% endblock %}
 
@@ -24,7 +24,7 @@
                         </p>
                     </div>
                     <div class="col-md-4 text-end">
-                        <a href="{% url 'PilatesGravity:admin_reservas_lista' %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'gravity:admin_reservas_lista' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Volver a Reservas
                         </a>
                     </div>
@@ -265,7 +265,7 @@
                     
                     <!-- Action Buttons -->
                     <div class="d-flex gap-3 justify-content-end">
-                        <a href="{% url 'PilatesGravity:admin_reservas_lista' %}" 
+                        <a href="{% url 'gravity:admin_reservas_lista' %}" 
                            class="btn btn-outline-secondary">
                             <i class="fas fa-times me-2"></i>Cancelar Acción
                         </a>
@@ -324,7 +324,7 @@
                 {% endif %}
                 
                 <div class="mt-3">
-                    <a href="{% url 'PilatesGravity:admin_usuario_detalle' reserva.usuario.id %}" 
+                    <a href="{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}" 
                        class="btn btn-outline-primary btn-sm w-100">
                         <i class="fas fa-user me-2"></i>Ver Perfil Completo
                     </a>
@@ -345,17 +345,17 @@
                 </p>
                 
                 <div class="d-grid gap-2">
-                    <a href="{% url 'PilatesGravity:admin_clase_detalle' reserva.clase.id %}" 
+                    <a href="{% url 'gravity:admin_clase_detalle' reserva.clase.id %}" 
                        class="btn btn-outline-info btn-sm">
                         <i class="fas fa-calendar-alt me-2"></i>Ver Clase Completa
                     </a>
                     
-                    <a href="{% url 'PilatesGravity:admin_reservas_lista' %}?usuario={{ reserva.usuario.username }}" 
+                    <a href="{% url 'gravity:admin_reservas_lista' %}?usuario={{ reserva.usuario.username }}" 
                        class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-bookmark me-2"></i>Otras Reservas del Usuario
                     </a>
                     
-                    <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}?clase_id={{ reserva.clase.id }}" 
+                    <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}?clase_id={{ reserva.clase.id }}" 
                        class="btn btn-outline-success btn-sm">
                         <i class="fas fa-user-plus me-2"></i>Agregar Otro Cliente
                     </a>

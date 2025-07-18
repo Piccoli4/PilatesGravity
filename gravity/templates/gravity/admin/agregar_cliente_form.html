@@ -1,9 +1,9 @@
-{% extends 'PilatesGravity/admin/base_admin.html' %}
+{% extends 'gravity/admin/base_admin.html' %}
 
 {% block title %}Agregar Cliente No Registrado - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}">Clientes No Registrados</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'gravity:admin_clientes_no_registrados_lista' %}">Clientes No Registrados</a></li>
     <li class="breadcrumb-item active">Agregar Cliente</li>
 {% endblock %}
 
@@ -25,10 +25,10 @@
                     </div>
                     <div class="col-md-4 text-end">
                         <div class="btn-group" role="group">
-                            <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'gravity:admin_clientes_no_registrados_lista' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-list me-2"></i>Ver Lista
                             </a>
-                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-info">
+                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-outline-info">
                                 <i class="fas fa-calendar-alt me-2"></i>Ver Clases
                             </a>
                         </div>
@@ -283,7 +283,7 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="d-flex gap-3 justify-content-end">
-                                <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" 
+                                <a href="{% url 'gravity:admin_clientes_no_registrados_lista' %}" 
                                    class="btn btn-outline-secondary">
                                     <i class="fas fa-times me-2"></i>Cancelar
                                 </a>
@@ -370,7 +370,7 @@
                     <hr>
                     
                     <div class="text-center">
-                        <a href="{% url 'PilatesGravity:admin_clase_crear' %}" 
+                        <a href="{% url 'gravity:admin_clase_crear' %}" 
                            class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-plus me-1"></i>Crear Nueva Clase
                         </a>
@@ -379,7 +379,7 @@
                     <div class="text-center py-3">
                         <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
                         <p class="text-muted mb-3">No hay clases disponibles con cupos libres</p>
-                        <a href="{% url 'PilatesGravity:admin_clase_crear' %}" 
+                        <a href="{% url 'gravity:admin_clase_crear' %}" 
                            class="btn btn-primary btn-sm">
                             <i class="fas fa-plus me-1"></i>Crear Clase
                         </a>
@@ -409,7 +409,7 @@
                 <hr>
                 
                 <div class="text-center">
-                    <a href="{% url 'PilatesGravity:admin_clientes_no_registrados_lista' %}" 
+                    <a href="{% url 'gravity:admin_clientes_no_registrados_lista' %}" 
                        class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-list me-1"></i>Ver Todos
                     </a>

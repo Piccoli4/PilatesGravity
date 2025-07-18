@@ -1,9 +1,9 @@
-{% extends 'PilatesGravity/admin/base_admin.html' %}
+{% extends 'gravity/admin/base_admin.html' %}
 
 {% block title %}{% if clase %}Editar{% else %}Crear{% endif %} Clase - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{% url 'PilatesGravity:admin_clases_lista' %}">Clases</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'gravity:admin_clases_lista' %}">Clases</a></li>
     <li class="breadcrumb-item active">{% if clase %}Editar{% else %}Crear{% endif %}</li>
 {% endblock %}
 
@@ -28,7 +28,7 @@
                             </p>
                         </div>
                         <div class="col-md-6 text-end">
-                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Volver a Lista
                             </a>
                         </div>
@@ -204,7 +204,7 @@
                         <div class="row">
                             <div class="col-12">
                                 <div class="d-flex gap-3 justify-content-end">
-                                    <a href="{% url 'PilatesGravity:admin_clases_lista' %}" 
+                                    <a href="{% url 'gravity:admin_clases_lista' %}" 
                                     class="btn btn-outline-secondary">
                                         <i class="fas fa-times me-2"></i>Cancelar
                                     </a>

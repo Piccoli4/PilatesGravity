@@ -482,7 +482,7 @@ class CustomSetPasswordForm(SetPasswordForm):
         
         # Personalizar mensajes de ayuda
         self.fields['new_password1'].help_text = (
-            'Tu contraseña debe tener al menos 8 caracteres y no puede ser '
+            'Tu contraseña debe tener al menos 6 caracteres y te recomendamos que no sea '
             'demasiado común o similar a tu información personal.'
         )
 

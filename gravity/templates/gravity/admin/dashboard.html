@@ -1,4 +1,4 @@
-{% extends 'PilatesGravity/admin/base_admin.html' %}
+{% extends 'gravity/admin/base_admin.html' %}
 
 {% block title %}Panel de Administración - Pilates Gravity{% endblock %}
 
@@ -267,25 +267,25 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-pilates-primary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                            <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-pilates-primary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
                                 <i class="fas fa-plus fa-2x mb-2"></i>
                                 <span>Nueva Clase</span>
                             </a>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-pilates-secondary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-pilates-secondary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
                                 <i class="fas fa-calendar-alt fa-2x mb-2"></i>
                                 <span>Ver Clases</span>
                             </a>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'PilatesGravity:admin_usuarios_lista' %}" class="btn btn-pilates-accent btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                            <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn btn-pilates-accent btn-lg w-100 h-100 d-flex flex-column justify-content-center">
                                 <i class="fas fa-users fa-2x mb-2"></i>
                                 <span>Ver Usuarios</span>
                             </a>
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-light btn-lg w-100 h-100 d-flex flex-column justify-content-center">
+                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-light btn-lg w-100 h-100 d-flex flex-column justify-content-center">
                                 <i class="fas fa-user-plus fa-2x mb-2"></i>
                                 <span>Agregar Cliente</span>
                             </a>
@@ -319,7 +319,7 @@
                             </div>
                         {% endfor %}
                         <div class="text-center mt-3">
-                            <a href="{% url 'PilatesGravity:admin_clases_lista' %}" class="btn btn-outline-pilates btn-sm">
+                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-outline-pilates btn-sm">
                                 Ver Todas las Clases
                             </a>
                         </div>
@@ -327,7 +327,7 @@
                         <div class="text-center py-4">
                             <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
                             <p class="text-muted">No hay clases creadas</p>
-                            <a href="{% url 'PilatesGravity:admin_clase_crear' %}" class="btn btn-pilates-primary">
+                            <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-pilates-primary">
                                 Crear Primera Clase
                             </a>
                         </div>
@@ -357,7 +357,7 @@
                             </div>
                         {% endfor %}
                         <div class="text-center mt-3">
-                            <a href="{% url 'PilatesGravity:admin_reservas_lista' %}" class="btn btn-outline-secondary-pilates btn-sm">
+                            <a href="{% url 'gravity:admin_reservas_lista' %}" class="btn btn-outline-secondary-pilates btn-sm">
                                 Ver Todas las Reservas
                             </a>
                         </div>
@@ -365,7 +365,7 @@
                         <div class="text-center py-4">
                             <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
                             <p class="text-muted">No hay reservas aún</p>
-                            <a href="{% url 'PilatesGravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-secondary">
+                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-secondary">
                                 Agregar Primer Cliente
                             </a>
                         </div>
@@ -407,11 +407,11 @@
                 <div class="card-body text-center">
                     <h5 class="mb-3">Enlaces Rápidos</h5>
                     <div class="d-flex flex-wrap justify-content-center gap-2">
-                        <a href="{% url 'PilatesGravity:admin_reportes' %}" class="btn btn-outline-pilates">
+                        <a href="{% url 'gravity:admin_reportes' %}" class="btn btn-outline-pilates">
                             <i class="fas fa-chart-bar me-1"></i>
                             Reportes
                         </a>
-                        <a href="{% url 'PilatesGravity:home' %}" class="btn btn-outline-pilates">
+                        <a href="{% url 'gravity:home' %}" class="btn btn-outline-pilates">
                             <i class="fas fa-home me-1"></i>
                             Ver Sitio Web
                         </a>

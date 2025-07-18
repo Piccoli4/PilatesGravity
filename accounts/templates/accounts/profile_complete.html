@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Completar Perfil - Pilates Gravity{% endblock %}
 
@@ -7,269 +8,323 @@
     <!-- Mostrar mensajes -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <div class="mb-6 p-4 rounded-2xl border-l-4 shadow-lg custom-fade-in-message
+                {% if message.tags == 'success' %}bg-gradient-to-r from-green-50 to-green-100 border-green-400 text-green-800
+                {% elif message.tags == 'error' %}bg-gradient-to-r from-red-50 to-red-100 border-red-400 text-red-800
+                {% elif message.tags == 'warning' %}bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-400 text-yellow-800
+                {% else %}bg-gradient-to-r from-blue-50 to-blue-100 border-blue-400 text-blue-800{% endif %}"
+                 role="alert">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="float-right text-xl leading-none font-semibold hover:opacity-70 transition-opacity" onclick="this.parentElement.remove()">×</button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <div class="wizard-container">
+    <div class="max-w-4xl mx-auto p-4 bg-fondo min-h-screen">
         
         {% if is_new_profile %}
-        <div class="welcome-message">
-            <div class="avatar-preview">
+        <div class="text-center p-10 bg-gradient-to-br from-blanco to-gray-50 rounded-3xl mb-8 border-2 border-principal/10 shadow-xl custom-fade-in">
+            <div class="w-24 h-24 rounded-full mx-auto mb-6 bg-gradient-to-br from-secundario to-principal flex items-center justify-center text-white text-3xl font-bold shadow-xl border-4 border-white hover:scale-105 transition-transform duration-300">
                 {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
             </div>
-            <h3>¡Bienvenido {{ user.first_name }}!</h3>
-            <p>Completa tu perfil para personalizar tu experiencia en Pilates Gravity</p>
+            <h3 class="text-principal text-3xl font-semibold mb-4">¡Bienvenido {{ user.first_name }}!</h3>
+            <p class="text-gray-600 text-lg leading-relaxed">Completa tu perfil para personalizar tu experiencia en Pilates Gravity</p>
         </div>
         {% endif %}
 
-        <div class="wizard-header">
-            <h2>{% if is_new_profile %}Completar Perfil{% else %}Actualizar Perfil{% endif %}</h2>
-            <p>Ayúdanos a conocerte mejor para brindarte la mejor experiencia</p>
+        <div class="text-center mb-6">
+            <h2 class="text-principal text-4xl mt-3 mb-4 font-semibold opacity-0 custom-slide-up-delayed-1">
+                {% if is_new_profile %}Completar Perfil{% else %}Actualizar Perfil{% endif %}
+            </h2>
+            <p class="text-gray-600 text-lg opacity-0 custom-slide-up-delayed-2">
+                Ayúdanos a conocerte mejor para brindarte la mejor experiencia
+            </p>
         </div>
 
-        <!-- Barra de progreso corregida -->
-        <div class="wizard-progress">
-            <div class="step active" data-step="1">1</div>
-            <div class="step-line"></div>
-            <div class="step" data-step="2">2</div>
-            <div class="step-line"></div>
-            <div class="step" data-step="3">3</div>
-            <div class="step-line"></div>
-            <div class="step" data-step="4">4</div>
-            <div class="step-line"></div>
-            <div class="step" data-step="5">5</div>
+        <!-- Barra de progreso del wizard -->
+        <div class="flex justify-center items-center mb-12 relative opacity-0 custom-fade-in-delayed">
+            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent active" data-step="1">1</div>
+            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
+            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="2">2</div>
+            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
+            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="3">3</div>
+            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
+            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="4">4</div>
+            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
+            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="5">5</div>
         </div>
 
         <form method="post" enctype="multipart/form-data" id="profileForm">
             {% csrf_token %}
             
-            <div class="wizard-content">
+            <div class="bg-blanco rounded-3xl p-10 shadow-2xl border border-principal/10 mb-8 relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-secundario to-principal"></div>
                 
                 <!-- Paso 1: Información básica -->
-                <div class="step-content active" data-step="1">
-                    <h3 class="step-title">Información Básica</h3>
-                    <p class="step-description">Empecemos con tu información de contacto y datos básicos.</p>
+                <div class="step-content active opacity-0 translate-x-8 transition-all duration-500" data-step="1">
+                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2">
+                        Información Básica
+                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
+                    </h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
+                        Empecemos con tu información de contacto y datos básicos.
+                    </p>
                     
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
-                                {{ form.telefono }}
-                                {% if form.telefono.errors %}
-                                    <div class="error-message">
-                                        {% for error in form.telefono.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="mb-8 relative">
+                            <label for="{{ form.telefono.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
+                                📱 Teléfono
+                            </label>
+                            <input type="tel" name="{{ form.telefono.name }}" id="{{ form.telefono.id_for_label }}" 
+                                   class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
+                                   value="{{ form.telefono.value|default:'' }}"
+                                   placeholder="Tu número de teléfono">
+                            {% if form.telefono.errors %}
+                                <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
+                                    ⚠️ {% for error in form.telefono.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">Fecha de Nacimiento</label>
-                                {{ form.fecha_nacimiento }}
-                                {% if form.fecha_nacimiento.errors %}
-                                    <div class="error-message">
-                                        {% for error in form.fecha_nacimiento.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
+                        <div class="mb-8 relative">
+                            <label for="{{ form.fecha_nacimiento.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
+                                🎂 Fecha de Nacimiento
+                            </label>
+                            <input type="date" name="{{ form.fecha_nacimiento.name }}" id="{{ form.fecha_nacimiento.id_for_label }}" 
+                                   class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
+                                   value="{{ form.fecha_nacimiento.value|default:'' }}">
+                            {% if form.fecha_nacimiento.errors %}
+                                <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
+                                    ⚠️ {% for error in form.fecha_nacimiento.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="{{ form.nivel_experiencia.id_for_label }}" class="form-label">Nivel de Experiencia en Pilates</label>
-                        {{ form.nivel_experiencia }}
+                    <div class="mb-8 relative">
+                        <label for="{{ form.nivel_experiencia.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
+                            🧘‍♀️ Nivel de Experiencia en Pilates
+                        </label>
+                        <select name="{{ form.nivel_experiencia.name }}" id="{{ form.nivel_experiencia.id_for_label }}" 
+                                class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5">
+                            {% for value, label in form.nivel_experiencia.field.choices %}
+                                <option value="{{ value }}" {% if form.nivel_experiencia.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
                         {% if form.nivel_experiencia.errors %}
-                            <div class="error-message">
-                                {% for error in form.nivel_experiencia.errors %}{{ error }}{% endfor %}
+                            <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
+                                ⚠️ {% for error in form.nivel_experiencia.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Paso 2: Información médica -->
-                <div class="step-content" data-step="2">
-                    <h3 class="step-title">Información de Salud</h3>
-                    <p class="step-description">Esta información nos ayuda a adaptar las clases a tus necesidades específicas.</p>
+                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="2">
+                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2">
+                        Información de Salud
+                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
+                    </h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
+                        Esta información nos ayuda a adaptar las clases a tus necesidades específicas.
+                    </p>
                     
-                    <div class="form-check">
-                        {{ form.tiene_lesiones }}
-                        <label for="{{ form.tiene_lesiones.id_for_label }}" class="form-check-label">
+                    <div class="p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl mb-6 border-2 border-transparent transition-all duration-300 relative cursor-pointer hover:border-secundario hover:-translate-y-1 hover:shadow-lg">
+                        <input type="checkbox" name="{{ form.tiene_lesiones.name }}" id="{{ form.tiene_lesiones.id_for_label }}" 
+                               class="w-6 h-6 mr-4 border-2 border-principal rounded-lg transition-all duration-300 cursor-pointer"
+                               {% if form.tiene_lesiones.value %}checked{% endif %}>
+                        <label for="{{ form.tiene_lesiones.id_for_label }}" class="text-principal font-medium text-lg cursor-pointer leading-relaxed">
                             {{ form.tiene_lesiones.label }}
                         </label>
                         {% if form.tiene_lesiones.errors %}
-                            <div class="error-message">
-                                {% for error in form.tiene_lesiones.errors %}{{ error }}{% endfor %}
+                            <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
+                                ⚠️ {% for error in form.tiene_lesiones.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>
 
-                    <div class="lesiones-container" id="lesionesContainer">
-                        <label for="{{ form.descripcion_lesiones.id_for_label }}" class="form-label">Descripción de Lesiones</label>
-                        {{ form.descripcion_lesiones }}
-                        <small class="form-text">
+                    <div class="lesiones-container hidden mt-6 p-8 bg-gradient-to-br from-secundario to-amber-700 border-2 border-amber-800 rounded-2xl custom-slide-down relative overflow-hidden" id="lesionesContainer">
+                        <div class="absolute top-4 right-4 text-2xl opacity-70">⚠️</div>
+                        <label for="{{ form.descripcion_lesiones.id_for_label }}" class="text-amber-900 font-semibold mb-3 block">
+                            Descripción de Lesiones
+                        </label>
+                        <textarea name="{{ form.descripcion_lesiones.name }}" id="{{ form.descripcion_lesiones.id_for_label }}" 
+                                  rows="4"
+                                  class="bg-white/90 border-amber-800 border-2 rounded-xl p-4 text-base text-gray-800 transition-all duration-300 w-full hover:bg-white focus:border-amber-900 focus:outline-none focus:ring-4 focus:ring-amber-900/25 focus:bg-white"
+                                  placeholder="Describe brevemente cualquier lesión o condición médica que debamos conocer...">{{ form.descripcion_lesiones.value|default:'' }}</textarea>
+                        <small class="text-amber-800 text-sm italic leading-relaxed block mt-2">
                             Por favor describe brevemente cualquier lesión o condición médica que debamos conocer.
                         </small>
                         {% if form.descripcion_lesiones.errors %}
-                            <div class="error-message">
-                                {% for error in form.descripcion_lesiones.errors %}{{ error }}{% endfor %}
+                            <div class="text-amber-900 text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
+                                ⚠️ {% for error in form.descripcion_lesiones.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- Paso 3: Preferencias -->
-                <div class="step-content" data-step="3">
-                    <h3 class="step-title">Preferencias de Comunicación</h3>
-                    <p class="step-description">Configura cómo te gustaría que nos comuniquemos contigo.</p>
+                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="3">
+                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2">
+                        Preferencias de Comunicación
+                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
+                    </h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
+                        Configura cómo te gustaría que nos comuniquemos contigo.
+                    </p>
                     
-                    <div class="form-check">
-                        {{ form.acepta_recordatorios }}
-                        <label for="{{ form.acepta_recordatorios.id_for_label }}" class="form-check-label">
+                    <div class="p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl mb-6 border-2 border-transparent transition-all duration-300 relative cursor-pointer hover:border-secundario hover:-translate-y-1 hover:shadow-lg">
+                        <input type="checkbox" name="{{ form.acepta_recordatorios.name }}" id="{{ form.acepta_recordatorios.id_for_label }}" 
+                               class="w-6 h-6 mr-4 border-2 border-principal rounded-lg transition-all duration-300 cursor-pointer"
+                               {% if form.acepta_recordatorios.value %}checked{% endif %}>
+                        <label for="{{ form.acepta_recordatorios.id_for_label }}" class="text-principal font-medium text-lg cursor-pointer leading-relaxed">
                             {{ form.acepta_recordatorios.label }}
                         </label>
-                        <small class="form-text text-muted d-block mt-2">
+                        <small class="text-gray-500 text-sm block mt-2 ml-10 italic">
                             Te enviaremos recordatorios de tus clases reservadas.
                         </small>
                     </div>
 
-                    <div class="form-check">
-                        {{ form.acepta_marketing }}
-                        <label for="{{ form.acepta_marketing.id_for_label }}" class="form-check-label">
+                    <div class="p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl mb-6 border-2 border-transparent transition-all duration-300 relative cursor-pointer hover:border-secundario hover:-translate-y-1 hover:shadow-lg">
+                        <input type="checkbox" name="{{ form.acepta_marketing.name }}" id="{{ form.acepta_marketing.id_for_label }}" 
+                               class="w-6 h-6 mr-4 border-2 border-principal rounded-lg transition-all duration-300 cursor-pointer"
+                               {% if form.acepta_marketing.value %}checked{% endif %}>
+                        <label for="{{ form.acepta_marketing.id_for_label }}" class="text-principal font-medium text-lg cursor-pointer leading-relaxed">
                             {{ form.acepta_marketing.label }}
                         </label>
-                        <small class="form-text text-muted d-block mt-2">
+                        <small class="text-gray-500 text-sm block mt-2 ml-10 italic">
                             Recibe información sobre promociones, eventos especiales y novedades del estudio.
                         </small>
                     </div>
                 </div>
 
                 <!-- Paso 4: Historial en el Estudio -->
-                <div class="step-content" data-step="4">
-                    <h3 class="section-title">
-                        <span class="section-icon">📅</span>
-                        Tu Historial en Pilates Gravity
+                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="4">
+                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2 flex items-center gap-3">
+                        📅 Tu Historial en Pilates Gravity
+                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
                     </h3>
-                    <p class="step-description">Completa tu información histórica y revisa tus estadísticas.</p>
+                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
+                        Completa tu información histórica y revisa tus estadísticas.
+                    </p>
                     
-                    <div class="form-group">
-                        <label for="{{ form.fecha_primera_clase.id_for_label }}" class="form-label">Fecha de Primera Clase (opcional)</label>
-                        {{ form.fecha_primera_clase }}
-                        <small class="form-text">
+                    <div class="mb-8 relative">
+                        <label for="{{ form.fecha_primera_clase.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
+                            📅 Fecha de Primera Clase (opcional)
+                        </label>
+                        <input type="date" name="{{ form.fecha_primera_clase.name }}" id="{{ form.fecha_primera_clase.id_for_label }}" 
+                               class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
+                               value="{{ form.fecha_primera_clase.value|default:'' }}">
+                        <small class="text-gray-600 text-sm italic leading-relaxed block mt-2">
                             Si ya has tomado clases con nosotros, indica cuándo fue tu primera vez.
                         </small>
                         {% if form.fecha_primera_clase.errors %}
-                            <div class="error-message">
-                                {% for error in form.fecha_primera_clase.errors %}{{ error }}{% endfor %}
+                            <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
+                                ⚠️ {% for error in form.fecha_primera_clase.errors %}{{ error }}{% endfor %}
                             </div>
                         {% endif %}
                     </div>
 
-                    <!-- Estadísticas del usuario mejoradas -->
+                    <!-- Estadísticas del usuario -->
                     {% if user.profile %}
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-number">{{ user.profile.get_total_reservas }}</span>
-                            <span class="stat-label">Total Reservas</span>
+                    <div class="flex flex-wrap justify-center gap-6 mt-8">
+                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
+                            <span class="text-3xl font-bold text-principal block mb-2">{{ user.profile.get_total_reservas }}</span>
+                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Total Reservas</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-number">{{ user.profile.get_reservas_activas.count }}</span>
-                            <span class="stat-label">Reservas Activas</span>
+                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
+                            <span class="text-3xl font-bold text-principal block mb-2">{{ user.profile.get_reservas_activas.count }}</span>
+                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Reservas Activas</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-number">
+                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
+                            <span class="text-3xl font-bold text-principal block mb-2">
                                 {% if user.profile.get_tiempo_en_estudio %}
                                     {{ user.profile.get_tiempo_en_estudio }}
                                 {% else %}
                                     Nuevo
                                 {% endif %}
                             </span>
-                            <span class="stat-label">Tiempo en el Estudio</span>
+                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Tiempo en el Estudio</span>
                         </div>
                         {% if user.profile.get_edad %}
-                        <div class="stat-item">
-                            <span class="stat-number">{{ user.profile.get_edad }}</span>
-                            <span class="stat-label">Años</span>
+                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
+                            <span class="text-3xl font-bold text-principal block mb-2">{{ user.profile.get_edad }}</span>
+                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Años</span>
                         </div>
-                    {% endif %}
+                        {% endif %}
                     </div>
                     {% else %}
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-number">0</span>
-                            <span class="stat-label">Total Reservas</span>
+                    <div class="flex flex-wrap justify-center gap-6 mt-8">
+                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
+                            <span class="text-3xl font-bold text-principal block mb-2">0</span>
+                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Total Reservas</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-number">0</span>
-                            <span class="stat-label">Reservas Activas</span>
+                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
+                            <span class="text-3xl font-bold text-principal block mb-2">0</span>
+                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Reservas Activas</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-number">Nuevo</span>
-                            <span class="stat-label">En el Estudio</span>
+                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
+                            <span class="text-3xl font-bold text-principal block mb-2">Nuevo</span>
+                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">En el Estudio</span>
                         </div>
                     </div>
                     {% endif %}
                 </div>
 
                 <!-- Paso 5: Foto de Perfil -->
-                <div class="step-content" data-step="5">
-                    <h3 class="section-title">
-                        <span class="section-icon">📸</span>
-                        Foto de Perfil
+                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="5">
+                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2 flex items-center gap-3">
+                        📸 Foto de Perfil
+                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
                     </h3>
-                    <p class="step-description">Opcional: Agrega una foto para personalizar tu perfil y que nuestro equipo te reconozca fácilmente.</p>
+                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
+                        Opcional: Agrega una foto para personalizar tu perfil y que nuestro equipo te reconozca fácilmente.
+                    </p>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <div class="file-input-container">
-                                <div class="file-input-custom" onclick="document.getElementById('{{ form.avatar.id_for_label }}').click()">
-                                    {{ form.avatar }}
-                                    <div>
-                                        <div style="font-size: 3rem; margin-bottom: 1rem; color: #5D768B;">📷</div>
-                                        <div style="font-weight: 600; color: #5D768B; font-size: 1.2rem; margin-bottom: 0.5rem;">
-                                            Hacer clic para seleccionar imagen
-                                        </div>
-                                        <div style="font-size: 0.95rem; color: #666; line-height: 1.4;">
-                                            JPG, PNG o GIF<br>
-                                            <strong>Máximo 5MB</strong>
-                                        </div>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="relative overflow-hidden w-full">
+                            <div class="file-input-custom bg-gradient-to-br from-gris-claro to-gray-200 border-4 border-dashed border-secundario rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 relative overflow-hidden hover:border-principal hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 hover:scale-95 hover:shadow-xl" onclick="document.getElementById('{{ form.avatar.id_for_label }}').click()">
+                                <input type="file" name="{{ form.avatar.name }}" id="{{ form.avatar.id_for_label }}" 
+                                       class="absolute -left-96 opacity-0" accept="image/*">
+                                <div>
+                                    <div class="text-5xl mb-4 text-principal">📷</div>
+                                    <div class="font-semibold text-principal text-xl mb-2">
+                                        Hacer clic para seleccionar imagen
+                                    </div>
+                                    <div class="text-base text-gray-600 leading-relaxed">
+                                        JPG, PNG o GIF<br>
+                                        <strong>Máximo 5MB</strong>
                                     </div>
                                 </div>
                             </div>
                             {% if form.avatar.errors %}
-                                <div class="error-message">
-                                    {% for error in form.avatar.errors %}{{ error }}{% endfor %}
+                                <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
+                                    ⚠️ {% for error in form.avatar.errors %}{{ error }}{% endfor %}
                                 </div>
                             {% endif %}
                         </div>
                         
-                        <div class="form-group">
-                            <div class="file-preview">
-                                <div class="avatar-preview" id="avatarPreview">
-                                    {% if user.profile.avatar %}
-                                        <img src="{{ user.profile.avatar.url }}" alt="Avatar actual">
-                                    {% else %}
-                                        {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
-                                    {% endif %}
-                                </div>
-                                <div style="margin-top: 1rem; font-size: 0.95rem; color: #666; font-weight: 500;">
-                                    {% if user.profile.avatar %}
-                                        Imagen actual
-                                    {% else %}
-                                        Vista previa
-                                    {% endif %}
-                                </div>
+                        <div class="text-center mt-6">
+                            <div class="w-24 h-24 rounded-full mx-auto mb-4 bg-gradient-to-br from-secundario to-principal flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-4 border-white shadow-xl transition-all duration-300 hover:scale-105" id="avatarPreview">
+                                {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" alt="Avatar actual" class="w-full h-full object-cover rounded-full">
+                                {% else %}
+                                    {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+                                {% endif %}
+                            </div>
+                            <div class="mt-4 text-base text-gray-600 font-medium">
+                                {% if user.profile.avatar %}
+                                    Imagen actual
+                                {% else %}
+                                    Vista previa
+                                {% endif %}
                             </div>
                         </div>
                     </div>
 
                     <!-- Mensaje de finalización -->
-                    <div class="completion-message">
-                        <h5>¡Ya casi terminamos!</h5>
-                        <p>
+                    <div class="mt-8 p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border-2 border-green-200">
+                        <h5 class="text-green-800 text-xl font-semibold mb-2">¡Ya casi terminamos!</h5>
+                        <p class="text-green-700 leading-relaxed">
                             Una vez completado tu perfil, podrás empezar a reservar tus clases de Pilates y 
                             disfrutar de una experiencia personalizada en nuestro estudio.
                         </p>
@@ -279,14 +334,14 @@
             </div>
 
             <!-- Navegación -->
-            <div class="wizard-navigation">
-                <button type="button" class="btn-wizard btn-prev" id="prevBtn" style="display: none;">
+            <div class="flex justify-between items-center mt-8 gap-4">
+                <button type="button" class="btn-wizard-prev px-10 py-4 border-none rounded-full font-semibold text-lg cursor-pointer transition-all duration-300 text-white inline-flex items-center gap-3 relative overflow-hidden hidden" id="prevBtn">
                     ← Anterior
                 </button>
-                <button type="button" class="btn-wizard btn-next" id="nextBtn">
+                <button type="button" class="btn-wizard-next px-10 py-4 border-none rounded-full font-semibold text-lg cursor-pointer transition-all duration-300 text-white inline-flex items-center gap-3 relative overflow-hidden ml-auto" id="nextBtn">
                     Siguiente →
                 </button>
-                <button type="submit" class="btn-wizard btn-submit" id="submitBtn" style="display: none;">
+                <button type="submit" class="btn-wizard-submit px-12 py-5 border-none rounded-full font-semibold text-xl cursor-pointer transition-all duration-300 text-white inline-flex items-center gap-3 relative overflow-hidden hidden" id="submitBtn">
                     ✓ Completar Perfil
                 </button>
             </div>
@@ -310,16 +365,19 @@
             if (lesionesCheckbox) {
                 lesionesCheckbox.addEventListener('change', function() {
                     if (this.checked) {
-                        lesionesContainer.style.display = 'block';
+                        lesionesContainer.classList.remove('hidden');
+                        lesionesContainer.classList.add('block');
                     } else {
-                        lesionesContainer.style.display = 'none';
+                        lesionesContainer.classList.add('hidden');
+                        lesionesContainer.classList.remove('block');
                         document.getElementById('{{ form.descripcion_lesiones.id_for_label }}').value = '';
                     }
                 });
                 
                 // Verificar estado inicial
                 if (lesionesCheckbox.checked) {
-                    lesionesContainer.style.display = 'block';
+                    lesionesContainer.classList.remove('hidden');
+                    lesionesContainer.classList.add('block');
                 }
             }
 
@@ -345,7 +403,7 @@
                         // Mostrar preview
                         const reader = new FileReader();
                         reader.onload = function(e) {
-                            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Preview del avatar">`;
+                            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Preview del avatar" class="w-full h-full object-cover rounded-full">`;
                         };
                         reader.readAsDataURL(file);
                     }
@@ -354,7 +412,7 @@
 
             function updateWizard() {
                 // Actualizar pasos visuales
-                document.querySelectorAll('.step').forEach((step, index) => {
+                document.querySelectorAll('.wizard-step').forEach((step, index) => {
                     const stepNumber = index + 1;
                     step.classList.remove('active', 'completed');
                     
@@ -366,7 +424,7 @@
                 });
 
                 // Actualizar líneas de progreso
-                document.querySelectorAll('.step-line').forEach((line, index) => {
+                document.querySelectorAll('.wizard-step-line').forEach((line, index) => {
                     if (index + 1 < currentStep) {
                         line.classList.add('completed');
                     } else {
@@ -378,9 +436,17 @@
                 document.querySelectorAll('.step-content').forEach((content, index) => {
                     const stepNumber = index + 1;
                     if (stepNumber === currentStep) {
+                        content.classList.remove('hidden');
                         content.classList.add('active');
+                        setTimeout(() => {
+                            content.style.opacity = '1';
+                            content.style.transform = 'translateX(0)';
+                        }, 150);
                     } else {
+                        content.classList.add('hidden');
                         content.classList.remove('active');
+                        content.style.opacity = '0';
+                        content.style.transform = 'translateX(30px)';
                     }
                 });
 
@@ -389,19 +455,23 @@
                 const isLastStep = currentStep === totalSteps;
                 
                 if (prevBtnVisible) {
-                    prevBtn.style.display = 'inline-flex';
-                    document.querySelector('.wizard-navigation').style.justifyContent = 'space-between';
+                    prevBtn.classList.remove('hidden');
+                    prevBtn.classList.add('inline-flex');
                 } else {
-                    prevBtn.style.display = 'none';
-                    document.querySelector('.wizard-navigation').style.justifyContent = 'flex-end';
+                    prevBtn.classList.add('hidden');
+                    prevBtn.classList.remove('inline-flex');
                 }
                 
                 if (isLastStep) {
-                    nextBtn.style.display = 'none';
-                    submitBtn.style.display = 'inline-flex';
+                    nextBtn.classList.add('hidden');
+                    nextBtn.classList.remove('inline-flex');
+                    submitBtn.classList.remove('hidden');
+                    submitBtn.classList.add('inline-flex');
                 } else {
-                    nextBtn.style.display = 'inline-flex';
-                    submitBtn.style.display = 'none';
+                    nextBtn.classList.remove('hidden');
+                    nextBtn.classList.add('inline-flex');
+                    submitBtn.classList.add('hidden');
+                    submitBtn.classList.remove('inline-flex');
                 }
             }
 
@@ -503,55 +573,26 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '⏳ Guardando perfil...';
                 
-                // Opcional: Agregar un timeout para re-habilitar el botón si falla
+                // Timeout para re-habilitar el botón si falla
                 setTimeout(() => {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '✓ Completar Perfil';
                 }, 10000);
             });
 
-            // Animaciones suaves entre pasos
-            function animateStepTransition() {
-                const activeContent = document.querySelector('.step-content.active');
-                if (activeContent) {
-                    activeContent.style.opacity = '0';
-                    activeContent.style.transform = 'translateX(30px)';
-                    
-                    setTimeout(() => {
-                        activeContent.style.opacity = '1';
-                        activeContent.style.transform = 'translateX(0)';
-                    }, 150);
-                }
-            }
-
-            // Mejorar la función updateWizard para incluir animaciones
-            const originalUpdateWizard = updateWizard;
-            updateWizard = function() {
-                originalUpdateWizard();
-                animateStepTransition();
-            };
-
-            // Inicializar wizard
-            updateWizard();
-
             // Auto-scroll suave al cambiar de paso
             function scrollToTop() {
-                const wizardContainer = document.querySelector('.wizard-container');
-                if (wizardContainer) {
-                    wizardContainer.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
-                    });
-                }
+                window.scrollTo({ 
+                    top: 0, 
+                    behavior: 'smooth' 
+                });
             }
 
             // Agregar scroll suave a los event listeners
-            const originalNext = nextBtn.onclick;
             nextBtn.addEventListener('click', function() {
                 setTimeout(scrollToTop, 200);
             });
 
-            const originalPrev = prevBtn.onclick;
             prevBtn.addEventListener('click', function() {
                 setTimeout(scrollToTop, 200);
             });
@@ -568,14 +609,14 @@
                 document.title = `${stepTitles[currentStep - 1]} - Completar Perfil - Pilates Gravity`;
             }
 
-            // Agregar actualización de título a updateWizard
-            const originalUpdateWizard2 = updateWizard;
+            // Mejorar la función updateWizard para incluir actualización de título
+            const originalUpdateWizard = updateWizard;
             updateWizard = function() {
-                originalUpdateWizard2();
+                originalUpdateWizard();
                 updatePageTitle();
             };
 
-            // Inicialización final
+            // Inicialización
             updateWizard();
         });
     </script>
