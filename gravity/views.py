@@ -276,16 +276,38 @@ def clases_disponibles(request):
     clases = Clase.objects.filter(activa=True).order_by('tipo', 'dia', 'horario')
     
     clases_info = []
+    disponibles = 0
+    limitadas = 0
+    completas = 0
+    
     for clase in clases:
+        cupos_disponibles = clase.cupos_disponibles()
+        esta_completa = clase.esta_completa()
+        porcentaje_ocupacion = clase.get_porcentaje_ocupacion()
+        
         clases_info.append({
             'clase': clase,
-            'cupos_disponibles': clase.cupos_disponibles(),
-            'esta_completa': clase.esta_completa(),
-            'porcentaje_ocupacion': clase.get_porcentaje_ocupacion()
+            'cupos_disponibles': cupos_disponibles,
+            'esta_completa': esta_completa,
+            'porcentaje_ocupacion': porcentaje_ocupacion
         })
+        
+        # Contar para estadísticas
+        if esta_completa:
+            completas += 1
+        elif cupos_disponibles <= 2:
+            limitadas += 1
+        else:
+            disponibles += 1
     
     return render(request, 'gravity/clases_disponibles.html', {
-        'clases_info': clases_info
+        'clases_info': clases_info,
+        'estadisticas': {
+            'disponibles': disponibles,
+            'limitadas': limitadas,
+            'completas': completas,
+            'total': len(clases_info)
+        }
     })
 
 # Vista para el botón de "Conoce más" (pública)
@@ -583,7 +605,6 @@ def admin_clases_lista(request):
     
     return render(request, 'gravity/admin/clases_lista.html', context)
 
-
 @admin_required
 def admin_clase_crear(request):
     """
@@ -633,7 +654,6 @@ def admin_clase_crear(request):
     }
     
     return render(request, 'gravity/admin/clase_form.html', context)
-
 
 @admin_required
 def admin_clase_editar(request, clase_id):
@@ -689,7 +709,6 @@ def admin_clase_editar(request, clase_id):
     
     return render(request, 'gravity/admin/clase_form.html', context)
 
-
 @admin_required
 def admin_clase_eliminar(request, clase_id):
     """
@@ -723,7 +742,6 @@ def admin_clase_eliminar(request, clase_id):
     
     return render(request, 'gravity/admin/clase_eliminar.html', context)
 
-
 @admin_required
 def admin_clase_detalle(request, clase_id):
     """
@@ -745,7 +763,6 @@ def admin_clase_detalle(request, clase_id):
     }
     
     return render(request, 'gravity/admin/clase_detalle.html', context)
-
 
 # ==============================================================================
 # GESTIÓN DE RESERVAS
@@ -801,7 +818,6 @@ def admin_reservas_lista(request):
     
     return render(request, 'gravity/admin/reservas_lista.html', context)
 
-
 @admin_required
 def admin_reserva_cancelar(request, reserva_id):
     """
@@ -830,7 +846,6 @@ def admin_reserva_cancelar(request, reserva_id):
     }
     
     return render(request, 'gravity/admin/reserva_cancelar.html', context)
-
 
 # ==============================================================================
 # GESTIÓN DE USUARIOS

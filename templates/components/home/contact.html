@@ -52,42 +52,16 @@
                             <p class="my-[2px] text-black">@pilatesgravity</p>
                         </div>
                     </a>
-                    <a href="#" id="open-schedule-modal" class="no-underline hover:scale-105 transition-transform duration-300 ease-in-out">
+                    <a href="{% url 'gravity:clases_disponibles' %}" class="no-underline hover:scale-105 transition-transform duration-300 ease-in-out">
                         <div class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
                             <img src="{% static 'icons/clock.png' %}" alt="Icono de horarios" class="w-[50px] h-auto mb-[3px]">
                             <h4 class="my-[2px] text-black">Horarios</h4>
                             <p class="my-[2px] text-black">
-                                Lunes a Viernes<br>
-                                Sabados y Domingos Cerrados
+                                Ver Clases Disponibles
                             </p>
                         </div>
                     </a>
                 </div>
-            </div>
-        </div>
-
-        <!-- Modal de horarios-->
-        <div id="schedule-modal" class="modal hidden fixed z-[999] left-0 top-0 w-full h-full overflow-auto bg-black bg-opacity-60">
-            <div class="modal-content bg-[#F8EFE5] my-[10%] mx-auto p-[30px] rounded-[10px] max-w-[500px] relative text-left">
-                <span class="close-modal absolute right-5 top-[10px] text-[28px] cursor-pointer text-[#5D768B]">&times;</span>
-                <h3 class="text-center text-[#5D768B] font-black mb-4">Horarios de Clases</h3>
-                <p class="font-bold">Turnos por la mañana:</p>
-                <ul class="mb-4">
-                    <li>07:00 - 08:00</li>
-                    <li>08:00 - 09:00</li>
-                    <li>09:00 - 10:00</li>
-                    <li>10:00 - 11:00</li>
-                </ul>
-                <p class="font-bold">Turnos por la tarde:</p>
-                <ul>
-                    <li>13:30 - 14:30</li>
-                    <li>14:30 - 15:30</li>
-                    <li>15:30 - 16:30</li>
-                    <li>16:30 - 17:30</li>
-                    <li>17:30 - 18:30</li>
-                    <li>18:30 - 19:30</li>
-                    <li>19:30 - 20:30</li>
-                </ul>
             </div>
         </div>
 
@@ -96,26 +70,3 @@
         </div>
     </div>
 </section>
-
-<!-- Script para el modal de horarios -->
-<script>
-    // Script para el modal de horarios
-    const openModal = document.getElementById('open-schedule-modal');
-    const modal = document.getElementById('schedule-modal');
-    const closeModal = modal.querySelector('.close-modal');
-
-    openModal.addEventListener('click', function (e) {
-        e.preventDefault();
-        modal.classList.remove('hidden');
-    });
-
-    closeModal.addEventListener('click', function () {
-        modal.classList.add('hidden');
-    });
-
-    window.addEventListener('click', function (e) {
-        if (e.target === modal) {
-            modal.classList.add('hidden');
-        }
-    });
-</script>

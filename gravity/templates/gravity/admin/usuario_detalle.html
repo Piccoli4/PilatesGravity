@@ -1,623 +1,713 @@
 {% extends 'gravity/admin/base_admin.html' %}
 
-{% block title %}Gestión de Usuarios - Panel de Administración{% endblock %}
+{% block title %}Detalle de Usuario: {{ usuario.get_full_name|default:usuario.username }} - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item active">Usuarios</li>
+    <li class="breadcrumb-item"><a href="{% url 'gravity:admin_usuarios_lista' %}">Usuarios</a></li>
+    <li class="breadcrumb-item active">{{ usuario.get_full_name|default:usuario.username }}</li>
+{% endblock %}
+
+{% block extra_css %}
+    <style>
+        :root {
+            --principal: #5D768B;
+            --secundario: #C8B39B;
+            --fondo: #F8EFE5;
+            --principal-claro: #7B94A9;
+            --principal-oscuro: #4A5E6D;
+            --secundario-claro: #D6C7B3;
+            --secundario-oscuro: #B5A084;
+        }
+
+        .user-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 0 auto 1rem auto;
+            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--principal);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-value {
+            color: #495057;
+            text-align: right;
+        }
+
+        .stat-card-user {
+            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
+            color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card-user:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-card-secondary {
+            background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
+            color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card-secondary:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn-action-primary {
+            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(93, 118, 139, 0.3);
+        }
+
+        .btn-action-primary:hover {
+            background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.4);
+            color: white;
+        }
+
+        .btn-action-secondary {
+            background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(200, 179, 155, 0.3);
+        }
+
+        .btn-action-secondary:hover {
+            background: linear-gradient(135deg, var(--secundario-oscuro) 0%, var(--secundario) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.4);
+            color: white;
+        }
+
+        .badge-custom-success {
+            background-color: #28a745;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .badge-custom-warning {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .badge-custom-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .badge-custom-info {
+            background-color: var(--principal);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .reserva-item {
+            background: var(--fondo);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--principal);
+            transition: all 0.2s ease;
+        }
+
+        .reserva-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(93, 118, 139, 0.15);
+        }
+
+        .reserva-cancelada {
+            border-left-color: #dc3545;
+            opacity: 0.7;
+        }
+
+        .health-warning {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 1px solid #ffc107;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--principal);
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1rem;
+            width: 2px;
+            height: calc(100% - 0.5rem);
+            background: #e9ecef;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<!-- Header Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h2 class="mb-2">
-                            <i class="fas fa-users me-2"></i>
-                            Gestión de Usuarios
-                        </h2>
-                        <p class="text-muted mb-0">Administra todos los usuarios registrados en el sistema</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-success" onclick="exportUsuarios()">
-                                <i class="fas fa-download me-2"></i>Exportar
-                            </button>
-                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
-                                <i class="fas fa-user-plus me-2"></i>Agregar Cliente
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Search and Filters Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-search me-2"></i>Búsqueda y Filtros</h5>
-            </div>
-            <div class="card-body">
-                <form method="get" id="searchForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="busqueda" class="form-label">Buscar Usuario</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                                <input type="text" 
-                                       name="busqueda" 
-                                       id="busqueda" 
-                                       class="form-control" 
-                                       placeholder="Nombre, apellido, email o username..."
-                                       value="{{ busqueda }}">
-                                <button type="submit" class="btn btn-primary">
-                                    Buscar
-                                </button>
-                            </div>
-                            <div class="form-text">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Busca por nombre, apellido, email o nombre de usuario
-                                </small>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Filtros Rápidos</label>
-                            <div class="d-flex gap-2 flex-wrap">
-                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterBy('con_reservas')">
-                                    <i class="fas fa-bookmark me-1"></i>Con Reservas
-                                </button>
-                                <button type="button" class="btn btn-outline-info btn-sm" onclick="filterBy('nuevos')">
-                                    <i class="fas fa-star me-1"></i>Nuevos (7 días)
-                                </button>
-                                <button type="button" class="btn btn-outline-success btn-sm" onclick="filterBy('activos')">
-                                    <i class="fas fa-check-circle me-1"></i>Activos
-                                </button>
-                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterBy('sin_perfil')">
-                                    <i class="fas fa-user-edit me-1"></i>Sin Perfil
-                                </button>
-                                <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn btn-outline-secondary btn-sm">
-                                    <i class="fas fa-times me-1"></i>Limpiar
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Results Summary -->
-{% if page_obj.object_list %}
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h6 class="mb-0">
-                    <i class="fas fa-list me-2"></i>
-                    Resultados: {{ page_obj.paginator.count }} usuario{{ page_obj.paginator.count|pluralize }}
-                    {% if busqueda %}
-                        <span class="badge bg-info">Búsqueda activa</span>
-                    {% endif %}
-                </h6>
-                <small class="text-muted">
-                    Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
-                </small>
-            </div>
-            
-            <!-- Display Options -->
-            <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-outline-secondary active" onclick="toggleView('cards')">
-                    <i class="fas fa-th-large"></i>
-                </button>
-                <button type="button" class="btn btn-outline-secondary" onclick="toggleView('table')">
-                    <i class="fas fa-list"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Results Section -->
-<div class="row">
-    <div class="col-12">
-        {% if page_obj.object_list %}
-            <!-- Cards View (Default) -->
-            <div id="cardsView">
-                <div class="row">
-                    {% for item in page_obj.object_list %}
-                        <div class="col-lg-6 col-xl-4 mb-4">
-                            <div class="card h-100 user-card">
-                                <div class="card-body">
-                                    <!-- User Header -->
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="user-avatar me-3" style="width: 50px; height: 50px; font-size: 1.2rem;">
-                                            {{ item.usuario.first_name.0|default:item.usuario.username.0|upper }}
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <h6 class="card-title mb-1">{{ item.usuario.get_full_name|default:item.usuario.username }}</h6>
-                                            <small class="text-muted">@{{ item.usuario.username }}</small>
-                                            {% if not item.usuario.is_active %}
-                                                <span class="badge bg-danger ms-2">Inactivo</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary" 
-                                                    type="button" 
-                                                    data-bs-toggle="dropdown">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item" 
-                                                       href="{% url 'gravity:admin_usuario_detalle' item.usuario.id %}">
-                                                        <i class="fas fa-eye me-2"></i>Ver Detalle
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" 
-                                                       href="{% url 'gravity:admin_reservas_lista' %}?usuario={{ item.usuario.username }}">
-                                                        <i class="fas fa-bookmark me-2"></i>Ver Reservas
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <a class="dropdown-item" href="mailto:{{ item.usuario.email }}">
-                                                        <i class="fas fa-envelope me-2"></i>Enviar Email
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- User Info -->
-                                    <div class="mb-3">
-                                        <div class="mb-2">
-                                            <i class="fas fa-envelope text-primary me-2"></i>
-                                            <small>{{ item.usuario.email }}</small>
-                                        </div>
-                                        {% if item.profile.telefono %}
-                                            <div class="mb-2">
-                                                <i class="fas fa-phone text-success me-2"></i>
-                                                <small>{{ item.profile.telefono }}</small>
-                                            </div>
-                                        {% endif %}
-                                        <div class="mb-2">
-                                            <i class="fas fa-calendar text-info me-2"></i>
-                                            <small>Miembro desde {{ item.usuario.date_joined|date:"d/m/Y" }}</small>
-                                        </div>
-                                        {% if item.profile.nivel_experiencia %}
-                                            <div>
-                                                <i class="fas fa-star text-warning me-2"></i>
-                                                <small>{{ item.profile.get_nivel_experiencia_display }}</small>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- Stats -->
-                                    <div class="row text-center mb-3">
-                                        <div class="col-6">
-                                            <div class="fw-bold text-primary">{{ item.total_reservas }}</div>
-                                            <small class="text-muted">Reservas</small>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="fw-bold {% if item.fecha_ultima_reserva %}text-success{% else %}text-muted{% endif %}">
-                                                {% if item.fecha_ultima_reserva %}
-                                                    {{ item.fecha_ultima_reserva.fecha_reserva|timesince|truncatechars:10 }}
-                                                {% else %}
-                                                    Nunca
-                                                {% endif %}
-                                            </div>
-                                            <small class="text-muted">Última reserva</small>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Health Alert -->
-                                    {% if item.profile.tiene_lesiones %}
-                                        <div class="alert alert-warning py-1 px-2 mb-3">
-                                            <i class="fas fa-medical me-1"></i>
-                                            <small>Tiene condiciones médicas</small>
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <!-- Profile Status -->
-                                    <div class="mb-3">
-                                        {% if item.profile.perfil_completado %}
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check me-1"></i>Perfil Completo
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-warning">
-                                                <i class="fas fa-exclamation me-1"></i>Perfil Incompleto
-                                            </span>
-                                        {% endif %}
-                                        
-                                        {% if item.profile.acepta_marketing %}
-                                            <span class="badge bg-info">
-                                                <i class="fas fa-envelope me-1"></i>Marketing
-                                            </span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- Actions -->
-                                    <div class="d-flex gap-2">
-                                        <a href="{% url 'gravity:admin_usuario_detalle' item.usuario.id %}" 
-                                           class="btn btn-outline-primary btn-sm flex-grow-1">
-                                            <i class="fas fa-eye me-1"></i>Ver Detalle
-                                        </a>
-                                        {% if item.total_reservas > 0 %}
-                                            <a href="{% url 'gravity:admin_reservas_lista' %}?usuario={{ item.usuario.username }}" 
-                                               class="btn btn-outline-info btn-sm">
-                                                <i class="fas fa-bookmark"></i>
-                                            </a>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Table View (Hidden by default) -->
-            <div id="tableView" style="display: none;">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle" id="usuariosTable">
-                                <thead>
-                                    <tr>
-                                        <th>Usuario</th>
-                                        <th>Contacto</th>
-                                        <th>Registro</th>
-                                        <th>Perfil</th>
-                                        <th>Reservas</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in page_obj.object_list %}
-                                        <tr {% if not item.usuario.is_active %}class="table-secondary"{% endif %}>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="user-avatar me-3">
-                                                        {{ item.usuario.first_name.0|default:item.usuario.username.0|upper }}
-                                                    </div>
-                                                    <div>
-                                                        <div class="fw-bold">{{ item.usuario.get_full_name|default:item.usuario.username }}</div>
-                                                        <small class="text-muted">@{{ item.usuario.username }}</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div>
-                                                    <div class="mb-1">
-                                                        <i class="fas fa-envelope me-1"></i>
-                                                        <small>{{ item.usuario.email }}</small>
-                                                    </div>
-                                                    {% if item.profile.telefono %}
-                                                        <div>
-                                                            <i class="fas fa-phone me-1"></i>
-                                                            <small>{{ item.profile.telefono }}</small>
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div>
-                                                    <div class="fw-bold">{{ item.usuario.date_joined|date:"d/m/Y" }}</div>
-                                                    <small class="text-muted">{{ item.usuario.date_joined|timesince }} atrás</small>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                {% if item.profile.perfil_completado %}
-                                                    <span class="badge bg-success">Completo</span>
-                                                {% else %}
-                                                    <span class="badge bg-warning">Incompleto</span>
-                                                {% endif %}
-                                                {% if item.profile.tiene_lesiones %}
-                                                    <br><span class="badge bg-danger mt-1">Lesiones</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="fw-bold text-primary">{{ item.total_reservas }}</div>
-                                                {% if item.fecha_ultima_reserva %}
-                                                    <small class="text-success">Última: {{ item.fecha_ultima_reserva.fecha_reserva|date:"d/m" }}</small>
-                                                {% else %}
-                                                    <small class="text-muted">Sin reservas</small>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if item.usuario.is_active %}
-                                                    <span class="badge bg-success">
-                                                        <i class="fas fa-check me-1"></i>Activo
-                                                    </span>
-                                                {% else %}
-                                                    <span class="badge bg-danger">
-                                                        <i class="fas fa-times me-1"></i>Inactivo
-                                                    </span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <div class="d-flex gap-1 justify-content-center">
-                                                    <a href="{% url 'gravity:admin_usuario_detalle' item.usuario.id %}" 
-                                                       class="btn btn-sm btn-outline-primary" 
-                                                       title="Ver detalle">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    {% if item.total_reservas > 0 %}
-                                                        <a href="{% url 'gravity:admin_reservas_lista' %}?usuario={{ item.usuario.username }}" 
-                                                           class="btn btn-sm btn-outline-info" 
-                                                           title="Ver reservas">
-                                                            <i class="fas fa-bookmark"></i>
-                                                        </a>
-                                                    {% endif %}
-                                                    <a href="mailto:{{ item.usuario.email }}" 
-                                                       class="btn btn-sm btn-outline-success" 
-                                                       title="Enviar email">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Paginación de usuarios" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page=1{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
-                                    <i class="fas fa-angle-double-left"></i>
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
-                                    <i class="fas fa-angle-left"></i>
-                                </a>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
-                                        {{ num }}
-                                    </a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
-                                    <i class="fas fa-angle-right"></i>
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if busqueda %}&busqueda={{ busqueda }}{% endif %}">
-                                    <i class="fas fa-angle-double-right"></i>
-                                </a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
-
-        {% else %}
-            <!-- Empty State -->
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <div class="text-center py-5">
-                        <i class="fas fa-users fa-4x text-muted mb-4"></i>
-                        <h4 class="text-muted mb-3">No se encontraron usuarios</h4>
-                        {% if busqueda %}
-                            <p class="text-muted mb-4">
-                                No hay usuarios que coincidan con la búsqueda: 
-                                <strong>"{{ busqueda }}"</strong>
-                            </p>
-                            <div class="d-flex gap-2 justify-content-center">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">
+                                <i class="fas fa-user me-2"></i>
+                                Detalle de Usuario
+                            </h2>
+                            <p class="text-muted mb-0">Información completa del usuario y su actividad</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group" role="group">
                                 <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times me-2"></i>Limpiar Búsqueda
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a Lista
                                 </a>
-                                <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
-                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                                <a href="mailto:{{ usuario.email }}" class="btn btn-success">
+                                    <i class="fas fa-envelope me-2"></i>Enviar Email
                                 </a>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Personal -->
+        <div class="col-lg-4 mb-4">
+            <div class="info-card">
+                <div class="text-center mb-4">
+                    <div class="user-avatar-large">
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                         {% else %}
-                            <p class="text-muted mb-4">Aún no hay usuarios registrados en el sistema.</p>
-                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
-                                <i class="fas fa-user-plus me-2"></i>Agregar Primer Cliente
-                            </a>
+                            {{ usuario.first_name.0|default:usuario.username.0|upper }}{{ usuario.last_name.0|upper }}
+                        {% endif %}
+                    </div>
+                    <h4 class="mb-1">{{ usuario.get_full_name|default:usuario.username }}</h4>
+                    <p class="text-muted mb-3">@{{ usuario.username }}</p>
+                    
+                    <!-- Estado del Usuario -->
+                    <div class="mb-3 d-flex flex-row justify-content-center gap-2 flex-wrap">
+                        <div>
+                            {% if usuario.is_active %}
+                                <span class="badge-custom-success">
+                                    <i class="fas fa-check me-1"></i>Usuario Activo
+                                </span>
+                            {% else %}
+                                <span class="badge-custom-danger">
+                                    <i class="fas fa-times me-1"></i>Usuario Inactivo
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            {% if profile.perfil_completado %}
+                                <span class="badge-custom-info">
+                                    <i class="fas fa-user-check me-1"></i>Perfil Completo
+                                </span>
+                            {% else %}
+                                <span class="badge-custom-warning">
+                                    <i class="fas fa-exclamation me-1"></i>Perfil Incompleto
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Contacto -->
+                <h6 class="text-uppercase text-muted mb-3">
+                    <i class="fas fa-address-card me-2"></i>Información de Contacto
+                </h6>
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-envelope"></i>
+                        Email
+                    </div>
+                    <div class="info-value">{{ usuario.email }}</div>
+                </div>
+                
+                {% if profile.telefono %}
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-phone"></i>
+                            Teléfono
+                        </div>
+                        <div class="info-value">{{ profile.telefono }}</div>
+                    </div>
+                {% endif %}
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-calendar"></i>
+                        Miembro desde
+                    </div>
+                    <div class="info-value">{{ usuario.date_joined|date:"d/m/Y" }}</div>
+                </div>
+                
+                {% if profile.fecha_nacimiento %}
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-birthday-cake"></i>
+                            Fecha de Nacimiento
+                        </div>
+                        <div class="info-value">
+                            {{ profile.fecha_nacimiento|date:"d/m/Y" }}
+                            {% if profile.get_edad %}
+                                ({{ profile.get_edad }} años)
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Información de Pilates -->
+            <div class="info-card">
+                <h6 class="text-uppercase text-muted mb-3">
+                    <i class="fas fa-dumbbell me-2"></i>Información de Pilates
+                </h6>
+                
+                {% if profile.nivel_experiencia %}
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-star"></i>
+                            Nivel de Experiencia
+                        </div>
+                        <div class="info-value">{{ profile.get_nivel_experiencia_display }}</div>
+                    </div>
+                {% endif %}
+                
+                {% if profile.fecha_primera_clase %}
+                    <div class="info-row">
+                        <div class="info-label">
+                            <i class="fas fa-play"></i>
+                            Primera Clase
+                        </div>
+                        <div class="info-value">
+                            {{ profile.fecha_primera_clase|date:"d/m/Y" }}
+                            {% if profile.get_tiempo_en_estudio %}
+                                ({{ profile.get_tiempo_en_estudio }})
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-bell"></i>
+                        Recordatorios
+                    </div>
+                    <div class="info-value">
+                        {% if profile.acepta_recordatorios %}
+                            <span class="badge-custom-success">Activados</span>
+                        {% else %}
+                            <span class="badge-custom-danger">Desactivados</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-envelope-open"></i>
+                        Marketing
+                    </div>
+                    <div class="info-value">
+                        {% if profile.acepta_marketing %}
+                            <span class="badge-custom-success">Acepta</span>
+                        {% else %}
+                            <span class="badge-custom-danger">No acepta</span>
                         {% endif %}
                     </div>
                 </div>
             </div>
-        {% endif %}
+
+            <!-- Alertas de Salud -->
+            {% if profile.tiene_lesiones %}
+                <div class="health-warning">
+                    <h6 class="text-warning mb-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ¡Atención! Condiciones Médicas
+                    </h6>
+                    <p class="mb-0">
+                        <strong>Descripción:</strong><br>
+                        {{ profile.descripcion_lesiones|default:"No especificado" }}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Estadísticas y Actividad -->
+        <div class="col-lg-8">
+            <!-- Estadísticas Rápidas -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card-user">
+                        <i class="fas fa-bookmark fa-2x mb-2"></i>
+                        <h3 class="mb-1">{{ total_reservas_activas }}</h3>
+                        <p class="mb-0">Reservas Activas</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card-secondary">
+                        <i class="fas fa-history fa-2x mb-2"></i>
+                        <h3 class="mb-1">{{ total_reservas_historicas }}</h3>
+                        <p class="mb-0">Todas las Reservas</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card-user">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <h3 class="mb-1" id="tiempo-estudio">Calculando...</h3>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const joinDate = new Date("{{ usuario.date_joined|date:'Y-m-d' }}");
+                                const now = new Date();
+                                
+                                const totalMonths = (now.getFullYear() - joinDate.getFullYear()) * 12 + 
+                                                    (now.getMonth() - joinDate.getMonth());
+                                
+                                let timeText;
+                                if (totalMonths < 1) {
+                                    timeText = 'Nuevo';
+                                } else if (totalMonths === 1) {
+                                    timeText = '1 mes';
+                                } else if (totalMonths < 12) {
+                                    timeText = totalMonths + ' meses';
+                                } else {
+                                    const years = Math.floor(totalMonths / 12);
+                                    const months = totalMonths % 12;
+                                    if (months === 0) {
+                                        timeText = years === 1 ? '1 año' : years + ' años';
+                                    } else {
+                                        timeText = `${years} año${years > 1 ? 's' : ''} y ${months} mes${months > 1 ? 'es' : ''}`;
+                                    }
+                                }
+                                
+                                document.getElementById('tiempo-estudio').textContent = timeText;
+                            });
+                        </script>
+                        <p class="mb-0">En el Estudio</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card-secondary">
+                        <i class="fas fa-chart-line fa-2x mb-2"></i>
+                        <h3 class="mb-1">{{ reservas_canceladas|length }}</h3>
+                        <p class="mb-0">Cancelaciones</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="info-card">
+                        <h6 class="text-uppercase text-muted mb-3">
+                            <i class="fas fa-tools me-2"></i>Acciones Rápidas
+                        </h6>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{% url 'gravity:admin_reservas_lista' %}?usuario={{ usuario.username }}" class="btn-action-primary">
+                                <i class="fas fa-bookmark"></i>
+                                Ver Todas las Reservas
+                            </a>
+                            <a href="mailto:{{ usuario.email }}" class="btn-action-secondary">
+                                <i class="fas fa-envelope"></i>
+                                Enviar Email
+                            </a>
+                            {% if usuario.is_active %}
+                                <button class="btn-action-primary" onclick="toggleUserStatus('{{ usuario.id }}', false)">
+                                    <i class="fas fa-user-slash"></i>
+                                    Desactivar Usuario
+                                </button>
+                            {% else %}
+                                <button class="btn-action-secondary" onclick="toggleUserStatus('{{ usuario.id }}', true)">
+                                    <i class="fas fa-user-check"></i>
+                                    Activar Usuario
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reservas Activas -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="info-card">
+                        <h6 class="text-uppercase text-muted mb-3">
+                            <i class="fas fa-bookmark me-2"></i>
+                            Reservas Activas ({{ total_reservas_activas }})
+                        </h6>
+                        
+                        {% if reservas_activas %}
+                            {% for reserva in reservas_activas %}
+                                <div class="reserva-item">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <h6 class="mb-1">{{ reserva.clase.get_tipo_display }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                {{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>
+                                                Reservada {{ reserva.fecha_reserva|timesince }} atrás
+                                            </small>
+                                            <br>
+                                            <small class="text-info">
+                                                Nº {{ reserva.numero_reserva }}
+                                            </small>
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
+                                                   class="btn btn-outline-danger btn-sm" 
+                                                   title="Cancelar reserva">
+                                                    <i class="fas fa-times"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-success">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            {{ reserva.get_proxima_clase_info }}
+                                        </small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">Sin Reservas Activas</h5>
+                                <p class="text-muted">Este usuario no tiene reservas activas en este momento.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historial de Reservas -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="info-card">
+                        <h6 class="text-uppercase text-muted mb-3">
+                            <i class="fas fa-history me-2"></i>
+                            Historial Reciente (Últimas 10 canceladas)
+                        </h6>
+                        
+                        {% if reservas_canceladas %}
+                            {% for reserva in reservas_canceladas %}
+                                <div class="reserva-item reserva-cancelada">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h6 class="mb-1">{{ reserva.clase.get_tipo_display }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                {{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }}
+                                                • Cancelada {{ reserva.fecha_modificacion|timesince }} atrás
+                                            </small>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times me-1"></i>Cancelada
+                                            </span>
+                                            <br>
+                                            <small class="text-muted">Nº {{ reserva.numero_reserva }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">Sin Historial de Cancelaciones</h5>
+                                <p class="text-muted">Este usuario no ha cancelado ninguna reserva.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+
+    <!-- Notas Administrativas -->
+    {% if profile.notas_admin %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="info-card">
+                    <h6 class="text-uppercase text-muted mb-3">
+                        <i class="fas fa-sticky-note me-2"></i>
+                        Notas Administrativas
+                    </h6>
+                    <div class="alert alert-info">
+                        <p class="mb-0">{{ profile.notas_admin|linebreaks }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add tooltips to action buttons
-    const actionButtons = document.querySelectorAll('[title]');
-    actionButtons.forEach(function(button) {
-        new bootstrap.Tooltip(button);
-    });
-    
-    // Highlight search term in results
-    const searchTerm = document.getElementById('busqueda').value;
-    if (searchTerm.trim()) {
-        highlightSearchTerm(searchTerm);
-    }
-    
-    // Auto-focus search input
-    document.getElementById('busqueda').focus();
-});
-
-// Function to toggle between card and table view
-function toggleView(viewType) {
-    const cardsView = document.getElementById('cardsView');
-    const tableView = document.getElementById('tableView');
-    const buttons = document.querySelectorAll('.btn-group button');
-    
-    buttons.forEach(function(btn) {
-        btn.classList.remove('active');
-    });
-    
-    if (viewType === 'cards') {
-        cardsView.style.display = 'block';
-        tableView.style.display = 'none';
-        buttons[0].classList.add('active');
-    } else {
-        cardsView.style.display = 'none';
-        tableView.style.display = 'block';
-        buttons[1].classList.add('active');
-    }
-    
-    // Save preference
-    localStorage.setItem('userViewPreference', viewType);
-}
-
-// Function to filter users
-function filterBy(filterType) {
-    const baseUrl = '{% url "gravity:admin_usuarios_lista" %}';
-    let url = baseUrl;
-    
-    switch(filterType) {
-        case 'con_reservas':
-            // This would need backend support
-            alert('Filtro en desarrollo: usuarios con reservas');
-            break;
-        case 'nuevos':
-            // This would need backend support  
-            alert('Filtro en desarrollo: usuarios nuevos');
-            break;
-        case 'activos':
-            // This would need backend support
-            alert('Filtro en desarrollo: usuarios activos');
-            break;
-        case 'sin_perfil':
-            // This would need backend support
-            alert('Filtro en desarrollo: usuarios sin perfil completo');
-            break;
-        default:
-            window.location.href = url;
-    }
-}
-
-// Function to export users
-function exportUsuarios() {
-    const table = document.getElementById('usuariosTable');
-    if (!table) {
-        // If table view is not active, gather data from cards
-        const userCards = document.querySelectorAll('.user-card');
-        if (userCards.length === 0) {
-            alert('No hay datos para exportar');
-            return;
-        }
-        
-        let csv = 'Nombre,Username,Email,Teléfono,Fecha de Registro,Reservas,Estado\n';
-        
-        userCards.forEach(function(card) {
-            const nombre = card.querySelector('.card-title').textContent.trim();
-            const username = card.querySelector('small').textContent.replace('@', '').trim();
-            const email = card.querySelector('.fa-envelope').parentNode.textContent.trim();
-            const telefonoEl = card.querySelector('.fa-phone');
-            const telefono = telefonoEl ? telefonoEl.parentNode.textContent.trim() : 'N/A';
-            const fechaEl = card.querySelector('.fa-calendar');
-            const fecha = fechaEl ? fechaEl.parentNode.textContent.replace('Miembro desde ', '').trim() : 'N/A';
-            const reservas = card.querySelector('.text-primary').textContent.trim();
-            const estadoEl = card.querySelector('.badge');
-            const estado = estadoEl ? estadoEl.textContent.trim() : 'Activo';
-            
-            csv += '"' + nombre + '","' + username + '","' + email + '","' + telefono + 
-                   '","' + fecha + '","' + reservas + '","' + estado + '"\n';
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add tooltips to all elements with title attribute
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
         });
-        
-        downloadCSV(csv, 'usuarios_cards.csv');
-        return;
-    }
-    
-    let csv = 'Nombre,Username,Email,Teléfono,Fecha de Registro,Perfil,Reservas,Estado\n';
-    
-    const rows = table.querySelectorAll('tbody tr');
-    rows.forEach(function(row) {
-        const cells = row.querySelectorAll('td');
-        const nombre = cells[0].querySelector('.fw-bold').textContent.trim();
-        const username = cells[0].querySelector('small').textContent.replace('@', '').trim();
-        const emailEl = cells[1].querySelector('.fa-envelope');
-        const email = emailEl ? emailEl.parentNode.textContent.trim() : 'N/A';
-        const telefonoEl = cells[1].querySelector('.fa-phone');
-        const telefono = telefonoEl ? telefonoEl.parentNode.textContent.trim() : 'N/A';
-        const fecha = cells[2].querySelector('.fw-bold').textContent.trim();
-        const perfil = cells[3].querySelector('.badge').textContent.trim();
-        const reservas = cells[4].querySelector('.fw-bold').textContent.trim();
-        const estado = cells[5].querySelector('.badge').textContent.trim();
-        
-        csv += '"' + nombre + '","' + username + '","' + email + '","' + telefono + 
-               '","' + fecha + '","' + perfil + '","' + reservas + '","' + estado + '"\n';
-    });
-    
-    downloadCSV(csv, 'usuarios_table.csv');
-}
 
-// Function to download CSV
-function downloadCSV(csv, filename) {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Function to highlight search terms
-function highlightSearchTerm(term) {
-    const regex = new RegExp('(' + term + ')', 'gi');
-    const textNodes = document.querySelectorAll('.card-title, .fw-bold, td small');
-    
-    textNodes.forEach(function(node) {
-        if (node.textContent.toLowerCase().includes(term.toLowerCase())) {
-            node.innerHTML = node.innerHTML.replace(regex, '<mark>$1</mark>');
+        // Function to toggle user status (activate/deactivate)
+        function toggleUserStatus(userId, activate) {
+            const action = activate ? 'activar' : 'desactivar';
+            const message = `¿Estás seguro de que quieres ${action} este usuario?`;
+            
+            if (confirm(message)) {
+                // Aquí iría la llamada AJAX para cambiar el estado del usuario
+                // Por ahora solo mostramos un mensaje
+                alert(`Funcionalidad en desarrollo: ${action} usuario ${userId}`);
+                
+                // En una implementación real, harías algo como:
+                /*
+                fetch(`/admin-panel/usuarios/${userId}/toggle-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ activate: activate })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al cambiar el estado del usuario');
+                    }
+                });
+                */
+            }
         }
-    });
-}
 
-// Load saved view preference
-document.addEventListener('DOMContentLoaded', function() {
-    const savedView = localStorage.getItem('userViewPreference');
-    if (savedView === 'table') {
-        toggleView('table');
-    }
-});
-</script>
+        // Function to add admin notes
+        function addAdminNote() {
+            const note = prompt('Ingresa una nota administrativa:');
+            if (note && note.trim()) {
+                // Aquí iría la llamada para guardar la nota
+                alert(`Funcionalidad en desarrollo: agregar nota "${note}"`);
+            }
+        }
+
+        // Auto-refresh every 5 minutes to show updated reservation status
+        setInterval(function() {
+            // Solo refrescar si no hay modales abiertos o acciones en curso
+            if (!document.querySelector('.modal.show')) {
+                location.reload();
+            }
+        }, 300000); // 5 minutos
+    </script>
 {% endblock %}
