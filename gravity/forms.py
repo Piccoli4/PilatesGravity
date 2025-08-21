@@ -16,7 +16,7 @@ class ReservaForm(forms.Form):
     tipo_clase = forms.ChoiceField(
         choices=[('', 'Selecciona el tipo de clase')],
         widget=forms.Select(attrs={
-            'class': 'form-control',
+            'class': 'w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white',
             'id': 'id_tipo_clase'
         }),
         label="Tipo de Clase",
@@ -29,7 +29,7 @@ class ReservaForm(forms.Form):
     dia = forms.ChoiceField(
         choices=[('', 'Selecciona el día')],
         widget=forms.Select(attrs={
-            'class': 'form-control',
+            'class': 'w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white',
             'id': 'id_dia'
         }),
         label="Día de la Semana",
@@ -42,7 +42,7 @@ class ReservaForm(forms.Form):
     horario = forms.ChoiceField(
         choices=[('', 'Selecciona el horario')],
         widget=forms.Select(attrs={
-            'class': 'form-control',
+            'class': 'w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white',
             'id': 'id_horario'
         }),
         label="Horario",

@@ -162,37 +162,44 @@ def mis_reservas(request):
 def eliminar_cuenta(request): 
     """Vista para que el usuario pueda eliminar su propia cuenta"""
     if request.method == 'POST':
-        # Verificar si tiene reservas activas
-        reservas_activas = request.user.reservas_pilates.filter(activa=True)
-        
-        if reservas_activas.exists():
-            messages.error(
-                request, 
-                'No puedes eliminar tu cuenta mientras tengas reservas activas. '
-                'Por favor cancela todas tus reservas primero.'
-            )
-            return redirect('accounts:eliminar_cuenta')
-        
         # Confirmar eliminación
         confirmacion = request.POST.get('confirmar_eliminacion')
-        if confirmacion == 'ELIMINAR':
+        if confirmacion == 'confirmar':
             username = request.user.username
+            
+            # Obtener estadísticas antes de eliminar
+            total_reservas = request.user.reservas_pilates.count()
+            reservas_activas = request.user.reservas_pilates.filter(activa=True).count()
+            
+            # Eliminar usuario (esto eliminará automáticamente todas las reservas por CASCADE)
             request.user.delete()
+            
             messages.success(
                 request, 
-                f'La cuenta de {username} ha sido eliminada exitosamente. '
+                f'La cuenta de {username} ha sido eliminada exitosamente junto con {total_reservas} reservas. '
                 '¡Esperamos verte de nuevo pronto!'
             )
             return redirect('gravity:home')
         else:
-            messages.error(request, 'Debes escribir "ELIMINAR" para confirmar la eliminación de tu cuenta.')
+            messages.error(request, 'Error en la confirmación. Por favor, intenta nuevamente.')
     
     # Obtener información para mostrar en la confirmación
-    reservas_activas = request.user.reservas_pilates.filter(activa=True)
+    reservas_activas = request.user.reservas_pilates.filter(activa=True).select_related('clase')
+    reservas_historicas = request.user.reservas_pilates.filter(activa=False).select_related('clase')
+    total_reservas = request.user.reservas_pilates.count()
+    
+    # Obtener información del perfil si existe
+    try:
+        user_profile = request.user.profile
+    except:
+        user_profile = None
     
     context = {
         'reservas_activas': reservas_activas,
-        'puede_eliminar': not reservas_activas.exists()
+        'reservas_historicas': reservas_historicas,
+        'total_reservas': total_reservas,
+        'user_profile': user_profile,
+        'tiempo_en_estudio': user_profile.get_tiempo_en_estudio() if user_profile else None
     }
     return render(request, 'accounts/eliminar_cuenta.html', context)
 

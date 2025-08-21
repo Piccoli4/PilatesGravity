@@ -35,6 +35,9 @@ def reservar_clase(request):
         user_profile = request.user.profile
     except UserProfile.DoesNotExist:
         user_profile = UserProfile.objects.create(user=request.user)
+
+    # Obtener tipo preseleccionado ANTES del bloque if/else
+    tipo_preseleccionado = request.GET.get('tipo', '')
     
     if request.method == 'POST':
         form = ReservaForm(request.POST, user=request.user)
@@ -67,8 +70,7 @@ def reservar_clase(request):
                     'Si esto persiste, contacta al administrador.'
                 )
     else:
-        # Permitir preseleccionar tipo de clase desde URL
-        tipo_preseleccionado = request.GET.get('tipo', '')
+       # Permitir preseleccionar tipo de clase desde URL
         initial_data = {'tipo_clase': tipo_preseleccionado} if tipo_preseleccionado else None
         form = ReservaForm(user=request.user, initial=initial_data)
 

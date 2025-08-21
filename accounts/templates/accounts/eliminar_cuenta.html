@@ -1,0 +1,392 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Eliminar Cuenta - Pilates Gravity{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/custom_styles_eliminar_cuenta.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Mensajes -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="fixed top-5 right-5 z-50 max-w-md p-4 rounded-xl border-l-4 animate-slideInRight
+                   {% if message.tags == 'success' %}
+                       bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 text-green-800
+                   {% elif message.tags == 'error' or message.tags == 'danger' %}
+                       bg-gradient-to-r from-red-50 to-rose-50 border-red-500 text-red-800
+                   {% elif message.tags == 'warning' %}
+                       bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-500 text-yellow-800
+                   {% else %}
+                       bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-500 text-blue-800
+                   {% endif %}">
+            {{ message }}
+            <button type="button" 
+                    onclick="this.parentElement.style.display='none'"
+                    class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-none border-none text-xl text-current cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                ×
+            </button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Sección principal -->
+<section class="py-10 min-h-screen" style="background-color: #F8EFE5;">
+    <div class="max-w-4xl mx-auto px-4">
+        
+        <!-- Título de la sección -->
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold mb-4" style="color: #5D768B;">Eliminar Cuenta</h2>
+            <div class="w-24 h-1 mx-auto mb-4 rounded-full" style="background: linear-gradient(90deg, #C8B39B, #5D768B);"></div>
+            <p class="text-slate-600 text-lg">Esta acción es permanente e irreversible</p>
+        </div>
+
+        <!-- Advertencia principal -->
+        <div class="bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-500 p-6 rounded-xl mb-8 shadow-lg animate-fade-in">
+            <div class="flex items-center mb-4">
+                <span class="text-3xl mr-3">⚠️</span>
+                <h3 class="text-xl font-bold text-orange-800">¡Atención! Esta acción no se puede deshacer</h3>
+            </div>
+            <p class="text-orange-700 text-lg leading-relaxed">
+                Al eliminar tu cuenta, se perderán <strong>permanentemente</strong> todos tus datos, 
+                incluyendo tu historial de reservas, información personal y configuraciones.
+            </p>
+        </div>
+
+        <!-- Información del usuario -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg mb-8 animate-fade-in-delay-1">
+            <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold mb-2" style="color: #5D768B;">Tu Información</h3>
+                <p class="text-slate-600">Esto es lo que se eliminará permanentemente:</p>
+            </div>
+            
+            <!-- Avatar y datos básicos -->
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
+                <!-- Avatar -->
+                <div class="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold overflow-hidden border-4 border-white shadow-lg flex-shrink-0"
+                     style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                    {% if user_profile and user_profile.avatar %}
+                        <img src="{{ user_profile.avatar.url }}" alt="Avatar" class="w-full h-full object-cover rounded-full">
+                    {% else %}
+                        {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+                    {% endif %}
+                </div>
+                
+                <!-- Información personal -->
+                <div class="flex-1 text-center md:text-left">
+                    <h4 class="text-xl font-bold mb-2" style="color: #5D768B;">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </h4>
+                    <p class="text-slate-600 mb-1">@{{ user.username }}</p>
+                    <p class="text-slate-600 mb-1">{{ user.email }}</p>
+                    {% if user_profile and user_profile.telefono %}
+                        <p class="text-slate-600 mb-1">{{ user_profile.telefono }}</p>
+                    {% endif %}
+                    <p class="text-slate-500 text-sm">Miembro desde {{ user.date_joined|date:"F Y" }}</p>
+                    {% if tiempo_en_estudio %}
+                        <p class="text-slate-500 text-sm">{{ tiempo_en_estudio }} en el estudio</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-slate-50 rounded-xl">
+                <div class="text-center">
+                    <span class="block text-3xl font-bold mb-1" style="color: #5D768B;">{{ total_reservas }}</span>
+                    <span class="block text-sm text-slate-600 font-medium">Total de Reservas</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-3xl font-bold mb-1" style="color: #5D768B;">{{ reservas_activas.count }}</span>
+                    <span class="block text-sm text-slate-600 font-medium">Reservas Activas</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-3xl font-bold mb-1" style="color: #5D768B;">{{ reservas_historicas.count }}</span>
+                    <span class="block text-sm text-slate-600 font-medium">Historial de Reservas</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservas activas (si las hay) -->
+        {% if reservas_activas %}
+        <div class="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 p-6 rounded-xl mb-8 shadow-lg animate-fade-in-delay-2">
+            <div class="flex items-center mb-4">
+                <span class="text-2xl mr-3">🚨</span>
+                <h3 class="text-xl font-bold text-red-800">Tienes {{ reservas_activas.count }} reserva{{ reservas_activas.count|pluralize }} activa{{ reservas_activas.count|pluralize }}</h3>
+            </div>
+            <p class="text-red-700 mb-4">
+                Al eliminar tu cuenta, estas reservas también serán canceladas automáticamente:
+            </p>
+            <div class="space-y-3">
+                {% for reserva in reservas_activas %}
+                <div class="bg-white p-4 rounded-lg border border-red-200">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="font-semibold text-red-800">{{ reserva.clase.get_tipo_display }}</span>
+                            <span class="text-red-600 ml-2">{{ reserva.clase.dia }}s a las {{ reserva.clase.horario|time:"H:i" }}</span>
+                        </div>
+                        <span class="text-sm text-red-500 font-mono">{{ reserva.numero_reserva }}</span>
+                    </div>
+                    <p class="text-sm text-red-600 mt-1">{{ reserva.get_proxima_clase_info }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Historial de reservas -->
+        {% if reservas_historicas %}
+        <div class="bg-white rounded-2xl p-8 shadow-lg mb-8 animate-fade-in-delay-3">
+            <h3 class="text-xl font-bold mb-4" style="color: #5D768B;">
+                Historial de Reservas ({{ reservas_historicas.count }} cancelada{{ reservas_historicas.count|pluralize }})
+            </h3>
+            <p class="text-slate-600 mb-6">Este historial también se eliminará permanentemente:</p>
+            
+            <div class="max-h-64 overflow-y-auto space-y-2">
+                {% for reserva in reservas_historicas|slice:":10" %}
+                <div class="bg-slate-50 p-3 rounded-lg flex justify-between items-center">
+                    <div>
+                        <span class="font-medium text-slate-700">{{ reserva.clase.get_tipo_display }}</span>
+                        <span class="text-slate-500 ml-2">{{ reserva.clase.dia }}s {{ reserva.clase.horario|time:"H:i" }}</span>
+                    </div>
+                    <span class="text-sm text-slate-400">{{ reserva.fecha_modificacion|date:"d/m/Y" }}</span>
+                </div>
+                {% endfor %}
+                {% if reservas_historicas.count > 10 %}
+                <p class="text-center text-slate-500 text-sm italic">
+                    Y {{ reservas_historicas.count|add:"-10" }} reserva{{ reservas_historicas.count|add:"-10"|pluralize }} más...
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formulario de confirmación -->
+        <div class="bg-white rounded-2xl p-8 shadow-lg mb-8 animate-fade-in-delay-4">
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-bold mb-4" style="color: #5D768B;">Confirmación Final</h3>
+                <div class="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 p-6 rounded-xl mb-6">
+                    <div class="flex items-center justify-center mb-3">
+                        <span class="text-3xl mr-3">⚠️</span>
+                        <span class="text-xl font-bold text-red-800">Última advertencia</span>
+                    </div>
+                    <p class="text-red-700 text-lg leading-relaxed">
+                        Al hacer clic en "Eliminar Cuenta", tu cuenta y <strong>todos tus datos</strong> 
+                        serán eliminados <strong>permanentemente</strong> sin posibilidad de recuperación.
+                    </p>
+                </div>
+            </div>
+            
+            <form method="post" class="space-y-6" id="deleteForm">
+                {% csrf_token %}
+                <input type="hidden" name="confirmar_eliminacion" value="confirmar">
+
+                <!-- Botones -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <!-- Botón cancelar -->
+                    <a href="{% url 'accounts:profile' %}" 
+                       class="inline-flex items-center justify-center px-8 py-4 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center"
+                       style="color: #5D768B; border-color: #5D768B;">
+                        <span class="text-lg mr-2">↩️</span>
+                        Cancelar y Volver
+                    </a>
+                    
+                    <!-- Botón eliminar -->
+                    <button type="submit" 
+                            id="deleteButton"
+                            class="inline-flex items-center justify-center px-8 py-4 font-bold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-red-500/25 relative overflow-hidden group delete-button text-white"
+                            style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                        <span class="text-lg mr-2">🗑️</span>
+                        <span class="delete-text">Eliminar Cuenta Permanentemente</span>
+                        <!-- Efecto de brillo -->
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="text-center text-slate-500 text-sm">
+            <p class="mb-2">
+                ¿Necesitas ayuda? Contáctanos en 
+                <a href="mailto:pilatesgravity@gmail.com" class="text-[#C8B39B] hover:text-[#5D768B] transition-colors">
+                    pilatesgravity@gmail.com
+                </a>
+            </p>
+            <p>
+                O llámanos al 
+                <a href="tel:+543425114448" class="text-[#C8B39B] hover:text-[#5D768B] transition-colors">
+                    +54 342 511 4448
+                </a>
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Modal de confirmación -->
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden modal-overlay">
+    <div class="bg-white rounded-2xl p-4 max-w-md w-full mx-4 shadow-2xl transform scale-95 opacity-0 transition-all duration-300 modal-content">
+        <!-- Confirmación -->
+        <div id="confirmStep2" class="text-center">
+            <div class="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center"
+                 style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                <span class="text-3xl">🚨</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-2 text-red-600">¡ÚLTIMA CONFIRMACIÓN!</h3>
+            <h4 class="text-2xl font-bold mb-2 text-red-600">¿Estás completamente seguro?</h4>
+            <p class="mb-6 leading-relaxed text-red-600">
+                Esta acción eliminará permanentemente tu cuenta y <strong class="text-red-800">todos tus datos</strong>. 
+                <br>
+                No podrás recuperar esta información.
+            </p>
+            <div class="bg-red-50 border border-red-200 p-2 rounded-xl mb-6">
+                <p class="text-red-800 font-semibold mb-2">Se eliminarán permanentemente:</p>
+                <ul class="text-red-700 text-sm space-y-1 text-left">
+                    <li>• Tu cuenta de usuario</li>
+                    <li>• Todas tus reservas ({{ total_reservas }})</li>
+                    <li>• Tu información personal</li>
+                    <li>• Tu historial en el estudio</li>
+                </ul>
+            </div>
+            <p class="text-red-600 mb-3 font-medium">
+                ¿Realmente quieres proceder con la eliminación?
+            </p>
+            <div class="flex gap-3 justify-center">
+                <button type="button" 
+                        id="cancelStep2"
+                        class="px-6 py-3 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                        style="color: #5D768B; border-color: #5D768B;">
+                    No, Conservar Cuenta
+                </button>
+                <button type="button" 
+                        id="confirmDelete"
+                        class="px-6 py-3 font-bold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-white"
+                        style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                    Sí, Eliminar Todo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener elementos
+    const deleteButton = document.getElementById('deleteButton');
+    const modal = document.getElementById('confirmModal');
+    const modalContent = document.querySelector('.modal-content');
+    const cancelButton = document.getElementById('cancelStep2');
+    const confirmButton = document.getElementById('confirmDelete');
+    const form = document.getElementById('deleteForm');
+    
+    // Función para mostrar el modal
+    function showModal() {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Animar entrada
+        setTimeout(() => {
+            modal.style.opacity = '1';
+            modalContent.style.transform = 'scale(1)';
+            modalContent.style.opacity = '1';
+        }, 10);
+    }
+    
+    // Función para ocultar el modal
+    function hideModal() {
+        modal.style.opacity = '0';
+        modalContent.style.transform = 'scale(0.95)';
+        modalContent.style.opacity = '0';
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }, 300);
+    }
+    
+    // Eventos
+    deleteButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        showModal();
+    });
+    
+    cancelButton.addEventListener('click', function() {
+        hideModal();
+    });
+    
+    confirmButton.addEventListener('click', function() {
+        hideModal();
+        
+        // Mostrar estado de carga
+        deleteButton.innerHTML = '<span class="text-lg mr-2">⏳</span>Eliminando...';
+        deleteButton.disabled = true;
+        
+        // Enviar formulario después de un breve delay
+        setTimeout(() => {
+            form.submit();
+        }, 500);
+    });
+    
+    // Cerrar modal al hacer clic en el fondo
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            hideModal();
+        }
+    });
+    
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            hideModal();
+        }
+    });
+    
+    // Animaciones de entrada para la página
+    const elements = document.querySelectorAll('[class*="animate-fade-in"]');
+    elements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            element.style.transition = 'all 0.6s ease';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        }, 200 * (index + 1));
+    });
+    
+    // Auto-hide de alertas
+    const alerts = document.querySelectorAll('[class*="fixed top-5 right-5"]');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => {
+                alert.remove();
+            }, 300);
+        }, 5000);
+    });
+    
+    // Efecto hover del botón
+    deleteButton.addEventListener('mouseenter', function() {
+        if (!this.disabled) {
+            this.style.transform = 'translateY(-3px) scale(1.02)';
+            this.style.boxShadow = '0 15px 35px rgba(93, 118, 139, 0.4)';
+        }
+    });
+    
+    deleteButton.addEventListener('mouseleave', function() {
+        if (!this.disabled) {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.boxShadow = '0 10px 25px rgba(93, 118, 139, 0.3)';
+        }
+    });
+});
+</script>
+
+{% endblock %}

@@ -278,6 +278,14 @@
                 <span class="text-lg mr-2 transition-transform duration-300 hover:scale-110">🚪</span>
                 Cerrar Sesión
             </a>
+
+            <!-- Botón eliminar cuenta -->
+            <a href="{% url 'accounts:eliminar_cuenta' %}" 
+               class="inline-flex items-center px-6 py-3 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-slate-500 border-slate-300 hover:border-slate-400 hover:text-slate-600 hover:bg-slate-50"
+               title="Eliminar cuenta permanentemente">
+                <span class="text-lg mr-2 transition-transform duration-300 hover:scale-110">🗑️</span>
+                <span class="text-sm">Eliminar Cuenta</span>
+            </a>
         </div>
     </div>
 </section>

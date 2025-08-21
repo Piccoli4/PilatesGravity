@@ -1,0 +1,220 @@
+/* ========================================
+   ESTILOS ESPECÍFICOS DE ELIMINAR CUENTA
+   ======================================== */
+
+/* Modal personalizado - ACTUALIZADO */
+.modal-overlay {
+    backdrop-filter: blur(5px);
+    background-color: rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+}
+
+.modal-content {
+    transition: all 0.3s ease;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Animaciones para el modal */
+#confirmStep2 {
+    transition: all 0.3s ease;
+}
+
+/* Efectos hover para botones del modal */
+.modal-content button {
+    transition: all 0.3s ease;
+}
+
+.modal-content button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilos específicos para botones de confirmación */
+.modal-content button[style*="linear-gradient(135deg, #ef4444"]:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+}
+
+/* Estilos para el backdrop blur */
+@supports (backdrop-filter: blur(5px)) {
+    .modal-overlay {
+        backdrop-filter: blur(5px);
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+}
+
+@supports not (backdrop-filter: blur(5px)) {
+    .modal-overlay {
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) skewX(-12deg); }
+    100% { transform: translateX(100%) skewX(-12deg); }
+}
+
+/* Clases de animación */
+.animate-fade-in {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.animate-fade-in-delay-1 {
+    animation: fadeInUp 0.6s ease 0.2s forwards;
+    opacity: 0;
+}
+
+.animate-fade-in-delay-2 {
+    animation: fadeInUp 0.6s ease 0.4s forwards;
+    opacity: 0;
+}
+
+.animate-fade-in-delay-3 {
+    animation: fadeInUp 0.6s ease 0.6s forwards;
+    opacity: 0;
+}
+
+.animate-fade-in-delay-4 {
+    animation: fadeInUp 0.6s ease 0.8s forwards;
+    opacity: 0;
+}
+
+.animate-slideInRight {
+    animation: slideInRight 0.4s ease forwards;
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Botón de eliminar personalizado */
+.delete-button {
+    transition: all 0.3s ease;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 25px rgba(93, 118, 139, 0.3);
+}
+
+.delete-button:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(93, 118, 139, 0.4);
+    background: linear-gradient(135deg, #b8a189, #4a6375) !important;
+}
+
+/* Efecto de shimmer para alertas */
+.shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+/* Estilos para código inline - NO NECESARIO */
+
+/* Mejoras en el scroll de historial */
+.max-h-64::-webkit-scrollbar {
+    width: 6px;
+}
+
+.max-h-64::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.max-h-64::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.max-h-64::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Efectos hover mejorados */
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos eliminados para inputs - ya no se necesitan */
+
+/* Responsive mejoras */
+@media (max-width: 640px) {
+    .delete-button .delete-text {
+        font-size: 0.875rem;
+    }
+    
+    .max-w-4xl {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Estados de focus mejorados */
+button:focus {
+    outline: none;
+}
+
+/* Mejoras en gradientes */
+.gradient-text {
+    background: linear-gradient(135deg, #C8B39B, #5D768B);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Efectos de pulso para elementos importantes */
+.pulse-warning {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}

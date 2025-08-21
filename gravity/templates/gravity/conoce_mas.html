@@ -1,1 +1,420 @@
 {% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Conoce más sobre Pilates Gravity{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .hero-gradient {
+            background: linear-gradient(135deg, #5D768B 0%, #C8B39B 100%);
+        }
+        
+        .floating-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .benefit-icon {
+            background: linear-gradient(135deg, #5D768B, #C8B39B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #5D768B, #C8B39B);
+        }
+        
+        .timeline-dot {
+            background: linear-gradient(135deg, #5D768B, #C8B39B);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero-gradient text-black min-h-screen flex items-center relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="w-96 h-96 bg-black rounded-full absolute -top-48 -right-48 animate-pulse-ring"></div>
+            <div class="w-64 h-64 bg-black rounded-full absolute -bottom-32 -left-32 animate-float"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 relative z-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-5xl md:text-6xl font-cinzel font-semibold mb-6 animate-fadeInUp">
+                    Descubre el Poder del
+                    <span class="text-principal">Pilates</span>
+                </h1>
+                <p class="text-xl md:text-2xl mb-8 leading-relaxed animate-fadeInUp" style="animation-delay: 0.2s;">
+                    Transforma tu cuerpo y mente en Pilates Gravity, donde cada movimiento 
+                    cuenta y cada respiración te acerca a tu mejor versión.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style="animation-delay: 0.4s;">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'gravity:reservar_clase' %}" 
+                        class="bg-principal hover:bg-principal/90 text-white px-8 py-3 rounded-lg font-semibold text-center inline-flex items-center justify-center transition-all duration-300 hover:shadow-btn-primary-hover">
+                            Reserva tu Primera Clase
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:signup' %}" 
+                        class="bg-principal hover:bg-principal/90 text-white px-8 py-3 rounded-lg font-semibold text-center inline-flex items-center justify-center transition-all duration-300 hover:shadow-btn-primary-hover">
+                            Únete Ahora
+                        </a>
+                    {% endif %}
+                    <a href="#historia" 
+                    class="border-2 border-white text-black px-8 py-3 rounded-lg font-semibold text-center inline-flex items-center justify-center hover:bg-white hover:text-principal transition-all duration-300">
+                        Conoce Nuestra Historia
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Nuestra Historia -->
+    <section id="historia" class="min-h-screen flex items-center bg-blanco py-20">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl md:text-4xl font-cinzel font-bold text-principal mt-4 mb-4">
+                        Nuestra Historia
+                    </h2>
+                    <p class="text-lg text-gris-oscuro max-w-3xl mx-auto">
+                        Una pasión por el bienestar que comenzó con un sueño y se convirtió 
+                        en el lugar de transformación que es hoy.
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8 items-stretch">
+                    <div class="flex flex-col justify-between h-full space-y-4">
+                        <div class="bg-fondo p-6 rounded-xl shadow-wizard flex-1 flex items-center">
+                            <div class="flex items-start space-x-3 w-full">
+                                <div class="timeline-dot w-3 h-3 rounded-full flex-shrink-0 mt-1"></div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-principal mb-2">El Comienzo</h3>
+                                    <p class="text-gris-oscuro text-sm leading-relaxed">
+                                        Pilates Gravity nació de la visión de crear un espacio donde el movimiento 
+                                        consciente y la respiración se unieran para transformar vidas.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-fondo p-6 rounded-xl shadow-wizard flex-1 flex items-center">
+                            <div class="flex items-start space-x-3 w-full">
+                                <div class="timeline-dot w-3 h-3 rounded-full flex-shrink-0 mt-1"></div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-principal mb-2">Nuestra Filosofía</h3>
+                                    <p class="text-gris-oscuro text-sm leading-relaxed">
+                                        Creemos que el Pilates es más que ejercicio; es una forma de vida que 
+                                        fortalece el cuerpo y la mente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-fondo p-6 rounded-xl shadow-wizard flex-1 flex items-center">
+                            <div class="flex items-start space-x-3 w-full">
+                                <div class="timeline-dot w-3 h-3 rounded-full flex-shrink-0 mt-1"></div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-principal mb-2">Hoy</h3>
+                                    <p class="text-gris-oscuro text-sm leading-relaxed">
+                                        Somos una comunidad vibrante donde cada alumno encuentra su camino 
+                                        hacia una vida más saludable y equilibrada.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="relative h-full min-h-[400px]">
+                        <div class="bg-gradient-to-br from-principal to-secundario rounded-xl p-1 h-full">
+                            <div class="w-full h-full bg-fondo rounded-xl flex items-center justify-center">
+                                <div class="text-center p-6">
+                                    <h3 class="text-xl font-bold text-principal mb-3">Transformación Total</h3>
+                                    <p class="text-gris-oscuro text-sm">
+                                        Cuerpo, mente y espíritu en perfecta armonía
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Nuestros Equipos -->
+    <section class="py-20 bg-fondo">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-cinzel font-bold text-principal mb-6">
+                        Nuestros Equipos
+                    </h2>
+                    <p class="text-xl text-gris-oscuro max-w-3xl mx-auto">
+                        Trabajamos con equipos de última generación para ofrecerte 
+                        la mejor experiencia de Pilates.
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-12">
+                    <!-- Reformer -->
+                    <div class="floating-card bg-blanco p-8 rounded-2xl shadow-wizard group hover:shadow-card-hover transition-all duration-300">
+                        <div class="text-center">
+                            <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center text-white text-3xl group-hover:animate-iconPulse">
+                                <img src="{% static 'icons/reformer.png' %}" alt="Icono de pilates reformer" class="w-[50px] h-auto mb-[3px]">
+                            </div>
+                            <h3 class="text-3xl font-bold text-principal mb-4">Pilates Reformer</h3>
+                            <p class="text-gris-oscuro leading-relaxed mb-6">
+                                El equipo más versátil del Pilates. Con un sistema de poleas y resortes, 
+                                el Reformer proporciona resistencia variable que desafía tu cuerpo de 
+                                manera única, permitiendo trabajos de fuerza, flexibilidad y coordinación.
+                            </p>
+                            <div class="space-y-3 text-left">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 bg-principal rounded-full"></div>
+                                    <span class="text-gris-oscuro">Trabajo de cuerpo completo</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 bg-principal rounded-full"></div>
+                                    <span class="text-gris-oscuro">Resistencia variable y progresiva</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 bg-principal rounded-full"></div>
+                                    <span class="text-gris-oscuro">Ideal para todos los niveles</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cadillac -->
+                    <div class="floating-card bg-blanco p-8 rounded-2xl shadow-wizard group hover:shadow-card-hover transition-all duration-300">
+                        <div class="text-center">
+                            <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center text-white text-3xl group-hover:animate-iconPulse">
+                                <img src="{% static 'icons/cadillac.png' %}" alt="Icono de pilates cadillac" class="w-[50px] h-auto mb-[3px]">
+                            </div>
+                            <h3 class="text-3xl font-bold text-principal mb-4">Pilates Cadillac</h3>
+                            <p class="text-gris-oscuro leading-relaxed mb-6">
+                                El "Cadillac" del Pilates. Este equipo permite una gama completa de 
+                                ejercicios terapéuticos y avanzados. Con su estructura de torre y 
+                                múltiples accesorios, ofrece infinitas posibilidades de movimiento.
+                            </p>
+                            <div class="space-y-3 text-left">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 bg-principal rounded-full"></div>
+                                    <span class="text-gris-oscuro">Ejercicios terapéuticos especializados</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 bg-principal rounded-full"></div>
+                                    <span class="text-gris-oscuro">Trabajo de flexibilidad avanzada</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-2 h-2 bg-principal rounded-full"></div>
+                                    <span class="text-gris-oscuro">Perfecto para rehabilitación</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonios -->
+    <section class="py-20 bg-blanco">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-cinzel font-bold text-principal mb-6">
+                        Lo que Dicen Nuestros Alumnos
+                    </h2>
+                    <p class="text-xl text-gris-oscuro max-w-3xl mx-auto">
+                        Historias reales de transformación que inspiran y motivan.
+                    </p>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Testimonio 1 -->
+                    <div class="p-8 rounded-2xl bg-fondo border-l-4 border-principal hover:shadow-card-hover transition-all duration-300">
+                        <div class="text-4xl text-secundario mb-4">"</div>
+                        <p class="text-gris-oscuro leading-relaxed mb-6 italic">
+                            Pilates Gravity cambió mi vida. Después de años de dolor de espalda, 
+                            encontré aquí no solo alivio, sino una nueva forma de relacionarme 
+                            con mi cuerpo.
+                        </p>
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center text-white font-bold">
+                                M
+                            </div>
+                            <div>
+                                <p class="font-semibold text-principal">María González</p>
+                                <p class="text-sm text-gris-medio">Alumna desde 2022</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Testimonio 2 -->
+                    <div class="p-8 rounded-2xl bg-fondo border-l-4 border-secundario hover:shadow-card-hover transition-all duration-300">
+                        <div class="text-4xl text-secundario mb-4">"</div>
+                        <p class="text-gris-oscuro leading-relaxed mb-6 italic">
+                            La atención personalizada y el ambiente acogedor hacen que cada clase 
+                            sea una experiencia única. Nunca pensé que hacer ejercicio podría ser 
+                            tan placentero.
+                        </p>
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center text-white font-bold">
+                                C
+                            </div>
+                            <div>
+                                <p class="font-semibold text-principal">Carlos Rodríguez</p>
+                                <p class="text-sm text-gris-medio">Alumno desde 2023</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Testimonio 3 -->
+                    <div class="p-8 rounded-2xl bg-fondo border-l-4 border-principal hover:shadow-card-hover transition-all duration-300">
+                        <div class="text-4xl text-secundario mb-4">"</div>
+                        <p class="text-gris-oscuro leading-relaxed mb-6 italic">
+                            Como atleta, pensé que sabía todo sobre entrenamiento. El Pilates me 
+                            enseñó una nueva dimensión del movimiento y mejoró increíblemente mi 
+                            rendimiento.
+                        </p>
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center text-white font-bold">
+                                L
+                            </div>
+                            <div>
+                                <p class="font-semibold text-principal">Laura Martín</p>
+                                <p class="text-sm text-gris-medio">Alumna desde 2021</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action Final -->
+    <section class="hero-gradient text-black py-20 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="w-64 h-64 bg- rounded-full absolute top-0 right-0 animate-pulse-ring"></div>
+            <div class="w-96 h-96 bg- rounded-full absolute bottom-0 left-0 animate-float"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl md:text-5xl font-cinzel mb-6">
+                    ¿Listo para Comenzar tu
+                    <span class="text-principal">Transformación?</span>
+                </h2>
+                <p class="text-xl mb-8 leading-relaxed">
+                    Tu cuerpo y mente te están esperando. Únete a nuestra comunidad y 
+                    descubre todo lo que el Pilates puede hacer por ti.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'gravity:reservar_clase' %}" 
+                        class="bg-secundario text-principal px-8 py-4 text-lg font-semibold rounded-full hover:bg-white hover:text-principal transform hover:scale-105 transition-all duration-300 shadow-btn-primary-hover">
+                            Reserva tu Primera Clase
+                        </a>
+                        <a href="{% url 'gravity:clases_disponibles' %}" 
+                        class="border-2 border-white text-principal px-8 py-4 text-lg font-semibold rounded-full hover:bg-white hover:text-principal transition-all duration-300">
+                            Ver Horarios Disponibles
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:signup' %}" 
+                        class="bg-secundario text-principal px-8 py-4 text-lg font-semibold rounded-full hover:bg-white hover:text-principal transform hover:scale-105 transition-all duration-300 shadow-btn-primary-hover">
+                            Únete Ahora
+                        </a>
+                        <a href="{% url 'accounts:login' %}" 
+                        class="border-2 border-white text-white px-8 py-4 text-lg font-semibold rounded-full hover:bg-white hover:text-principal transition-all duration-300">
+                            Iniciar Sesión
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Información de contacto -->
+                <div class="flex flex-col sm:flex-row gap-8 justify-center text-center">
+                    <div class="flex items-center justify-center space-x-3">
+                        <div class="w-8 h-8  flex items-center justify-center">
+                            <img src="{% static 'icons/telefono.png' %}" alt="Icono de teléfono" class="w-[50px] h-auto mb-[3px]">
+                        </div>
+                        <span>+54 342 511 4448</span>
+                    </div>
+                    <div class="flex items-center justify-center space-x-3">
+                        <div class="w-8 h-8  flex items-center justify-center">
+                            <img src="{% static 'icons/email.png' %}" alt="Icono de email" class="w-[50px] h-auto mb-[3px]">
+                        </div>
+                        <span>pilatesgravity@gmail.com</span>
+                    </div>
+                    <div class="flex items-center justify-center space-x-3">
+                        <div class="w-8 h-8  flex items-center justify-center">
+                            <img src="{% static 'icons/location.png' %}" alt="Icono de ubicación" class="w-[50px] h-auto mb-[3px]">
+                        </div>
+                        <span>Santa Fe, Argentina</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Animaciones adicionales al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Observador para animaciones al hacer scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationDelay = '0s';
+                        entry.target.classList.add('animate-fadeInUp');
+                    }
+                });
+            }, observerOptions);
+            
+            // Observar elementos que deben animarse
+            document.querySelectorAll('.floating-card, .group').forEach(el => {
+                observer.observe(el);
+            });
+            
+            // Efecto de escritura para el título principal
+            const title = document.querySelector('h1');
+            if (title) {
+                title.style.opacity = '0';
+                setTimeout(() => {
+                    title.style.opacity = '1';
+                    title.classList.add('animate-fadeInUp');
+                }, 200);
+            }
+        });
+        
+        // Smooth scroll para los enlaces de anclaje
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
