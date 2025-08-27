@@ -72,10 +72,14 @@
             <!-- Estadísticas del usuario -->
             {% if user_profile %}
             <div class="flex justify-center gap-8 pt-6 border-t border-slate-200">
-                <div class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer min-w-20">
-                    <span class="block text-2xl font-bold mb-1" style="color: #5D768B;">{{ user_profile.get_total_reservas }}</span>
-                    <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide">Reservas</span>
-                </div>
+                <!-- Enlace a Mis Reservas - CLICKEABLE -->
+                <a href="{% url 'accounts:mis_reservas' %}" class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-lg cursor-pointer min-w-20 no-underline group transform hover:scale-105">
+                    <span class="block text-2xl font-bold mb-1 group-hover:text-blue-600 transition-colors duration-300" style="color: #5D768B;">{{ user_profile.get_total_reservas }}</span>
+                    <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide group-hover:text-blue-700 transition-colors duration-300">Reservas</span>
+                    <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <span class="text-xs text-blue-600 font-semibold">Ver todas →</span>
+                    </div>
+                </a>
                 <div class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer min-w-20">
                     <span class="block text-2xl font-bold mb-1" style="color: #5D768B;">{{ user_profile.get_reservas_activas.count }}</span>
                     <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide">Activas</span>
@@ -109,6 +113,23 @@
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                 </a>
             {% endif %}
+            
+            <!-- Nuevo: Enlace directo a Mis Reservas -->
+            <a href="{% url 'accounts:mis_reservas' %}" 
+               class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in group">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+                     style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                    <span class="text-2xl">📋</span>
+                </div>
+                <div class="flex-1">
+                    <h4 class="font-semibold text-lg mb-1" style="color: #5D768B;">Mis Reservas</h4>
+                    <p class="text-slate-600 text-sm">Ver y gestionar reservas activas</p>
+                    {% if user_profile and user_profile.get_reservas_activas.count > 0 %}
+                        <p class="text-xs text-green-600 font-semibold mt-1">{{ user_profile.get_reservas_activas.count }} reserva{{ user_profile.get_reservas_activas.count|pluralize:"s" }} activa{{ user_profile.get_reservas_activas.count|pluralize:"s" }}</p>
+                    {% endif %}
+                </div>
+                <span class="text-2xl font-bold transition-transform duration-300 group-hover:translate-x-1" style="color: #C8B39B;">→</span>
+            </a>
             
             <a href="{% url 'accounts:profile_complete' %}" 
                class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in">
@@ -351,6 +372,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 shimmer.remove();
             }, 2000);
         }, 8000);
+    }
+
+    // Efecto especial para el enlace de reservas clickeable
+    const reservasLink = document.querySelector('a[href*="mis_reservas"]');
+    if (reservasLink && reservasLink.classList.contains('group')) {
+        // Agregar efecto de pulso sutil si hay reservas activas
+        const reservasActivas = '{{ user_profile.get_reservas_activas.count }}';
+        if (reservasActivas > 0) {
+            setInterval(() => {
+                reservasLink.style.boxShadow = '0 0 20px rgba(93, 118, 139, 0.3)';
+                setTimeout(() => {
+                    reservasLink.style.boxShadow = '';
+                }, 1000);
+            }, 3000);
+        }
     }
 });
 </script>

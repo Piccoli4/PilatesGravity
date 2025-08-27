@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Reserva {{ reserva.numero_reserva }} - Pilates Gravity{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .reservation-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .status-active {
+            background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
+        }
+        
+        .info-item {
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .info-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.1);
+        }
+        
+        .action-button {
+            transition: all 0.3s ease;
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(93, 118, 139, 0.2);
+        }
+        
+        .sede-badge {
+            background: linear-gradient(135deg, #5D768B 0%, #C8B39B 100%);
+        }
+        
+        .location-icon {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <section class="min-h-screen bg-fondo pt-10 pb-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+
+                <!-- Header de la página -->
+                <div class="text-center mb-6 animate-fadeInUp" style="animation-delay: 0.2s;">
+                    <h1 class="text-4xl md:text-5xl font-cinzel font-bold text-principal mb-4">
+                        Detalle de Reserva
+                    </h1>
+                    <div class="w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-6"></div>
+                    <div class="status-active inline-flex items-center px-6 rounded-full text-principal font-semibold">
+                        ✅ Reserva Activa
+                    </div>
+                </div>
+
+                <!-- Información principal de la reserva -->
+                <div class="reservation-card rounded-2xl shadow-wizard p-8 mb-8 animate-fadeInUp" style="animation-delay: 0.4s;">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-principal mb-2">
+                            {{ reserva.clase.get_nombre_display }}
+                        </h2>
+                        <p class="text-lg text-gris-oscuro">
+                            Código de Reserva: <span class="font-bold text-principal">{{ reserva.numero_reserva }}</span>
+                        </p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Día -->
+                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                            <div class="text-4xl mb-3">📅</div>
+                            <h3 class="text-lg font-semibold text-principal mb-2">Día</h3>
+                            <p class="text-gris-oscuro font-medium">{{ reserva.clase.dia }}</p>
+                        </div>
+
+                        <!-- Horario -->
+                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                            <div class="text-4xl mb-3">⏰</div>
+                            <h3 class="text-lg font-semibold text-principal mb-2">Horario</h3>
+                            <p class="text-gris-oscuro font-medium">{{ reserva.clase.horario|time:"H:i" }}</p>
+                        </div>
+
+                        <!-- Sede -->
+                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                            <div class="text-4xl mb-3 location-icon">📍</div>
+                            <h3 class="text-lg font-semibold text-principal mb-2">Sede</h3>
+                            <p class="text-gris-oscuro font-medium text-sm">{{ reserva.clase.get_direccion_corta }}</p>
+                        </div>
+
+                        <!-- Cupos -->
+                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                            <div class="text-4xl mb-3">👥</div>
+                            <h3 class="text-lg font-semibold text-principal mb-2">Cupos</h3>
+                            <p class="text-gris-oscuro font-medium">{{ reserva.clase.cupos_disponibles }}/{{ reserva.clase.cupo_maximo }}</p>
+                            <p class="text-xs text-gris-medio mt-1">disponibles</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <!-- Próxima clase -->
+                    <div class="reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp" style="animation-delay: 0.6s;">
+                        <h3 class="text-xl font-bold text-principal mb-4 flex items-center gap-2">
+                            <span class="text-2xl">⏰</span>
+                            Próxima Clase
+                        </h3>
+                        <div class="space-y-3">
+                            <p class="text-lg font-medium text-gris-oscuro">
+                                {{ proxima_clase_info }}
+                            </p>
+                            {% if puede_modificar %}
+                                <div class="bg-exito/10 border border-exito/30 rounded-lg p-3 flex items-start gap-2">
+                                    <span class="text-exito text-lg">✅</span>
+                                    <p class="text-exito text-sm font-medium">
+                                        Puedes cancelar tu reserva hasta 12 horas antes de la clase.
+                                    </p>
+                                </div>
+                            {% else %}
+                                <div class="bg-error/10 border border-error/30 rounded-lg p-3 flex items-start gap-2">
+                                    <span class="text-error text-lg">⚠️</span>
+                                    <p class="text-error text-sm font-medium">
+                                        {{ mensaje_modificacion }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Información del usuario -->
+                    <div class="reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp" style="animation-delay: 0.8s;">
+                        <h3 class="text-xl font-bold text-principal mb-4 flex items-center gap-2">
+                            <span class="text-2xl">👤</span>
+                            Información Personal
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-sm text-gris-medio">Nombre completo</p>
+                                <p class="font-medium text-gris-oscuro">{{ reserva.get_nombre_completo_usuario }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gris-medio">Usuario</p>
+                                <p class="font-medium text-gris-oscuro">{{ reserva.usuario.username }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gris-medio">Fecha de reserva</p>
+                                <p class="font-medium text-gris-oscuro">{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="text-center space-y-4 animate-fadeInUp" style="animation-delay: 1s;">
+                    {% if puede_modificar %}
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                            <a href="{% url 'gravity:eliminar_reserva' reserva.numero_reserva %}" 
+                               class="action-button bg-error hover:bg-error/90 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                                ❌ Cancelar Reserva
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'accounts:mis_reservas' %}" 
+                               class="action-button bg-secundario hover:bg-secundario/90 text-gris-oscuro px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                                📋 Ver Todas Mis Reservas
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'gravity:clases_disponibles' %}" 
+                           class="action-button border-2 border-principal text-principal hover:bg-principal hover:text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                            📅 Ver Clases Disponibles
+                        </a>
+                        <a href="{% url 'gravity:home' %}" 
+                           class="action-button bg-gris-claro hover:bg-gris-medio text-gris-oscuro px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                            🏠 Volver al Inicio
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Información adicional sobre la reserva recurrente -->
+                <div class="mt-12 reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp" style="animation-delay: 1.2s;">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold text-principal mb-4">
+                            🔄 Reserva Recurrente
+                        </h3>
+                        <p class="text-lg text-gris-oscuro mb-6 leading-relaxed">
+                            Esta reserva es <strong>recurrente</strong>, lo que significa que tienes tu lugar asegurado 
+                            todos los <strong>{{ reserva.clase.dia }}</strong> a las <strong>{{ reserva.clase.horario|time:"H:i" }}</strong> 
+                            en <strong>{{ reserva.clase.get_direccion_corta }}</strong> hasta que decidas cancelarla.
+                        </p>
+                        
+                        <div class="grid md:grid-cols-3 gap-4 text-sm">
+                            <div class="bg-exito/10 border border-exito/30 rounded-lg p-4">
+                                <div class="text-exito text-2xl mb-2">✅</div>
+                                <p class="font-medium text-exito">Lugar Asegurado</p>
+                                <p class="text-exito/80">Tu lugar está garantizado cada semana</p>
+                            </div>
+                            
+                            <div class="bg-info/10 border border-info/30 rounded-lg p-4">
+                                <div class="text-info text-2xl mb-2">🔄</div>
+                                <p class="font-medium text-info">Automática</p>
+                                <p class="text-info/80">No necesitas reservar cada semana</p>
+                            </div>
+                            
+                            <div class="bg-advertencia/10 border border-advertencia/30 rounded-lg p-4">
+                                <div class="text-advertencia text-2xl mb-2">⏰</div>
+                                <p class="font-medium text-advertencia">Flexible</p>
+                                <p class="text-advertencia/80">Puedes modificar o cancelar cuando quieras</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animaciones de entrada
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observar elementos para animaciones
+            document.querySelectorAll('.info-item, .reservation-card').forEach(item => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                item.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(item);
+            });
+
+            // Efecto de hover mejorado en botones
+            document.querySelectorAll('.action-button').forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.02)';
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Confirmación para acciones importantes
+            const cancelButton = document.querySelector('a[href*="eliminar_reserva"]');
+            if (cancelButton) {
+                cancelButton.addEventListener('click', function(e) {
+                    if (!confirm('¿Estás seguro de que quieres cancelar esta reserva? Esta acción no se puede deshacer.')) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // Mostrar tooltip con información adicional de la sede
+            const sedeInfo = document.querySelector('.sede-badge');
+            if (sedeInfo) {
+                sedeInfo.addEventListener('mouseenter', function() {
+                    this.title = 'Haz clic para ver más información sobre esta sede';
+                });
+            }
+
+            // Copiar número de reserva al hacer clic
+            const numeroReserva = document.querySelector('span.font-bold.text-principal');
+            if (numeroReserva) {
+                numeroReserva.style.cursor = 'pointer';
+                numeroReserva.title = 'Haz clic para copiar el número de reserva';
+                
+                numeroReserva.addEventListener('click', function() {
+                    navigator.clipboard.writeText(this.textContent).then(function() {
+                        // Mostrar feedback visual
+                        const originalText = numeroReserva.textContent;
+                        numeroReserva.textContent = '¡Copiado!';
+                        numeroReserva.classList.add('text-exito');
+                        
+                        setTimeout(() => {
+                            numeroReserva.textContent = originalText;
+                            numeroReserva.classList.remove('text-exito');
+                            numeroReserva.classList.add('text-principal');
+                        }, 2000);
+                    });
+                });
+            }
+
+            // Actualización automática del estado de modificación
+            function verificarEstadoModificacion() {
+                const ahora = new Date();
+                const proximaClase = new Date('{{ reserva.get_proxima_clase_info|date:"c" }}'); // Esto requeriría ajuste en el modelo
+                
+                // Esta función podría expandirse para actualizar dinámicamente
+                // el estado de si se puede modificar la reserva
+            }
+        });
+    </script>
+{% endblock %}

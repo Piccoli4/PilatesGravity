@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
-from .models import Clase, Reserva, DIAS_SEMANA
+from .models import Clase, Reserva, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
 from datetime import datetime
 from accounts.models import UserProfile
 from django.core.validators import RegexValidator
@@ -11,7 +11,7 @@ import re
 class ReservaForm(forms.Form):
     """
     Formulario para crear una nueva reserva.
-    Permite seleccionar tipo de clase, día y horario en campos separados.
+    Permite seleccionar tipo de clase, día, horario y sede.
     """
     tipo_clase = forms.ChoiceField(
         choices=[('', 'Selecciona el tipo de clase')],
@@ -23,6 +23,19 @@ class ReservaForm(forms.Form):
         error_messages={
             'required': 'Debes seleccionar un tipo de clase.',
             'invalid_choice': 'Selecciona un tipo de clase válido.'
+        }
+    )
+    
+    sede = forms.ChoiceField(
+        choices=[('', 'Selecciona la sede')],
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white',
+            'id': 'id_sede'
+        }),
+        label="Sede",
+        error_messages={
+            'required': 'Debes seleccionar una sede.',
+            'invalid_choice': 'Selecciona una sede válida.'
         }
     )
     
@@ -65,13 +78,22 @@ class ReservaForm(forms.Form):
             (tipo, dict(Clase.TIPO_CLASES).get(tipo, tipo)) for tipo in tipos_disponibles
         ]
         
+        # Obtener sedes únicas disponibles
+        sedes_disponibles = Clase.objects.filter(
+            activa=True
+        ).values_list('direccion', flat=True).distinct()
+        
+        self.fields['sede'].choices = [('', 'Selecciona la sede')] + [
+            (sede, dict(Clase.DIRECCIONES).get(sede, sede)) for sede in sedes_disponibles
+        ]
+        
         # Obtener días únicos disponibles
         dias_disponibles = Clase.objects.filter(
             activa=True
         ).values_list('dia', flat=True).distinct()
         
         # Ordenar días según el orden de la semana
-        orden_dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+        orden_dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
         dias_ordenados = sorted(
             set(dias_disponibles), 
             key=lambda x: orden_dias.index(x) if x in orden_dias else 999
@@ -94,20 +116,22 @@ class ReservaForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         tipo_clase = cleaned_data.get('tipo_clase')
+        sede = cleaned_data.get('sede')
         dia = cleaned_data.get('dia')
         horario_str = cleaned_data.get('horario')
         
         if not self.user:
             raise ValidationError('Usuario no autenticado.')
         
-        if tipo_clase and dia and horario_str:
+        if tipo_clase and sede and dia and horario_str:
             try:
                 # Convertir string de horario a time object
                 horario_time = datetime.strptime(horario_str, '%H:%M').time()
                 
-                # Buscar la clase específica
+                # Buscar la clase específica incluyendo la sede
                 clase = Clase.objects.get(
                     tipo=tipo_clase, 
+                    direccion=sede,
                     dia=dia, 
                     horario=horario_time,
                     activa=True
@@ -115,9 +139,10 @@ class ReservaForm(forms.Form):
                 
                 # Verificar si la clase tiene cupo disponible
                 if clase.esta_completa():
+                    sede_display = dict(Clase.DIRECCIONES).get(sede, sede)
                     raise ValidationError(
-                        f'La clase de {clase.get_tipo_display()} los {dia} a las {horario_str} '
-                        'está completa. Por favor selecciona otra opción.'
+                        f'La clase de {clase.get_nombre_display()} los {dia} a las {horario_str} '
+                        f'en {sede_display} está completa. Por favor selecciona otra opción.'
                     )
                 
                 # Verificar que el usuario no tenga ya una reserva activa para este día
@@ -130,8 +155,9 @@ class ReservaForm(forms.Form):
                 if reserva_existente:
                     raise ValidationError(
                         f'Ya tienes una reserva activa para los {dia} '
-                        f'({reserva_existente.clase.get_tipo_display()} a las '
-                        f'{reserva_existente.clase.horario.strftime("%H:%M")}). '
+                        f'({reserva_existente.clase.get_nombre_display()} a las '
+                        f'{reserva_existente.clase.horario.strftime("%H:%M")} en '
+                        f'{reserva_existente.clase.get_direccion_corta()}). '
                         'Solo puedes tener una reserva por día.'
                     )
                 
@@ -152,9 +178,10 @@ class ReservaForm(forms.Form):
                 cleaned_data['clase'] = clase
                 
             except Clase.DoesNotExist:
+                sede_display = dict(Clase.DIRECCIONES).get(sede, sede)
                 raise ValidationError(
                     f'No existe una clase de {tipo_clase} los {dia} a las {horario_str} '
-                    'o la clase no está activa. Por favor verifica tu selección.'
+                    f'en {sede_display} o la clase no está activa. Por favor verifica tu selección.'
                 )
             except ValueError:
                 raise ValidationError('Formato de horario inválido.')
@@ -225,7 +252,7 @@ class ModificarReservaForm(forms.Form):
             # Establecer el queryset con las clases disponibles
             self.fields['nueva_clase'].queryset = Clase.objects.filter(
                 id__in=clases_disponibles
-            ).order_by('tipo', 'dia', 'horario')
+            ).order_by('direccion', 'tipo', 'dia', 'horario')
     
     def clean_nueva_clase(self):
         nueva_clase = self.cleaned_data.get('nueva_clase')
@@ -236,9 +263,9 @@ class ModificarReservaForm(forms.Form):
         # Verificar que la clase siga teniendo cupo disponible
         if nueva_clase.esta_completa():
             raise ValidationError(
-                f'La clase de {nueva_clase.get_tipo_display()} los {nueva_clase.dia} '
-                f'a las {nueva_clase.horario.strftime("%H:%M")} ya no tiene cupos disponibles. '
-                'Por favor selecciona otra clase.'
+                f'La clase de {nueva_clase.get_nombre_display()} los {nueva_clase.dia} '
+                f'a las {nueva_clase.horario.strftime("%H:%M")} en {nueva_clase.get_direccion_corta()} '
+                'ya no tiene cupos disponibles. Por favor selecciona otra clase.'
             )
         
         # Verificar que no haya conflicto con otras reservas activas del usuario
@@ -281,12 +308,13 @@ class EliminarReservaForm(forms.Form):
         super().__init__(*args, **kwargs)
         
         if self.reserva:
-            # Personalizar el label con información específica de la reserva
+            # Personalizar el label con información específica de la reserva incluyendo sede
             self.fields['confirmar_eliminacion'].label = (
                 f"Confirmo que deseo cancelar mi reserva para la clase de "
-                f"{self.reserva.clase.get_tipo_display()} los "
+                f"{self.reserva.clase.get_nombre_display()} los "
                 f"{self.reserva.clase.dia} a las "
-                f"{self.reserva.clase.horario.strftime('%H:%M')}"
+                f"{self.reserva.clase.horario.strftime('%H:%M')} en "
+                f"{self.reserva.clase.get_direccion_corta()}"
             )
     
     def clean(self):
@@ -351,16 +379,27 @@ class BuscarReservaForm(forms.Form):
 class ClaseAdminForm(forms.ModelForm):
     """
     Formulario para crear y editar clases desde el panel de administración.
-    Incluye todas las validaciones necesarias.
+    Incluye lógica condicional para clases especiales y selección de sede.
     """
     
     class Meta:
         model = Clase
-        fields = ['tipo', 'dia', 'horario', 'cupo_maximo', 'activa']
+        fields = ['tipo', 'nombre_personalizado', 'direccion', 'dia', 'horario', 'cupo_maximo', 'activa']
         widgets = {
             'tipo': forms.Select(attrs={
                 'class': 'form-select',
-                'id': 'id_tipo'
+                'id': 'id_tipo',
+                'onchange': 'toggleEspecialFields()'
+            }),
+            'nombre_personalizado': forms.TextInput(attrs={
+                'class': 'form-control',
+                'id': 'id_nombre_personalizado',
+                'placeholder': 'Ej: Pilates Prenatal, Rehabilitación, etc.',
+                'maxlength': '100'
+            }),
+            'direccion': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_direccion'
             }),
             'dia': forms.Select(attrs={
                 'class': 'form-select',
@@ -387,6 +426,14 @@ class ClaseAdminForm(forms.ModelForm):
                 'required': 'Debes seleccionar un tipo de clase.',
                 'invalid_choice': 'Selecciona un tipo válido.'
             },
+            'nombre_personalizado': {
+                'required': 'Las clases especiales deben tener un nombre personalizado.',
+                'max_length': 'El nombre no puede exceder 100 caracteres.'
+            },
+            'direccion': {
+                'required': 'Debes seleccionar una sede.',
+                'invalid_choice': 'Selecciona una sede válida.'
+            },
             'dia': {
                 'required': 'Debes seleccionar un día de la semana.',
                 'invalid_choice': 'Selecciona un día válido.'
@@ -409,12 +456,74 @@ class ClaseAdminForm(forms.ModelForm):
         
         # Personalizar choices para mejor UX
         self.fields['tipo'].empty_label = "Selecciona el tipo de clase"
-        self.fields['dia'].empty_label = "Selecciona el día"
+        self.fields['direccion'].empty_label = "Selecciona la sede"
+        
+        # Configurar el campo de días dinámicamente
+        self._setup_dia_choices()
         
         # Agregar help_text
+        self.fields['nombre_personalizado'].help_text = "Solo para clases especiales (obligatorio si seleccionas 'Clase Especial')"
+        self.fields['direccion'].help_text = "Sede donde se dictará la clase"
         self.fields['horario'].help_text = "Formato 24 horas (ej: 09:00, 18:30)"
         self.fields['cupo_maximo'].help_text = "Número máximo de personas (1-20)"
         self.fields['activa'].help_text = "Las clases inactivas no aparecen para reservar"
+        
+        # Si estamos editando una clase existente, configurar los campos apropiadamente
+        if self.instance and self.instance.pk:
+            self._configure_existing_instance()
+
+    def _setup_dia_choices(self):
+        """Configura las opciones de días según el tipo de clase"""
+        # Por defecto, mostrar todos los días (se filtrará con JavaScript)
+        self.fields['dia'].choices = [('', 'Selecciona el día')] + list(DIAS_SEMANA_COMPLETOS)
+
+    def _configure_existing_instance(self):
+        """Configura el formulario para una instancia existente"""
+        if self.instance.tipo == 'Especial':
+            # Asegurar que el nombre personalizado esté visible
+            self.fields['nombre_personalizado'].required = True
+        else:
+            # Para clases no especiales, hacer el campo opcional
+            self.fields['nombre_personalizado'].required = False
+
+    def clean_tipo(self):
+        tipo = self.cleaned_data.get('tipo')
+        return tipo
+
+    def clean_nombre_personalizado(self):
+        nombre_personalizado = self.cleaned_data.get('nombre_personalizado')
+        tipo = self.cleaned_data.get('tipo')
+        
+        # Si es clase especial, el nombre es obligatorio
+        if tipo == 'Especial':
+            if not nombre_personalizado or not nombre_personalizado.strip():
+                raise ValidationError('Las clases especiales deben tener un nombre personalizado.')
+            
+            # Validar que el nombre no sea muy similar a los tipos existentes
+            nombre_lower = nombre_personalizado.lower().strip()
+            tipos_existentes = ['reformer', 'cadillac', 'pilates reformer', 'pilates cadillac']
+            
+            if nombre_lower in tipos_existentes:
+                raise ValidationError(
+                    'El nombre personalizado no puede ser igual a un tipo de clase existente. '
+                    'Usa nombres como "Pilates Prenatal", "Rehabilitación", etc.'
+                )
+        else:
+            # Si no es especial, no debe tener nombre personalizado
+            if nombre_personalizado:
+                raise ValidationError('Solo las clases especiales pueden tener nombre personalizado.')
+        
+        return nombre_personalizado.strip() if nombre_personalizado else None
+
+    def clean_dia(self):
+        dia = self.cleaned_data.get('dia')
+        tipo = self.cleaned_data.get('tipo')
+        
+        # Validar que solo las clases especiales puedan ser los sábados
+        if dia == 'Sábado' and tipo != 'Especial':
+            raise ValidationError('Solo las clases especiales pueden programarse los sábados.')
+        
+        return dia
 
     def clean_horario(self):
         horario = self.cleaned_data.get('horario')
@@ -446,25 +555,47 @@ class ClaseAdminForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         tipo = cleaned_data.get('tipo')
+        nombre_personalizado = cleaned_data.get('nombre_personalizado')
+        direccion = cleaned_data.get('direccion')
         dia = cleaned_data.get('dia')
         horario = cleaned_data.get('horario')
         
-        if tipo and dia and horario:
+        if tipo and direccion and dia and horario:
+            # Construir la consulta base para verificar duplicados
+            duplicate_filter = {
+                'tipo': tipo,
+                'direccion': direccion,
+                'dia': dia,
+                'horario': horario
+            }
+            
+            # Para clases especiales, incluir el nombre personalizado en la verificación
+            if tipo == 'Especial':
+                duplicate_filter['nombre_personalizado'] = nombre_personalizado
+            else:
+                # Para clases normales, el nombre debe ser null
+                duplicate_filter['nombre_personalizado__isnull'] = True
+            
             # Verificar que no exista una clase igual (excluyendo la instancia actual si estamos editando)
-            existing_clase = Clase.objects.filter(
-                tipo=tipo,
-                dia=dia,
-                horario=horario
-            )
+            existing_clase = Clase.objects.filter(**duplicate_filter)
             
             if self.instance and self.instance.pk:
                 existing_clase = existing_clase.exclude(pk=self.instance.pk)
             
             if existing_clase.exists():
-                raise ValidationError(
-                    f'Ya existe una clase de {dict(Clase.TIPO_CLASES)[tipo]} '
-                    f'los {dia} a las {horario.strftime("%H:%M")}.'
-                )
+                direccion_display = dict(Clase.DIRECCIONES).get(direccion, direccion)
+                if tipo == 'Especial':
+                    error_msg = (
+                        f'Ya existe una clase especial "{nombre_personalizado}" '
+                        f'los {dia} a las {horario.strftime("%H:%M")} en {direccion_display}.'
+                    )
+                else:
+                    tipo_display = dict(Clase.TIPO_CLASES).get(tipo, tipo)
+                    error_msg = (
+                        f'Ya existe una clase de {tipo_display} '
+                        f'los {dia} a las {horario.strftime("%H:%M")} en {direccion_display}.'
+                    )
+                raise ValidationError(error_msg)
         
         return cleaned_data
 
@@ -659,15 +790,15 @@ class ClienteNoRegistradoForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Solo mostrar clases activas con cupos disponibles
+        # Solo mostrar clases activas con cupos disponibles, ordenadas por sede
         clases_disponibles = []
-        for clase in Clase.objects.filter(activa=True).order_by('tipo', 'dia', 'horario'):
+        for clase in Clase.objects.filter(activa=True).order_by('direccion', 'tipo', 'dia', 'horario'):
             if clase.cupos_disponibles() > 0:
                 clases_disponibles.append(clase.id)
         
         self.fields['clase'].queryset = Clase.objects.filter(
             id__in=clases_disponibles
-        ).order_by('tipo', 'dia', 'horario')
+        ).order_by('direccion', 'tipo', 'dia', 'horario')
 
     def clean_nombre(self):
         nombre = self.cleaned_data.get('nombre')
@@ -696,8 +827,9 @@ class ClienteNoRegistradoForm(forms.Form):
             # Verificar que la clase siga teniendo cupos disponibles
             if clase.cupos_disponibles() <= 0:
                 raise ValidationError(
-                    f'La clase de {clase.get_tipo_display()} los {clase.dia} '
-                    f'a las {clase.horario.strftime("%H:%M")} ya no tiene cupos disponibles.'
+                    f'La clase de {clase.get_nombre_display()} los {clase.dia} '
+                    f'a las {clase.horario.strftime("%H:%M")} en {clase.get_direccion_corta()} '
+                    'ya no tiene cupos disponibles.'
                 )
             
             # Verificar que la clase esté activa
@@ -795,6 +927,16 @@ class BuscarReservasAdminForm(forms.Form):
             'id': 'id_tipo_clase'
         }),
         label="Tipo de clase"
+    )
+    
+    sede = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Todas las sedes')] + Clase.DIRECCIONES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_sede'
+        }),
+        label="Sede"
     )
     
     dia = forms.ChoiceField(

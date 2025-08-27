@@ -7,459 +7,459 @@
 {% endblock %}
 
 {% block content %}
-<!-- Header Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h2 class="mb-2">
-                            <i class="fas fa-chart-bar me-2"></i>
-                            Reportes y Estadísticas
-                        </h2>
-                        <p class="text-muted mb-0">
-                            Análisis detallado del rendimiento del estudio
-                        </p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-success" onclick="exportarReporte()">
-                                <i class="fas fa-download me-2"></i>Exportar
-                            </button>
-                            <button type="button" class="btn btn-primary" onclick="actualizarDatos()">
-                                <i class="fas fa-sync me-2"></i>Actualizar
-                            </button>
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Reportes y Estadísticas
+                            </h2>
+                            <p class="text-muted mb-0">
+                                Análisis detallado del rendimiento del estudio
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-success" onclick="exportarReporte()">
+                                    <i class="fas fa-download me-2"></i>Exportar
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="actualizarDatos()">
+                                    <i class="fas fa-sync me-2"></i>Actualizar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Quick Stats Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Reservas Esta Semana</h6>
-                        <h2 class="card-title mb-0">{{ reservas_esta_semana|default:0 }}</h2>
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Reservas Esta Semana</h6>
+                            <h2 class="card-title mb-0">{{ reservas_esta_semana|default:0 }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-calendar-week fa-3x opacity-75"></i>
+                        </div>
                     </div>
-                    <div>
-                        <i class="fas fa-calendar-week fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Reservas Este Mes</h6>
+                            <h2 class="card-title mb-0">{{ reservas_este_mes|default:0 }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-bookmark fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Usuarios Esta Semana</h6>
+                            <h2 class="card-title mb-0">{{ usuarios_esta_semana|default:0 }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-user-plus fa-3x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-subtitle mb-2">Usuarios Este Mes</h6>
+                            <h2 class="card-title mb-0">{{ usuarios_este_mes|default:0 }}</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-users fa-3x opacity-75"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Reservas Este Mes</h6>
-                        <h2 class="card-title mb-0">{{ reservas_este_mes|default:0 }}</h2>
-                    </div>
-                    <div>
-                        <i class="fas fa-bookmark fa-3x opacity-75"></i>
-                    </div>
+    <!-- Statistics by Class Type -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-table me-2"></i>
+                        Estadísticas por Tipo de Clase
+                    </h5>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Usuarios Esta Semana</h6>
-                        <h2 class="card-title mb-0">{{ usuarios_esta_semana|default:0 }}</h2>
-                    </div>
-                    <div>
-                        <i class="fas fa-user-plus fa-3x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-subtitle mb-2">Usuarios Este Mes</h6>
-                        <h2 class="card-title mb-0">{{ usuarios_este_mes|default:0 }}</h2>
-                    </div>
-                    <div>
-                        <i class="fas fa-users fa-3x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Statistics by Class Type -->
-<div class="row mb-4">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h5>
-                    <i class="fas fa-table me-2"></i>
-                    Estadísticas por Tipo de Clase
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if stats_por_tipo %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Tipo de Clase</th>
-                                    <th class="text-center">Total Clases</th>
-                                    <th class="text-center">Total Reservas</th>
-                                    <th class="text-center">Cupos Totales</th>
-                                    <th class="text-center">% Ocupación</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for stat in stats_por_tipo %}
+                <div class="card-body">
+                    {% if stats_por_tipo %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                {% if stat.tipo == 'Reformer' %}
-                                                    <i class="fas fa-dumbbell me-2 text-primary"></i>
-                                                {% else %}
-                                                    <i class="fas fa-bed me-2 text-info"></i>
-                                                {% endif %}
-                                                <strong>{{ stat.nombre }}</strong>
-                                            </div>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-secondary">{{ stat.total_clases|default:0 }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-primary">{{ stat.total_reservas|default:0 }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-info">{{ stat.total_cupos|default:0 }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge 
-                                                {% if stat.porcentaje_ocupacion >= 80 %}bg-success
-                                                {% elif stat.porcentaje_ocupacion >= 60 %}bg-warning
-                                                {% else %}bg-danger{% endif %}">
-                                                {{ stat.porcentaje_ocupacion|default:0 }}%
-                                            </span>
-                                        </td>
+                                        <th>Tipo de Clase</th>
+                                        <th class="text-center">Total Clases</th>
+                                        <th class="text-center">Total Reservas</th>
+                                        <th class="text-center">Cupos Totales</th>
+                                        <th class="text-center">% Ocupación</th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
-                        <h6 class="text-muted">No hay estadísticas disponibles</h6>
-                        <p class="text-muted">Crea algunas clases para ver estadísticas</p>
-                    </div>
-                {% endif %}
+                                </thead>
+                                <tbody>
+                                    {% for stat in stats_por_tipo %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if stat.tipo == 'Reformer' %}
+                                                        <i class="fas fa-dumbbell me-2 text-primary"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-bed me-2 text-info"></i>
+                                                    {% endif %}
+                                                    <strong>{{ stat.nombre }}</strong>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-secondary">{{ stat.total_clases|default:0 }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary">{{ stat.total_reservas|default:0 }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ stat.total_cupos|default:0 }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge 
+                                                    {% if stat.porcentaje_ocupacion >= 80 %}bg-success
+                                                    {% elif stat.porcentaje_ocupacion >= 60 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {{ stat.porcentaje_ocupacion|default:0 }}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">No hay estadísticas disponibles</h6>
+                            <p class="text-muted">Crea algunas clases para ver estadísticas</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Quick Insights -->
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-lightbulb me-2"></i>
-                    Resumen Rápido
-                </h5>
-            </div>
-            <div class="card-body">
-                <!-- Best Day -->
-                <div class="mb-4">
-                    <h6 class="text-success">Día Más Popular</h6>
-                    {% if stats_por_dia %}
-                        {% for stat in stats_por_dia %}
-                            {% if forloop.first %}
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="fw-bold">{{ stat.dia }}</span>
-                                    <span class="badge bg-success">{{ stat.total_reservas|default:0 }}</span>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <small class="text-muted">Sin datos disponibles</small>
-                    {% endif %}
+        <!-- Quick Insights -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Resumen Rápido
+                    </h5>
                 </div>
-
-                <!-- Best Class Type -->
-                <div class="mb-4">
-                    <h6 class="text-primary">Mejor Rendimiento</h6>
-                    {% if stats_por_tipo %}
-                        {% for stat in stats_por_tipo %}
-                            {% if forloop.first %}
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="fw-bold">{{ stat.nombre }}</span>
-                                    <span class="badge bg-primary">{{ stat.porcentaje_ocupacion|default:0 }}%</span>
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        <small class="text-muted">Sin datos disponibles</small>
-                    {% endif %}
-                </div>
-
-                <!-- Recommendations -->
-                <div class="mb-4">
-                    <h6 class="text-warning">Recomendaciones</h6>
-                    {% if stats_por_tipo %}
-                        <ul class="list-unstyled mb-0">
-                            {% for stat in stats_por_tipo %}
-                                {% if stat.porcentaje_ocupacion < 50 %}
-                                    <li class="mb-2">
-                                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                                        <small>Promocionar {{ stat.nombre }}</small>
-                                    </li>
-                                {% elif stat.porcentaje_ocupacion > 90 %}
-                                    <li class="mb-2">
-                                        <i class="fas fa-plus-circle text-success me-2"></i>
-                                        <small>Más clases de {{ stat.nombre }}</small>
-                                    </li>
+                <div class="card-body">
+                    <!-- Best Day -->
+                    <div class="mb-4">
+                        <h6 class="text-success">Día Más Popular</h6>
+                        {% if stats_por_dia %}
+                            {% for stat in stats_por_dia %}
+                                {% if forloop.first %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold">{{ stat.dia }}</span>
+                                        <span class="badge bg-success">{{ stat.total_reservas|default:0 }}</span>
+                                    </div>
                                 {% endif %}
                             {% endfor %}
-                        </ul>
-                    {% else %}
-                        <small class="text-muted">Sin recomendaciones disponibles</small>
-                    {% endif %}
-                </div>
+                        {% else %}
+                            <small class="text-muted">Sin datos disponibles</small>
+                        {% endif %}
+                    </div>
 
-                <!-- Summary -->
-                <div class="bg-light p-3 rounded">
-                    <h6 class="text-dark mb-2">Resumen General</h6>
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <div class="fw-bold text-primary">{{ reservas_este_mes|default:0 }}</div>
-                            <small class="text-muted">Reservas/Mes</small>
-                        </div>
-                        <div class="col-6">
-                            <div class="fw-bold text-success">
-                                {% if stats_por_tipo %}
-                                    {{ stats_por_tipo.0.porcentaje_ocupacion|default:0 }}%
-                                {% else %}
-                                    0%
+                    <!-- Best Class Type -->
+                    <div class="mb-4">
+                        <h6 class="text-primary">Mejor Rendimiento</h6>
+                        {% if stats_por_tipo %}
+                            {% for stat in stats_por_tipo %}
+                                {% if forloop.first %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold">{{ stat.nombre }}</span>
+                                        <span class="badge bg-primary">{{ stat.porcentaje_ocupacion|default:0 }}%</span>
+                                    </div>
                                 {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <small class="text-muted">Sin datos disponibles</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="mb-4">
+                        <h6 class="text-warning">Recomendaciones</h6>
+                        {% if stats_por_tipo %}
+                            <ul class="list-unstyled mb-0">
+                                {% for stat in stats_por_tipo %}
+                                    {% if stat.porcentaje_ocupacion < 50 %}
+                                        <li class="mb-2">
+                                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                            <small>Promocionar {{ stat.nombre }}</small>
+                                        </li>
+                                    {% elif stat.porcentaje_ocupacion > 90 %}
+                                        <li class="mb-2">
+                                            <i class="fas fa-plus-circle text-success me-2"></i>
+                                            <small>Más clases de {{ stat.nombre }}</small>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <small class="text-muted">Sin recomendaciones disponibles</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="text-dark mb-2">Resumen General</h6>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="fw-bold text-primary">{{ reservas_este_mes|default:0 }}</div>
+                                <small class="text-muted">Reservas/Mes</small>
                             </div>
-                            <small class="text-muted">Ocupación Avg.</small>
+                            <div class="col-6">
+                                <div class="fw-bold text-success">
+                                    {% if stats_por_tipo %}
+                                        {{ stats_por_tipo.0.porcentaje_ocupacion|default:0 }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">Ocupación Avg.</small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Activity by Day -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>
-                    <i class="fas fa-calendar me-2"></i>
-                    Actividad por Día de la Semana
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if stats_por_dia %}
-                    <div class="row text-center">
-                        {% for stat in stats_por_dia %}
-                            <div class="col">
-                                <div class="card bg-light">
-                                    <div class="card-body py-3">
-                                        <h4 class="text-primary mb-1">{{ stat.total_reservas|default:0 }}</h4>
-                                        <h6 class="text-muted mb-1">{{ stat.dia }}</h6>
-                                        <small class="text-muted">
-                                            {{ stat.total_clases|default:0 }} clase{{ stat.total_clases|pluralize }}
-                                        </small>
+    <!-- Activity by Day -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-calendar me-2"></i>
+                        Actividad por Día de la Semana
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if stats_por_dia %}
+                        <div class="row text-center">
+                            {% for stat in stats_por_dia %}
+                                <div class="col">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-3">
+                                            <h4 class="text-primary mb-1">{{ stat.total_reservas|default:0 }}</h4>
+                                            <h6 class="text-muted mb-1">{{ stat.dia }}</h6>
+                                            <small class="text-muted">
+                                                {{ stat.total_clases|default:0 }} clase{{ stat.total_clases|pluralize }}
+                                            </small>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
-                        <h6 class="text-muted">No hay datos de actividad</h6>
-                        <p class="text-muted">Los datos aparecerán cuando tengas clases y reservas</p>
-                    </div>
-                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">No hay datos de actividad</h6>
+                            <p class="text-muted">Los datos aparecerán cuando tengas clases y reservas</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Export Options -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>
-                    <i class="fas fa-download me-2"></i>
-                    Exportar Reportes
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6 class="mb-3">Reportes Disponibles:</h6>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary" onclick="exportReport('reservas')">
-                                <i class="fas fa-bookmark me-2"></i>Reporte de Reservas
-                            </button>
-                            <button class="btn btn-outline-success" onclick="exportReport('usuarios')">
-                                <i class="fas fa-users me-2"></i>Reporte de Usuarios
-                            </button>
-                            <button class="btn btn-outline-info" onclick="exportReport('clases')">
-                                <i class="fas fa-calendar-alt me-2"></i>Reporte de Clases
-                            </button>
+    <!-- Export Options -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>
+                        <i class="fas fa-download me-2"></i>
+                        Exportar Reportes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Reportes Disponibles:</h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="exportReport('reservas')">
+                                    <i class="fas fa-bookmark me-2"></i>Reporte de Reservas
+                                </button>
+                                <button class="btn btn-outline-success" onclick="exportReport('usuarios')">
+                                    <i class="fas fa-users me-2"></i>Reporte de Usuarios
+                                </button>
+                                <button class="btn btn-outline-info" onclick="exportReport('clases')">
+                                    <i class="fas fa-calendar-alt me-2"></i>Reporte de Clases
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="mb-3">Información:</h6>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Los reportes incluyen:</strong>
-                            <ul class="mb-0 mt-2">
-                                <li>Datos actuales del sistema</li>
-                                <li>Estadísticas de ocupación</li>
-                                <li>Información de usuarios</li>
-                                <li>Formato CSV para Excel</li>
-                            </ul>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Información:</h6>
+                            <div class="alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Los reportes incluyen:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Datos actuales del sistema</li>
+                                    <li>Estadísticas de ocupación</li>
+                                    <li>Información de usuarios</li>
+                                    <li>Formato CSV para Excel</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Reportes cargados correctamente');
-});
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Reportes cargados correctamente');
+    });
 
-// Update data function
-function actualizarDatos() {
-    const button = document.querySelector('[onclick="actualizarDatos()"]');
-    if (!button) return;
-    
-    const originalText = button.innerHTML;
-    button.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Actualizando...';
-    button.disabled = true;
-    
-    // Simulate refresh
-    setTimeout(function() {
-        button.innerHTML = originalText;
-        button.disabled = false;
-        showNotification('Datos actualizados correctamente', 'success');
-        location.reload();
-    }, 2000);
-}
+    // Update data function
+    function actualizarDatos() {
+        const button = document.querySelector('[onclick="actualizarDatos()"]');
+        if (!button) return;
+        
+        const originalText = button.innerHTML;
+        button.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Actualizando...';
+        button.disabled = true;
+        
+        // Simulate refresh
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            showNotification('Datos actualizados correctamente', 'success');
+            location.reload();
+        }, 2000);
+    }
 
-// Export specific report
-function exportReport(reportType) {
-    showNotification('Preparando reporte de ' + reportType + '...', 'info');
-    
-    setTimeout(function() {
-        const fileName = 'reporte_' + reportType + '_' + new Date().toISOString().split('T')[0] + '.csv';
+    // Export specific report
+    function exportReport(reportType) {
+        showNotification('Preparando reporte de ' + reportType + '...', 'info');
         
-        let csvContent = '';
-        switch(reportType) {
-            case 'reservas':
-                csvContent = 'Fecha,Usuario,Clase,Estado\n';
-                csvContent += '"{{ "now"|date:"d/m/Y" }}","Usuario Ejemplo","Reformer Lunes 09:00","Activa"\n';
-                break;
-            case 'usuarios':
-                csvContent = 'Nombre,Email,Fecha Registro,Reservas\n';
-                csvContent += '"Usuario Ejemplo","usuario@email.com","{{ "now"|date:"d/m/Y" }}","5"\n';
-                break;
-            case 'clases':
-                csvContent = 'Tipo,Día,Horario,Ocupación\n';
-                csvContent += '"Reformer","Lunes","09:00","80%"\n';
-                break;
-        }
-        
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', fileName);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification('Reporte exportado: ' + fileName, 'success');
-    }, 1500);
-}
+        setTimeout(function() {
+            const fileName = 'reporte_' + reportType + '_' + new Date().toISOString().split('T')[0] + '.csv';
+            
+            let csvContent = '';
+            switch(reportType) {
+                case 'reservas':
+                    csvContent = 'Fecha,Usuario,Clase,Estado\n';
+                    csvContent += '"{{ "now"|date:"d/m/Y" }}","Usuario Ejemplo","Reformer Lunes 09:00","Activa"\n';
+                    break;
+                case 'usuarios':
+                    csvContent = 'Nombre,Email,Fecha Registro,Reservas\n';
+                    csvContent += '"Usuario Ejemplo","usuario@email.com","{{ "now"|date:"d/m/Y" }}","5"\n';
+                    break;
+                case 'clases':
+                    csvContent = 'Tipo,Día,Horario,Ocupación\n';
+                    csvContent += '"Reformer","Lunes","09:00","80%"\n';
+                    break;
+            }
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', fileName);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('Reporte exportado: ' + fileName, 'success');
+        }, 1500);
+    }
 
-// Export general report
-function exportarReporte() {
-    showNotification('Preparando reporte completo...', 'info');
-    
-    setTimeout(function() {
-        const csvContent = 
-            'Tipo de Reporte,Valor\n' +
-            '"Reservas Esta Semana","{{ reservas_esta_semana|default:0 }}"\n' +
-            '"Reservas Este Mes","{{ reservas_este_mes|default:0 }}"\n' +
-            '"Usuarios Esta Semana","{{ usuarios_esta_semana|default:0 }}"\n' +
-            '"Usuarios Este Mes","{{ usuarios_este_mes|default:0 }}"\n';
+    // Export general report
+    function exportarReporte() {
+        showNotification('Preparando reporte completo...', 'info');
         
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'reporte_completo_' + new Date().toISOString().split('T')[0] + '.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showNotification('Reporte completo exportado', 'success');
-    }, 1500);
-}
+        setTimeout(function() {
+            const csvContent = 
+                'Tipo de Reporte,Valor\n' +
+                '"Reservas Esta Semana","{{ reservas_esta_semana|default:0 }}"\n' +
+                '"Reservas Este Mes","{{ reservas_este_mes|default:0 }}"\n' +
+                '"Usuarios Esta Semana","{{ usuarios_esta_semana|default:0 }}"\n' +
+                '"Usuarios Este Mes","{{ usuarios_este_mes|default:0 }}"\n';
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'reporte_completo_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('Reporte completo exportado', 'success');
+        }, 1500);
+    }
 
-// Show notification
-function showNotification(message, type) {
-    const alertClass = 'alert-' + type;
-    const iconClass = type === 'success' ? 'fa-check-circle' : 
-                     type === 'info' ? 'fa-info-circle' : 
-                     'fa-exclamation-circle';
-    
-    const notification = document.createElement('div');
-    notification.className = 'alert ' + alertClass + ' alert-dismissible fade show position-fixed';
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    notification.innerHTML = 
-        '<i class="fas ' + iconClass + ' me-2"></i>' + message +
-        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(function() {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 5000);
-}
-</script>
+    // Show notification
+    function showNotification(message, type) {
+        const alertClass = 'alert-' + type;
+        const iconClass = type === 'success' ? 'fa-check-circle' : 
+                        type === 'info' ? 'fa-info-circle' : 
+                        'fa-exclamation-circle';
+        
+        const notification = document.createElement('div');
+        notification.className = 'alert ' + alertClass + ' alert-dismissible fade show position-fixed';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = 
+            '<i class="fas ' + iconClass + ' me-2"></i>' + message +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(function() {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    </script>
 {% endblock %}

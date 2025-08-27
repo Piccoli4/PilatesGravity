@@ -14,10 +14,27 @@ DIAS_SEMANA = [
     ('Viernes', 'Viernes'),
 ]
 
+# Días de semana incluyendo sábado para clases especiales
+DIAS_SEMANA_COMPLETOS = [
+    ('Lunes', 'Lunes'),
+    ('Martes', 'Martes'),
+    ('Miércoles', 'Miércoles'),
+    ('Jueves', 'Jueves'),
+    ('Viernes', 'Viernes'),
+    ('Sábado', 'Sábado'),
+]
+
 class Clase(models.Model):
     TIPO_CLASES = [
         ('Reformer', 'Pilates Reformer'),
         ('Cadillac', 'Pilates Cadillac'),
+        ('Especial', 'Clase Especial'),
+    ]
+    
+    # Opciones de direcciones/sedes
+    DIRECCIONES = [
+        ('sede_principal', 'Sede Principal - La Rioja 3044'),
+        ('sede_2', 'Sede 2 - 9 de julio 3698'),
     ]
 
     tipo = models.CharField(
@@ -25,9 +42,28 @@ class Clase(models.Model):
         choices=TIPO_CLASES, 
         verbose_name="Tipo de clase"
     )
+    
+    # Campo para nombre personalizado de clases especiales
+    nombre_personalizado = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Nombre personalizado",
+        help_text="Solo para clases especiales. Ejemplo: 'Pilates Prenatal', 'Clase de Rehabilitación', etc."
+    )
+    
+    # Nuevo campo para dirección/sede
+    direccion = models.CharField(
+        max_length=20,
+        choices=DIRECCIONES,
+        default='sede_principal',
+        verbose_name="Sede",
+        help_text="Ubicación donde se dicta la clase"
+    )
+    
     dia = models.CharField(
         max_length=10, 
-        choices=DIAS_SEMANA, 
+        choices=DIAS_SEMANA_COMPLETOS,  # Ahora incluye sábado
         verbose_name="Día de la semana"
     )
     horario = models.TimeField(verbose_name="Horario")
@@ -65,6 +101,38 @@ class Clase(models.Model):
             raise ValidationError({
                 'cupo_maximo': 'El cupo máximo debe ser al menos 1'
             })
+            
+        # Validar que las clases especiales tengan nombre personalizado
+        if self.tipo == 'Especial' and not self.nombre_personalizado:
+            raise ValidationError({
+                'nombre_personalizado': 'Las clases especiales deben tener un nombre personalizado.'
+            })
+            
+        # Validar que solo las clases especiales puedan ser los sábados
+        if self.dia == 'Sábado' and self.tipo != 'Especial':
+            raise ValidationError({
+                'dia': 'Solo las clases especiales pueden programarse los sábados.'
+            })
+            
+        # Validar que las clases no especiales no tengan nombre personalizado
+        if self.tipo != 'Especial' and self.nombre_personalizado:
+            raise ValidationError({
+                'nombre_personalizado': 'Solo las clases especiales pueden tener nombre personalizado.'
+            })
+
+    def get_nombre_display(self):
+        """Devuelve el nombre a mostrar según el tipo de clase"""
+        if self.tipo == 'Especial' and self.nombre_personalizado:
+            return self.nombre_personalizado
+        return self.get_tipo_display()
+        
+    def get_direccion_corta(self):
+        """Devuelve una versión corta de la dirección para mostrar"""
+        direcciones_cortas = {
+            'sede_principal': 'La Rioja 3044',
+            'sede_2': '9 de julio 3698'
+        }
+        return direcciones_cortas.get(self.direccion, self.get_direccion_display())
 
     def cupos_disponibles(self):
         """Devuelve la cantidad de cupos disponibles en esta clase"""
@@ -94,13 +162,18 @@ class Clase(models.Model):
 
     def __str__(self):
         estado = "Activa" if self.activa else "Inactiva"
-        return f"{self.get_tipo_display()} - {self.dia} {self.horario.strftime('%H:%M')} ({self.cupos_disponibles()}/{self.cupo_maximo}) - {estado}"
+        nombre = self.get_nombre_display()
+        direccion_corta = self.get_direccion_corta()
+        return f"{nombre} - {self.dia} {self.horario.strftime('%H:%M')} - {direccion_corta} ({self.cupos_disponibles()}/{self.cupo_maximo}) - {estado}"
 
     class Meta:
         verbose_name = "Clase"
         verbose_name_plural = "Clases"
-        unique_together = ['tipo', 'dia', 'horario']  # Evita clases duplicadas
-        ordering = ['dia', 'horario', 'tipo']
+        # Actualizar unique_together para incluir dirección
+        unique_together = [
+            ['tipo', 'dia', 'horario', 'direccion', 'nombre_personalizado']
+        ]
+        ordering = ['direccion', 'dia', 'horario', 'tipo']
         permissions = [
             ('can_manage_all_classes', 'Puede gestionar todas las clases'),
         ]
@@ -199,7 +272,7 @@ class Reserva(models.Model):
         # Obtener el día de la semana actual
         hoy = timezone.now()
         dias_semana = {
-            'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4
+            'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
         }
         
         dia_clase = dias_semana.get(self.clase.dia)
@@ -247,7 +320,7 @@ class Reserva(models.Model):
         """Devuelve información sobre cuándo es la próxima clase"""
         hoy = timezone.now()
         dias_semana = {
-            'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4
+            'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
         }
         
         dia_clase = dias_semana.get(self.clase.dia)
@@ -267,11 +340,11 @@ class Reserva(models.Model):
                 dias_hasta_clase = 7
         
         if dias_hasta_clase == 0:
-            return "Hoy a las " + self.clase.horario.strftime('%H:%M')
+            return f"Hoy a las {self.clase.horario.strftime('%H:%M')} en {self.clase.get_direccion_corta()}"
         elif dias_hasta_clase == 1:
-            return "Mañana a las " + self.clase.horario.strftime('%H:%M')
+            return f"Mañana a las {self.clase.horario.strftime('%H:%M')} en {self.clase.get_direccion_corta()}"
         else:
-            return f"En {dias_hasta_clase} días ({self.clase.dia} a las {self.clase.horario.strftime('%H:%M')})"
+            return f"En {dias_hasta_clase} días ({self.clase.dia} a las {self.clase.horario.strftime('%H:%M')} en {self.clase.get_direccion_corta()})"
 
     def get_nombre_completo_usuario(self):
         """Devuelve el nombre completo del usuario"""
@@ -281,7 +354,8 @@ class Reserva(models.Model):
 
     def __str__(self):
         estado = "Activa" if self.activa else "Cancelada"
-        return f"Reserva {self.numero_reserva} - {self.get_nombre_completo_usuario()} - {self.clase} ({estado})"
+        direccion = self.clase.get_direccion_corta()
+        return f"Reserva {self.numero_reserva} - {self.get_nombre_completo_usuario()} - {self.clase.get_nombre_display()} en {direccion} ({estado})"
 
     class Meta:
         verbose_name = "Reserva"

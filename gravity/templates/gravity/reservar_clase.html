@@ -59,7 +59,7 @@
                     <div class="w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-6"></div>
                     <p class="text-lg text-gris-oscuro max-w-2xl mx-auto animate-fadeInUp" style="animation-delay: 0.2s;">
                         Completá el formulario para reservar tu lugar fijo. Tu reserva será recurrente, 
-                        asistirás todas las semanas al mismo día y horario.
+                        asistirás todas las semanas al mismo día y horario en la sede elegida.
                     </p>
                 </div>
 
@@ -108,22 +108,22 @@
                                 <!-- Tercera fila: Email y Teléfono -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="space-y-2">
-                                            <label class="text-sm font-medium text-gris-oscuro">Email:</label>
-                                            <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
-                                                <span class="text-principal font-medium block truncate" title="{{ user_info.email|default:'No registrado' }}">
-                                                    {{ user_info.email|default:"No registrado" }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            <label class="text-sm font-medium text-gris-oscuro">Teléfono:</label>
-                                            <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
-                                                <span class="text-principal font-medium">
-                                                    {{ user_info.telefono|default:"No registrado" }}
-                                                </span>
-                                            </div>
+                                        <label class="text-sm font-medium text-gris-oscuro">Email:</label>
+                                        <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
+                                            <span class="text-principal font-medium block truncate" title="{{ user_info.email|default:'No registrado' }}">
+                                                {{ user_info.email|default:"No registrado" }}
+                                            </span>
                                         </div>
                                     </div>
+                                    <div class="space-y-2">
+                                        <label class="text-sm font-medium text-gris-oscuro">Teléfono:</label>
+                                        <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
+                                            <span class="text-principal font-medium">
+                                                {{ user_info.telefono|default:"No registrado" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             
                             {% if not user_info.telefono or not user_info.email %}
@@ -149,7 +149,7 @@
                                 Selección de Clase
                             </h2>
                             
-                            <div class="grid md:grid-cols-3 gap-6">
+                            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <!-- Tipo de Clase -->
                                 <div class="space-y-2">
                                     <label for="{{ form.tipo_clase.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
@@ -159,6 +159,19 @@
                                         {{ form.tipo_clase }}
                                     </div>
                                     {% for error in form.tipo_clase.errors %}
+                                        <p class="text-error text-sm animate-slideInError">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Sede -->
+                                <div class="space-y-2">
+                                    <label for="{{ form.sede.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
+                                        {{ form.sede.label }}
+                                    </label>
+                                    <div class="relative">
+                                        {{ form.sede }}
+                                    </div>
+                                    {% for error in form.sede.errors %}
                                         <p class="text-error text-sm animate-slideInError">{{ error }}</p>
                                     {% endfor %}
                                 </div>
@@ -230,6 +243,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Elementos del formulario
             const tipoClase = document.getElementById('id_tipo_clase');
+            const sede = document.getElementById('id_sede');
             const dia = document.getElementById('id_dia');
             const horario = document.getElementById('id_horario');
             const disponibilidadInfo = document.getElementById('disponibilidad-info');
@@ -259,6 +273,9 @@
                     if (tipoClase) {
                         tipoClase.addEventListener('change', () => this.onTipoClaseChange());
                     }
+                    if (sede) {
+                        sede.addEventListener('change', () => this.onSedeChange());
+                    }
                     if (dia) {
                         dia.addEventListener('change', () => this.onDiaChange());
                     }
@@ -280,15 +297,18 @@
                     }
 
                     try {
-                        this.mostrarCargando('Cargando días disponibles...');
-                        const diasDisponibles = await this.obtenerDiasDisponibles(tipoSeleccionado);
-                        this.actualizarSelectDias(diasDisponibles);
-                        this.resetearSelectHorario();
+                        this.mostrarCargando('Actualizando opciones disponibles...');
+                        await this.actualizarOpcionesDisponibles();
                         this.ocultarDisponibilidad();
                     } catch (error) {
-                        console.error('Error al obtener días disponibles:', error);
-                        this.mostrarError('Error al cargar días disponibles');
+                        console.error('Error al actualizar opciones:', error);
+                        this.mostrarError('Error al cargar opciones disponibles');
                     }
+                }
+
+                // Maneja el cambio de sede
+                async onSedeChange() {
+                    await this.actualizarOpcionesDisponibles();
                 }
 
                 // Maneja la preselección de tipo de clase desde la URL
@@ -307,9 +327,36 @@
                     }
                 }
 
+                // Actualiza las opciones disponibles según la selección actual
+                async actualizarOpcionesDisponibles() {
+                    const tipoSeleccionado = tipoClase.value;
+                    const sedeSeleccionada = sede.value;
+
+                    if (!tipoSeleccionado) {
+                        this.resetearFormulario();
+                        return;
+                    }
+
+                    try {
+                        const diasDisponibles = await this.obtenerDiasDisponibles(tipoSeleccionado, sedeSeleccionada);
+                        this.actualizarSelectDias(diasDisponibles);
+                        this.resetearSelectHorario();
+                        this.ocultarDisponibilidad();
+
+                        // Si hay día seleccionado, actualizar horarios
+                        if (dia.value) {
+                            await this.onDiaChange();
+                        }
+                    } catch (error) {
+                        console.error('Error al actualizar opciones:', error);
+                        this.mostrarError('Error al actualizar opciones');
+                    }
+                }
+
                 // Maneja el cambio de día
                 async onDiaChange() {
                     const tipoSeleccionado = tipoClase.value;
+                    const sedeSeleccionada = sede.value;
                     const diaSeleccionado = dia.value;
 
                     if (!tipoSeleccionado || !diaSeleccionado) {
@@ -320,7 +367,7 @@
 
                     try {
                         this.mostrarCargando('Cargando horarios disponibles...');
-                        const horariosDisponibles = await this.obtenerHorariosDisponibles(tipoSeleccionado, diaSeleccionado);
+                        const horariosDisponibles = await this.obtenerHorariosDisponibles(tipoSeleccionado, sedeSeleccionada, diaSeleccionado);
                         this.actualizarSelectHorarios(horariosDisponibles);
                         this.ocultarDisponibilidad();
                     } catch (error) {
@@ -332,17 +379,18 @@
                 // Maneja el cambio de horario
                 async onHorarioChange() {
                     const tipoSeleccionado = tipoClase.value;
+                    const sedeSeleccionada = sede.value;
                     const diaSeleccionado = dia.value;
                     const horarioSeleccionado = horario.value;
 
-                    if (!tipoSeleccionado || !diaSeleccionado || !horarioSeleccionado) {
+                    if (!tipoSeleccionado || !sedeSeleccionada || !diaSeleccionado || !horarioSeleccionado) {
                         this.ocultarDisponibilidad();
                         return;
                     }
 
                     try {
                         this.mostrarCargando('Verificando disponibilidad...');
-                        const disponibilidad = await this.verificarDisponibilidad(tipoSeleccionado, diaSeleccionado, horarioSeleccionado);
+                        const disponibilidad = await this.verificarDisponibilidad(tipoSeleccionado, sedeSeleccionada, diaSeleccionado, horarioSeleccionado);
                         this.mostrarDisponibilidad(disponibilidad);
                     } catch (error) {
                         console.error('Error al verificar disponibilidad:', error);
@@ -364,14 +412,14 @@
                 }
 
                 // APIs
-                async obtenerDiasDisponibles(tipo) {
+                async obtenerDiasDisponibles(tipo, sede = '') {
                     const response = await fetch(API_ENDPOINTS.diasDisponibles, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': this.getCSRFToken()
                         },
-                        body: JSON.stringify({ tipo })
+                        body: JSON.stringify({ tipo, sede })
                     });
 
                     if (!response.ok) {
@@ -382,14 +430,14 @@
                     return data.dias || [];
                 }
 
-                async obtenerHorariosDisponibles(tipo, dia) {
+                async obtenerHorariosDisponibles(tipo, sede = '', dia) {
                     const response = await fetch(API_ENDPOINTS.horariosDisponibles, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': this.getCSRFToken()
                         },
-                        body: JSON.stringify({ tipo, dia })
+                        body: JSON.stringify({ tipo, sede, dia })
                     });
 
                     if (!response.ok) {
@@ -400,14 +448,14 @@
                     return data.horarios || [];
                 }
 
-                async verificarDisponibilidad(tipo, dia, horario) {
+                async verificarDisponibilidad(tipo, sede, dia, horario) {
                     const response = await fetch(API_ENDPOINTS.verificarDisponibilidad, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': this.getCSRFToken()
                         },
-                        body: JSON.stringify({ tipo, dia, horario })
+                        body: JSON.stringify({ tipo, sede, dia, horario })
                     });
 
                     if (!response.ok) {
@@ -436,6 +484,10 @@
                         const option = document.createElement('option');
                         option.value = horarioInfo.value;
                         option.textContent = horarioInfo.text;
+                        option.disabled = !horarioInfo.disponible;
+                        if (!horarioInfo.disponible) {
+                            option.classList.add('text-gris-medio');
+                        }
                         horario.appendChild(option);
                     });
                 }
@@ -469,7 +521,8 @@
                     if (disponibilidad.disponible) {
                         disponibilidadMensaje.classList.add('availability-success');
                         disponibilidadIcon.textContent = '✅';
-                        disponibilidadText.textContent = `¡Disponible! ${disponibilidad.cupos_disponibles} lugares restantes`;
+                        const sedeText = disponibilidad.sede ? ` en ${disponibilidad.sede}` : '';
+                        disponibilidadText.textContent = `¡Disponible! ${disponibilidad.cupos_disponibles} lugares restantes${sedeText}`;
                     } else {
                         disponibilidadMensaje.classList.add('availability-warning');
                         disponibilidadIcon.textContent = '⚠️';
@@ -487,7 +540,7 @@
                 mostrarError(mensaje) {
                     disponibilidadInfo.classList.remove('hidden');
                     disponibilidadMensaje.className = 'rounded-lg p-4 text-white font-medium flex items-center space-x-3 availability-danger';
-                    disponibilidadIcon.textContent = '❌';
+                    disponibilidadIcon.textContent = '⌛';
                     disponibilidadText.textContent = mensaje;
                 }
 
@@ -499,6 +552,7 @@
                 validarFormulario() {
                     const campos = [
                         { element: tipoClase, nombre: 'tipo de clase' },
+                        { element: sede, nombre: 'sede' },
                         { element: dia, nombre: 'día' },
                         { element: horario, nombre: 'horario' }
                     ];
@@ -512,7 +566,7 @@
                             }, 3000);
                             
                             campo.element.focus();
-                            this.mostrarError(`Por favor selecciona el ${campo.nombre}.`);
+                            this.mostrarError(`Por favor selecciona la ${campo.nombre}.`);
                             return false;
                         }
                     }

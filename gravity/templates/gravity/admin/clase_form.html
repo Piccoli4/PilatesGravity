@@ -58,7 +58,7 @@
                                 <label for="tipo" class="form-label">
                                     <i class="fas fa-tag me-2"></i>Tipo de Clase *
                                 </label>
-                                <select name="tipo" id="tipo" class="form-select" required>
+                                <select name="tipo" id="tipo" class="form-select" required onchange="toggleEspecialFields()">
                                     <option value="">Selecciona un tipo</option>
                                     {% for value, label in tipos_clases %}
                                         <option value="{{ value }}" 
@@ -71,11 +71,33 @@
                                 <div class="form-text">
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Selecciona el tipo de equipo de Pilates
+                                        Selecciona "Clase Especial" para crear clases personalizadas
                                     </small>
                                 </div>
                             </div>
 
+                            <!-- Nombre Personalizado (solo para clases especiales) -->
+                            <div class="col-md-6 mb-4" id="nombre_personalizado_container" style="display: none;">
+                                <label for="nombre_personalizado" class="form-label">
+                                    <i class="fas fa-pen-fancy me-2"></i>Nombre de la Clase Especial *
+                                </label>
+                                <input type="text" 
+                                    name="nombre_personalizado" 
+                                    id="nombre_personalizado" 
+                                    class="form-control"
+                                    placeholder="Ej: Pilates Prenatal, Rehabilitación, etc."
+                                    maxlength="100"
+                                    value="{% if clase %}{{ clase.nombre_personalizado|default:'' }}{% endif %}{% if form_data.nombre_personalizado %}{{ form_data.nombre_personalizado }}{% endif %}">
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Nombre descriptivo para la clase especial
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
                             <!-- Día de la Semana -->
                             <div class="col-md-6 mb-4">
                                 <label for="dia" class="form-label">
@@ -85,6 +107,7 @@
                                     <option value="">Selecciona un día</option>
                                     {% for value, label in dias_semana %}
                                         <option value="{{ value }}" 
+                                            data-especial-only="{% if value == 'Sábado' %}true{% else %}false{% endif %}"
                                             {% if clase and clase.dia == value %}selected{% endif %}
                                             {% if form_data.dia == value %}selected{% endif %}>
                                             {{ label }}
@@ -92,15 +115,13 @@
                                     {% endfor %}
                                 </select>
                                 <div class="form-text">
-                                    <small class="text-muted">
+                                    <small class="text-muted" id="dia_help_text">
                                         <i class="fas fa-info-circle me-1"></i>
                                         Día de la semana para la clase recurrente
                                     </small>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="row">
                             <!-- Horario -->
                             <div class="col-md-6 mb-4">
                                 <label for="horario" class="form-label">
@@ -121,7 +142,9 @@
                                     </small>
                                 </div>
                             </div>
+                        </div>
 
+                        <div class="row">
                             <!-- Cupo Máximo -->
                             <div class="col-md-6 mb-4">
                                 <label for="cupo_maximo" class="form-label">
@@ -142,12 +165,10 @@
                                     </small>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Estado (solo para edición) -->
-                        {% if clase %}
-                        <div class="row">
-                            <div class="col-12 mb-4">
+                            <!-- Estado (solo para edición) -->
+                            {% if clase %}
+                            <div class="col-md-6 mb-4 d-flex align-items-center">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" 
                                         type="checkbox" 
@@ -158,15 +179,15 @@
                                         <i class="fas fa-toggle-on me-2"></i>Clase Activa
                                     </label>
                                 </div>
-                                <div class="form-text">
+                                <div class="form-text ms-3">
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle me-1"></i>
                                         Las clases inactivas no aparecerán disponibles para reservar
                                     </small>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
 
                         <!-- Preview Section -->
                         <div class="row">
@@ -193,7 +214,7 @@
                             <div class="col-12 mb-4">
                                 <div class="alert alert-warning">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>Atención:</strong> Esta clase tiene {{ clase.reserva_set.filter|length }} reservas activas. 
+                                    <strong>Atención:</strong> Esta clase tiene {{ clase.reserva_set.filter.count|default:0 }} reservas activas. 
                                     Si cambias el horario o día, afectarás a todos los usuarios con reservas.
                                 </div>
                             </div>
@@ -238,7 +259,11 @@
                     <ul class="list-unstyled mb-0">
                         <li class="mb-2">
                             <i class="fas fa-check text-success me-2"></i>
-                            <small>Verifica que no exista una clase igual antes de crear</small>
+                            <small>Usa "Clase Especial" para clases personalizadas</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            <small>Solo las clases especiales pueden ser los sábados</small>
                         </li>
                         <li class="mb-2">
                             <i class="fas fa-check text-success me-2"></i>
@@ -256,7 +281,47 @@
                 </div>
             </div>
 
-            <!-- Current Classes Info (only for create) -->
+            <!-- Clase Especial Info -->
+            <div class="card mb-4" id="especial_info_card" style="display: none;">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-star me-2"></i>Clases Especiales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        <small>Las clases especiales te permiten crear clases personalizadas:</small>
+                    </p>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-plus text-warning me-2"></i>
+                            <small>Nombre personalizable</small>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-calendar-plus text-warning me-2"></i>
+                            <small>Disponibles también los sábados</small>
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-users text-warning me-2"></i>
+                            <small>Ideales para talleres y eventos</small>
+                        </li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <div class="mb-0">
+                        <strong>Ejemplos de nombres:</strong>
+                        <div class="mt-2">
+                            <span class="badge bg-outline-warning me-1 mb-1">Pilates Prenatal</span>
+                            <span class="badge bg-outline-warning me-1 mb-1">Rehabilitación</span>
+                            <span class="badge bg-outline-warning me-1 mb-1">Taller Intensivo</span>
+                            <span class="badge bg-outline-warning me-1 mb-1">Pilates Senior</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Clases Actuales (solo al crear) -->
             {% if not clase %}
             <div class="card">
                 <div class="card-header bg-info text-white">
@@ -284,7 +349,7 @@
             </div>
             {% endif %}
 
-            <!-- Current Class Info (only for edit) -->
+            <!-- Información de la Clase Actual (solo para edición) -->
             {% if clase %}
             <div class="card">
                 <div class="card-header bg-warning text-dark">
@@ -293,6 +358,14 @@
                     </h6>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Tipo:</strong>
+                        {% if clase.tipo == 'Especial' %}
+                            <span class="badge bg-warning ms-2">{{ clase.get_nombre_display }}</span>
+                        {% else %}
+                            <span class="badge bg-info ms-2">{{ clase.get_tipo_display }}</span>
+                        {% endif %}
+                    </div>
                     <div class="mb-3">
                         <strong>Reservas Activas:</strong>
                         <span class="badge bg-info ms-2">{{ clase.reserva_set.filter.count|default:0 }}</span>
@@ -330,21 +403,38 @@
             
             // Form fields
             const tipoSelect = document.getElementById('tipo');
+            const nombrePersonalizadoInput = document.getElementById('nombre_personalizado');
             const diaSelect = document.getElementById('dia');
             const horarioInput = document.getElementById('horario');
             const cupoInput = document.getElementById('cupo_maximo');
             
-            // Update preview when fields change
+            // Inicializa el estado del formulario
+            toggleEspecialFields();
+            updatePreview();
+            
+            // Actualiza la vista previa cuando los campos cambian
             function updatePreview() {
                 const tipo = tipoSelect.value;
+                const nombrePersonalizado = nombrePersonalizadoInput.value;
                 const dia = diaSelect.value;
                 const horario = horarioInput.value;
                 const cupo = cupoInput.value;
                 
                 if (tipo && dia && horario && cupo) {
-                    const tipoText = tipoSelect.options[tipoSelect.selectedIndex].text;
-                    const diaText = diaSelect.options[diaSelect.selectedIndex].text;
-                    const iconClass = (tipo === 'Reformer') ? 'fas fa-dumbbell fa-2x text-primary' : 'fas fa-bed fa-2x text-info';
+                    let tipoText;
+                    let iconClass;
+                    
+                    if (tipo === 'Especial' && nombrePersonalizado) {
+                        tipoText = nombrePersonalizado;
+                        iconClass = 'fas fa-star fa-2x text-warning';
+                    } else if (tipo === 'Especial') {
+                        tipoText = 'Clase Especial (sin nombre)';
+                        iconClass = 'fas fa-star fa-2x text-warning';
+                    } else {
+                        const tipoOption = tipoSelect.options[tipoSelect.selectedIndex];
+                        tipoText = tipoOption.text;
+                        iconClass = (tipo === 'Reformer') ? 'fas fa-dumbbell fa-2x text-primary' : 'fas fa-bed fa-2x text-info';
+                    }
                     
                     previewContent.innerHTML = 
                         '<div class="d-flex align-items-center justify-content-center">' +
@@ -354,7 +444,7 @@
                             '<div class="text-start">' +
                                 '<h6 class="mb-1">' + tipoText + '</h6>' +
                                 '<small class="text-muted">' +
-                                    '<i class="fas fa-calendar me-1"></i>' + diaText + ' - ' +
+                                    '<i class="fas fa-calendar me-1"></i>' + dia + ' - ' +
                                     '<i class="fas fa-clock me-1"></i>' + horario + ' - ' +
                                     '<i class="fas fa-users me-1"></i>' + cupo + ' cupos' +
                                 '</small>' +
@@ -365,28 +455,30 @@
                 }
             }
             
-            // Add event listeners
-            [tipoSelect, diaSelect, horarioInput, cupoInput].forEach(function(field) {
+            // Agrega los event listeners
+            [tipoSelect, nombrePersonalizadoInput, diaSelect, horarioInput, cupoInput].forEach(function(field) {
                 field.addEventListener('change', updatePreview);
                 field.addEventListener('input', updatePreview);
             });
             
-            // Initial preview update
-            updatePreview();
-            
-            // Form validation
+            // Validación y envío del formulario
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // Show loading state
+                // Mostrar estado de carga
                 const originalText = submitText.textContent;
                 submitText.textContent = 'Guardando...';
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>' + submitText.textContent;
                 
-                // Validate form
+                // Validar formulario
                 let isValid = true;
                 const requiredFields = [tipoSelect, diaSelect, horarioInput, cupoInput];
+                
+                // Agrega nombre_personalizado a los requeridos si el tipo es 'Especial'
+                if (tipoSelect.value === 'Especial') {
+                    requiredFields.push(nombrePersonalizadoInput);
+                }
                 
                 requiredFields.forEach(function(field) {
                     if (!field.value.trim()) {
@@ -397,7 +489,14 @@
                     }
                 });
                 
-                // Validate time range
+                // Validar que el sábado solo sea para clases especiales
+                if (diaSelect.value === 'Sábado' && tipoSelect.value !== 'Especial') {
+                    diaSelect.classList.add('is-invalid');
+                    isValid = false;
+                    alert('Solo las clases especiales pueden programarse los sábados.');
+                }
+                
+                // Validar rango de horario
                 if (horarioInput.value) {
                     const time = horarioInput.value;
                     const timeParts = time.split(':');
@@ -412,7 +511,7 @@
                     }
                 }
                 
-                // Validate cupo range
+                // Validar rango de cupo máximo
                 if (cupoInput.value) {
                     const cupo = parseInt(cupoInput.value);
                     if (cupo < 1 || cupo > 20) {
@@ -426,14 +525,14 @@
                     // Submit form
                     this.submit();
                 } else {
-                    // Reset button state
+                    // Restablecer el estado del botón
                     submitText.textContent = originalText;
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>' + submitText.textContent;
                 }
             });
             
-            // Load existing classes for create mode (only if we're in create mode)
+            // Cargar clases existentes en modo creación
             const existingClassesDiv = document.getElementById('existing-classes');
             if (existingClassesDiv) {
                 fetch('/api/clases-disponibles/')
@@ -463,19 +562,53 @@
                         existingClassesDiv.innerHTML = '<small class="text-danger">Error al cargar clases</small>';
                     });
             }
-            
-            // Add input animations
-            const inputs = document.querySelectorAll('.form-control, .form-select');
-            inputs.forEach(function(input) {
-                input.addEventListener('focus', function() {
-                    this.parentElement.style.transform = 'scale(1.02)';
-                    this.parentElement.style.transition = 'transform 0.2s ease';
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.parentElement.style.transform = 'scale(1)';
-                });
-            });
         });
+
+        // Función para mostrar/ocultar campos de clase especial
+        function toggleEspecialFields() {
+            const tipoSelect = document.getElementById('tipo');
+            const nombreContainer = document.getElementById('nombre_personalizado_container');
+            const nombreInput = document.getElementById('nombre_personalizado');
+            const diaSelect = document.getElementById('dia');
+            const diaHelpText = document.getElementById('dia_help_text');
+            const especialInfoCard = document.getElementById('especial_info_card');
+            
+            const isEspecial = tipoSelect.value === 'Especial';
+            
+            // Mostrar/ocultar campo de nombre personalizado
+            if (isEspecial) {
+                nombreContainer.style.display = 'block';
+                nombreInput.required = true;
+                especialInfoCard.style.display = 'block';
+            } else {
+                nombreContainer.style.display = 'none';
+                nombreInput.required = false;
+                nombreInput.value = '';
+                especialInfoCard.style.display = 'none';
+            }
+            
+            // Actualiza las opciones del campo día y el texto de ayuda
+            const diaOptions = diaSelect.querySelectorAll('option[data-especial-only="true"]');
+            diaOptions.forEach(function(option) {
+                if (isEspecial) {
+                    option.style.display = 'block';
+                    option.disabled = false;
+                } else {
+                    if (option.selected) {
+                        // Restablece la selección al valor predeterminado
+                        diaSelect.selectedIndex = 0;
+                    }
+                    option.style.display = 'none';
+                    option.disabled = true;
+                }
+            });
+            
+            // Actualiza el texto de ayuda
+            if (isEspecial) {
+                diaHelpText.innerHTML = '<i class="fas fa-info-circle me-1"></i>Las clases especiales pueden programarse cualquier día, incluidos sábados';
+            } else {
+                diaHelpText.innerHTML = '<i class="fas fa-info-circle me-1"></i>Día de la semana para la clase recurrente (Lunes a Viernes)';
+            }
+        }
     </script>
 {% endblock %}

@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from .models import Reserva, Clase, DIAS_SEMANA, Cliente, Turno
+from .models import Reserva, Clase, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS, Cliente, Turno
 from .forms import ReservaForm, ModificarReservaForm, EliminarReservaForm, BuscarReservaForm
 import json
 from accounts.models import UserProfile
@@ -57,7 +57,7 @@ def reservar_clase(request):
                     request,
                     f'¡Reserva exitosa! Tu número de reserva es {reserva.numero_reserva}. '
                     f'Asistirás todos los {clase.dia} a las {clase.horario.strftime("%H:%M")} '
-                    f'a la clase de {clase.get_tipo_display()}.'
+                    f'a la clase de {clase.get_nombre_display()} en {clase.get_direccion_corta()}.'
                 )
                 
                 return redirect('gravity:home')
@@ -130,8 +130,8 @@ def modificar_reserva(request, numero_reserva):
                 messages.success(
                     request,
                     f'¡Cambio exitoso! Tu reserva ahora es para la clase de '
-                    f'{nueva_clase.get_tipo_display()} los {nueva_clase.dia} '
-                    f'a las {nueva_clase.horario.strftime("%H:%M")}.'
+                    f'{nueva_clase.get_nombre_display()} los {nueva_clase.dia} '
+                    f'a las {nueva_clase.horario.strftime("%H:%M")} en {nueva_clase.get_direccion_corta()}.'
                 )
                 
                 return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
@@ -188,9 +188,9 @@ def eliminar_reserva(request, numero_reserva):
             
             messages.success(
                 request,
-                f'Tu reserva para la clase de {reserva.clase.get_tipo_display()} '
+                f'Tu reserva para la clase de {reserva.clase.get_nombre_display()} '
                 f'los {reserva.clase.dia} a las {reserva.clase.horario.strftime("%H:%M")} '
-                'ha sido cancelada exitosamente.'
+                f'en {reserva.clase.get_direccion_corta()} ha sido cancelada exitosamente.'
             )
             
             return redirect('gravity:home')
@@ -221,11 +221,11 @@ def buscar_reservas_usuario(request):
             usuario_encontrado = form.cleaned_data.get('user')
             
             if usuario_encontrado:
-                # Obtener todas las reservas activas del usuario
+                # Obtener todas las reservas activas del usuario, ordenadas por sede
                 reservas_usuario = Reserva.objects.filter(
                     usuario=usuario_encontrado,
                     activa=True
-                ).select_related('clase').order_by('clase__dia', 'clase__horario')
+                ).select_related('clase').order_by('clase__direccion', 'clase__dia', 'clase__horario')
     else:
         form = BuscarReservaForm()
 
@@ -271,43 +271,66 @@ def detalle_reserva(request, numero_reserva):
 def clases_disponibles(request):
     """
     Muestra todas las clases disponibles con información de cupos.
-    Vista informativa pública.
+    Vista informativa pública, ahora organizadas por sede.
     """
-    clases = Clase.objects.filter(activa=True).order_by('tipo', 'dia', 'horario')
+    clases = Clase.objects.filter(activa=True).order_by('direccion', 'tipo', 'dia', 'horario')
     
-    clases_info = []
-    disponibles = 0
-    limitadas = 0
-    completas = 0
+    # Organizar clases por sede
+    clases_por_sede = {}
+    estadisticas_generales = {
+        'disponibles': 0,
+        'limitadas': 0,
+        'completas': 0,
+        'total': 0
+    }
     
     for clase in clases:
         cupos_disponibles = clase.cupos_disponibles()
         esta_completa = clase.esta_completa()
         porcentaje_ocupacion = clase.get_porcentaje_ocupacion()
         
-        clases_info.append({
+        # Organizar por sede
+        sede_key = clase.direccion
+        sede_display = clase.get_direccion_display()
+        
+        if sede_key not in clases_por_sede:
+            clases_por_sede[sede_key] = {
+                'nombre': sede_display,
+                'clases': [],
+                'estadisticas': {
+                    'disponibles': 0,
+                    'limitadas': 0,
+                    'completas': 0,
+                    'total': 0
+                }
+            }
+        
+        clase_info = {
             'clase': clase,
             'cupos_disponibles': cupos_disponibles,
             'esta_completa': esta_completa,
             'porcentaje_ocupacion': porcentaje_ocupacion
-        })
+        }
         
-        # Contar para estadísticas
+        clases_por_sede[sede_key]['clases'].append(clase_info)
+        
+        # Contar para estadísticas por sede
         if esta_completa:
-            completas += 1
+            clases_por_sede[sede_key]['estadisticas']['completas'] += 1
+            estadisticas_generales['completas'] += 1
         elif cupos_disponibles <= 2:
-            limitadas += 1
+            clases_por_sede[sede_key]['estadisticas']['limitadas'] += 1
+            estadisticas_generales['limitadas'] += 1
         else:
-            disponibles += 1
+            clases_por_sede[sede_key]['estadisticas']['disponibles'] += 1
+            estadisticas_generales['disponibles'] += 1
+        
+        clases_por_sede[sede_key]['estadisticas']['total'] += 1
+        estadisticas_generales['total'] += 1
     
     return render(request, 'gravity/clases_disponibles.html', {
-        'clases_info': clases_info,
-        'estadisticas': {
-            'disponibles': disponibles,
-            'limitadas': limitadas,
-            'completas': completas,
-            'total': len(clases_info)
-        }
+        'clases_por_sede': clases_por_sede,
+        'estadisticas_generales': estadisticas_generales
     })
 
 # Vista para el botón de "Conoce más" (pública)
@@ -315,11 +338,11 @@ def conoce_mas(request):
     """Vista informativa sobre el estudio"""
     return render(request, 'gravity/conoce_mas.html')
 
-# API Endpoints para funcionalidad AJAX
+# API Endpoints para funcionalidad AJAX - ACTUALIZADOS PARA MÚLTIPLES SEDES
 @require_http_methods(["POST"])
-def dias_disponibles(request):
+def sedes_disponibles(request):
     """
-    API que devuelve los días únicos disponibles para un tipo de clase específico
+    API que devuelve las sedes únicas disponibles para un tipo de clase específico
     """
     try:
         data = json.loads(request.body)
@@ -328,14 +351,57 @@ def dias_disponibles(request):
         if not tipo_clase:
             return JsonResponse({'error': 'Tipo de clase requerido'}, status=400)
 
-        # Obtener días únicos para el tipo de clase (solo clases activas)
-        dias_disponibles = Clase.objects.filter(
+        # Obtener sedes únicas para el tipo de clase (solo clases activas)
+        sedes_disponibles = Clase.objects.filter(
             tipo=tipo_clase, 
             activa=True
-        ).values_list('dia', flat=True).distinct()
+        ).values_list('direccion', flat=True).distinct()
+
+        # Convertir a formato legible
+        sedes_info = []
+        for sede in sedes_disponibles:
+            sedes_info.append({
+                'value': sede,
+                'text': dict(Clase.DIRECCIONES).get(sede, sede)
+            })
+
+        return JsonResponse({
+            'sedes': sedes_info
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Datos JSON inválidos'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@require_http_methods(["POST"])
+def dias_disponibles(request):
+    """
+    API que devuelve los días únicos disponibles para un tipo de clase y sede específicos
+    """
+    try:
+        data = json.loads(request.body)
+        tipo_clase = data.get('tipo')
+        sede = data.get('sede')
+        
+        if not tipo_clase:
+            return JsonResponse({'error': 'Tipo de clase requerido'}, status=400)
+
+        # Construir filtro base
+        filtro = {
+            'tipo': tipo_clase, 
+            'activa': True
+        }
+        
+        # Agregar sede al filtro si se especifica
+        if sede:
+            filtro['direccion'] = sede
+
+        # Obtener días únicos para la combinación tipo-sede (solo clases activas)
+        dias_disponibles = Clase.objects.filter(**filtro).values_list('dia', flat=True).distinct()
 
         # Ordenar días según el orden de la semana
-        orden_dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+        orden_dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
         dias_ordenados = sorted(
             set(dias_disponibles), 
             key=lambda x: orden_dias.index(x) if x in orden_dias else 999
@@ -353,31 +419,42 @@ def dias_disponibles(request):
 @require_http_methods(["POST"])
 def horarios_disponibles(request):
     """
-    API que devuelve los horarios disponibles para un tipo de clase y día específicos
+    API que devuelve los horarios disponibles para un tipo de clase, sede y día específicos
     """
     try:
         data = json.loads(request.body)
         tipo_clase = data.get('tipo')
+        sede = data.get('sede')
         dia_clase = data.get('dia')
         
         if not tipo_clase or not dia_clase:
             return JsonResponse({'error': 'Tipo de clase y día requeridos'}, status=400)
         
-        # Obtener horarios para la combinación tipo-día (solo clases activas)
-        clases = Clase.objects.filter(
-            tipo=tipo_clase, 
-            dia=dia_clase,
-            activa=True
-        ).order_by('horario')
+        # Construir filtro
+        filtro = {
+            'tipo': tipo_clase, 
+            'dia': dia_clase,
+            'activa': True
+        }
+        
+        if sede:
+            filtro['direccion'] = sede
+        
+        # Obtener horarios para la combinación (solo clases activas)
+        clases = Clase.objects.filter(**filtro).order_by('horario')
         
         horarios_info = []
         for clase in clases:
             cupos_disponibles = clase.cupos_disponibles()
+            sede_corta = clase.get_direccion_corta()
+            
             horarios_info.append({
                 'value': clase.horario.strftime('%H:%M'),
-                'text': f"{clase.horario.strftime('%H:%M')} ({cupos_disponibles} cupos disponibles)",
+                'text': f"{clase.horario.strftime('%H:%M')} - {sede_corta} ({cupos_disponibles} cupos)",
                 'cupos': cupos_disponibles,
-                'disponible': cupos_disponibles > 0
+                'disponible': cupos_disponibles > 0,
+                'sede': clase.direccion,
+                'sede_display': sede_corta
             })
         
         return JsonResponse({
@@ -392,15 +469,16 @@ def horarios_disponibles(request):
 @require_http_methods(["POST"])
 def verificar_disponibilidad(request):
     """
-    API que verifica la disponibilidad de una combinación específica tipo-día-horario
+    API que verifica la disponibilidad de una combinación específica tipo-sede-día-horario
     """
     try:
         data = json.loads(request.body)
         tipo_clase = data.get('tipo')
+        sede = data.get('sede')
         dia_clase = data.get('dia')
         horario_str = data.get('horario')
         
-        if not all([tipo_clase, dia_clase, horario_str]):
+        if not all([tipo_clase, sede, dia_clase, horario_str]):
             return JsonResponse({'error': 'Todos los campos son requeridos'}, status=400)
         
         from datetime import datetime
@@ -408,7 +486,8 @@ def verificar_disponibilidad(request):
         
         try:
             clase = Clase.objects.get(
-                tipo=tipo_clase, 
+                tipo=tipo_clase,
+                direccion=sede,
                 dia=dia_clase, 
                 horario=horario_time,
                 activa=True
@@ -419,7 +498,8 @@ def verificar_disponibilidad(request):
                 'disponible': cupos_disponibles > 0,
                 'cupos_disponibles': cupos_disponibles,
                 'cupo_maximo': clase.cupo_maximo,
-                'mensaje': f'Quedan {cupos_disponibles} cupos disponibles' if cupos_disponibles > 0 else 'Clase completa'
+                'sede': clase.get_direccion_corta(),
+                'mensaje': f'Quedan {cupos_disponibles} cupos disponibles en {clase.get_direccion_corta()}' if cupos_disponibles > 0 else 'Clase completa'
             })
             
         except Clase.DoesNotExist:
@@ -438,10 +518,10 @@ def verificar_disponibilidad(request):
 @require_http_methods(["GET"])
 def clases_disponibles_api(request):
     """
-    API que devuelve todas las clases disponibles con información de cupos
+    API que devuelve todas las clases disponibles con información de cupos y sede
     """
     try:
-        clases = Clase.objects.filter(activa=True).order_by('tipo', 'dia', 'horario')
+        clases = Clase.objects.filter(activa=True).order_by('direccion', 'tipo', 'dia', 'horario')
         
         clases_data = []
         for clase in clases:
@@ -449,7 +529,10 @@ def clases_disponibles_api(request):
             clases_data.append({
                 'id': clase.id,
                 'tipo': clase.tipo,
-                'tipo_display': clase.get_tipo_display(),
+                'tipo_display': clase.get_nombre_display(),
+                'direccion': clase.direccion,
+                'direccion_display': clase.get_direccion_display(),
+                'direccion_corta': clase.get_direccion_corta(),
                 'dia': clase.dia,
                 'horario': clase.horario.strftime('%H:%M'),
                 'horario_display': clase.horario.strftime('%H:%M'),
@@ -497,12 +580,30 @@ def admin_required(view_func):
 def admin_dashboard(request):
     """
     Panel principal del administrador con estadísticas y resumen general
+    Ahora incluye estadísticas por sede
     """
     # Estadísticas generales
     total_clases = Clase.objects.filter(activa=True).count()
     total_reservas_activas = Reserva.objects.filter(activa=True).count()
     total_usuarios = User.objects.filter(is_active=True, is_staff=False).count()
     total_clientes_legacy = Cliente.objects.count()
+    
+    # Estadísticas por sede
+    stats_por_sede = []
+    for direccion_key, direccion_display in Clase.DIRECCIONES:
+        clases_sede = Clase.objects.filter(direccion=direccion_key, activa=True)
+        total_clases_sede = clases_sede.count()
+        total_reservas_sede = Reserva.objects.filter(
+            clase__direccion=direccion_key,
+            activa=True
+        ).count()
+        
+        stats_por_sede.append({
+            'sede': direccion_display,
+            'total_clases': total_clases_sede,
+            'total_reservas': total_reservas_sede,
+            'porcentaje_reservas': round((total_reservas_sede / total_reservas_activas * 100), 2) if total_reservas_activas > 0 else 0
+        })
     
     # Clases más populares
     clases_populares = Clase.objects.filter(activa=True).annotate(
@@ -542,6 +643,7 @@ def admin_dashboard(request):
         'total_usuarios': total_usuarios,
         'total_clientes_legacy': total_clientes_legacy,
         'usuarios_nuevos': usuarios_nuevos,
+        'stats_por_sede': stats_por_sede,
         'clases_populares': clases_populares,
         'reservas_recientes': reservas_recientes,
         'clases_casi_llenas': clases_casi_llenas,
@@ -550,28 +652,32 @@ def admin_dashboard(request):
     
     return render(request, 'gravity/admin/dashboard.html', context)
 
-
 # ==============================================================================
-# GESTIÓN DE CLASES
+# GESTIÓN DE CLASES - ACTUALIZADO PARA MÚLTIPLES SEDES
 # ==============================================================================
 
 @admin_required
 def admin_clases_lista(request):
     """
     Lista todas las clases con opciones de filtrado y paginación
+    Ahora incluye filtros por sede
     """
-    clases = Clase.objects.all().order_by('tipo', 'dia', 'horario')
+    clases = Clase.objects.all().order_by('direccion', 'tipo', 'dia', 'horario')
     
     # Filtros
     tipo_filtro = request.GET.get('tipo', '')
     dia_filtro = request.GET.get('dia', '')
     estado_filtro = request.GET.get('estado', '')
+    sede_filtro = request.GET.get('sede', '')
     
     if tipo_filtro:
         clases = clases.filter(tipo=tipo_filtro)
     
     if dia_filtro:
         clases = clases.filter(dia=dia_filtro)
+    
+    if sede_filtro:
+        clases = clases.filter(direccion=sede_filtro)
     
     if estado_filtro == 'activas':
         clases = clases.filter(activa=True)
@@ -599,8 +705,10 @@ def admin_clases_lista(request):
         'tipo_filtro': tipo_filtro,
         'dia_filtro': dia_filtro,
         'estado_filtro': estado_filtro,
+        'sede_filtro': sede_filtro,
         'tipos_clases': Clase.TIPO_CLASES,
-        'dias_semana': DIAS_SEMANA,
+        'dias_semana': DIAS_SEMANA_COMPLETOS,
+        'sedes': Clase.DIRECCIONES,
     }
     
     return render(request, 'gravity/admin/clases_lista.html', context)
@@ -608,11 +716,13 @@ def admin_clases_lista(request):
 @admin_required
 def admin_clase_crear(request):
     """
-    Crear una nueva clase
+    Crear una nueva clase - Actualizado para incluir direccion
     """
     if request.method == 'POST':
         # Obtener datos del formulario
         tipo = request.POST.get('tipo')
+        nombre_personalizado = request.POST.get('nombre_personalizado', '').strip() or None
+        direccion = request.POST.get('direccion')
         dia = request.POST.get('dia')
         horario_str = request.POST.get('horario')
         cupo_maximo = request.POST.get('cupo_maximo')
@@ -621,18 +731,70 @@ def admin_clase_crear(request):
             # Validar horario
             horario = datetime.strptime(horario_str, '%H:%M').time()
             
-            # Verificar que no exista una clase igual
-            if Clase.objects.filter(tipo=tipo, dia=dia, horario=horario).exists():
-                messages.error(request, 'Ya existe una clase con estas características.')
+            # Validaciones específicas para clases especiales
+            if tipo == 'Especial':
+                if not nombre_personalizado:
+                    messages.error(request, 'Las clases especiales deben tener un nombre personalizado.')
+                    return render(request, 'gravity/admin/clase_form.html', {
+                        'tipos_clases': Clase.TIPO_CLASES,
+                        'dias_semana': DIAS_SEMANA_COMPLETOS,
+                        'direcciones': Clase.DIRECCIONES,
+                        'form_data': request.POST
+                    })
+            elif nombre_personalizado:
+                messages.error(request, 'Solo las clases especiales pueden tener nombre personalizado.')
                 return render(request, 'gravity/admin/clase_form.html', {
                     'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA,
+                    'dias_semana': DIAS_SEMANA_COMPLETOS,
+                    'direcciones': Clase.DIRECCIONES,
+                    'form_data': request.POST
+                })
+            
+            # Validar día para clases no especiales
+            if dia == 'Sábado' and tipo != 'Especial':
+                messages.error(request, 'Solo las clases especiales pueden programarse los sábados.')
+                return render(request, 'gravity/admin/clase_form.html', {
+                    'tipos_clases': Clase.TIPO_CLASES,
+                    'dias_semana': DIAS_SEMANA_COMPLETOS,
+                    'direcciones': Clase.DIRECCIONES,
+                    'form_data': request.POST
+                })
+            
+            # Construir filtro para verificar duplicados
+            duplicate_filter = {
+                'tipo': tipo,
+                'direccion': direccion,
+                'dia': dia,
+                'horario': horario
+            }
+            
+            if tipo == 'Especial':
+                duplicate_filter['nombre_personalizado'] = nombre_personalizado
+            else:
+                duplicate_filter['nombre_personalizado__isnull'] = True
+            
+            # Verificar que no exista una clase igual
+            if Clase.objects.filter(**duplicate_filter).exists():
+                direccion_display = dict(Clase.DIRECCIONES).get(direccion, direccion)
+                if tipo == 'Especial':
+                    error_msg = f'Ya existe una clase especial "{nombre_personalizado}" los {dia} a las {horario_str} en {direccion_display}.'
+                else:
+                    tipo_display = dict(Clase.TIPO_CLASES).get(tipo, tipo)
+                    error_msg = f'Ya existe una clase de {tipo_display} los {dia} a las {horario_str} en {direccion_display}.'
+                
+                messages.error(request, error_msg)
+                return render(request, 'gravity/admin/clase_form.html', {
+                    'tipos_clases': Clase.TIPO_CLASES,
+                    'dias_semana': DIAS_SEMANA_COMPLETOS,
+                    'direcciones': Clase.DIRECCIONES,
                     'form_data': request.POST
                 })
             
             # Crear la clase
             clase = Clase.objects.create(
                 tipo=tipo,
+                nombre_personalizado=nombre_personalizado,
+                direccion=direccion,
                 dia=dia,
                 horario=horario,
                 cupo_maximo=int(cupo_maximo),
@@ -649,7 +811,8 @@ def admin_clase_crear(request):
     
     context = {
         'tipos_clases': Clase.TIPO_CLASES,
-        'dias_semana': DIAS_SEMANA,
+        'dias_semana': DIAS_SEMANA_COMPLETOS,
+        'direcciones': Clase.DIRECCIONES,
         'accion': 'Crear'
     }
     
@@ -658,12 +821,14 @@ def admin_clase_crear(request):
 @admin_required
 def admin_clase_editar(request, clase_id):
     """
-    Editar una clase existente
+    Editar una clase existente - Actualizado para incluir direccion
     """
     clase = get_object_or_404(Clase, id=clase_id)
     
     if request.method == 'POST':
         tipo = request.POST.get('tipo')
+        nombre_personalizado = request.POST.get('nombre_personalizado', '').strip() or None
+        direccion = request.POST.get('direccion')
         dia = request.POST.get('dia')
         horario_str = request.POST.get('horario')
         cupo_maximo = request.POST.get('cupo_maximo')
@@ -672,20 +837,73 @@ def admin_clase_editar(request, clase_id):
         try:
             horario = datetime.strptime(horario_str, '%H:%M').time()
             
-            # Verificar duplicados (excluyendo la clase actual)
-            if Clase.objects.filter(
-                tipo=tipo, dia=dia, horario=horario
-            ).exclude(id=clase.id).exists():
-                messages.error(request, 'Ya existe otra clase con estas características.')
+            # Validaciones específicas para clases especiales
+            if tipo == 'Especial':
+                if not nombre_personalizado:
+                    messages.error(request, 'Las clases especiales deben tener un nombre personalizado.')
+                    return render(request, 'gravity/admin/clase_form.html', {
+                        'clase': clase,
+                        'tipos_clases': Clase.TIPO_CLASES,
+                        'dias_semana': DIAS_SEMANA_COMPLETOS,
+                        'direcciones': Clase.DIRECCIONES,
+                        'accion': 'Editar'
+                    })
+            elif nombre_personalizado:
+                messages.error(request, 'Solo las clases especiales pueden tener nombre personalizado.')
                 return render(request, 'gravity/admin/clase_form.html', {
                     'clase': clase,
                     'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA,
+                    'dias_semana': DIAS_SEMANA_COMPLETOS,
+                    'direcciones': Clase.DIRECCIONES,
+                    'accion': 'Editar'
+                })
+            
+            # Validar día para clases no especiales
+            if dia == 'Sábado' and tipo != 'Especial':
+                messages.error(request, 'Solo las clases especiales pueden programarse los sábados.')
+                return render(request, 'gravity/admin/clase_form.html', {
+                    'clase': clase,
+                    'tipos_clases': Clase.TIPO_CLASES,
+                    'dias_semana': DIAS_SEMANA_COMPLETOS,
+                    'direcciones': Clase.DIRECCIONES,
+                    'accion': 'Editar'
+                })
+            
+            # Construir filtro para verificar duplicados
+            duplicate_filter = {
+                'tipo': tipo,
+                'direccion': direccion,
+                'dia': dia,
+                'horario': horario
+            }
+            
+            if tipo == 'Especial':
+                duplicate_filter['nombre_personalizado'] = nombre_personalizado
+            else:
+                duplicate_filter['nombre_personalizado__isnull'] = True
+            
+            # Verificar duplicados (excluyendo la clase actual)
+            if Clase.objects.filter(**duplicate_filter).exclude(id=clase.id).exists():
+                direccion_display = dict(Clase.DIRECCIONES).get(direccion, direccion)
+                if tipo == 'Especial':
+                    error_msg = f'Ya existe otra clase especial "{nombre_personalizado}" los {dia} a las {horario_str} en {direccion_display}.'
+                else:
+                    tipo_display = dict(Clase.TIPO_CLASES).get(tipo, tipo)
+                    error_msg = f'Ya existe otra clase de {tipo_display} los {dia} a las {horario_str} en {direccion_display}.'
+                
+                messages.error(request, error_msg)
+                return render(request, 'gravity/admin/clase_form.html', {
+                    'clase': clase,
+                    'tipos_clases': Clase.TIPO_CLASES,
+                    'dias_semana': DIAS_SEMANA_COMPLETOS,
+                    'direcciones': Clase.DIRECCIONES,
                     'accion': 'Editar'
                 })
             
             # Actualizar la clase
             clase.tipo = tipo
+            clase.nombre_personalizado = nombre_personalizado
+            clase.direccion = direccion
             clase.dia = dia
             clase.horario = horario
             clase.cupo_maximo = int(cupo_maximo)
@@ -703,7 +921,8 @@ def admin_clase_editar(request, clase_id):
     context = {
         'clase': clase,
         'tipos_clases': Clase.TIPO_CLASES,
-        'dias_semana': DIAS_SEMANA,
+        'dias_semana': DIAS_SEMANA_COMPLETOS,
+        'direcciones': Clase.DIRECCIONES,
         'accion': 'Editar'
     }
     
@@ -718,14 +937,15 @@ def admin_clase_eliminar(request, clase_id):
     
     if request.method == 'POST':
         if clase.puede_eliminarse():
-            tipo_nombre = clase.get_tipo_display()
+            nombre_display = clase.get_nombre_display()
             dia = clase.dia
             horario = clase.horario.strftime('%H:%M')
+            sede = clase.get_direccion_corta()
             
             clase.delete()
             messages.success(
                 request, 
-                f'Clase eliminada exitosamente: {tipo_nombre} - {dia} {horario}'
+                f'Clase eliminada exitosamente: {nombre_display} - {dia} {horario} - {sede}'
             )
         else:
             messages.error(
@@ -765,13 +985,14 @@ def admin_clase_detalle(request, clase_id):
     return render(request, 'gravity/admin/clase_detalle.html', context)
 
 # ==============================================================================
-# GESTIÓN DE RESERVAS
+# GESTIÓN DE RESERVAS - ACTUALIZADO CON FILTROS DE SEDE
 # ==============================================================================
 
 @admin_required
 def admin_reservas_lista(request):
     """
     Lista todas las reservas con filtros y paginación
+    Ahora incluye filtro por sede
     """
     reservas = Reserva.objects.select_related(
         'usuario', 'clase', 'usuario__profile'
@@ -780,6 +1001,7 @@ def admin_reservas_lista(request):
     # Filtros
     estado_filtro = request.GET.get('estado', 'activas')
     tipo_clase_filtro = request.GET.get('tipo_clase', '')
+    sede_filtro = request.GET.get('sede', '')
     dia_filtro = request.GET.get('dia', '')
     usuario_filtro = request.GET.get('usuario', '')
     
@@ -790,6 +1012,9 @@ def admin_reservas_lista(request):
     
     if tipo_clase_filtro:
         reservas = reservas.filter(clase__tipo=tipo_clase_filtro)
+    
+    if sede_filtro:
+        reservas = reservas.filter(clase__direccion=sede_filtro)
     
     if dia_filtro:
         reservas = reservas.filter(clase__dia=dia_filtro)
@@ -810,9 +1035,11 @@ def admin_reservas_lista(request):
         'page_obj': page_obj,
         'estado_filtro': estado_filtro,
         'tipo_clase_filtro': tipo_clase_filtro,
+        'sede_filtro': sede_filtro,
         'dia_filtro': dia_filtro,
         'usuario_filtro': usuario_filtro,
         'tipos_clases': Clase.TIPO_CLASES,
+        'sedes': Clase.DIRECCIONES,
         'dias_semana': DIAS_SEMANA,
     }
     
@@ -900,7 +1127,6 @@ def admin_usuarios_lista(request):
     
     return render(request, 'gravity/admin/usuarios_lista.html', context)
 
-
 @admin_required
 def admin_usuario_detalle(request, usuario_id):
     """
@@ -913,10 +1139,10 @@ def admin_usuario_detalle(request, usuario_id):
     except UserProfile.DoesNotExist:
         profile = UserProfile.objects.create(user=usuario)
     
-    # Obtener todas las reservas del usuario
+    # Obtener todas las reservas del usuario, ordenadas por sede
     reservas_activas = usuario.reservas_pilates.filter(activa=True).select_related(
         'clase'
-    ).order_by('clase__dia', 'clase__horario')
+    ).order_by('clase__direccion', 'clase__dia', 'clase__horario')
     
     reservas_canceladas = usuario.reservas_pilates.filter(activa=False).select_related(
         'clase'
@@ -933,9 +1159,8 @@ def admin_usuario_detalle(request, usuario_id):
     
     return render(request, 'gravity/admin/usuario_detalle.html', context)
 
-
 # ==============================================================================
-# AGREGAR CLIENTES NO REGISTRADOS
+# AGREGAR CLIENTES NO REGISTRADOS - ACTUALIZADO CON SEDES
 # ==============================================================================
 
 @admin_required
@@ -956,7 +1181,7 @@ def admin_agregar_cliente_no_registrado(request):
             messages.error(request, 'Nombre, apellido, teléfono y clase son obligatorios.')
             return render(request, 'gravity/admin/agregar_cliente_form.html', {
                 'clases_disponibles': Clase.objects.filter(activa=True).order_by(
-                    'tipo', 'dia', 'horario'
+                    'direccion', 'tipo', 'dia', 'horario'
                 ),
                 'form_data': request.POST
             })
@@ -969,7 +1194,7 @@ def admin_agregar_cliente_no_registrado(request):
                 messages.error(request, 'La clase seleccionada no tiene cupos disponibles.')
                 return render(request, 'gravity/admin/agregar_cliente_form.html', {
                     'clases_disponibles': Clase.objects.filter(activa=True).order_by(
-                        'tipo', 'dia', 'horario'
+                        'direccion', 'tipo', 'dia', 'horario'
                     ),
                     'form_data': request.POST
                 })
@@ -987,24 +1212,27 @@ def admin_agregar_cliente_no_registrado(request):
             # Calcular la próxima fecha de esta clase
             today = timezone.now().date()
             dias_semana_num = {
-                'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4
+                'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
             }
             
             dia_clase_num = dias_semana_num.get(clase.dia)
-            dias_hasta_clase = (dia_clase_num - today.weekday()) % 7
-            if dias_hasta_clase == 0:
-                # Si es hoy, verificar si la clase ya pasó
-                now = timezone.now()
-                clase_hoy = now.replace(
-                    hour=clase.horario.hour,
-                    minute=clase.horario.minute,
-                    second=0,
-                    microsecond=0
-                )
-                if clase_hoy <= now:
-                    dias_hasta_clase = 7
-            
-            fecha_clase = today + timedelta(days=dias_hasta_clase)
+            if dia_clase_num is not None:
+                dias_hasta_clase = (dia_clase_num - today.weekday()) % 7
+                if dias_hasta_clase == 0:
+                    # Si es hoy, verificar si la clase ya pasó
+                    now = timezone.now()
+                    clase_hoy = now.replace(
+                        hour=clase.horario.hour,
+                        minute=clase.horario.minute,
+                        second=0,
+                        microsecond=0
+                    )
+                    if clase_hoy <= now:
+                        dias_hasta_clase = 7
+                
+                fecha_clase = today + timedelta(days=dias_hasta_clase)
+            else:
+                fecha_clase = today + timedelta(days=1)  # Fallback
             
             turno = Turno.objects.create(
                 cliente=cliente,
@@ -1015,8 +1243,8 @@ def admin_agregar_cliente_no_registrado(request):
             messages.success(
                 request,
                 f'Cliente {nombre} {apellido} agregado exitosamente a la clase de '
-                f'{clase.get_tipo_display()} del {clase.dia} a las {clase.horario.strftime("%H:%M")}. '
-                f'Número de cliente: {cliente.numero_cliente}'
+                f'{clase.get_nombre_display()} del {clase.dia} a las {clase.horario.strftime("%H:%M")} '
+                f'en {clase.get_direccion_corta()}. Número de cliente: {cliente.numero_cliente}'
             )
             
             return redirect('gravity:admin_clases_lista')
@@ -1024,9 +1252,9 @@ def admin_agregar_cliente_no_registrado(request):
         except Exception as e:
             messages.error(request, f'Error al agregar cliente: {str(e)}')
     
-    # Obtener clases disponibles con cupos
+    # Obtener clases disponibles con cupos, organizadas por sede
     clases_disponibles = []
-    for clase in Clase.objects.filter(activa=True).order_by('tipo', 'dia', 'horario'):
+    for clase in Clase.objects.filter(activa=True).order_by('direccion', 'tipo', 'dia', 'horario'):
         cupos = clase.cupos_disponibles()
         if cupos > 0:  # Solo mostrar clases con cupos
             clases_disponibles.append({
@@ -1039,7 +1267,6 @@ def admin_agregar_cliente_no_registrado(request):
     }
     
     return render(request, 'gravity/admin/agregar_cliente_form.html', context)
-
 
 @admin_required
 def admin_clientes_no_registrados_lista(request):
@@ -1081,15 +1308,15 @@ def admin_clientes_no_registrados_lista(request):
     
     return render(request, 'gravity/admin/clientes_no_registrados_lista.html', context)
 
-
 # ==============================================================================
-# REPORTES Y ESTADÍSTICAS
+# REPORTES Y ESTADÍSTICAS - ACTUALIZADO CON SEDES
 # ==============================================================================
 
 @admin_required
 def admin_reportes(request):
     """
     Página de reportes y estadísticas avanzadas
+    Ahora incluye estadísticas por sede
     """
     # Estadísticas por período
     hoy = timezone.now().date()
@@ -1138,9 +1365,28 @@ def admin_reportes(request):
             'porcentaje_ocupacion': round((total_reservas / total_cupos * 100), 2) if total_cupos > 0 else 0
         })
     
+    # Estadísticas por sede
+    stats_por_sede = []
+    for sede_key, sede_nombre in Clase.DIRECCIONES:
+        clases_sede = Clase.objects.filter(direccion=sede_key, activa=True)
+        total_clases = clases_sede.count()
+        total_reservas = Reserva.objects.filter(
+            clase__direccion=sede_key,
+            activa=True
+        ).count()
+        total_cupos = sum(clase.cupo_maximo for clase in clases_sede)
+        
+        stats_por_sede.append({
+            'sede': sede_nombre,
+            'total_clases': total_clases,
+            'total_reservas': total_reservas,
+            'total_cupos': total_cupos,
+            'porcentaje_ocupacion': round((total_reservas / total_cupos * 100), 2) if total_cupos > 0 else 0
+        })
+    
     # Estadísticas por día de la semana
     stats_por_dia = []
-    for dia, nombre in DIAS_SEMANA:
+    for dia, nombre in DIAS_SEMANA_COMPLETOS:
         clases_dia = Clase.objects.filter(dia=dia, activa=True)
         total_clases = clases_dia.count()
         total_reservas = Reserva.objects.filter(
@@ -1161,6 +1407,7 @@ def admin_reportes(request):
         'usuarios_esta_semana': usuarios_esta_semana,
         'usuarios_este_mes': usuarios_este_mes,
         'stats_por_tipo': stats_por_tipo,
+        'stats_por_sede': stats_por_sede,
         'stats_por_dia': stats_por_dia,
     }
     

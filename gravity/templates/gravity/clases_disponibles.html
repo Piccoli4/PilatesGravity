@@ -4,56 +4,60 @@
 {% block title %}Clases Disponibles - Pilates Gravity{% endblock %}
 
 {% block extra_css %}
-<style>
-    .card-hover-effect {
-        transition: all 0.3s ease;
-    }
-    
-    .card-hover-effect:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(93, 118, 139, 0.15);
-    }
-    
-    .ocupacion-bar {
-        transition: width 0.8s ease-in-out;
-    }
-    
-    .status-disponible {
-        background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
-    }
-    
-    .status-limitado {
-        background: linear-gradient(135deg, #FFC107 0%, #FD7E14 100%);
-    }
-    
-    .status-completo {
-        background: linear-gradient(135deg, #DC3545 0%, #E74C3C 100%);
-    }
-    
-    .icon-reformer {
-        background-image: url('{% static "icons/reformer.png" %}');
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-    }
-    
-    .icon-cadillac {
-        background-image: url('{% static "icons/cadillac.png" %}');
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-    }
-    
-    .pulse-ring {
-        animation: pulse-ring 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulse-ring {
-        0% { transform: scale(1); opacity: 0.3; }
-        50% { transform: scale(1.05); opacity: 0.1; }
-        100% { transform: scale(1.1); opacity: 0; }
-    }
-</style>
+    <style>
+        .card-hover-effect {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover-effect:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(93, 118, 139, 0.15);
+        }
+        
+        .ocupacion-bar {
+            transition: width 0.8s ease-in-out;
+        }
+        
+        .status-disponible {
+            background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
+        }
+        
+        .status-limitado {
+            background: linear-gradient(135deg, #FFC107 0%, #FD7E14 100%);
+        }
+        
+        .status-completo {
+            background: linear-gradient(135deg, #DC3545 0%, #E74C3C 100%);
+        }
+        
+        .icon-reformer {
+            background-image: url('{% static "icons/reformer.png" %}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .icon-cadillac {
+            background-image: url('{% static "icons/cadillac.png" %}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s ease-in-out infinite;
+        }
+        
+        .sede-header {
+            background: linear-gradient(135deg, #5D768B 0%, #C8B39B 100%);
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.05); opacity: 0.1; }
+            100% { transform: scale(1.1); opacity: 0; }
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -71,7 +75,7 @@
                 </h1>
                 <div class="w-24 h-1 bg-white mx-auto mb-6"></div>
                 <p class="text-xl md:text-2xl mb-8 leading-relaxed animate-fadeInUp" style="animation-delay: 0.2s;">
-                    Descubre nuestros horarios y encuentra la clase perfecta para tu rutina
+                    Descubre nuestros horarios en ambas sedes y encuentra la clase perfecta para tu rutina
                 </p>
                 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style="animation-delay: 0.4s;">
@@ -102,19 +106,19 @@
                 <!-- Estadísticas rápidas -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
                     <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-principal mb-2">{{ estadisticas.total }}</div>
+                        <div class="text-3xl font-bold text-principal mb-2">{{ estadisticas_generales.total }}</div>
                         <div class="text-sm text-gris-oscuro">Clases Totales</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-exito mb-2" id="clases-disponibles">{{ estadisticas.disponibles }}</div>
+                        <div class="text-3xl font-bold text-exito mb-2" id="clases-disponibles">{{ estadisticas_generales.disponibles }}</div>
                         <div class="text-sm text-gris-oscuro">Disponibles</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-advertencia mb-2" id="clases-limitadas">{{ estadisticas.limitadas }}</div>
+                        <div class="text-3xl font-bold text-advertencia mb-2" id="clases-limitadas">{{ estadisticas_generales.limitadas }}</div>
                         <div class="text-sm text-gris-oscuro">Cupos Limitados</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-error mb-2" id="clases-completas">{{ estadisticas.completas }}</div>
+                        <div class="text-3xl font-bold text-error mb-2" id="clases-completas">{{ estadisticas_generales.completas }}</div>
                         <div class="text-sm text-gris-oscuro">Completas</div>
                     </div>
                 </div>
@@ -122,13 +126,22 @@
                 <!-- Filtros -->
                 <div class="bg-white rounded-xl p-6 shadow-wizard mb-8">
                     <h3 class="text-xl font-bold text-principal mb-4">Filtrar Clases</h3>
-                    <div class="grid md:grid-cols-3 gap-4">
+                    <div class="grid md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gris-oscuro mb-2">Tipo de Clase</label>
                             <select id="filtro-tipo" class="w-full px-4 py-2 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal">
                                 <option value="">Todos los tipos</option>
                                 <option value="Reformer">Pilates Reformer</option>
                                 <option value="Cadillac">Pilates Cadillac</option>
+                                <option value="Especial">Clase Especial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Sede</label>
+                            <select id="filtro-sede" class="w-full px-4 py-2 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal">
+                                <option value="">Todas las sedes</option>
+                                <option value="sede_principal">Sede Principal - La Rioja 3044</option>
+                                <option value="sede_2">Sede 2 - 9 de julio 3698</option>
                             </select>
                         </div>
                         <div>
@@ -140,6 +153,7 @@
                                 <option value="Miércoles">Miércoles</option>
                                 <option value="Jueves">Jueves</option>
                                 <option value="Viernes">Viernes</option>
+                                <option value="Sábado">Sábado</option>
                             </select>
                         </div>
                         <div>
@@ -157,7 +171,7 @@
         </div>
     </section>
 
-    <!-- Lista de clases -->
+    <!-- Lista de clases por sede -->
     <section class="py-12 bg-blanco">
         <div class="container mx-auto px-4">
             <div class="max-w-6xl mx-auto">
@@ -166,122 +180,161 @@
                         Nuestros Horarios
                     </h2>
                     <p class="text-lg text-gris-oscuro max-w-2xl mx-auto">
-                        Encuentra la clase perfecta para tu horario y nivel
+                        Encuentra la clase perfecta para tu horario y nivel en cualquiera de nuestras sedes
                     </p>
                 </div>
                 
-                <!-- Grid de clases -->
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8" id="clases-grid">
-                    {% for clase_info in clases_info %}
-                    <div class="bg-white rounded-2xl shadow-wizard p-6 card-hover-effect clase-card" 
-                        data-tipo="{{ clase_info.clase.tipo }}" 
-                        data-dia="{{ clase_info.clase.dia }}"
-                        data-disponibilidad="{% if clase_info.esta_completa %}completo{% elif clase_info.cupos_disponibles <= 2 %}limitado{% else %}disponible{% endif %}">
-                        
-                        <!-- Header de la clase -->
-                        <div class="flex items-center justify-between mb-6">
-                            <div class="flex items-center space-x-3">
-                                <!-- Icono del equipo -->
-                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-principal to-secundario flex items-center justify-center">
-                                    {% if clase_info.clase.tipo == 'Reformer' %}
-                                        <div class="w-8 h-8 icon-reformer"></div>
-                                    {% else %}
-                                        <div class="w-8 h-8 icon-cadillac"></div>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <h3 class="text-xl font-bold text-principal">{{ clase_info.clase.get_tipo_display }}</h3>
-                                    <p class="text-sm text-gris-medio">{{ clase_info.clase.dia }}</p>
-                                </div>
+                <!-- Clases por sede -->
+                {% for sede_key, sede_info in clases_por_sede.items %}
+                <div class="mb-16">
+                    <!-- Header de la sede -->
+                    <div class="sede-header rounded-t-2xl p-6 text-secundario mb-0">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div>
+                                <h3 class="text-2xl font-cinzel font-bold mb-2">
+                                    {{ sede_info.nombre }}
+                                </h3>
                             </div>
-                            
-                            <!-- Badge de estado -->
-                            <div class="status-badge px-3 py-1 rounded-full text-white text-sm font-medium
-                                        {% if clase_info.esta_completa %}status-completo
-                                        {% elif clase_info.cupos_disponibles <= 2 %}status-limitado
-                                        {% else %}status-disponible{% endif %}">
-                                {% if clase_info.esta_completa %}
-                                    Completa
-                                {% elif clase_info.cupos_disponibles <= 2 %}
-                                    Limitado
-                                {% else %}
-                                    Disponible
-                                {% endif %}
+                            <div class="mt-4 md:mt-0 flex flex-wrap gap-4">
+                                <div class="bg-white/20 rounded-lg px-4 py-2 text-center">
+                                    <div class="text-lg font-bold">{{ sede_info.estadisticas.total }}</div>
+                                    <div class="text-sm opacity-90">Clases</div>
+                                </div>
+                                <div class="bg-white/20 rounded-lg px-4 py-2 text-center">
+                                    <div class="text-lg font-bold">{{ sede_info.estadisticas.disponibles }}</div>
+                                    <div class="text-sm opacity-90">Disponibles</div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Información de la clase -->
-                        <div class="space-y-4">
-                            <!-- Horario -->
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 bg-fondo rounded-lg flex items-center justify-center">
-                                    🕐
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gris-oscuro">Horario</p>
-                                    <p class="text-lg font-bold text-principal">{{ clase_info.clase.horario|time:"H:i" }}</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Cupos disponibles -->
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 bg-fondo rounded-lg flex items-center justify-center">
-                                    👥
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex justify-between items-center mb-1">
-                                        <p class="font-medium text-gris-oscuro">Cupos</p>
-                                        <p class="text-sm font-bold">
-                                            <span class="{% if clase_info.cupos_disponibles <= 2 %}text-error{% elif clase_info.cupos_disponibles <= 5 %}text-advertencia{% else %}text-exito{% endif %}">
-                                                {{ clase_info.cupos_disponibles }}
-                                            </span>
-                                            <span class="text-gris-medio">/ {{ clase_info.clase.cupo_maximo }}</span>
-                                        </p>
-                                    </div>
+                    </div>
+                    
+                    <!-- Grid de clases -->
+                    {% if sede_info.clases %}
+                        <div class="bg-white rounded-b-2xl p-6 shadow-wizard">
+                            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8" id="clases-grid-{{ sede_key }}">
+                                {% for clase_info in sede_info.clases %}
+                                <div class="bg-white rounded-2xl shadow-wizard p-6 card-hover-effect clase-card" 
+                                    data-tipo="{{ clase_info.clase.tipo }}" 
+                                    data-sede="{{ sede_key }}"
+                                    data-dia="{{ clase_info.clase.dia }}"
+                                    data-disponibilidad="{% if clase_info.esta_completa %}completo{% elif clase_info.cupos_disponibles <= 2 %}limitado{% else %}disponible{% endif %}">
                                     
-                                    <!-- Barra de ocupación -->
-                                    <div class="w-full bg-gris-claro rounded-full h-2">
-                                        <div class="ocupacion-bar h-2 rounded-full 
-                                                    {% if clase_info.porcentaje_ocupacion >= 90 %}bg-error
-                                                    {% elif clase_info.porcentaje_ocupacion >= 70 %}bg-advertencia
-                                                    {% else %}bg-exito{% endif %}"
-                                            data-width="{{ clase_info.porcentaje_ocupacion|default:0 }}">
+                                    <!-- Header de la clase -->
+                                    <div class="flex items-center justify-between mb-6">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Icono del equipo -->
+                                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-principal to-secundario flex items-center justify-center">
+                                                {% if clase_info.clase.tipo == 'Reformer' %}
+                                                    <div class="w-8 h-8 icon-reformer"></div>
+                                                {% elif clase_info.clase.tipo == 'Cadillac' %}
+                                                    <div class="w-8 h-8 icon-cadillac"></div>
+                                                {% else %}
+                                                    <div class="text-white font-bold">✨</div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h4 class="text-xl font-bold text-principal">{{ clase_info.clase.get_nombre_display }}</h4>
+                                                <p class="text-sm text-gris-medio">{{ clase_info.clase.dia }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Badge de estado -->
+                                        <div class="status-badge px-3 py-1 rounded-full text-white text-sm font-medium
+                                                    {% if clase_info.esta_completa %}status-completo
+                                                    {% elif clase_info.cupos_disponibles <= 2 %}status-limitado
+                                                    {% else %}status-disponible{% endif %}">
+                                            {% if clase_info.esta_completa %}
+                                                Completa
+                                            {% elif clase_info.cupos_disponibles <= 2 %}
+                                                Limitado
+                                            {% else %}
+                                                Disponible
+                                            {% endif %}
                                         </div>
                                     </div>
-                                    <p class="text-xs text-gris-medio mt-1">{{ clase_info.porcentaje_ocupacion|default:0 }}% ocupado</p>
+                                    
+                                    <!-- Información de la clase -->
+                                    <div class="space-y-4">
+                                        <!-- Horario -->
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-fondo rounded-lg flex items-center justify-center">
+                                                🕐
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gris-oscuro">Horario</p>
+                                                <p class="text-lg font-bold text-principal">{{ clase_info.clase.horario|time:"H:i" }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Cupos disponibles -->
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-fondo rounded-lg flex items-center justify-center">
+                                                👥
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="flex justify-between items-center mb-1">
+                                                    <p class="font-medium text-gris-oscuro">Cupos</p>
+                                                    <p class="text-sm font-bold">
+                                                        <span class="{% if clase_info.cupos_disponibles <= 2 %}text-error{% elif clase_info.cupos_disponibles <= 5 %}text-advertencia{% else %}text-exito{% endif %}">
+                                                            {{ clase_info.cupos_disponibles }}
+                                                        </span>
+                                                        <span class="text-gris-medio">/ {{ clase_info.clase.cupo_maximo }}</span>
+                                                    </p>
+                                                </div>
+                                                
+                                                <!-- Barra de ocupación -->
+                                                <div class="w-full bg-gris-claro rounded-full h-2">
+                                                    <div class="ocupacion-bar h-2 rounded-full 
+                                                                {% if clase_info.porcentaje_ocupacion >= 90 %}bg-error
+                                                                {% elif clase_info.porcentaje_ocupacion >= 70 %}bg-advertencia
+                                                                {% else %}bg-exito{% endif %}"
+                                                        data-width="{{ clase_info.porcentaje_ocupacion|default:0 }}">
+                                                    </div>
+                                                </div>
+                                                <p class="text-xs text-gris-medio mt-1">{{ clase_info.porcentaje_ocupacion|default:0 }}% ocupado</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Botón de acción -->
+                                    <div class="mt-6">
+                                        {% if user.is_authenticated %}
+                                            {% if clase_info.esta_completa %}
+                                                <button disabled class="w-full bg-gris-claro text-gris-medio px-4 py-3 rounded-lg font-semibold cursor-not-allowed">
+                                                    Clase Completa
+                                                </button>
+                                            {% else %}
+                                                <a href="{% url 'gravity:reservar_clase' %}?tipo={{ clase_info.clase.tipo }}" 
+                                                class="block w-full bg-principal hover:bg-principal/90 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300 hover:shadow-btn-primary-hover">
+                                                    Reservar Clase
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <a href="{% url 'accounts:signup' %}" 
+                                            class="block w-full bg-secundario hover:bg-secundario/90 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300">
+                                                Registrarse para Reservar
+                                            </a>
+                                        {% endif %}
+                                    </div>
                                 </div>
+                                {% endfor %}
                             </div>
                         </div>
-                        
-                        <!-- Botón de acción -->
-                        <div class="mt-6">
-                            {% if user.is_authenticated %}
-                                {% if clase_info.esta_completa %}
-                                    <button disabled class="w-full bg-gris-claro text-gris-medio px-4 py-3 rounded-lg font-semibold cursor-not-allowed">
-                                        Clase Completa
-                                    </button>
-                                {% else %}
-                                    <a href="{% url 'gravity:reservar_clase' %}?tipo={{ clase_info.clase.tipo }}" 
-                                    class="block w-full bg-principal hover:bg-principal/90 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300 hover:shadow-btn-primary-hover">
-                                        Reservar Clase
-                                    </a>
-                                {% endif %}
-                            {% else %}
-                                <a href="{% url 'accounts:signup' %}" 
-                                class="block w-full bg-secundario hover:bg-secundario/90 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300">
-                                    Registrarse para Reservar
-                                </a>
-                            {% endif %}
+                    {% else %}
+                        <div class="bg-white rounded-b-2xl p-12 shadow-wizard text-center">
+                            <div class="text-6xl mb-4">📅</div>
+                            <h4 class="text-xl font-bold text-gris-oscuro mb-2">No hay clases disponibles en esta sede</h4>
+                            <p class="text-gris-medio">Pronto agregaremos más horarios aquí</p>
                         </div>
-                    </div>
-                    {% empty %}
-                    <div class="col-span-full text-center py-12">
-                        <div class="text-6xl mb-4">😔</div>
-                        <h3 class="text-2xl font-bold text-gris-oscuro mb-2">No hay clases disponibles</h3>
-                        <p class="text-gris-medio">Vuelve pronto para ver nuevas clases</p>
-                    </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
+                {% empty %}
+                <div class="text-center py-12">
+                    <div class="text-6xl mb-4">😔</div>
+                    <h3 class="text-2xl font-bold text-gris-oscuro mb-2">No hay clases disponibles</h3>
+                    <p class="text-gris-medio">Vuelve pronto para ver nuevas clases</p>
+                </div>
+                {% endfor %}
                 
                 <!-- Mensaje cuando no hay resultados filtrados -->
                 <div id="no-results" class="text-center py-12 hidden">
@@ -335,9 +388,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Elementos
             const filtroTipo = document.getElementById('filtro-tipo');
+            const filtroSede = document.getElementById('filtro-sede');
             const filtroDia = document.getElementById('filtro-dia');
             const filtroDisponibilidad = document.getElementById('filtro-disponibilidad');
-            const clasesGrid = document.getElementById('clases-grid');
             const noResults = document.getElementById('no-results');
             
             // Contadores
@@ -351,19 +404,23 @@
             
             // Event listeners para filtros
             filtroTipo.addEventListener('change', aplicarFiltros);
+            filtroSede.addEventListener('change', aplicarFiltros);
             filtroDia.addEventListener('change', aplicarFiltros);
             filtroDisponibilidad.addEventListener('change', aplicarFiltros);
             
             function aplicarFiltros() {
                 const tipoSeleccionado = filtroTipo.value;
+                const sedeSeleccionada = filtroSede.value;
                 const diaSeleccionado = filtroDia.value;
                 const disponibilidadSeleccionada = filtroDisponibilidad.value;
                 
                 const clases = document.querySelectorAll('.clase-card');
+                const sedes = document.querySelectorAll('[id^="clases-grid-"]');
                 let clasesVisibles = 0;
                 
                 clases.forEach(clase => {
                     const tipo = clase.dataset.tipo;
+                    const sede = clase.dataset.sede;
                     const dia = clase.dataset.dia;
                     const disponibilidad = clase.dataset.disponibilidad;
                     
@@ -371,6 +428,11 @@
                     
                     // Filtro por tipo
                     if (tipoSeleccionado && tipo !== tipoSeleccionado) {
+                        mostrar = false;
+                    }
+                    
+                    // Filtro por sede
+                    if (sedeSeleccionada && sede !== sedeSeleccionada) {
                         mostrar = false;
                     }
                     
@@ -395,13 +457,23 @@
                     }
                 });
                 
+                // Mostrar/ocultar sedes vacías
+                sedes.forEach(sedeGrid => {
+                    const sedeClases = sedeGrid.querySelectorAll('.clase-card[style*="block"], .clase-card:not([style*="none"])');
+                    const sedeContainer = sedeGrid.closest('.mb-16');
+                    
+                    if (sedeClases.length === 0) {
+                        sedeContainer.style.display = 'none';
+                    } else {
+                        sedeContainer.style.display = 'block';
+                    }
+                });
+                
                 // Mostrar mensaje de "no resultados" si es necesario
                 if (clasesVisibles === 0) {
                     noResults.classList.remove('hidden');
-                    clasesGrid.style.display = 'none';
                 } else {
                     noResults.classList.add('hidden');
-                    clasesGrid.style.display = 'grid';
                 }
             }
             
