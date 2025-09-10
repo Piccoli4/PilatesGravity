@@ -81,11 +81,19 @@ class ReservaForm(forms.Form):
         # Obtener sedes únicas disponibles
         sedes_disponibles = Clase.objects.filter(
             activa=True
-        ).values_list('direccion', flat=True).distinct()
+        ).values('direccion').distinct().order_by('direccion')
         
-        self.fields['sede'].choices = [('', 'Selecciona la sede')] + [
-            (sede, dict(Clase.DIRECCIONES).get(sede, sede)) for sede in sedes_disponibles
-        ]
+        sedes_choices = [('', 'Selecciona la sede')]
+        sedes_agregadas = set()
+        
+        for sede_dict in sedes_disponibles:
+            sede = sede_dict['direccion']
+            if sede not in sedes_agregadas:
+                sede_display = dict(Clase.DIRECCIONES).get(sede, sede)
+                sedes_choices.append((sede, sede_display))
+                sedes_agregadas.add(sede)
+        
+        self.fields['sede'].choices = sedes_choices
         
         # Obtener días únicos disponibles
         dias_disponibles = Clase.objects.filter(

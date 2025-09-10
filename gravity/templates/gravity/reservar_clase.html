@@ -4,47 +4,58 @@
 {% block title %}Reservar Clase - Pilates Gravity{% endblock %}
 
 {% block extra_css %}
-<style>
-    .form-floating-label {
-        position: relative;
-    }
-    
-    .form-floating-label label {
-        position: absolute;
-        top: 50%;
-        left: 12px;
-        transform: translateY(-50%);
-        color: #6C757D;
-        transition: all 0.3s ease;
-        pointer-events: none;
-        background: white;
-        padding: 0 4px;
-    }
-    
-    .form-floating-label select:focus + label,
-    .form-floating-label select:not(:invalid) + label {
-        top: 0;
-        font-size: 0.75rem;
-        color: #5D768B;
-        transform: translateY(-50%);
-    }
-    
-    .availability-success {
-        background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
-    }
-    
-    .availability-warning {
-        background: linear-gradient(135deg, #FFC107 0%, #FD7E14 100%);
-    }
-    
-    .availability-danger {
-        background: linear-gradient(135deg, #DC3545 0%, #E74C3C 100%);
-    }
-    
-    .availability-info {
-        background: linear-gradient(135deg, #17A2B8 0%, #6F42C1 100%);
-    }
-</style>
+    <style>
+        .form-floating-label {
+            position: relative;
+        }
+        
+        .form-floating-label label {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            transform: translateY(-50%);
+            color: #6C757D;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            background: white;
+            padding: 0 4px;
+        }
+        
+        .form-floating-label select:focus + label,
+        .form-floating-label select:not(:invalid) + label {
+            top: 0;
+            font-size: 0.75rem;
+            color: #5D768B;
+            transform: translateY(-50%);
+        }
+        
+        .availability-success {
+            background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
+        }
+        
+        .availability-warning {
+            background: linear-gradient(135deg, #FFC107 0%, #FD7E14 100%);
+        }
+        
+        .availability-danger {
+            background: linear-gradient(135deg, #DC3545 0%, #E74C3C 100%);
+        }
+        
+        .availability-info {
+            background: linear-gradient(135deg, #17A2B8 0%, #6F42C1 100%);
+        }
+
+        .form-step {
+            opacity: 0.5;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .form-step.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -149,11 +160,40 @@
                                 Selección de Clase
                             </h2>
                             
+                            <!-- Indicador de progreso -->
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center space-x-2">
+                                    <div id="step-1" class="w-8 h-8 rounded-full bg-principal text-white flex items-center justify-center text-sm font-bold">1</div>
+                                    <span class="text-sm text-principal font-medium">Tipo</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gris-claro mx-2">
+                                    <div id="progress-1" class="h-full bg-principal transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div id="step-2" class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio flex items-center justify-center text-sm font-bold">2</div>
+                                    <span class="text-sm text-gris-medio font-medium">Sede</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gris-claro mx-2">
+                                    <div id="progress-2" class="h-full bg-principal transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div id="step-3" class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio flex items-center justify-center text-sm font-bold">3</div>
+                                    <span class="text-sm text-gris-medio font-medium">Día</span>
+                                </div>
+                                <div class="flex-1 h-1 bg-gris-claro mx-2">
+                                    <div id="progress-3" class="h-full bg-principal transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <div id="step-4" class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio flex items-center justify-center text-sm font-bold">4</div>
+                                    <span class="text-sm text-gris-medio font-medium">Horario</span>
+                                </div>
+                            </div>
+                            
                             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <!-- Tipo de Clase -->
-                                <div class="space-y-2">
+                                <!-- Tipo de Clase - Paso 1 -->
+                                <div class="space-y-2 form-step active" id="form-step-1">
                                     <label for="{{ form.tipo_clase.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.tipo_clase.label }}
+                                        {{ form.tipo_clase.label }} <span class="text-error">*</span>
                                     </label>
                                     <div class="relative">
                                         {{ form.tipo_clase }}
@@ -163,10 +203,10 @@
                                     {% endfor %}
                                 </div>
                                 
-                                <!-- Sede -->
-                                <div class="space-y-2">
+                                <!-- Sede - Paso 2 -->
+                                <div class="space-y-2 form-step" id="form-step-2">
                                     <label for="{{ form.sede.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.sede.label }}
+                                        {{ form.sede.label }} <span class="text-error">*</span>
                                     </label>
                                     <div class="relative">
                                         {{ form.sede }}
@@ -176,10 +216,10 @@
                                     {% endfor %}
                                 </div>
                                 
-                                <!-- Día -->
-                                <div class="space-y-2">
+                                <!-- Día - Paso 3 -->
+                                <div class="space-y-2 form-step" id="form-step-3">
                                     <label for="{{ form.dia.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.dia.label }}
+                                        {{ form.dia.label }} <span class="text-error">*</span>
                                     </label>
                                     <div class="relative">
                                         {{ form.dia }}
@@ -189,10 +229,10 @@
                                     {% endfor %}
                                 </div>
                                 
-                                <!-- Horario -->
-                                <div class="space-y-2">
+                                <!-- Horario - Paso 4 -->
+                                <div class="space-y-2 form-step" id="form-step-4">
                                     <label for="{{ form.horario.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.horario.label }}
+                                        {{ form.horario.label }} <span class="text-error">*</span>
                                     </label>
                                     <div class="relative">
                                         {{ form.horario }}
@@ -229,8 +269,8 @@
                         <div class="text-center pt-6">
                             <button type="submit" 
                                     id="btn-reservar"
-                                    class="bg-principal hover:bg-principal/90 text-white px-12 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-principal/20">
-                                <span id="btn-text">Reservar Clase</span>
+                                    class="bg-principal hover:bg-principal/90 text-white px-12 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-principal/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span id="btn-text">Completar Selección</span>
                             </button>
                         </div>
                     </form>
@@ -256,16 +296,25 @@
 
             // Configuración
             const API_ENDPOINTS = {
-                diasDisponibles: '/api/dias-disponibles/',
-                horariosDisponibles: '/api/horarios-disponibles/',
-                verificarDisponibilidad: '/api/verificar-disponibilidad/'
+                sedesDisponibles: '{% url "gravity:sedes_disponibles" %}',
+                diasDisponibles: '{% url "gravity:dias_disponibles" %}',
+                horariosDisponibles: '{% url "gravity:horarios_disponibles" %}',
+                verificarDisponibilidad: '{% url "gravity:verificar_disponibilidad" %}'
             };
 
             // Clase principal para manejar el formulario
             class ReservaFormHandler {
                 constructor() {
+                    this.currentStep = 1;
                     this.initEventListeners();
+                    this.initFormState();
                     this.manejarPreseleccion();
+                }
+
+                // Inicializa el estado del formulario
+                initFormState() {
+                    btnReservar.disabled = true;
+                    this.updateStepVisual(1);
                 }
 
                 // Inicializa los event listeners
@@ -287,6 +336,43 @@
                     }
                 }
 
+                // Actualiza la visualización de pasos
+                updateStepVisual(completedStep) {
+                    for (let i = 1; i <= 4; i++) {
+                        const stepElement = document.getElementById(`step-${i}`);
+                        const progressElement = document.getElementById(`progress-${i}`);
+                        const formStep = document.getElementById(`form-step-${i}`);
+
+                        if (i <= completedStep) {
+                            // Paso completado
+                            stepElement.classList.remove('bg-gris-claro', 'text-gris-medio');
+                            stepElement.classList.add('bg-principal', 'text-white');
+                            if (progressElement) progressElement.style.width = '100%';
+                            if (formStep) formStep.classList.add('active');
+                        } else if (i === completedStep + 1) {
+                            // Paso actual
+                            stepElement.classList.remove('bg-gris-claro', 'text-gris-medio');
+                            stepElement.classList.add('bg-secundario', 'text-gris-oscuro');
+                            if (formStep) formStep.classList.add('active');
+                        } else {
+                            // Pasos futuros
+                            stepElement.classList.remove('bg-principal', 'text-white', 'bg-secundario', 'text-gris-oscuro');
+                            stepElement.classList.add('bg-gris-claro', 'text-gris-medio');
+                            if (progressElement) progressElement.style.width = '0%';
+                            if (formStep) formStep.classList.remove('active');
+                        }
+                    }
+                    
+                    // Actualizar texto del botón
+                    if (completedStep >= 4 && horario.value) {
+                        btnText.textContent = 'Reservar Clase';
+                        btnReservar.disabled = false;
+                    } else {
+                        btnText.textContent = 'Completar Selección';
+                        btnReservar.disabled = true;
+                    }
+                }
+
                 // Maneja el cambio de tipo de clase
                 async onTipoClaseChange() {
                     const tipoSeleccionado = tipoClase.value;
@@ -297,18 +383,86 @@
                     }
 
                     try {
-                        this.mostrarCargando('Actualizando opciones disponibles...');
-                        await this.actualizarOpcionesDisponibles();
+                        this.mostrarCargando('Cargando sedes disponibles...');
+                        await this.actualizarSedesDisponibles(tipoSeleccionado);
+                        this.currentStep = 1;
+                        this.updateStepVisual(1);
                         this.ocultarDisponibilidad();
                     } catch (error) {
-                        console.error('Error al actualizar opciones:', error);
-                        this.mostrarError('Error al cargar opciones disponibles');
+                        console.error('Error al actualizar sedes:', error);
+                        this.mostrarError('Error al cargar sedes disponibles');
                     }
                 }
 
                 // Maneja el cambio de sede
                 async onSedeChange() {
-                    await this.actualizarOpcionesDisponibles();
+                    const tipoSeleccionado = tipoClase.value;
+                    const sedeSeleccionada = sede.value;
+                    
+                    if (!sedeSeleccionada) {
+                        this.resetearDiasYHorarios();
+                        return;
+                    }
+
+                    try {
+                        this.mostrarCargando('Cargando días disponibles...');
+                        await this.actualizarDiasDisponibles(tipoSeleccionado, sedeSeleccionada);
+                        this.currentStep = 2;
+                        this.updateStepVisual(2);
+                        this.ocultarDisponibilidad();
+                    } catch (error) {
+                        console.error('Error al actualizar días:', error);
+                        this.mostrarError('Error al cargar días disponibles');
+                    }
+                }
+
+                // Maneja el cambio de día
+                async onDiaChange() {
+                    const tipoSeleccionado = tipoClase.value;
+                    const sedeSeleccionada = sede.value;
+                    const diaSeleccionado = dia.value;
+
+                    if (!diaSeleccionado) {
+                        this.resetearSelectHorario();
+                        return;
+                    }
+
+                    try {
+                        this.mostrarCargando('Cargando horarios disponibles...');
+                        const horariosDisponibles = await this.obtenerHorariosDisponibles(tipoSeleccionado, sedeSeleccionada, diaSeleccionado);
+                        this.actualizarSelectHorarios(horariosDisponibles);
+                        this.currentStep = 3;
+                        this.updateStepVisual(3);
+                        this.ocultarDisponibilidad();
+                    } catch (error) {
+                        console.error('Error al obtener horarios disponibles:', error);
+                        this.mostrarError('Error al cargar horarios disponibles');
+                    }
+                }
+
+                // Maneja el cambio de horario
+                async onHorarioChange() {
+                    const tipoSeleccionado = tipoClase.value;
+                    const sedeSeleccionada = sede.value;
+                    const diaSeleccionado = dia.value;
+                    const horarioSeleccionado = horario.value;
+
+                    if (!horarioSeleccionado) {
+                        this.ocultarDisponibilidad();
+                        this.updateStepVisual(3);
+                        return;
+                    }
+
+                    try {
+                        this.mostrarCargando('Verificando disponibilidad...');
+                        const disponibilidad = await this.verificarDisponibilidad(tipoSeleccionado, sedeSeleccionada, diaSeleccionado, horarioSeleccionado);
+                        this.mostrarDisponibilidad(disponibilidad);
+                        this.currentStep = 4;
+                        this.updateStepVisual(4);
+                    } catch (error) {
+                        console.error('Error al verificar disponibilidad:', error);
+                        this.mostrarError('Error al verificar disponibilidad');
+                    }
                 }
 
                 // Maneja la preselección de tipo de clase desde la URL
@@ -327,99 +481,15 @@
                     }
                 }
 
-                // Actualiza las opciones disponibles según la selección actual
-                async actualizarOpcionesDisponibles() {
-                    const tipoSeleccionado = tipoClase.value;
-                    const sedeSeleccionada = sede.value;
-
-                    if (!tipoSeleccionado) {
-                        this.resetearFormulario();
-                        return;
-                    }
-
-                    try {
-                        const diasDisponibles = await this.obtenerDiasDisponibles(tipoSeleccionado, sedeSeleccionada);
-                        this.actualizarSelectDias(diasDisponibles);
-                        this.resetearSelectHorario();
-                        this.ocultarDisponibilidad();
-
-                        // Si hay día seleccionado, actualizar horarios
-                        if (dia.value) {
-                            await this.onDiaChange();
-                        }
-                    } catch (error) {
-                        console.error('Error al actualizar opciones:', error);
-                        this.mostrarError('Error al actualizar opciones');
-                    }
-                }
-
-                // Maneja el cambio de día
-                async onDiaChange() {
-                    const tipoSeleccionado = tipoClase.value;
-                    const sedeSeleccionada = sede.value;
-                    const diaSeleccionado = dia.value;
-
-                    if (!tipoSeleccionado || !diaSeleccionado) {
-                        this.resetearSelectHorario();
-                        this.ocultarDisponibilidad();
-                        return;
-                    }
-
-                    try {
-                        this.mostrarCargando('Cargando horarios disponibles...');
-                        const horariosDisponibles = await this.obtenerHorariosDisponibles(tipoSeleccionado, sedeSeleccionada, diaSeleccionado);
-                        this.actualizarSelectHorarios(horariosDisponibles);
-                        this.ocultarDisponibilidad();
-                    } catch (error) {
-                        console.error('Error al obtener horarios disponibles:', error);
-                        this.mostrarError('Error al cargar horarios disponibles');
-                    }
-                }
-
-                // Maneja el cambio de horario
-                async onHorarioChange() {
-                    const tipoSeleccionado = tipoClase.value;
-                    const sedeSeleccionada = sede.value;
-                    const diaSeleccionado = dia.value;
-                    const horarioSeleccionado = horario.value;
-
-                    if (!tipoSeleccionado || !sedeSeleccionada || !diaSeleccionado || !horarioSeleccionado) {
-                        this.ocultarDisponibilidad();
-                        return;
-                    }
-
-                    try {
-                        this.mostrarCargando('Verificando disponibilidad...');
-                        const disponibilidad = await this.verificarDisponibilidad(tipoSeleccionado, sedeSeleccionada, diaSeleccionado, horarioSeleccionado);
-                        this.mostrarDisponibilidad(disponibilidad);
-                    } catch (error) {
-                        console.error('Error al verificar disponibilidad:', error);
-                        this.mostrarError('Error al verificar disponibilidad');
-                    }
-                }
-
-                // Maneja el envío del formulario
-                onFormSubmit(e) {
-                    if (!this.validarFormulario()) {
-                        e.preventDefault();
-                        return false;
-                    }
-
-                    // Deshabilita el botón y muestra indicador de carga
-                    btnReservar.disabled = true;
-                    btnText.innerHTML = '⏳ Procesando reserva...';
-                    btnReservar.classList.add('opacity-75', 'cursor-not-allowed');
-                }
-
                 // APIs
-                async obtenerDiasDisponibles(tipo, sede = '') {
-                    const response = await fetch(API_ENDPOINTS.diasDisponibles, {
+                async actualizarSedesDisponibles(tipo) {
+                    const response = await fetch(API_ENDPOINTS.sedesDisponibles, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRFToken': this.getCSRFToken()
                         },
-                        body: JSON.stringify({ tipo, sede })
+                        body: JSON.stringify({ tipo })
                     });
 
                     if (!response.ok) {
@@ -427,10 +497,28 @@
                     }
 
                     const data = await response.json();
-                    return data.dias || [];
+                    this.actualizarSelectSedes(data.sedes || []);
                 }
 
-                async obtenerHorariosDisponibles(tipo, sede = '', dia) {
+                async actualizarDiasDisponibles(tipo, sedeSeleccionada) {
+                    const response = await fetch(API_ENDPOINTS.diasDisponibles, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken()
+                        },
+                        body: JSON.stringify({ tipo, sede: sedeSeleccionada })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+
+                    const data = await response.json();
+                    this.actualizarSelectDias(data.dias || []);
+                }
+
+                async obtenerHorariosDisponibles(tipo, sede, dia) {
                     const response = await fetch(API_ENDPOINTS.horariosDisponibles, {
                         method: 'POST',
                         headers: {
@@ -466,6 +554,17 @@
                 }
 
                 // UI Updates
+                actualizarSelectSedes(sedesDisponibles) {
+                    this.limpiarSelect(sede, 'Selecciona la sede');
+                    
+                    sedesDisponibles.forEach(sedeInfo => {
+                        const option = document.createElement('option');
+                        option.value = sedeInfo.value;
+                        option.textContent = sedeInfo.text;
+                        sede.appendChild(option);
+                    });
+                }
+
                 actualizarSelectDias(diasDisponibles) {
                     this.limpiarSelect(dia, 'Selecciona el día');
                     
@@ -504,11 +603,21 @@
                     this.limpiarSelect(horario, 'Selecciona el horario');
                 }
 
+                resetearDiasYHorarios() {
+                    this.limpiarSelect(dia, 'Selecciona el día');
+                    this.resetearSelectHorario();
+                    this.currentStep = 1;
+                    this.updateStepVisual(1);
+                }
+
                 resetearFormulario() {
+                    sede.selectedIndex = 0;
                     dia.selectedIndex = 0;
                     horario.selectedIndex = 0;
                     this.resetearSelectHorario();
                     this.ocultarDisponibilidad();
+                    this.currentStep = 1;
+                    this.updateStepVisual(0);
                 }
 
                 // Estados de disponibilidad
@@ -516,36 +625,45 @@
                     disponibilidadInfo.classList.remove('hidden');
                     
                     // Remover clases anteriores
-                    disponibilidadMensaje.className = 'rounded-lg p-4 text-white font-medium flex items-center space-x-3';
+                    disponibilidadMensaje.className = 'rounded-lg p-4 text-principal font-medium flex items-center space-x-3';
                     
                     if (disponibilidad.disponible) {
                         disponibilidadMensaje.classList.add('availability-success');
-                        disponibilidadIcon.textContent = '✅';
                         const sedeText = disponibilidad.sede ? ` en ${disponibilidad.sede}` : '';
-                        disponibilidadText.textContent = `¡Disponible! ${disponibilidad.cupos_disponibles} lugares restantes${sedeText}`;
+                        disponibilidadText.textContent = `¡Clase Disponible! ${disponibilidad.cupos_disponibles} lugares restantes${sedeText}`;
                     } else {
                         disponibilidadMensaje.classList.add('availability-warning');
-                        disponibilidadIcon.textContent = '⚠️';
                         disponibilidadText.textContent = disponibilidad.mensaje;
                     }
                 }
 
                 mostrarCargando(mensaje) {
                     disponibilidadInfo.classList.remove('hidden');
-                    disponibilidadMensaje.className = 'rounded-lg p-4 text-white font-medium flex items-center space-x-3 availability-info';
-                    disponibilidadIcon.textContent = '⏳';
+                    disponibilidadMensaje.className = 'rounded-lg p-4 text-principal font-medium flex items-center space-x-3 availability-info';
                     disponibilidadText.textContent = mensaje;
                 }
 
                 mostrarError(mensaje) {
                     disponibilidadInfo.classList.remove('hidden');
-                    disponibilidadMensaje.className = 'rounded-lg p-4 text-white font-medium flex items-center space-x-3 availability-danger';
-                    disponibilidadIcon.textContent = '⌛';
+                    disponibilidadMensaje.className = 'rounded-lg p-4 text-principal font-medium flex items-center space-x-3 availability-danger';
                     disponibilidadText.textContent = mensaje;
                 }
 
                 ocultarDisponibilidad() {
                     disponibilidadInfo.classList.add('hidden');
+                }
+
+                // Maneja el envío del formulario
+                onFormSubmit(e) {
+                    if (!this.validarFormulario()) {
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    // Deshabilita el botón y muestra indicador de carga
+                    btnReservar.disabled = true;
+                    btnText.innerHTML = '⏳ Procesando reserva...';
+                    btnReservar.classList.add('opacity-75', 'cursor-not-allowed');
                 }
 
                 // Validación
@@ -566,7 +684,7 @@
                             }, 3000);
                             
                             campo.element.focus();
-                            this.mostrarError(`Por favor selecciona la ${campo.nombre}.`);
+                            this.mostrarError(`Por favor selecciona ${campo.nombre}.`);
                             return false;
                         }
                     }
@@ -602,6 +720,25 @@
                         behavior: 'smooth'
                     });
                 }
+            });
+        });
+
+        // Validación en tiempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectFields = document.querySelectorAll('select');
+            
+            selectFields.forEach(field => {
+                field.addEventListener('change', function() {
+                    this.classList.remove('border-error');
+                });
+                
+                field.addEventListener('focus', function() {
+                    this.classList.add('ring-2', 'ring-principal/20', 'border-principal');
+                });
+                
+                field.addEventListener('blur', function() {
+                    this.classList.remove('ring-2', 'ring-principal/20', 'border-principal');
+                });
             });
         });
     </script>

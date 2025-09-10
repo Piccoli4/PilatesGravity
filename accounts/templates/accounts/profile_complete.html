@@ -73,7 +73,8 @@
                     <div class="grid md:grid-cols-2 gap-6">
                         <div class="mb-8 relative">
                             <label for="{{ form.telefono.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
-                                📱 Teléfono
+                                <img src="{% static 'icons/celular.png' %}" alt="Icono de Celular" class="w-[23px] h-auto">
+                                Teléfono
                             </label>
                             <input type="tel" name="{{ form.telefono.name }}" id="{{ form.telefono.id_for_label }}" 
                                    class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
@@ -87,7 +88,8 @@
                         </div>
                         <div class="mb-8 relative">
                             <label for="{{ form.fecha_nacimiento.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
-                                🎂 Fecha de Nacimiento
+                                <img src="{% static 'icons/fecha_nacimiento.png' %}" alt="Icono de Fecha Nacimiento" class="w-[23px] h-auto">
+                                Fecha de Nacimiento
                             </label>
                             <input type="date" name="{{ form.fecha_nacimiento.name }}" id="{{ form.fecha_nacimiento.id_for_label }}" 
                                    class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
@@ -102,7 +104,8 @@
 
                     <div class="mb-8 relative">
                         <label for="{{ form.nivel_experiencia.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
-                            🧘‍♀️ Nivel de Experiencia en Pilates
+                            <img src="{% static 'icons/pilates.png' %}" alt="Icono de Pilates" class="w-[23px] h-auto">
+                            Nivel de Experiencia en Pilates
                         </label>
                         <select name="{{ form.nivel_experiencia.name }}" id="{{ form.nivel_experiencia.id_for_label }}" 
                                 class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5">
@@ -142,7 +145,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="lesiones-container hidden mt-6 p-8 bg-gradient-to-br from-secundario to-amber-700 border-2 border-amber-800 rounded-2xl custom-slide-down relative overflow-hidden" id="lesionesContainer">
+                    <div class="lesiones-container hidden mt-6 p-8 bg-gradient-to-br from-secundario to-amber-500 border-2 border-amber-800 rounded-2xl custom-slide-down relative overflow-hidden" id="lesionesContainer">
                         <div class="absolute top-4 right-4 text-2xl opacity-70">⚠️</div>
                         <label for="{{ form.descripcion_lesiones.id_for_label }}" class="text-amber-900 font-semibold mb-3 block">
                             Descripción de Lesiones

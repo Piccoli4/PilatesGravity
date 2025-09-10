@@ -3,30 +3,48 @@
 {% block title %}Gestión de Reservas - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item active">Reservas</li>
+    <li class="flex items-center gap-1">
+        <span class="text-gray-400">/</span>
+        <span class="text-gray-500">Reservas</span>
+    </li>
 {% endblock %}
 
 {% block content %}
-<!-- Header Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h2 class="mb-2">
-                            <i class="fas fa-bookmark me-2"></i>
-                            Gestión de Reservas
-                        </h2>
-                        <p class="text-muted mb-0">Administra todas las reservas del sistema</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-success" onclick="exportReservas()">
-                                <i class="fas fa-download me-2"></i>Exportar
+    {% load static %}
+    <!-- Header Section -->
+    <div class="flex flex-col lg:flex-row gap-4 mb-6">
+        <div class="w-full">
+            <div class="card">
+                <div class="card-body">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-3">
+                        <div class="flex-1">
+                            <h2 class="text-3xl text-principal mb-2 flex items-center gap-2">
+                                <svg class="size-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                </svg>
+                                Gestión de Reservas
+                            </h2>
+                            <p class="text-gris-medio mb-0">Administra todas las reservas del sistema</p>
+                        </div>
+                        <div class="flex">
+                            <button 
+                                type="button" 
+                                class="flex items-center gap-1 border border-green-500 text-green-600 hover:bg-green-500 hover:text-white font-medium py-2 px-4 rounded-l transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50" 
+                                onclick="exportReservas()"
+                            >
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                                Exportar
                             </button>
-                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
-                                <i class="fas fa-user-plus me-2"></i>Agregar Cliente
+                            <a 
+                                href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" 
+                                class="flex items-center gap-1 bg-principal text-fondo hover:bg-principal/60 font-medium py-2 px-4 rounded-r transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                            >
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"></path>
+                                </svg>
+                                Agregar Cliente
                             </a>
                         </div>
                     </div>
@@ -34,499 +52,761 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Filters Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h5>
-            </div>
-            <div class="card-body">
-                <form method="get" id="filterForm">
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="estado" class="form-label">Estado de Reserva</label>
-                            <select name="estado" id="estado" class="form-select">
-                                <option value="">Todos los estados</option>
-                                <option value="activas" {% if estado_filtro == 'activas' %}selected{% endif %}>
-                                    Solo Activas
-                                </option>
-                                <option value="canceladas" {% if estado_filtro == 'canceladas' %}selected{% endif %}>
-                                    Solo Canceladas
-                                </option>
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <label for="tipo_clase" class="form-label">Tipo de Clase</label>
-                            <select name="tipo_clase" id="tipo_clase" class="form-select">
-                                <option value="">Todos los tipos</option>
-                                {% for value, label in tipos_clases %}
-                                    <option value="{{ value }}" {% if tipo_clase_filtro == value %}selected{% endif %}>
-                                        {{ label }}
+    <!-- Filters Section -->
+    <div class="flex flex-col gap-4 mb-6">
+        <div class="w-full">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="text-lg font-medium flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>
+                        </svg>
+                        Filtros de Búsqueda
+                    </h5>
+                </div>
+                <div class="card-body p-3">
+                    <form method="get" id="filterForm">
+                        <div class="flex flex-col md:flex-row items-center justify-evenly mb-4">
+                            <div class="flex flex-col">
+                                <label for="estado" class="text-sm font-medium text-gray-700 mb-1">Estado de Reserva</label>
+                                <select name="estado" id="estado" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                                    <option value="">Todos los estados</option>
+                                    <option value="activas" {% if estado_filtro == 'activas' %}selected{% endif %}>
+                                        Solo Activas
                                     </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <label for="dia" class="form-label">Día de la Semana</label>
-                            <select name="dia" id="dia" class="form-select">
-                                <option value="">Todos los días</option>
-                                {% for value, label in dias_semana %}
-                                    <option value="{{ value }}" {% if dia_filtro == value %}selected{% endif %}>
-                                        {{ label }}
+                                    <option value="canceladas" {% if estado_filtro == 'canceladas' %}selected{% endif %}>
+                                        Solo Canceladas
                                     </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="col-md-3 mb-3">
-                            <label for="usuario" class="form-label">Buscar Usuario</label>
-                            <input type="text" 
-                                   name="usuario" 
-                                   id="usuario" 
-                                   class="form-control" 
-                                   placeholder="Nombre o email..."
-                                   value="{{ usuario_filtro }}">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search me-2"></i>Buscar
-                                </button>
-                                <a href="{% url 'gravity:admin_reservas_lista' %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times me-2"></i>Limpiar
-                                </a>
-                                <button type="button" class="btn btn-outline-info" onclick="toggleAdvancedFilters()">
-                                    <i class="fas fa-cog me-2"></i>Filtros Avanzados
-                                </button>
+                                </select>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <label for="tipo_clase" class="text-sm font-medium text-gray-700 mb-1">Tipo de Clase</label>
+                                <select name="tipo_clase" id="tipo_clase" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                                    <option value="">Todos los tipos</option>
+                                    {% for value, label in tipos_clases %}
+                                        <option value="{{ value }}" {% if tipo_clase_filtro == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label for="sede" class="text-sm font-medium text-gray-700 mb-1">Sede</label>
+                                <select name="sede" id="sede" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                                    <option value="">Todas las sedes</option>
+                                    {% for value, label in sedes %}
+                                        <option value="{{ value }}" {% if sede_filtro == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <label for="dia" class="text-sm font-medium text-gray-700 mb-1">Día de la Semana</label>
+                                <select name="dia" id="dia" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                                    <option value="">Todos los días</option>
+                                    {% for value, label in dias_semana %}
+                                        <option value="{{ value }}" {% if dia_filtro == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <label for="usuario" class="text-sm font-medium text-gray-700 mb-1">Buscar Usuario</label>
+                                <input type="text" 
+                                    name="usuario" 
+                                    id="usuario" 
+                                    class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent" 
+                                    placeholder="Nombre o email..."
+                                    value="{{ usuario_filtro }}">
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Advanced Filters (Hidden by default) -->
-                    <div id="advancedFilters" class="row mt-3" style="display: none;">
-                        <div class="col-md-4 mb-3">
-                            <label for="fecha_desde" class="form-label">Fecha Desde</label>
-                            <input type="date" name="fecha_desde" id="fecha_desde" class="form-control">
+                        
+                        <div class="flex flex-wrap items-center justify-center gap-4">
+                            <button type="submit" class="flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-900 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                </svg>
+                                Buscar
+                            </button>
+                            <a href="{% url 'gravity:admin_reservas_lista' %}" class="flex items-center gap-1 border border-gray-400 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                                Limpiar
+                            </a>
+                            <button type="button" class="flex items-center gap-1 border border-cyan-500 text-cyan-600 hover:bg-cyan-500 hover:text-white font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50" onclick="toggleAdvancedFilters()">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+                                </svg>
+                                Filtros Avanzados
+                            </button>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
-                            <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control">
+                        
+                        <!-- Advanced Filters (Hidden by default) -->
+                        <div id="advancedFilters" class="flex flex-col md:flex-row items-center justify-evenly w-full mt-4 hidden">
+                            <div class="flex flex-col">
+                                <label for="fecha_desde" class="text-sm font-medium text-gray-700 mb-1">Fecha Desde</label>
+                                <input type="date" name="fecha_desde" id="fecha_desde" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="fecha_hasta" class="text-sm font-medium text-gray-700 mb-1">Fecha Hasta</label>
+                                <input type="date" name="fecha_hasta" id="fecha_hasta" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="ordenar" class="text-sm font-medium text-gray-700 mb-1">Ordenar Por</label>
+                                <select name="ordenar" id="ordenar" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                                    <option value="">Fecha de reserva (más reciente)</option>
+                                    <option value="fecha_asc">Fecha de reserva (más antigua)</option>
+                                    <option value="usuario">Usuario (A-Z)</option>
+                                    <option value="clase">Clase</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="ordenar" class="form-label">Ordenar Por</label>
-                            <select name="ordenar" id="ordenar" class="form-select">
-                                <option value="">Fecha de reserva (más reciente)</option>
-                                <option value="fecha_asc">Fecha de reserva (más antigua)</option>
-                                <option value="usuario">Usuario (A-Z)</option>
-                                <option value="clase">Clase</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Results Summary -->
-{% if page_obj.object_list %}
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h6 class="mb-0">
-                    <i class="fas fa-list me-2"></i>
-                    Resultados: {{ page_obj.paginator.count }} reserva{{ page_obj.paginator.count|pluralize }}
-                    {% if estado_filtro or tipo_clase_filtro or dia_filtro or usuario_filtro %}
-                        <span class="badge bg-info">Filtrado</span>
-                    {% endif %}
-                </h6>
-                <small class="text-muted">
-                    Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
-                </small>
-            </div>
-            
-            <!-- Quick Stats -->
-            <div class="d-flex gap-3">
-                <div class="text-center">
-                    <div class="fw-bold text-success">{{ page_obj.object_list|length }}</div>
-                    <small class="text-muted">En esta página</small>
-                </div>
-                <div class="text-center">
-                    <div class="fw-bold text-primary">{{ page_obj.paginator.count }}</div>
-                    <small class="text-muted">Total</small>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
 
-<!-- Results Section -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                {% if page_obj.object_list %}
-                    <!-- Desktop Table -->
-                    <div class="table-responsive d-none d-lg-block">
-                        <table class="table table-hover align-middle" id="reservasTable">
-                            <thead>
-                                <tr>
-                                    <th>Usuario</th>
-                                    <th>Contacto</th>
-                                    <th>Clase</th>
-                                    <th>Reserva</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                    <th>Próxima Clase</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for reserva in page_obj.object_list %}
-                                    <tr {% if not reserva.activa %}class="table-secondary"{% endif %}>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="user-avatar me-3">
-                                                    {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold">{{ reserva.get_nombre_completo_usuario }}</div>
-                                                    <small class="text-muted">@{{ reserva.usuario.username }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                <div class="mb-1">
-                                                    <i class="fas fa-envelope me-1"></i>
-                                                    <small>{{ reserva.usuario.email }}</small>
-                                                </div>
-                                                {% if reserva.usuario.profile.telefono %}
-                                                    <div>
-                                                        <i class="fas fa-phone me-1"></i>
-                                                        <small>{{ reserva.usuario.profile.telefono }}</small>
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                {% if reserva.clase.tipo == 'Reformer' %}
-                                                    <i class="fas fa-dumbbell me-2 text-primary"></i>
-                                                {% else %}
-                                                    <i class="fas fa-bed me-2 text-info"></i>
-                                                {% endif %}
-                                                <div>
-                                                    <div class="fw-bold">{{ reserva.clase.get_tipo_display }}</div>
-                                                    <small class="text-muted">
-                                                        {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}
-                                                    </small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-info">{{ reserva.numero_reserva }}</span>
-                                            {% if reserva.notas %}
-                                                <br><small class="text-muted">{{ reserva.notas|truncatechars:30 }}</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if reserva.activa %}
-                                                <span class="badge bg-success">
-                                                    <i class="fas fa-check me-1"></i>Activa
-                                                </span>
-                                            {% else %}
-                                                <span class="badge bg-danger">
-                                                    <i class="fas fa-times me-1"></i>Cancelada
-                                                </span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div>
-                                                <div class="fw-bold">{{ reserva.fecha_reserva|date:"d/m/Y" }}</div>
-                                                <small class="text-muted">{{ reserva.fecha_reserva|date:"H:i" }}</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {% if reserva.activa %}
-                                                <small class="text-success">
-                                                    <i class="fas fa-calendar-check me-1"></i>
-                                                    {{ reserva.get_proxima_clase_info }}
-                                                </small>
-                                            {% else %}
-                                                <small class="text-muted">-</small>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="d-flex gap-1 justify-content-center">
-                                                <a href="{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}" 
-                                                   class="btn btn-sm btn-outline-info" 
-                                                   title="Ver usuario">
-                                                    <i class="fas fa-user"></i>
-                                                </a>
-                                                <a href="{% url 'gravity:admin_clase_detalle' reserva.clase.id %}" 
-                                                   class="btn btn-sm btn-outline-primary" 
-                                                   title="Ver clase">
-                                                    <i class="fas fa-calendar-alt"></i>
-                                                </a>
-                                                {% if reserva.activa %}
-                                                    <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
-                                                       class="btn btn-sm btn-outline-danger" 
-                                                       title="Cancelar reserva"
-                                                       onclick="return confirm('¿Estás seguro de cancelar la reserva de {{ reserva.get_nombre_completo_usuario }}?')">
-                                                        <i class="fas fa-times"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </div>
-                                        </td>
+    <!-- Results Summary -->
+    {% if page_obj.object_list %}
+    <div class="flex flex-col mb-4">
+        <div class="w-full">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <div>
+                    <h6 class="text-base font-medium flex items-center gap-2">
+                        <svg class="size-4" fill="currenColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M104 112C90.7 112 80 122.7 80 136L80 184C80 197.3 90.7 208 104 208L152 208C165.3 208 176 197.3 176 184L176 136C176 122.7 165.3 112 152 112L104 112zM256 128C238.3 128 224 142.3 224 160C224 177.7 238.3 192 256 192L544 192C561.7 192 576 177.7 576 160C576 142.3 561.7 128 544 128L256 128zM256 288C238.3 288 224 302.3 224 320C224 337.7 238.3 352 256 352L544 352C561.7 352 576 337.7 576 320C576 302.3 561.7 288 544 288L256 288zM256 448C238.3 448 224 462.3 224 480C224 497.7 238.3 512 256 512L544 512C561.7 512 576 497.7 576 480C576 462.3 561.7 448 544 448L256 448zM80 296L80 344C80 357.3 90.7 368 104 368L152 368C165.3 368 176 357.3 176 344L176 296C176 282.7 165.3 272 152 272L104 272C90.7 272 80 282.7 80 296zM104 432C90.7 432 80 442.7 80 456L80 504C80 517.3 90.7 528 104 528L152 528C165.3 528 176 517.3 176 504L176 456C176 442.7 165.3 432 152 432L104 432z"/>
+                        </svg>
+                        Resultados: {{ page_obj.paginator.count }} reserva{{ page_obj.paginator.count|pluralize }}
+                        {% if estado_filtro or tipo_clase_filtro or dia_filtro or usuario_filtro or sede_filtro %}
+                            <span class="inline-flex items-center px-2 py-1 text-sm bg-info text-blanco rounded-lg">Filtrado</span>
+                        {% endif %}
+                    </h6>
+                    <small class="text-gris-medio">
+                        Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                    </small>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="flex gap-6">
+                    <div class="text-center">
+                        <div class="font-bold text-principal text-lg">{{ page_obj.object_list|length }}</div>
+                        <small class="text-gris-medio">En esta página</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="font-bold text-secundario text-lg">{{ page_obj.paginator.count }}</div>
+                        <small class="text-gris-medio">Total</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Results Section -->
+    <div class="flex flex-col">
+        <div class="w-full">
+            <div class="card">
+                <div class="card-body p-4">
+                    {% if page_obj.object_list %}
+                        <!-- Desktop Table -->
+                        <div class="hidden lg:block">
+                            <table class="overflow-hidden rounded-t-lg" id="reservasTable">
+                                <thead class="bg-principal/10 rounded-t-lg">
+                                    <tr>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Usuario</th>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Contacto</th>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Clase</th>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Sede</th>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Estado</th>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Fecha</th>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Próxima Clase</th>
+                                        <th class="px-2 py-4 text-center text-xs font-medium uppercase tracking-wider">Acciones</th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Tablet/Mobile Cards -->
-                    <div class="d-lg-none">
-                        {% for reserva in page_obj.object_list %}
-                            <div class="card mb-3 {% if not reserva.activa %}border-secondary{% endif %}">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-4 text-center">
-                                            <div class="user-avatar mb-2">
-                                                {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
-                                            </div>
-                                            {% if reserva.activa %}
-                                                <span class="badge bg-success">Activa</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Cancelada</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="col-8">
-                                            <h6 class="card-title mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
-                                            <p class="card-text mb-2">
-                                                <small class="text-muted">
-                                                    <i class="fas fa-envelope me-1"></i>{{ reserva.usuario.email }}<br>
+                                </thead>
+                                <tbody class="bg-blanco divide-y divide-gray-200">
+                                    {% for reserva in page_obj.object_list %}
+                                        <tr class="hover:bg-gray-50 {% if not reserva.activa %}bg-gray-100{% endif %}">
+                                            <td class="px-1 py-3 whitespace-nowrap">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="user-avatar">
+                                                        {% if reserva.usuario.profile.avatar %}
+                                                            <img src="{{ reserva.usuario.profile.avatar.url }}" 
+                                                                alt="{{ reserva.get_nombre_completo_usuario }}"
+                                                                class="avatar-img">
+                                                        {% else %}
+                                                            <span class="avatar-initials">
+                                                                {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}{{ reserva.usuario.last_name.0|default:''|upper }}
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div>
+                                                        <div class="font-medium text-gray-900">{{ reserva.get_nombre_completo_usuario }}</div>
+                                                        <small class="text-gray-500">@{{ reserva.usuario.username }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2 whitespace-nowrap">
+                                                <div>
+                                                    <div class="mb-1">
+                                                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                                                        </svg>
+                                                        <small class="text-gray-600">{{ reserva.usuario.email }}</small>
+                                                    </div>
                                                     {% if reserva.usuario.profile.telefono %}
-                                                        <i class="fas fa-phone me-1"></i>{{ reserva.usuario.profile.telefono }}<br>
+                                                        <div class="mb-1">
+                                                            <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                                                            </svg>
+                                                            <small class="text-gray-600">{{ reserva.usuario.profile.telefono }}</small>
+                                                        </div>
                                                     {% endif %}
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                <div class="flex items-center gap-1">
                                                     {% if reserva.clase.tipo == 'Reformer' %}
-                                                        <i class="fas fa-dumbbell me-1"></i>
+                                                        <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="size-6">
+                                                    {% elif reserva.clase.tipo == 'Cadillac' %}
+                                                        <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="size-6">
                                                     {% else %}
-                                                        <i class="fas fa-bed me-1"></i>
+                                                        <img src="{% static 'icons/especial.png' %}" alt="Icono de Clase Especial" class="size-6">
                                                     {% endif %}
-                                                    {{ reserva.clase.get_tipo_display }} - {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}<br>
-                                                    <i class="fas fa-calendar me-1"></i>{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}
-                                                </small>
-                                            </p>
-                                            
-                                            <div class="mb-2">
-                                                <span class="badge bg-info">{{ reserva.numero_reserva }}</span>
-                                            </div>
-                                            
-                                            <div class="d-flex gap-1">
-                                                <a href="{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}" 
-                                                   class="btn btn-sm btn-outline-info">
-                                                    <i class="fas fa-user"></i>
-                                                </a>
-                                                <a href="{% url 'gravity:admin_clase_detalle' reserva.clase.id %}" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-calendar-alt"></i>
-                                                </a>
+                                                    <div>
+                                                        <h5 class="font-medium text-xs text-gray-900">{{ reserva.clase.get_nombre_display }}</h5>
+                                                        <small class="text-gray-500">
+                                                            {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                <div class="flex items-center gap-1 text-principal">
+                                                    {% if reserva.clase.direccion == 'sede_principal' %}
+                                                        <svg viewBox="0 0 24 24" fill="currentColor" class="size-6" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M4.5 2.25a.75.75 0 0 0 0 1.5v16.5h-.75a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5h-.75V3.75a.75.75 0 0 0 0-1.5h-15ZM9 6a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5H9Zm-.75 3.75A.75.75 0 0 1 9 9h1.5a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM9 12a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5H9Zm3.75-5.25A.75.75 0 0 1 13.5 6H15a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75ZM13.5 9a.75.75 0 0 0 0 1.5H15A.75.75 0 0 0 15 9h-1.5Zm-.75 3.75a.75.75 0 0 1 .75-.75H15a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75ZM9 19.5v-2.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-.75.75h-4.5A.75.75 0 0 1 9 19.5Z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    {% else %}
+                                                        <svg viewBox="0 0 24 24" fill="currentColor" class="size-6" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M3 2.25a.75.75 0 0 0 0 1.5v16.5h-.75a.75.75 0 0 0 0 1.5H15v-18a.75.75 0 0 0 0-1.5H3ZM6.75 19.5v-2.25a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-.75.75h-3a.75.75 0 0 1-.75-.75ZM6 6.75A.75.75 0 0 1 6.75 6h.75a.75.75 0 0 1 0 1.5h-.75A.75.75 0 0 1 6 6.75ZM6.75 9a.75.75 0 0 0 0 1.5h.75a.75.75 0 0 0 0-1.5h-.75ZM6 12.75a.75.75 0 0 1 .75-.75h.75a.75.75 0 0 1 0 1.5h-.75a.75.75 0 0 1-.75-.75ZM10.5 6a.75.75 0 0 0 0 1.5h.75a.75.75 0 0 0 0-1.5h-.75Zm-.75 3.75A.75.75 0 0 1 10.5 9h.75a.75.75 0 0 1 0 1.5h-.75a.75.75 0 0 1-.75-.75ZM10.5 12a.75.75 0 0 0 0 1.5h.75a.75.75 0 0 0 0-1.5h-.75ZM16.5 6.75v15h5.25a.75.75 0 0 0 0-1.5H21v-12a.75.75 0 0 0 0-1.5h-4.5Zm1.5 4.5a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Zm.75 2.25a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75v-.008a.75.75 0 0 0-.75-.75h-.008ZM18 17.25a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="font-medium text-gray-900">{{ reserva.clase.get_direccion_corta }}</div>
+                                                        <small class="text-gray-500">{{ reserva.clase.get_direccion_display }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2">
                                                 {% if reserva.activa %}
-                                                    <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
-                                                       class="btn btn-sm btn-outline-danger"
-                                                       onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
-                                                        <i class="fas fa-times"></i>
-                                                    </a>
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-exito text-white rounded-md">
+                                                        <svg class="size-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Activa
+                                                    </span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-error text-white rounded-md">
+                                                        <svg class="size-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Cancelada
+                                                    </span>
                                                 {% endif %}
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                <div>
+                                                    <div class="font-medium text-gray-900">{{ reserva.fecha_reserva|date:"d/m/Y" }}</div>
+                                                    <small class="text-gray-500">{{ reserva.fecha_reserva|date:"H:i" }}</small>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2 ">
+                                                {% if reserva.activa %}
+                                                    <small class="text-exito">
+                                                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ reserva.get_proxima_clase_info }}
+                                                    </small>
+                                                {% else %}
+                                                    <small class="text-gris-medio">-</small>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                <div class="flex gap-1 justify-center">
+                                                    <a href="{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blanco text-principal border border-principal rounded hover:bg-principal/50" 
+                                                    title="Ver usuario">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    </a>
+                                                    <a href="{% url 'gravity:admin_clase_detalle' reserva.clase.id %}" 
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blanco text-secundario border border-secundario rounded hover:bg-secundario/50" 
+                                                    title="Ver clase">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    </a>
+                                                    {% if reserva.activa %}
+                                                        <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
+                                                        class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blanco text-error border border-error rounded hover:bg-red-50" 
+                                                        title="Cancelar reserva"
+                                                        onclick="return confirm('¿Estás seguro de cancelar la reserva de {{ reserva.get_nombre_completo_usuario }}?')">
+                                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Tablet/Mobile Cards -->
+                        <div class="lg:hidden space-y-4">
+                            {% for reserva in page_obj.object_list %}
+                                <div class="card {% if not reserva.activa %}border-gray-300{% endif %}">
+                                    <div class="card-body">
+                                        <div class="grid grid-cols-4 gap-4">
+                                            <div class="flex flex-col items-center justify-center text-center">
+                                                <div class="user-avatar-sm mb-2">
+                                                    {% if reserva.usuario.profile.avatar %}
+                                                        <img src="{{ reserva.usuario.profile.avatar.url }}" 
+                                                            alt="{{ reserva.get_nombre_completo_usuario }}"
+                                                            class="avatar-img">
+                                                    {% else %}
+                                                        <span class="avatar-initials">
+                                                            {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}{{ reserva.usuario.last_name.0|default:''|upper }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if reserva.activa %}
+                                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-exito text-white rounded-md mt-1">Activa</span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-error text-white rounded-md mt-1">Cancelada</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-span-3">
+                                                <h6 class="font-medium text-gray-900 mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
+                                                <div class="text-sm text-gray-600 space-y-1">
+                                                    <div class="flex items-center">
+                                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                                                        </svg>
+                                                        {{ reserva.usuario.email }}
+                                                    </div>
+                                                    {% if reserva.usuario.profile.telefono %}
+                                                        <div class="flex items-center">
+                                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                                                            </svg>
+                                                            {{ reserva.usuario.profile.telefono }}
+                                                        </div>
+                                                    {% endif %}
+                                                    <div class="flex items-center">
+                                                        {% if reserva.clase.tipo == 'Reformer' %}
+                                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 7a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3 3a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4-1a1 1 0 100 2h.01a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        {% elif reserva.clase.tipo == 'Cadillac' %}
+                                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
+                                                                <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        {% else %}
+                                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                                            </svg>
+                                                        {% endif %}
+                                                        {{ reserva.clase.get_nombre_display }} - {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}
+                                                    </div>
+                                                    <div class="flex items-center">
+                                                        {% if reserva.clase.direccion == 'sede_principal' %}
+                                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        {% else %}
+                                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        {% endif %}
+                                                        {{ reserva.clase.get_direccion_corta }}
+                                                    </div>
+                                                    <div class="flex items-center">
+                                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ reserva.fecha_reserva|date:"d/m/Y H:i" }}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="flex gap-1 items-center justify-evenly my-3">
+                                                    <a href="{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}" 
+                                                    class="inline-flex items-center px-6 py-3 text-xs font-medium bg-blanco text-principal border border-principal rounded hover:bg-principal/50">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    </a>
+                                                    <a href="{% url 'gravity:admin_clase_detalle' reserva.clase.id %}" 
+                                                    class="inline-flex items-center px-6 py-3 text-xs font-medium bg-blanco text-secundario border border-secundario rounded hover:bg-secundario/50">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    </a>
+                                                    {% if reserva.activa %}
+                                                        <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
+                                                        class="inline-flex items-center px-6 py-3 text-xs font-medium bg-blanco text-error border border-error rounded hover:bg-red-50"
+                                                        onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        {% endfor %}
-                    </div>
+                            {% endfor %}
+                        </div>
 
-                    <!-- Pagination -->
-                    {% if page_obj.has_other_pages %}
-                        <nav aria-label="Paginación de reservas" class="mt-4">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=1{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-double-left"></i>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-left"></i>
-                                        </a>
-                                    </li>
-                                {% endif %}
-
-                                {% for num in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == num %}
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ num }}</span>
-                                        </li>
-                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ num }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
-                                                {{ num }}
+                        <!-- Pagination -->
+                        {% if page_obj.has_other_pages %}
+                            <nav aria-label="Paginación de reservas" class="mt-6">
+                                <div class="flex justify-center">
+                                    <div class="flex items-center">
+                                        {% if page_obj.has_previous %}
+                                            <a class="px-3 py-2 text-sm font-medium text-principal bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 hover:text-white hover:bg-principal" href="?page=1{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                                </svg>
                                             </a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
+                                            <a class="px-3 py-2 text-sm font-medium text-principal bg-white border border-gray-300 hover:bg-gray-50 hover:text-white hover:bg-principal" href="?page={{ page_obj.previous_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            </a>
+                                        {% endif %}
 
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-right"></i>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-double-right"></i>
-                                        </a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    {% endif %}
+                                        {% for num in page_obj.paginator.page_range %}
+                                            {% if page_obj.number == num %}
+                                                <span class="px-3 py-2 text-sm font-medium text-white bg-principal border border-principal">{{ num }}</span>
+                                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                                <a class="px-3 py-2 text-sm font-medium text-principal bg-white border border-gray-300 hover:bg-gray-50 hover:text-white hover:bg-principal" href="?page={{ num }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                                    {{ num }}
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
 
-                {% else %}
-                    <!-- Empty State -->
-                    <div class="text-center py-5">
-                        <i class="fas fa-bookmark fa-4x text-muted mb-4"></i>
-                        <h4 class="text-muted mb-3">No se encontraron reservas</h4>
-                        {% if estado_filtro or tipo_clase_filtro or dia_filtro or usuario_filtro %}
-                            <p class="text-muted mb-4">No hay reservas que coincidan con los filtros seleccionados.</p>
-                            <div class="d-flex gap-2 justify-content-center">
-                                <a href="{% url 'gravity:admin_reservas_lista' %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times me-2"></i>Limpiar Filtros
-                                </a>
-                                <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
-                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
-                                </a>
-                            </div>
-                        {% else %}
-                            <p class="text-muted mb-4">Aún no hay reservas en el sistema.</p>
-                            <div class="d-flex gap-2 justify-content-center">
-                                <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-outline-primary">
-                                    <i class="fas fa-plus me-2"></i>Crear Clase
-                                </a>
-                                <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
-                                    <i class="fas fa-user-plus me-2"></i>Agregar Cliente
-                                </a>
-                            </div>
+                                        {% if page_obj.has_next %}
+                                            <a class="px-3 py-2 text-sm font-medium text-principal bg-white border border-gray-300 hover:bg-gray-50 hover:text-white hover:bg-principal" href="?page={{ page_obj.next_page_number }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            </a>
+                                            <a class="px-3 py-2 text-sm font-medium text-principal bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 hover:text-white hover:bg-principal" href="?page={{ page_obj.paginator.num_pages }}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if tipo_clase_filtro %}&tipo_clase={{ tipo_clase_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if usuario_filtro %}&usuario={{ usuario_filtro }}{% endif %}">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0zm-6 0a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </nav>
                         {% endif %}
-                    </div>
-                {% endif %}
+
+                    {% else %}
+                        <!-- Empty State -->
+                        <div class="text-center py-12">
+                            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                            </svg>
+                            <h4 class="text-xl font-medium text-gray-600 mb-3">No se encontraron reservas</h4>
+                            {% if estado_filtro or tipo_clase_filtro or sede_filtro or dia_filtro or usuario_filtro %}
+                                <p class="text-gray-500 mb-6">No hay reservas que coincidan con los filtros seleccionados.</p>
+                                <div class="flex gap-2 justify-center">
+                                    <a href="{% url 'gravity:admin_reservas_lista' %}" class="btn bg-white text-gray-700 border-gray-300 hover:bg-gray-50">
+                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Limpiar Filtros
+                                    </a>
+                                    <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn bg-principal text-white border-principal hover:bg-blue-600">
+                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"></path>
+                                        </svg>
+                                        Agregar Cliente
+                                    </a>
+                                </div>
+                            {% else %}
+                                <p class="text-gray-500 mb-6">Aún no hay reservas en el sistema.</p>
+                                <div class="flex gap-2 justify-center">
+                                    <a href="{% url 'gravity:admin_clase_crear' %}" class="btn bg-white text-principal border-principal hover:bg-blue-50">
+                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Crear Clase
+                                    </a>
+                                    <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn bg-principal text-white border-principal hover:bg-blue-600">
+                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"></path>
+                                        </svg>
+                                        Agregar Cliente
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit form when selects change
-    const filterSelects = document.querySelectorAll('#filterForm select');
-    filterSelects.forEach(function(select) {
-        select.addEventListener('change', function() {
-            document.getElementById('filterForm').submit();
-        });
-    });
-    
-    // Add tooltips to action buttons
-    const actionButtons = document.querySelectorAll('[title]');
-    actionButtons.forEach(function(button) {
-        new bootstrap.Tooltip(button);
-    });
-    
-    // Highlight search term in results
-    const searchTerm = document.getElementById('usuario').value;
-    if (searchTerm.trim()) {
-        highlightSearchTerm(searchTerm);
-    }
-});
-
-// Function to toggle advanced filters
-function toggleAdvancedFilters() {
-    const advancedFilters = document.getElementById('advancedFilters');
-    const isVisible = advancedFilters.style.display !== 'none';
-    
-    if (isVisible) {
-        advancedFilters.style.display = 'none';
-    } else {
-        advancedFilters.style.display = 'flex';
-    }
-}
-
-// Function to export reservations
-function exportReservas() {
-    const table = document.getElementById('reservasTable');
-    if (!table) {
-        alert('No hay datos para exportar');
-        return;
-    }
-    
-    let csv = 'Usuario,Email,Teléfono,Clase,Tipo,Día,Horario,Número de Reserva,Estado,Fecha de Reserva\n';
-    
-    const rows = table.querySelectorAll('tbody tr');
-    rows.forEach(function(row) {
-        const cells = row.querySelectorAll('td');
-        const usuario = cells[0].querySelector('.fw-bold').textContent.trim();
-        const emailEl = cells[1].querySelector('small');
-        const email = emailEl ? emailEl.textContent.replace('✉ ', '').trim() : 'N/A';
-        const telefonoEls = cells[1].querySelectorAll('small');
-        const telefono = telefonoEls.length > 1 ? 
-                        telefonoEls[1].textContent.replace('📞 ', '').trim() : 'N/A';
-        const claseNombre = cells[2].querySelector('.fw-bold').textContent.trim();
-        const claseDetalle = cells[2].querySelector('small').textContent.trim();
-        const [dia, horario] = claseDetalle.split(' ');
-        const reserva = cells[3].querySelector('.badge').textContent.trim();
-        const estado = cells[4].querySelector('.badge').textContent.trim();
-        const fecha = cells[5].querySelector('.fw-bold').textContent.trim() + ' ' + 
-                     cells[5].querySelector('small').textContent.trim();
-        
-        csv += '"' + usuario + '","' + email + '","' + telefono + '","' + claseNombre + 
-               '","' + claseNombre + '","' + dia + '","' + horario + '","' + reserva + 
-               '","' + estado + '","' + fecha + '"\n';
-    });
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'reservas_' + new Date().toISOString().split('T')[0] + '.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Function to highlight search terms
-function highlightSearchTerm(term) {
-    const regex = new RegExp('(' + term + ')', 'gi');
-    const textNodes = document.querySelectorAll('.fw-bold, td small');
-    
-    textNodes.forEach(function(node) {
-        if (node.textContent.toLowerCase().includes(term.toLowerCase())) {
-            node.innerHTML = node.innerHTML.replace(regex, '<mark>$1</mark>');
+    <style>
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #5D768B, #C8B39B);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+            overflow: hidden;
+            position: relative;
         }
-    });
-}
-</script>
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .avatar-initials {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .user-avatar-sm {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #5D768B, #C8B39B);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 22px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        #reservasTable td {
+            padding: 0.5rem 0.75rem !important;
+            vertical-align: middle;
+        }
+
+        #reservasTable .font-medium {
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+
+        #reservasTable small {
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .inline-flex.items-center.px-2.py-1 {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .inline-flex.items-center.px-2.py-1.text-xs {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+        }
+
+        /* Hover effects for table rows */
+        #reservasTable tbody tr:hover {
+            background-color: rgba(249, 250, 251, 0.8);
+        }
+
+        /* Custom pagination styling */
+        .pagination-custom a:hover {
+            background-color: #5D768B;
+            color: white;
+            border-color: #5D768B;
+        }
+
+        .pagination-custom .active {
+            background-color: #5D768B;
+            border-color: #5D768B;
+            color: white;
+        }
+
+        /* Focus styles */
+        .focus\:ring-principal:focus {
+            --tw-ring-color: rgba(93, 118, 139, 0.5);
+        }
+
+        /* Button hover transitions */
+        .btn {
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* Card hover effects */
+        .card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Advanced filters animation */
+        #advancedFilters {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Mark highlighting for search results */
+        mark {
+            background-color: rgba(251, 191, 36, 0.3);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+        }
+
+        /* Responsive avatar sizing */
+        @media (max-width: 768px) {
+            .user-avatar-sm {
+                width: 70px;
+                height: 70px;
+                font-size: 18px;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-submit form when selects change
+            const filterSelects = document.querySelectorAll('#filterForm select');
+            filterSelects.forEach(function(select) {
+                select.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
+            });
+            
+            // Add tooltips functionality (if needed)
+            const actionButtons = document.querySelectorAll('[title]');
+            actionButtons.forEach(function(button) {
+                // Simple tooltip implementation
+                button.addEventListener('mouseenter', function() {
+                    const title = this.getAttribute('title');
+                    if (title) {
+                        // You can implement a custom tooltip here if needed
+                        console.log('Tooltip:', title);
+                    }
+                });
+            });
+            
+            // Highlight search term in results
+            const searchTerm = document.getElementById('usuario').value;
+            if (searchTerm.trim()) {
+                highlightSearchTerm(searchTerm);
+            }
+        });
+
+        // Function to toggle advanced filters
+        function toggleAdvancedFilters() {
+            const advancedFilters = document.getElementById('advancedFilters');
+            const isHidden = advancedFilters.classList.contains('hidden');
+            
+            if (isHidden) {
+                advancedFilters.classList.remove('hidden');
+                advancedFilters.classList.add('flex');
+            } else {
+                advancedFilters.classList.add('hidden');
+                advancedFilters.classList.remove('flex');
+            }
+        }
+
+        // Function to export reservations
+        function exportReservas() {
+            const table = document.getElementById('reservasTable');
+            if (!table) {
+                alert('No hay datos para exportar');
+                return;
+            }
+            
+            // Updated: Include sede in export
+            let csv = 'Usuario,Email,Teléfono,Clase,Tipo,Día,Horario,Sede,Número de Reserva,Estado,Fecha de Reserva\n';
+            
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(function(row) {
+                const cells = row.querySelectorAll('td');
+                const usuario = cells[0].querySelector('.font-medium').textContent.trim();
+                const emailSvg = cells[1].querySelector('svg');
+                const email = emailSvg ? emailSvg.parentElement.textContent.trim() : 'N/A';
+                const telefonoElements = cells[1].querySelectorAll('div');
+                const telefono = telefonoElements.length > 1 ? 
+                                telefonoElements[1].textContent.trim() : 'N/A';
+                const claseNombre = cells[2].querySelector('.font-medium').textContent.trim();
+                const claseDetalle = cells[2].querySelector('small').textContent.trim();
+                const [dia, horario] = claseDetalle.split(' ');
+                const sede = cells[3].querySelector('.font-medium').textContent.trim();
+                const estado = cells[4].querySelector('span').textContent.trim();
+                const fecha = cells[5].querySelector('.font-medium').textContent.trim() + ' ' + 
+                            cells[5].querySelector('small').textContent.trim();
+                
+                // Get reservation number from URL or other source
+                const reservaNum = 'R' + Math.random().toString(36).substr(2, 9); // Placeholder
+                
+                csv += '"' + usuario + '","' + email + '","' + telefono + '","' + claseNombre + 
+                    '","' + claseNombre + '","' + dia + '","' + horario + '","' + sede + '","' + reservaNum + 
+                    '","' + estado + '","' + fecha + '"\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'reservas_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Function to highlight search terms
+        function highlightSearchTerm(term) {
+            const regex = new RegExp('(' + term + ')', 'gi');
+            const textNodes = document.querySelectorAll('.font-medium, td small');
+            
+            textNodes.forEach(function(node) {
+                if (node.textContent.toLowerCase().includes(term.toLowerCase())) {
+                    node.innerHTML = node.innerHTML.replace(regex, '<mark>$1</mark>');
+                }
+            });
+        }
+    </script>
 {% endblock %}

@@ -1,394 +1,416 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}Mi Perfil - Pilates Gravity{% endblock %}
 
 {% block content %}
 
-<!-- Mostrar solo mensajes relacionados con perfil -->
-{% if messages %}
-    {% for message in messages %}
-        {% if "perfil" in message.message|lower or "actualizado" in message.message|lower or "guardado" in message.message|lower or "modificado" in message.message|lower or "cambiado" in message.message|lower %}
-            <div class="fixed top-5 right-5 z-50 max-w-md p-4 rounded-xl border-l-4 animate-slideInRight
-                       {% if message.tags == 'success' %}
-                           bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 text-green-800
-                       {% elif message.tags == 'error' or message.tags == 'danger' %}
-                           bg-gradient-to-r from-red-50 to-rose-50 border-red-500 text-red-800
-                       {% elif message.tags == 'warning' %}
-                           bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-500 text-yellow-800
-                       {% else %}
-                           bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-500 text-blue-800
-                       {% endif %}">
-                {{ message }}
-                <button type="button" 
-                        onclick="this.parentElement.style.display='none'"
-                        class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-none border-none text-xl text-current cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
-                    ×
-                </button>
-            </div>
-        {% endif %}
-    {% endfor %}
-{% endif %}
-
-<!-- Sección del perfil -->
-<section class="py-10 min-h-screen" style="background-color: #F8EFE5;" id="Profile">
-    <div class="max-w-4xl mx-auto px-4">
-        
-        <!-- Título de la sección -->
-        <div class="text-center mb-12">
-            <h2 class="text-4xl font-bold mb-4" style="color: #5D768B;">Mi Perfil</h2>
-            <div class="w-24 h-1 mx-auto mb-4 rounded-full" style="background: linear-gradient(90deg, #C8B39B, #5D768B);"></div>
-            <p class="text-slate-600 text-lg">Gestiona tu información personal y configuración de cuenta</p>
-        </div>
-
-        <!-- Tarjeta principal del perfil -->
-        <div class="bg-white rounded-2xl p-8 text-center shadow-lg mb-8 transition-all duration-300 hover:-translate-y-2 animate-fade-in">
-            <!-- Avatar -->
-            <div class="w-32 h-32 rounded-full mx-auto mb-6 flex items-center justify-center text-white text-4xl font-bold overflow-hidden border-4 border-white shadow-lg transition-all duration-300 hover:scale-105"
-                 style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
-                {% if user_profile and user_profile.avatar %}
-                    <img src="{{ user_profile.avatar.url }}" alt="Avatar actual" class="w-full h-full object-cover rounded-full">
-                {% else %}
-                    {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
-                {% endif %}
-            </div>
-
-            <!-- Información del usuario -->
-            <div class="mb-8">
-                <h3 class="text-2xl font-bold mb-2" style="color: #5D768B;">
-                    {% if user.first_name and user.last_name %}
-                        {{ user.first_name }} {{ user.last_name }}
-                    {% elif user.first_name %}
-                        {{ user.first_name }}
-                    {% elif user.last_name %}
-                        {{ user.last_name }}
-                    {% else %}
-                        {{ user.username }}
-                    {% endif %}
-                </h3>
-                <p class="text-slate-600 text-lg mb-2 opacity-80">@{{ user.username }}</p>
-                <small class="text-slate-500 italic">Miembro desde {{ user.date_joined|date:"F Y" }}</small>
-            </div>
-            
-            <!-- Estadísticas del usuario -->
-            {% if user_profile %}
-            <div class="flex justify-center gap-8 pt-6 border-t border-slate-200">
-                <!-- Enlace a Mis Reservas - CLICKEABLE -->
-                <a href="{% url 'accounts:mis_reservas' %}" class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-lg cursor-pointer min-w-20 no-underline group transform hover:scale-105">
-                    <span class="block text-2xl font-bold mb-1 group-hover:text-blue-600 transition-colors duration-300" style="color: #5D768B;">{{ user_profile.get_total_reservas }}</span>
-                    <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide group-hover:text-blue-700 transition-colors duration-300">Reservas</span>
-                    <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <span class="text-xs text-blue-600 font-semibold">Ver todas →</span>
-                    </div>
-                </a>
-                <div class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer min-w-20">
-                    <span class="block text-2xl font-bold mb-1" style="color: #5D768B;">{{ user_profile.get_reservas_activas.count }}</span>
-                    <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide">Activas</span>
-                </div>
-                {% if user_profile.get_tiempo_en_estudio %}
-                <div class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer min-w-20">
-                    <span class="block text-2xl font-bold mb-1" style="color: #5D768B;">{{ user_profile.get_tiempo_en_estudio }}</span>
-                    <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide">En el estudio</span>
-                </div>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Navegación rápida del perfil -->
-        <div class="grid gap-4 mb-8">
-            <!-- Botón del Admin Panel - Solo visible para administradores -->
-            {% if user.is_staff %}
-                <a href="{% url 'gravity:admin_dashboard' %}" 
-                   class="flex items-center p-6 rounded-2xl text-white no-underline transition-all duration-300 hover:-translate-y-2 hover:shadow-xl relative overflow-hidden admin-card"
-                   style="background: linear-gradient(135deg, #C8B39B 0%, #b8a189 100%); border: 2px solid #ffd700;">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0 bg-yellow-400/20 border-2 border-yellow-400">
-                        <span class="text-2xl">⚙️</span>
-                    </div>
-                    <div class="flex-1">
-                        <h4 class="text-white font-semibold text-lg mb-1">Panel de Administración</h4>
-                        <p class="text-white/90 text-sm">Gestionar estudio</p>
-                    </div>
-                    <span class="text-yellow-400 text-2xl font-bold transition-transform duration-300 group-hover:translate-x-1">→</span>
-                    <!-- Efecto de brillo -->
-                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                </a>
-            {% endif %}
-            
-            <!-- Nuevo: Enlace directo a Mis Reservas -->
-            <a href="{% url 'accounts:mis_reservas' %}" 
-               class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in group">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
-                     style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
-                    <span class="text-2xl">📋</span>
-                </div>
-                <div class="flex-1">
-                    <h4 class="font-semibold text-lg mb-1" style="color: #5D768B;">Mis Reservas</h4>
-                    <p class="text-slate-600 text-sm">Ver y gestionar reservas activas</p>
-                    {% if user_profile and user_profile.get_reservas_activas.count > 0 %}
-                        <p class="text-xs text-green-600 font-semibold mt-1">{{ user_profile.get_reservas_activas.count }} reserva{{ user_profile.get_reservas_activas.count|pluralize:"s" }} activa{{ user_profile.get_reservas_activas.count|pluralize:"s" }}</p>
-                    {% endif %}
-                </div>
-                <span class="text-2xl font-bold transition-transform duration-300 group-hover:translate-x-1" style="color: #C8B39B;">→</span>
-            </a>
-            
-            <a href="{% url 'accounts:profile_complete' %}" 
-               class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
-                     style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
-                    <span class="text-2xl">🎯</span>
-                </div>
-                <div class="flex-1">
-                    <h4 class="font-semibold text-lg mb-1" style="color: #5D768B;">Completar Perfil</h4>
-                    <p class="text-slate-600 text-sm">Información paso a paso</p>
-                </div>
-                <span class="text-2xl font-bold transition-transform duration-300 hover:translate-x-1" style="color: #C8B39B;">→</span>
-            </a>
-            
-            <a href="{% url 'accounts:cambiar_password' %}" 
-               class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
-                     style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
-                    <span class="text-2xl">🔒</span>
-                </div>
-                <div class="flex-1">
-                    <h4 class="font-semibold text-lg mb-1" style="color: #5D768B;">Cambiar Contraseña</h4>
-                    <p class="text-slate-600 text-sm">Seguridad de cuenta</p>
-                </div>
-                <span class="text-2xl font-bold transition-transform duration-300 hover:translate-x-1" style="color: #C8B39B;">→</span>
-            </a>
-        </div>
-
-        <!-- Formulario de información básica -->
-        <div class="bg-white rounded-2xl p-8 shadow-lg mb-8 animate-fade-in">
-            <div class="text-center mb-8">
-                <h3 class="text-2xl font-bold mb-2" style="color: #5D768B;">Información Básica</h3>
-                <p class="text-slate-600">Actualiza tus datos personales</p>
-            </div>
-            
-            <form method="post" class="space-y-6">
-                {% csrf_token %}
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Nombre -->
-                    <div class="space-y-2">
-                        <label for="id_first_name" class="flex items-center font-semibold" style="color: #5D768B;">
-                            <span class="text-lg mr-2">👤</span>
-                            Nombre
-                        </label>
-                        <div class="relative">
-                            <input type="text" 
-                                   name="{{ form.first_name.name }}" 
-                                   id="id_first_name"
-                                   value="{{ form.first_name.value|default_if_none:'' }}"
-                                   {% if form.first_name.field.required %}required{% endif %}
-                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
-                        </div>
-                        {% if form.first_name.errors %}
-                            <div class="text-red-600 text-sm space-y-1">
-                                {% for error in form.first_name.errors %}
-                                    <span class="flex items-center animate-shake">
-                                        ⚠️ {{ error }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Apellido -->
-                    <div class="space-y-2">
-                        <label for="id_last_name" class="flex items-center font-semibold" style="color: #5D768B;">
-                            <span class="text-lg mr-2">👤</span>
-                            Apellido
-                        </label>
-                        <div class="relative">
-                            <input type="text" 
-                                   name="{{ form.last_name.name }}" 
-                                   id="id_last_name"
-                                   value="{{ form.last_name.value|default_if_none:'' }}"
-                                   {% if form.last_name.field.required %}required{% endif %}
-                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
-                        </div>
-                        {% if form.last_name.errors %}
-                            <div class="text-red-600 text-sm space-y-1">
-                                {% for error in form.last_name.errors %}
-                                    <span class="flex items-center animate-shake">
-                                        ⚠️ {{ error }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Teléfono -->
-                    <div class="space-y-2">
-                        <label for="id_telefono" class="flex items-center font-semibold" style="color: #5D768B;">
-                            <span class="text-lg mr-2">📞</span>
-                            Teléfono
-                        </label>
-                        <div class="relative">
-                            <input type="tel" 
-                                   name="{{ form.telefono.name }}" 
-                                   id="id_telefono"
-                                   value="{{ form.telefono.value|default_if_none:'' }}"
-                                   {% if form.telefono.field.required %}required{% endif %}
-                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
-                        </div>
-                        {% if form.telefono.errors %}
-                            <div class="text-red-600 text-sm space-y-1">
-                                {% for error in form.telefono.errors %}
-                                    <span class="flex items-center animate-shake">
-                                        ⚠️ {{ error }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if form.telefono.help_text %}
-                            <div class="text-slate-500 text-sm italic">{{ form.telefono.help_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Email -->
-                    <div class="space-y-2">
-                        <label for="id_email" class="flex items-center font-semibold" style="color: #5D768B;">
-                            <span class="text-lg mr-2">📧</span>
-                            Email
-                        </label>
-                        <div class="relative">
-                            <input type="email" 
-                                   name="{{ form.email.name }}" 
-                                   id="id_email"
-                                   value="{{ form.email.value|default_if_none:'' }}"
-                                   {% if form.email.field.required %}required{% endif %}
-                                   class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
-                        </div>
-                        {% if form.email.errors %}
-                            <div class="text-red-600 text-sm space-y-1">
-                                {% for error in form.email.errors %}
-                                    <span class="flex items-center animate-shake">
-                                        ⚠️ {{ error }}
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Botón de actualizar -->
-                <div class="text-center pt-4">
-                    <button type="submit" 
-                            class="inline-flex items-center px-8 py-4 text-white font-bold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#5D768B]/25 relative overflow-hidden group"
-                            style="background: linear-gradient(135deg, #C8B39B, #5D768B);"
-                            onmouseover="this.style.background='linear-gradient(135deg, #b8a189, #4a6375)'"
-                            onmouseout="this.style.background='linear-gradient(135deg, #C8B39B, #5D768B)'">
-                        <span class="mr-3">Actualizar Perfil</span>
-                        <span class="text-xl group-hover:translate-x-1 transition-transform duration-300">💾</span>
-                        <!-- Efecto de brillo -->
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+    <!-- Mostrar solo mensajes relacionados con perfil -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if "perfil" in message.message|lower or "actualizado" in message.message|lower or "guardado" in message.message|lower or "modificado" in message.message|lower or "cambiado" in message.message|lower %}
+                <div class="fixed top-5 right-5 z-50 max-w-md p-4 rounded-xl border-l-4 animate-slideInRight
+                        {% if message.tags == 'success' %}
+                            bg-gradient-to-r from-green-50 to-emerald-50 border-green-500 text-green-800
+                        {% elif message.tags == 'error' or message.tags == 'danger' %}
+                            bg-gradient-to-r from-red-50 to-rose-50 border-red-500 text-red-800
+                        {% elif message.tags == 'warning' %}
+                            bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-500 text-yellow-800
+                        {% else %}
+                            bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-500 text-blue-800
+                        {% endif %}">
+                    {{ message }}
+                    <button type="button" 
+                            onclick="this.parentElement.style.display='none'"
+                            class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-none border-none text-xl text-current cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                        ×
                     </button>
                 </div>
-            </form>
-        </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
-        <!-- Enlaces adicionales -->
-        <div class="text-center">
-            <a href="{% url 'accounts:logout' %}" 
-               class="inline-flex items-center px-6 py-3 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-               style="color: #5D768B; border-color: #5D768B;"
-               onmouseover="this.style.borderColor='#C8B39B'; this.style.color='#C8B39B'; this.style.backgroundColor='rgba(200, 179, 155, 0.1)'"
-               onmouseout="this.style.borderColor='#5D768B'; this.style.color='#5D768B'; this.style.backgroundColor='transparent'">
-                <span class="text-lg mr-2 transition-transform duration-300 hover:scale-110">🚪</span>
-                Cerrar Sesión
-            </a>
-
-            <!-- Botón eliminar cuenta -->
-            <a href="{% url 'accounts:eliminar_cuenta' %}" 
-               class="inline-flex items-center px-6 py-3 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-slate-500 border-slate-300 hover:border-slate-400 hover:text-slate-600 hover:bg-slate-50"
-               title="Eliminar cuenta permanentemente">
-                <span class="text-lg mr-2 transition-transform duration-300 hover:scale-110">🗑️</span>
-                <span class="text-sm">Eliminar Cuenta</span>
-            </a>
-        </div>
-    </div>
-</section>
-
-<!-- JavaScript para animaciones y efectos -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Animación de entrada para elementos
-    const elements = document.querySelectorAll('.animate-fade-in');
-    elements.forEach((element, index) => {
-        element.style.opacity = '0';
-        element.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-            element.style.transition = 'all 0.6s ease';
-            element.style.opacity = '1';
-            element.style.transform = 'translateY(0)';
-        }, 200 * index);
-    });
-
-    // Efecto hover mejorado en estadísticas
-    const statItems = document.querySelectorAll('.stat-item, [class*="min-w-20"]');
-    statItems.forEach(item => {
-        item.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px) scale(1.05)';
-        });
-        item.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
-    });
-
-    // Auto-hide de alertas después de 5 segundos
-    const alerts = document.querySelectorAll('[class*="fixed top-5 right-5"]');
-    alerts.forEach(alert => {
-        setTimeout(() => {
-            alert.style.opacity = '0';
-            setTimeout(() => {
-                alert.remove();
-            }, 300);
-        }, 5000);
-    });
-
-    // Efecto especial para el botón de admin
-    const adminCard = document.querySelector('.admin-card');
-    if (adminCard) {
-        adminCard.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-8px) scale(1.02)';
-        });
-        adminCard.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
-    }
-
-    // Efecto de shimmer para el admin card
-    if (adminCard) {
-        setInterval(() => {
-            const shimmer = document.createElement('div');
-            shimmer.className = 'absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 animate-shimmer';
-            shimmer.style.animation = 'shimmer 2s ease-in-out';
-            adminCard.appendChild(shimmer);
+    <!-- Sección del perfil -->
+    <section class="py-10 min-h-screen bg-fondo" id="Profile">
+        <div class="max-w-4xl mx-auto px-4">
             
-            setTimeout(() => {
-                shimmer.remove();
-            }, 2000);
-        }, 8000);
-    }
+            <!-- Título de la sección -->
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold mb-4" style="color: #5D768B;">Mi Perfil</h2>
+                <div class="w-24 h-1 mx-auto mb-4 rounded-full" style="background: linear-gradient(90deg, #C8B39B, #5D768B);"></div>
+                <p class="text-slate-600 text-lg">Gestiona tu información personal y configuración de cuenta</p>
+            </div>
 
-    // Efecto especial para el enlace de reservas clickeable
-    const reservasLink = document.querySelector('a[href*="mis_reservas"]');
-    if (reservasLink && reservasLink.classList.contains('group')) {
-        // Agregar efecto de pulso sutil si hay reservas activas
-        const reservasActivas = '{{ user_profile.get_reservas_activas.count }}';
-        if (reservasActivas > 0) {
-            setInterval(() => {
-                reservasLink.style.boxShadow = '0 0 20px rgba(93, 118, 139, 0.3)';
+            <!-- Tarjeta principal del perfil -->
+            <div class="bg-white rounded-2xl p-8 text-center shadow-lg mb-8 transition-all duration-300 hover:-translate-y-2 animate-fade-in">
+                <!-- Avatar -->
+                <div class="w-32 h-32 rounded-full mx-auto mb-6 flex items-center justify-center text-white text-4xl font-bold overflow-hidden border-4 border-white shadow-lg transition-all duration-300 hover:scale-105"
+                    style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                    {% if user_profile and user_profile.avatar %}
+                        <img src="{{ user_profile.avatar.url }}" alt="Avatar actual" class="w-full h-full object-cover rounded-full">
+                    {% else %}
+                        {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+                    {% endif %}
+                </div>
+
+                <!-- Información del usuario -->
+                <div class="mb-8">
+                    <h3 class="text-2xl font-bold mb-2" style="color: #5D768B;">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% elif user.first_name %}
+                            {{ user.first_name }}
+                        {% elif user.last_name %}
+                            {{ user.last_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </h3>
+                    <p class="text-slate-600 text-lg mb-2 opacity-80">@{{ user.username }}</p>
+                    <small class="text-slate-500 italic">Miembro desde {{ user.date_joined|date:"F Y" }}</small>
+                </div>
+                
+                <!-- Estadísticas del usuario -->
+                {% if user_profile %}
+                <div class="flex justify-center gap-8 pt-6 border-t border-slate-200">
+                    <!-- Enlace a Mis Reservas - CLICKEABLE -->
+                    <a href="{% url 'accounts:mis_reservas' %}" class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-2 hover:shadow-lg cursor-pointer min-w-20 no-underline group transform hover:scale-105">
+                        <span class="block text-2xl font-bold mb-1 group-hover:text-blue-600 transition-colors duration-300" style="color: #5D768B;">{{ user_profile.get_total_reservas }}</span>
+                        <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide group-hover:text-blue-700 transition-colors duration-300">Reservas</span>
+                        <div class="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <span class="text-xs text-blue-600 font-semibold">Ver todas →</span>
+                        </div>
+                    </a>
+                    <div class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer min-w-20">
+                        <span class="block text-2xl font-bold mb-1" style="color: #5D768B;">{{ user_profile.get_reservas_activas.count }}</span>
+                        <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide">Activas</span>
+                    </div>
+                    {% if user_profile.get_tiempo_en_estudio %}
+                    <div class="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer min-w-20">
+                        <span class="block text-2xl font-bold mb-1" style="color: #5D768B;">{{ user_profile.get_tiempo_en_estudio }}</span>
+                        <span class="block text-sm text-slate-600 font-medium uppercase tracking-wide">En el estudio</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Navegación rápida del perfil -->
+            <div class="grid gap-4 mb-8">
+                <!-- Botón del Admin Panel - Solo visible para administradores -->
+                {% if user.is_staff %}
+                    <a href="{% url 'gravity:admin_dashboard' %}" 
+                    class="flex items-center p-6 rounded-2xl text-white no-underline transition-all duration-300 hover:-translate-y-2 hover:shadow-xl relative overflow-hidden admin-card"
+                    style="background: linear-gradient(135deg, #C8B39B 0%, #b8a189 100%); border: 2px solid #ffd700;">
+                        <div 
+                            class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+                            style="background: linear-gradient(135deg, #C8B39B, #5D768B);"    
+                        >
+                            <img src="{% static 'icons/config.png' %}" alt="Icono de Configuración" class="w-[28px]">
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-white font-semibold text-lg mb-1">Panel de Administración</h4>
+                            <p class="text-white/90 text-sm">Gestionar estudio</p>
+                        </div>
+                        <span class="text-yellow-400 text-2xl font-bold transition-transform duration-300 group-hover:translate-x-1">→</span>
+                        <!-- Efecto de brillo -->
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                    </a>
+                {% endif %}
+                
+                <!-- Nuevo: Enlace directo a Mis Reservas -->
+                <a href="{% url 'accounts:mis_reservas' %}" 
+                class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in group">
+                    <div 
+                        class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+                        style="background: linear-gradient(135deg, #C8B39B, #5D768B);"
+                    >
+                        <img src="{% static 'icons/reservas.png' %}" alt="Icono de Reservas" class="w-[35px] h-auto mb-[3px]">    
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-lg mb-1" style="color: #5D768B;">Mis Reservas</h4>
+                        <p class="text-slate-600 text-sm">Ver y gestionar reservas activas</p>
+                        {% if user_profile and user_profile.get_reservas_activas.count > 0 %}
+                            <p class="text-xs text-exito font-semibold mt-1">{{ user_profile.get_reservas_activas.count }} reserva{{ user_profile.get_reservas_activas.count|pluralize:"s" }} activa{{ user_profile.get_reservas_activas.count|pluralize:"s" }}</p>
+                        {% endif %}
+                    </div>
+                    <span class="text-2xl font-bold transition-transform duration-300 group-hover:translate-x-1" style="color: #C8B39B;">→</span>
+                </a>
+                
+                <a href="{% url 'accounts:profile_complete' %}" 
+                class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in">
+                    <div 
+                        class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+                        style="background: linear-gradient(135deg, #C8B39B, #5D768B);"
+                    >
+                        <img src="{% static 'icons/profile-complete.png' %}" alt="Icono de Perfil Completo" class="w-[28px] h-auto">      
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-lg mb-1" style="color: #5D768B;">Completar Perfil</h4>
+                        <p class="text-slate-600 text-sm">Información paso a paso</p>
+                    </div>
+                    <span class="text-2xl font-bold transition-transform duration-300 hover:translate-x-1" style="color: #C8B39B;">→</span>
+                </a>
+                
+                <a href="{% url 'accounts:cambiar_password' %}" 
+                class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in">
+                    <div 
+                        class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+                        style="background: linear-gradient(135deg, #C8B39B, #5D768B);"
+                    >
+                        <img src="{% static 'icons/password.png' %}" alt="Icono de Contraseña" class="w-[28px] h-auto"> 
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-lg mb-1" style="color: #5D768B;">Cambiar Contraseña</h4>
+                        <p class="text-slate-600 text-sm">Seguridad de cuenta</p>
+                    </div>
+                    <span class="text-2xl font-bold transition-transform duration-300 hover:translate-x-1" style="color: #C8B39B;">→</span>
+                </a>
+            </div>
+
+            <!-- Formulario de información básica -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg mb-8 animate-fade-in">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold mb-2" style="color: #5D768B;">Información Básica</h3>
+                    <p class="text-slate-600">Actualiza tus datos personales</p>
+                </div>
+                
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Nombre -->
+                        <div class="space-y-2">
+                            <label for="id_first_name" class="flex items-center font-semibold" style="color: #5D768B;">
+                                <span class="text-lg mr-2">
+                                    <img src="{% static 'icons/user.png' %}" alt="Icono de Usuario" class="w-[18px] h-auto">
+                                </span>
+                                Nombre
+                            </label>
+                            <div class="relative">
+                                <input type="text" 
+                                    name="{{ form.first_name.name }}" 
+                                    id="id_first_name"
+                                    value="{{ form.first_name.value|default_if_none:'' }}"
+                                    {% if form.first_name.field.required %}required{% endif %}
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
+                            </div>
+                            {% if form.first_name.errors %}
+                                <div class="text-red-600 text-sm space-y-1">
+                                    {% for error in form.first_name.errors %}
+                                        <span class="flex items-center animate-shake">
+                                            ⚠️ {{ error }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Apellido -->
+                        <div class="space-y-2">
+                            <label for="id_last_name" class="flex items-center font-semibold" style="color: #5D768B;">
+                                <span class="text-lg mr-2">
+                                    <img src="{% static 'icons/user.png' %}" alt="Icono de Usuario" class="w-[18px] h-auto">
+                                </span>
+                                Apellido
+                            </label>
+                            <div class="relative">
+                                <input type="text" 
+                                    name="{{ form.last_name.name }}" 
+                                    id="id_last_name"
+                                    value="{{ form.last_name.value|default_if_none:'' }}"
+                                    {% if form.last_name.field.required %}required{% endif %}
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
+                            </div>
+                            {% if form.last_name.errors %}
+                                <div class="text-red-600 text-sm space-y-1">
+                                    {% for error in form.last_name.errors %}
+                                        <span class="flex items-center animate-shake">
+                                            ⚠️ {{ error }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Teléfono -->
+                        <div class="space-y-2">
+                            <label for="id_telefono" class="flex items-center font-semibold" style="color: #5D768B;">
+                                <span class="text-lg mr-2">
+                                    <img src="{% static 'icons/telefono.png' %}" alt="Icono de Telefono" class="w-[18px] h-auto">
+                                </span>
+                                Teléfono
+                            </label>
+                            <div class="relative">
+                                <input type="tel" 
+                                    name="{{ form.telefono.name }}" 
+                                    id="id_telefono"
+                                    value="{{ form.telefono.value|default_if_none:'' }}"
+                                    {% if form.telefono.field.required %}required{% endif %}
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
+                            </div>
+                            {% if form.telefono.errors %}
+                                <div class="text-red-600 text-sm space-y-1">
+                                    {% for error in form.telefono.errors %}
+                                        <span class="flex items-center animate-shake">
+                                            ⚠️ {{ error }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.telefono.help_text %}
+                                <div class="text-slate-500 text-sm italic">{{ form.telefono.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="space-y-2">
+                            <label for="id_email" class="flex items-center font-semibold" style="color: #5D768B;">
+                                <span class="text-lg mr-2">
+                                    <img src="{% static 'icons/email.png' %}" alt="Icono de Email" class="w-[18px] h-auto">
+                                </span>
+                                Email
+                            </label>
+                            <div class="relative">
+                                <input type="email" 
+                                    name="{{ form.email.name }}" 
+                                    id="id_email"
+                                    value="{{ form.email.value|default_if_none:'' }}"
+                                    {% if form.email.field.required %}required{% endif %}
+                                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-slate-50 text-slate-900 transition-all duration-300 focus:border-[#5D768B] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5D768B]/25 hover:border-[#C8B39B]">
+                            </div>
+                            {% if form.email.errors %}
+                                <div class="text-red-600 text-sm space-y-1">
+                                    {% for error in form.email.errors %}
+                                        <span class="flex items-center animate-shake">
+                                            ⚠️ {{ error }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Botón de actualizar -->
+                    <div class="text-center pt-4">
+                        <button type="submit" 
+                                class="inline-flex items-center px-8 py-4 text-white font-bold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#5D768B]/25 relative overflow-hidden group"
+                                style="background: linear-gradient(135deg, #C8B39B, #5D768B);"
+                                onmouseover="this.style.background='linear-gradient(135deg, #b8a189, #4a6375)'"
+                                onmouseout="this.style.background='linear-gradient(135deg, #C8B39B, #5D768B)'">
+                            <span class="mr-3">Actualizar Perfil</span>
+                            <!-- Efecto de brillo -->
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Enlaces adicionales -->
+            <div class="text-center">
+                <a href="{% url 'accounts:logout' %}" 
+                class="inline-flex items-center px-6 py-3 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                style="color: #5D768B; border-color: #5D768B;"
+                onmouseover="this.style.borderColor='#C8B39B'; this.style.color='#C8B39B'; this.style.backgroundColor='rgba(200, 179, 155, 0.1)'"
+                onmouseout="this.style.borderColor='#5D768B'; this.style.color='#5D768B'; this.style.backgroundColor='transparent'">
+                    <span class="text-lg mr-2 transition-transform duration-300 hover:scale-110">
+                        <img src="{% static 'icons/logout-azul.png' %}" alt="Icono de logout" class="w-[20px] h-auto">
+                    </span>
+                    Cerrar Sesión
+                </a>
+
+                <!-- Botón eliminar cuenta -->
+                <a href="{% url 'accounts:eliminar_cuenta' %}" 
+                class="inline-flex items-center px-6 py-3 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-slate-500 border-slate-300 hover:border-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                title="Eliminar cuenta permanentemente">
+                    <span class="text-lg mr-2 transition-transform duration-300 hover:scale-110">
+                        <img src="{% static 'icons/delete-account.png' %}" alt="Icono de delete-account" class="w-[23px] h-auto">
+                    </span>
+                    Eliminar Cuenta
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- JavaScript para animaciones y efectos -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de entrada para elementos
+            const elements = document.querySelectorAll('.animate-fade-in');
+            elements.forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(20px)';
+                
                 setTimeout(() => {
-                    reservasLink.style.boxShadow = '';
-                }, 1000);
-            }, 3000);
-        }
-    }
-});
-</script>
+                    element.style.transition = 'all 0.6s ease';
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, 200 * index);
+            });
+
+            // Efecto hover mejorado en estadísticas
+            const statItems = document.querySelectorAll('.stat-item, [class*="min-w-20"]');
+            statItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px) scale(1.05)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+
+            // Auto-hide de alertas después de 5 segundos
+            const alerts = document.querySelectorAll('[class*="fixed top-5 right-5"]');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 300);
+                }, 5000);
+            });
+
+            // Efecto especial para el botón de admin
+            const adminCard = document.querySelector('.admin-card');
+            if (adminCard) {
+                adminCard.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                adminCard.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            }
+
+            // Efecto de shimmer para el admin card
+            if (adminCard) {
+                setInterval(() => {
+                    const shimmer = document.createElement('div');
+                    shimmer.className = 'absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 animate-shimmer';
+                    shimmer.style.animation = 'shimmer 2s ease-in-out';
+                    adminCard.appendChild(shimmer);
+                    
+                    setTimeout(() => {
+                        shimmer.remove();
+                    }, 2000);
+                }, 8000);
+            }
+
+            // Efecto especial para el enlace de reservas clickeable
+            const reservasLink = document.querySelector('a[href*="mis_reservas"]');
+            if (reservasLink && reservasLink.classList.contains('group')) {
+                // Agregar efecto de pulso sutil si hay reservas activas
+                const reservasActivas = '{{ user_profile.get_reservas_activas.count }}';
+                if (reservasActivas > 0) {
+                    setInterval(() => {
+                        reservasLink.style.boxShadow = '0 0 20px rgba(93, 118, 139, 0.3)';
+                        setTimeout(() => {
+                            reservasLink.style.boxShadow = '';
+                        }, 1000);
+                    }, 3000);
+                }
+            }
+        });
+    </script>
 
 {% endblock %}

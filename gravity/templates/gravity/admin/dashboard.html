@@ -3,7 +3,10 @@
 {% block title %}Panel de Administración - Pilates Gravity{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item active">Dashboard</li>
+    <li class="flex items-center">
+        <span class="text-gray-400">/</span>
+        <span class="ml-1 text-gray-500">Dashboard</span>
+    </li>
 {% endblock %}
 
 {% block extra_css %}
@@ -18,120 +21,79 @@
             --secundario-oscuro: #B5A084;
         }
 
-        /* Tarjetas de estadísticas con colores del proyecto */
+        /* Gradientes personalizados para las tarjetas de estadísticas */
         .stat-card-primary {
             background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
         }
 
         .stat-card-secondary {
             background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.3);
         }
 
         .stat-card-accent {
             background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 15px rgba(74, 94, 109, 0.3);
         }
 
         .stat-card-light {
             background: var(--fondo);
-            color: var(--principal);
             border: 2px solid var(--secundario);
-            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.2);
         }
 
-        /* Botones de acción principales */
+        /* Gradientes para botones */
         .btn-pilates-primary {
             background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
-            border: none;
-            color: white;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
         }
 
         .btn-pilates-primary:hover {
             background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(93, 118, 139, 0.4);
-            color: white;
         }
 
         .btn-pilates-secondary {
             background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
-            border: none;
-            color: white;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.3);
         }
 
         .btn-pilates-secondary:hover {
             background: linear-gradient(135deg, var(--secundario-oscuro) 0%, var(--secundario) 100%);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(200, 179, 155, 0.4);
-            color: white;
         }
 
         .btn-pilates-accent {
             background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
-            border: none;
-            color: white;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(74, 94, 109, 0.3);
         }
 
         .btn-pilates-accent:hover {
             background: linear-gradient(135deg, #3A4A56 0%, var(--principal-oscuro) 100%);
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(74, 94, 109, 0.4);
-            color: white;
         }
 
         .btn-pilates-light {
             background: var(--fondo);
             border: 2px solid var(--secundario);
             color: var(--principal);
-            transition: all 0.3s ease;
         }
 
         .btn-pilates-light:hover {
             background: var(--secundario);
             color: white;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(200, 179, 155, 0.3);
         }
 
-        /* Headers de tarjetas con colores del proyecto */
+        /* Headers de tarjetas */
         .card-header-primary {
             background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
-            color: white;
-            border: none;
         }
 
         .card-header-secondary {
             background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
-            color: white;
-            border: none;
         }
 
-        /* Badges con colores del proyecto */
+        /* Badges personalizados */
         .badge-pilates-primary {
             background-color: var(--principal);
-            color: white;
         }
 
         .badge-pilates-secondary {
             background-color: var(--secundario);
-            color: white;
         }
 
-        /* Alertas con colores del proyecto */
+        /* Alertas personalizadas */
         .alert-pilates {
             background-color: var(--fondo);
             border: 2px solid var(--secundario);
@@ -141,289 +103,368 @@
         .alert-pilates h5 {
             color: var(--principal-oscuro);
         }
-
-        /* Botones outline con colores del proyecto */
-        .btn-outline-pilates {
-            border: 2px solid var(--principal);
-            color: var(--principal);
-            background: transparent;
-            transition: all 0.3s ease;
-        }
-
-        .btn-outline-pilates:hover {
-            background: var(--principal);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        .btn-outline-secondary-pilates {
-            border: 2px solid var(--secundario);
-            color: var(--secundario-oscuro);
-            background: transparent;
-            transition: all 0.3s ease;
-        }
-
-        .btn-outline-secondary-pilates:hover {
-            background: var(--secundario);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        /* Iconos con colores del proyecto */
-        .text-pilates-primary {
-            color: var(--principal) !important;
-        }
-
-        .text-pilates-secondary {
-            color: var(--secundario) !important;
-        }
-
-        /* Animaciones compatibles con el proyecto */
-        .card {
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(93, 118, 139, 0.1);
-        }
     </style>
 {% endblock %}
 
 {% block content %}
+    {% load static %}
+    
     <!-- Bienvenida Simple -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center py-4">
-                    <h1 class="mb-3">
-                        <i class="fas fa-dumbbell me-3 text-pilates-primary"></i>
-                        Panel de Administración
-                    </h1>
-                    <h4 class="text-muted mb-3">¡Hola {{ user.get_username|default:user.username }}!</h4>
-                    <p class="lead">Gestiona tu estudio de Pilates de forma simple y eficiente</p>
-                    <small class="text-muted">
-                        <i class="fas fa-clock me-1"></i>
-                        Última actualización: {% now "d/m/Y H:i" %}
-                    </small>
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-10 p-6">
+                <img src="{% static 'img/solo_logo_principal.webp' %}" alt="Logo Gravity" class="w-40 h-auto">
+                <div class="text-center py-4">
+                    <h1 class="mb-3 text-2xl sm:text-3xl lg:text-4xl font-bold text-principal">Panel de Administración</h1>
+                    <h4 class="text-secundario font-semibold text-lg sm:text-xl lg:text-2xl mb-3" style="color: var(--secundario);">¡Hola {{ user.get_username|default:user.username }}!</h4>
+                    <p class="text-lg text-gray-600">Gestiona tu estudio de Pilates de forma simple y eficiente</p>
+                    <div class="flex items-center justify-center gap-2 mt-2 text-sm text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                            <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Última actualización: {% now "d/m/Y H:i" %}</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Estadísticas Rápidas -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card-primary h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-calendar-alt fa-3x mb-3"></i>
-                    <h2 class="mb-1">{{ total_clases }}</h2>
-                    <p class="mb-0">Clases Activas</p>
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="stat-card-primary text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div class="p-6 flex flex-col items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-12">
+                    <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+                    <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
+                </svg>
+                <h2 class="text-3xl font-bold mb-1">{{ total_clases }}</h2>
+                <p class="text-sm opacity-90">Clases Activas</p>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card-secondary h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-bookmark fa-3x mb-3"></i>
-                    <h2 class="mb-1">{{ total_reservas_activas }}</h2>
-                    <p class="mb-0">Reservas Activas</p>
-                </div>
+        <div class="stat-card-secondary text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div class="p-6 flex flex-col items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-12">
+                    <path fill-rule="evenodd" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z" clip-rule="evenodd" />
+                </svg>
+                <h2 class="text-3xl font-bold mb-1">{{ total_reservas_activas }}</h2>
+                <p class="text-sm opacity-90">Reservas Activas</p>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card-accent h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-users fa-3x mb-3"></i>
-                    <h2 class="mb-1">{{ total_usuarios }}</h2>
-                    <p class="mb-0">Usuarios</p>
-                </div>
+        <div class="stat-card-accent text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div class="p-6 flex flex-col items-center justify-center gap-1 text-fondo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-12">
+                    <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+                    <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+                </svg>
+                <h2 class="text-3xl font-bold mb-1">{{ total_usuarios }}</h2>
+                <p class="text-sm opacity-90">Usuarios</p>
             </div>
         </div>
         
-        <div class="col-md-3 mb-3">
-            <div class="card stat-card-light h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-user-plus fa-3x mb-3"></i>
-                    <h2 class="mb-1">{{ usuarios_nuevos }}</h2>
-                    <p class="mb-0">Nuevos (últimos 7 días)</p>
-                </div>
+        <div class="stat-card-light rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1" style="color: var(--principal);">
+            <div class="p-6 flex flex-col items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-12">
+                    <path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
+                </svg>
+                <h2 class="text-3xl font-bold mb-1">{{ usuarios_nuevos }}</h2>
+                <p class="text-sm opacity-75">Nuevos (últimos 7 días)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas por Sede -->
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="card-header-secondary text-white px-6 py-4">
+                <h5 class="text-lg font-semibold flex items-center gap-2 mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
+                    </svg>
+                    Estadísticas por Sede
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if stats_por_sede %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for sede_stats in stats_por_sede %}
+                            <div class="bg-gray-50 rounded-lg border-0">
+                                <div class="p-4">
+                                    <h6 class="text-principal font-semibold mb-3 flex items-center justify-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                            <path fill-rule="evenodd" d="M4.5 2.25a.75.75 0 0 0 0 1.5v16.5h-.75a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5h-.75V3.75a.75.75 0 0 0 0-1.5h-15ZM9 6a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5H9Zm-.75 3.75A.75.75 0 0 1 9 9h1.5a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM9 12a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5H9Zm3.75-5.25A.75.75 0 0 1 13.5 6H15a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75ZM13.5 9a.75.75 0 0 0 0 1.5H15A.75.75 0 0 0 15 9h-1.5Zm-.75 3.75a.75.75 0 0 1 .75-.75H15a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75ZM9 19.5v-2.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-.75.75h-4.5A.75.75 0 0 1 9 19.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ sede_stats.sede }}
+                                    </h6>
+                                    <div class="grid grid-cols-3 gap-4 text-center">
+                                        <div class="text-principal flex flex-col items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                                <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+                                                <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
+                                            </svg>
+                                            <h6 class="text-lg font-semibold mt-1">{{ sede_stats.total_clases }}</h6>
+                                            <small class="text-gray-500">Clases</small>
+                                        </div>
+                                        <div class="text-secundario flex flex-col items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                                <path fill-rule="evenodd" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z" clip-rule="evenodd" />
+                                            </svg>
+                                            <h6 class="text-lg font-semibold mt-1">{{ sede_stats.total_reservas }}</h6>
+                                            <small class="text-gray-500">Reservas</small>
+                                        </div>
+                                        <div class="text-principal flex flex-col items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                                <path fill-rule="evenodd" d="M11.99 2.243a4.49 4.49 0 0 0-3.398 1.55 4.49 4.49 0 0 0-3.497 1.306 4.491 4.491 0 0 0-1.307 3.498 4.491 4.491 0 0 0-1.548 3.397c0 1.357.6 2.573 1.548 3.397a4.491 4.491 0 0 0 1.307 3.498 4.49 4.49 0 0 0 3.498 1.307 4.49 4.49 0 0 0 3.397 1.549 4.49 4.49 0 0 0 3.397-1.549 4.49 4.49 0 0 0 3.497-1.307 4.491 4.491 0 0 0 1.306-3.497 4.491 4.491 0 0 0 1.55-3.398c0-1.357-.601-2.573-1.549-3.397a4.491 4.491 0 0 0-1.307-3.498 4.49 4.49 0 0 0-3.498-1.307 4.49 4.49 0 0 0-3.396-1.549Zm3.53 7.28a.75.75 0 0 0-1.06-1.06l-6 6a.75.75 0 1 0 1.06 1.06l6-6Zm-5.78-.905a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25Zm4.5 4.5a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25Z" clip-rule="evenodd" />
+                                            </svg>
+                                            <h6 class="text-lg font-semibold mt-1">{{ sede_stats.porcentaje_reservas }}%</h6>
+                                            <small class="text-gray-500">del Total</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8 flex flex-col items-center justify-center gap-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                            <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
+                        </svg>
+                        <p class="text-gray-500">No hay datos de sedes disponibles</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Acciones Principales -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header card-header-primary">
-                    <h3 class="mb-0">
-                        <i class="fas fa-bolt me-2"></i>
-                        Acciones Principales
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-pilates-primary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
-                                <i class="fas fa-plus fa-2x mb-2"></i>
-                                <span>Nueva Clase</span>
-                            </a>
-                        </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-pilates-secondary btn-lg w-100 h-100 d-flex flex-column justify-content-center">
-                                <i class="fas fa-calendar-alt fa-2x mb-2"></i>
-                                <span>Ver Clases</span>
-                            </a>
-                        </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn btn-pilates-accent btn-lg w-100 h-100 d-flex flex-column justify-content-center">
-                                <i class="fas fa-users fa-2x mb-2"></i>
-                                <span>Ver Usuarios</span>
-                            </a>
-                        </div>
-                        <div class="col-lg-3 col-md-6 mb-3">
-                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-light btn-lg w-100 h-100 d-flex flex-column justify-content-center">
-                                <i class="fas fa-user-plus fa-2x mb-2"></i>
-                                <span>Agregar Cliente</span>
-                            </a>
-                        </div>
-                    </div>
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="card-header-primary text-white px-6 py-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2 mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z" clip-rule="evenodd" />
+                    </svg>
+                    Acciones Principales
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <a href="{% url 'gravity:admin_clase_crear' %}" class="btn-pilates-primary text-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <img src="{% static 'icons/plus.png' %}" alt="Icono Nueva Clase" class="w-6 h-6">
+                        <span class="font-medium">Nueva Clase</span>
+                    </a>
+                    <a href="{% url 'gravity:admin_clases_lista' %}" class="btn-pilates-secondary text-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                            <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+                            <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="font-medium">Ver Clases</span>
+                    </a>
+                    <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn-pilates-accent text-fondo rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-">
+                            <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
+                            <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+                        </svg>
+                        <span class="font-medium">Ver Usuarios</span>
+                    </a>
+                    <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn-pilates-light rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                            <path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
+                        </svg>
+                        <span class="font-medium">Agregar Cliente</span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Información Rápida -->
-    <div class="row">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Clases Populares Simplificado -->
-        <div class="col-lg-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header card-header-primary">
-                    <h5 class="mb-0">
-                        <i class="fas fa-star me-2"></i>
-                        Clases Más Populares
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if clases_populares %}
-                        {% for clase in clases_populares|slice:":3" %}
-                            <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
-                                <div>
-                                    <h6 class="mb-1">{{ clase.get_tipo_display }}</h6>
-                                    <small class="text-muted">{{ clase.dia }} - {{ clase.horario|time:"H:i" }}</small>
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden h-full">
+            <div class="card-header-primary text-white px-6 py-4">
+                <h5 class="text-lg font-semibold flex items-center gap-1 mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 mb-0.5">
+                        <path fill-rule="evenodd" d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813A3.75 3.75 0 0 0 7.466 7.89l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5ZM16.5 15a.75.75 0 0 1 .712.513l.394 1.183c.15.447.5.799.948.948l1.183.395a.75.75 0 0 1 0 1.422l-1.183.395c-.447.15-.799.5-.948.948l-.395 1.183a.75.75 0 0 1-1.422 0l-.395-1.183a1.5 1.5 0 0 0-.948-.948l-1.183-.395a.75.75 0 0 1 0-1.422l1.183-.395c.447-.15.799-.5.948-.948l.395-1.183A.75.75 0 0 1 16.5 15Z" clip-rule="evenodd" />
+                    </svg>
+                    Clases Más Populares
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if clases_populares %}
+                    {% for clase in clases_populares|slice:":3" %}
+                        <div class="flex justify-between items-center py-3 {% if not forloop.last %}border-b border-gray-200{% endif %}">
+                            <div class="flex-1">
+                                <h6 class="font-semibold mb-1">{{ clase.get_nombre_display }}</h6>
+                                <div class="text-sm text-gray-500">
+                                    <div class="flex items-center gap-1 mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                            <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span>{{ clase.dia }} - {{ clase.horario|time:"H:i" }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                            <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span>{{ clase.get_direccion_corta }}</span>
+                                    </div>
                                 </div>
-                                <span class="badge badge-pilates-primary">{{ clase.total_reservas }}</span>
                             </div>
-                        {% endfor %}
-                        <div class="text-center mt-3">
-                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-outline-pilates btn-sm">
-                                Ver Todas las Clases
-                            </a>
+                            <div class="text-right">
+                                <span class="badge-pilates-primary text-white px-2 py-1 rounded text-sm">{{ clase.total_reservas }}</span>
+                                <br>
+                                <small class="text-gray-500">{{ clase.cupos_disponibles }}/{{ clase.cupo_maximo }}</small>
+                            </div>
                         </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No hay clases creadas</p>
-                            <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-pilates-primary">
-                                Crear Primera Clase
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
+                    {% endfor %}
+                    <div class="text-center mt-4">
+                        <a href="{% url 'gravity:admin_clases_lista' %}" class="inline-block px-4 py-2 text-sm border-2 rounded-lg transition-all duration-300 hover:-translate-y-0.5 text-decoration-none" style="border-color: var(--principal); color: var(--principal);" onmouseover="this.style.backgroundColor='var(--principal)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--principal)';">
+                            Ver Todas las Clases
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                            <path d="M12 11.993a.75.75 0 0 0-.75.75v.006c0 .414.336.75.75.75h.006a.75.75 0 0 0 .75-.75v-.006a.75.75 0 0 0-.75-.75H12ZM12 16.494a.75.75 0 0 0-.75.75v.005c0 .414.335.75.75.75h.005a.75.75 0 0 0 .75-.75v-.005a.75.75 0 0 0-.75-.75H12ZM8.999 17.244a.75.75 0 0 1 .75-.75h.006a.75.75 0 0 1 .75.75v.006a.75.75 0 0 1-.75.75h-.006a.75.75 0 0 1-.75-.75v-.006ZM7.499 16.494a.75.75 0 0 0-.75.75v.005c0 .414.336.75.75.75h.005a.75.75 0 0 0 .75-.75v-.005a.75.75 0 0 0-.75-.75H7.5ZM13.499 14.997a.75.75 0 0 1 .75-.75h.006a.75.75 0 0 1 .75.75v.005a.75.75 0 0 1-.75.75h-.006a.75.75 0 0 1-.75-.75v-.005ZM14.25 16.494a.75.75 0 0 0-.75.75v.006c0 .414.335.75.75.75h.005a.75.75 0 0 0 .75-.75v-.006a.75.75 0 0 0-.75-.75h-.005ZM15.75 14.995a.75.75 0 0 1 .75-.75h.005a.75.75 0 0 1 .75.75v.006a.75.75 0 0 1-.75.75H16.5a.75.75 0 0 1-.75-.75v-.006ZM13.498 12.743a.75.75 0 0 1 .75-.75h2.25a.75.75 0 1 1 0 1.5h-2.25a.75.75 0 0 1-.75-.75ZM6.748 14.993a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z" />
+                            <path fill-rule="evenodd" d="M18 2.993a.75.75 0 0 0-1.5 0v1.5h-9V2.994a.75.75 0 1 0-1.5 0v1.497h-.752a3 3 0 0 0-3 3v11.252a3 3 0 0 0 3 3h13.5a3 3 0 0 0 3-3V7.492a3 3 0 0 0-3-3H18V2.993ZM3.748 18.743v-7.5a1.5 1.5 0 0 1 1.5-1.5h13.5a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5h-13.5a1.5 1.5 0 0 1-1.5-1.5Z" clip-rule="evenodd" />
+                        </svg>
+                        <p class="text-gray-500 mb-3">No hay clases creadas</p>
+                        <a href="{% url 'gravity:admin_clase_crear' %}" class="btn-pilates-primary text-white px-4 py-2 rounded-lg transition-all duration-300 hover:-translate-y-0.5 text-decoration-none">
+                            Crear Primera Clase
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
         <!-- Reservas Recientes Simplificado -->
-        <div class="col-lg-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header card-header-secondary">
-                    <h5 class="mb-0">
-                        <i class="fas fa-clock me-2"></i>
-                        Reservas Recientes
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if reservas_recientes %}
-                        {% for reserva in reservas_recientes|slice:":3" %}
-                            <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}">
-                                <div>
-                                    <h6 class="mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
-                                    <small class="text-muted">{{ reserva.clase.get_tipo_display }} - {{ reserva.clase.dia }}</small>
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden h-full">
+            <div class="card-header-secondary text-white px-6 py-4">
+                <h5 class="text-lg font-semibold flex items-center gap-1 mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
+                    </svg>
+                    Reservas Recientes
+                </h5>
+            </div>
+            <div class="p-6">
+                {% if reservas_recientes %}
+                    {% for reserva in reservas_recientes|slice:":3" %}
+                        <div class="flex justify-between items-center py-3 {% if not forloop.last %}border-b border-gray-200{% endif %}">
+                            <div class="flex-1">
+                                <h6 class="font-semibold mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
+                                <div class="text-sm text-gray-500">
+                                    <div class="flex items-center gap-1 mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dumbbell-icon lucide-dumbbell">
+                                            <path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/>
+                                            <path d="m2.5 21.5 1.4-1.4"/>
+                                            <path d="m20.1 3.9 1.4-1.4"/>
+                                            <path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/>
+                                            <path d="m9.6 14.4 4.8-4.8"/>
+                                        </svg>
+                                        <span>{{ reserva.clase.get_nombre_display }} - {{ reserva.clase.dia }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                            <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span>{{ reserva.clase.get_direccion_corta }}</span>
+                                    </div>
                                 </div>
-                                <small class="text-muted">{{ reserva.fecha_reserva|date:"d/m" }}</small>
                             </div>
-                        {% endfor %}
-                        <div class="text-center mt-3">
-                            <a href="{% url 'gravity:admin_reservas_lista' %}" class="btn btn-outline-secondary-pilates btn-sm">
-                                Ver Todas las Reservas
-                            </a>
+                            <div class="text-right">
+                                <small class="text-gray-500 block">{{ reserva.fecha_reserva|date:"d/m H:i" }}</small>
+                                <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs">{{ reserva.numero_reserva }}</span>
+                            </div>
                         </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No hay reservas aún</p>
-                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-pilates-secondary">
-                                Agregar Primer Cliente
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
+                    {% endfor %}
+                    <div class="text-center mt-4">
+                        <a href="{% url 'gravity:admin_reservas_lista' %}" class="inline-block px-4 py-2 text-sm border-2 rounded-lg transition-all duration-300 hover:-translate-y-0.5 text-decoration-none" style="border-color: var(--secundario); color: var(--secundario-oscuro);" onmouseover="this.style.backgroundColor='var(--secundario)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--secundario-oscuro)';">
+                            Ver Todas las Reservas
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10 text-gray-400 mb-3">
+                            <path fill-rule="evenodd" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z" clip-rule="evenodd" />
+                        </svg>
+                        <p class="text-gray-500 mb-3">No hay reservas aún</p>
+                        <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn-pilates-secondary text-white px-4 py-2 rounded-lg transition-all duration-300 hover:-translate-y-0.5 text-decoration-none">
+                            Agregar Primer Cliente
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <!-- Alertas Importantes (Solo si hay) -->
     {% if clases_casi_llenas %}
-    <div class="row">
-        <div class="col-12">
-            <div class="alert-pilates">
-                <h5>
-                    <i class="fas fa-exclamation-triangle me-2"></i>
+        <div class="mb-6">
+            <div class="alert-pilates p-6 rounded-xl">
+                <h5 class="text-lg font-semibold flex felx-row items-center gap-1 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                    </svg>
                     ¡Atención! Clases Casi Llenas
                 </h5>
-                <p class="mb-3">Las siguientes clases tienen más del 80% de ocupación:</p>
-                <div class="row">
+                <p class="mb-4">Las siguientes clases tienen más del 80% de ocupación:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {% for item in clases_casi_llenas|slice:":4" %}
-                        <div class="col-md-3 mb-2">
-                            <div class="badge badge-pilates-secondary text-dark">
-                                {{ item.clase.get_tipo_display }} - {{ item.clase.dia }}
-                                ({{ item.porcentaje_ocupacion }}%)
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="p-3">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-semibold">{{ item.clase.get_nombre_display }}</div>
+                                        <small class="text-gray-600">
+                                            {{ item.clase.dia }} - {{ item.clase.get_direccion_corta }}
+                                        </small>
+                                    </div>
+                                    <span class="bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-sm">
+                                        {{ item.porcentaje_ocupacion }}%
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
     {% endif %}
 
     <!-- Enlaces Rápidos -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h5 class="mb-3">Enlaces Rápidos</h5>
-                    <div class="d-flex flex-wrap justify-content-center gap-2">
-                        <a href="{% url 'gravity:admin_reportes' %}" class="btn btn-outline-pilates">
-                            <i class="fas fa-chart-bar me-1"></i>
-                            Reportes
-                        </a>
-                        <a href="{% url 'gravity:home' %}" class="btn btn-outline-pilates">
-                            <i class="fas fa-home me-1"></i>
-                            Ver Sitio Web
-                        </a>
-                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary-pilates">
-                            <i class="fas fa-user me-1"></i>
-                            Mi Perfil
-                        </a>
-                        <a href="{% url 'accounts:logout' %}" class="btn btn-outline-secondary-pilates">
-                            <i class="fas fa-sign-out-alt me-1"></i>
-                            Cerrar Sesión
-                        </a>
-                    </div>
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-lg">
+            <div class="p-6 flex flex-col items-center justify-center gap-1">
+                <h5 class="text-lg font-semibold mb-4">Enlaces Rápidos</h5>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <a href="{% url 'gravity:admin_reportes' %}" class="inline-flex items-center gap-1 px-4 py-2 border-2 rounded-lg text-sm transition-all duration-300 hover:-translate-y-0.5 text-decoration-none" style="border-color: var(--principal); color: var(--principal);" onmouseover="this.style.backgroundColor='var(--principal)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--principal)';">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 mb-0.5">
+                            <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75ZM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 0 1-1.875-1.875V8.625ZM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 0 1 3 19.875v-6.75Z" />
+                        </svg>
+                        Reportes
+                    </a>
+                    <a href="{% url 'gravity:home' %}" class="inline-flex items-center gap-1 px-4 py-2 border-2 rounded-lg text-sm transition-all duration-300 hover:-translate-y-0.5 text-decoration-none" style="border-color: var(--principal); color: var(--principal);" onmouseover="this.style.backgroundColor='var(--principal)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--principal)';">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 mb-0.5">
+                            <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+                            <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+                        </svg>
+                        Ver Sitio Web
+                    </a>
+                    <a href="{% url 'accounts:profile' %}" class="inline-flex items-center gap-1 px-4 py-2 border-2 rounded-lg text-sm transition-all duration-300 hover:-translate-y-0.5 text-decoration-none" style="border-color: var(--secundario); color: var(--secundario-oscuro);" onmouseover="this.style.backgroundColor='var(--secundario)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--secundario-oscuro)';">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 mb-0.5">
+                            <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                        </svg>
+                        Mi Perfil
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="inline-flex items-center gap-1 px-4 py-2 border-2 rounded-lg text-sm transition-all duration-300 hover:-translate-y-0.5 text-decoration-none" style="border-color: var(--secundario); color: var(--secundario-oscuro);" onmouseover="this.style.backgroundColor='var(--secundario)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--secundario-oscuro)';">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 mb-0.5">
+                            <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 0 0 6 5.25v13.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5V15a.75.75 0 0 1 1.5 0v3.75a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3V5.25a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3V9A.75.75 0 0 1 15 9V5.25a1.5 1.5 0 0 0-1.5-1.5h-6Zm10.72 4.72a.75.75 0 0 1 1.06 0l3 3a.75.75 0 0 1 0 1.06l-3 3a.75.75 0 1 1-1.06-1.06l1.72-1.72H9a.75.75 0 0 1 0-1.5h10.94l-1.72-1.72a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                        </svg>
+                        Cerrar Sesión
+                    </a>
                 </div>
             </div>
         </div>
@@ -434,7 +475,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Animación simple para las estadísticas
-            const statNumbers = document.querySelectorAll('.card h2');
+            const statNumbers = document.querySelectorAll('h2');
             statNumbers.forEach(function(stat) {
                 const finalValue = parseInt(stat.textContent);
                 if (!isNaN(finalValue)) {
@@ -449,19 +490,6 @@
                         stat.textContent = currentValue;
                     }, 50);
                 }
-            });
-
-            // Efecto hover suave en botones
-            const actionButtons = document.querySelectorAll('.btn-lg');
-            actionButtons.forEach(function(button) {
-                button.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-3px)';
-                    this.style.transition = 'all 0.3s ease';
-                });
-                
-                button.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                });
             });
 
             // Actualización automática cada 5 minutos

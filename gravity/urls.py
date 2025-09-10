@@ -5,6 +5,7 @@ from .views import (
     verificar_disponibilidad, modificar_reserva,
     eliminar_reserva, buscar_reservas_usuario,
     clases_disponibles_api, clases_disponibles, detalle_reserva,
+    sedes_disponibles,
     # NUEVAS IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_clases_lista, admin_clase_crear, admin_clase_editar,
     admin_clase_eliminar, admin_clase_detalle, admin_reservas_lista,
@@ -34,6 +35,7 @@ urlpatterns = [
     path('terminos_condiciones/', TemplateView.as_view(template_name='gravity/terminos_condiciones.html'), name='terminos_condiciones'),
 
     # API endpoints para AJAX
+    path('api/sedes-disponibles/', sedes_disponibles, name='sedes_disponibles'),
     path('api/dias-disponibles/', dias_disponibles, name='dias_disponibles'),
     path('api/horarios-disponibles/', horarios_disponibles, name='horarios_disponibles'),
     path('api/verificar-disponibilidad/', verificar_disponibilidad, name='verificar_disponibilidad'),

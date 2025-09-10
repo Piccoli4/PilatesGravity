@@ -1,0 +1,1 @@
+[Pilates Gravity] Tu reserva {{ reserva.numero_reserva }} ha sido cancelada

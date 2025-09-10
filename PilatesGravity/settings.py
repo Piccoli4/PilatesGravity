@@ -164,6 +164,39 @@ EMAIL_SUBJECT_PREFIX = '[Pilates Gravity] '
 # URLs para reset de contraseña
 PASSWORD_RESET_TIMEOUT = 900  # 15 minutos en segundos
 
+# URL del sitio para emails (cambiar según tu dominio)
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
+
+# Configuración de logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'email.log',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'gravity.email_service': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# Asegurar que la carpeta de logs existe
+import os
+LOGS_DIR = BASE_DIR / 'logs'
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
+
 # Configuraciones adicionales de seguridad para producción
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True

@@ -64,9 +64,9 @@
             </div>
             
             <!-- Avatar y datos básicos -->
-            <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-24 mb-8">
                 <!-- Avatar -->
-                <div class="w-24 h-24 rounded-full flex items-center justify-center text-white text-2xl font-bold overflow-hidden border-4 border-white shadow-lg flex-shrink-0"
+                <div class="w-32 h-32 rounded-full flex items-center justify-center text-blanco text-3xl font-bold overflow-hidden border-4 border-white shadow-lg flex-shrink-0"
                      style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
                     {% if user_profile and user_profile.avatar %}
                         <img src="{{ user_profile.avatar.url }}" alt="Avatar" class="w-full h-full object-cover rounded-full">
@@ -76,7 +76,7 @@
                 </div>
                 
                 <!-- Información personal -->
-                <div class="flex-1 text-center md:text-left">
+                <div class="flex-col text-center">
                     <h4 class="text-xl font-bold mb-2" style="color: #5D768B;">
                         {% if user.first_name and user.last_name %}
                             {{ user.first_name }} {{ user.last_name }}
@@ -193,7 +193,9 @@
                     <a href="{% url 'accounts:profile' %}" 
                        class="inline-flex items-center justify-center px-8 py-4 border-2 font-semibold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-center"
                        style="color: #5D768B; border-color: #5D768B;">
-                        <span class="text-lg mr-2">↩️</span>
+                        <span class="text-lg mr-2">
+                            <img src="{% static 'icons/volver.png' %}" alt="Icono de Volver" class="w-[23px] h-auto">
+                        </span>
                         Cancelar y Volver
                     </a>
                     
@@ -202,7 +204,9 @@
                             id="deleteButton"
                             class="inline-flex items-center justify-center px-8 py-4 font-bold rounded-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-red-500/25 relative overflow-hidden group delete-button text-white"
                             style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
-                        <span class="text-lg mr-2">🗑️</span>
+                        <span class="text-lg mr-2">
+                            <img src="{% static 'icons/delete-account.png' %}" alt="Icono de delete-account" class="w-[23px] h-auto">
+                        </span>
                         <span class="delete-text">Eliminar Cuenta Permanentemente</span>
                         <!-- Efecto de brillo -->
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>

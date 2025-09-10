@@ -1,0 +1,317 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reserva Cancelada - Pilates Gravity</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
+            .email-container {
+                background-color: white;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+                background-color: #5D768B;
+                color: white;
+                text-align: center;
+                padding: 30px 20px;
+            }
+            .header-content {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                object-fit: contain;
+            }
+            .header .logo {
+                width: 120px;
+                height: 120px;
+                border-radius: 50%;
+                background-color: rgba(255, 255, 255, 0.1);
+                padding: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 32px;
+                font-weight: 600;
+            }
+            .header p {
+                margin: 5px 0 0 0;
+                opacity: 0.9;
+                font-size: 18px;
+            }
+            @media (max-width: 600px) {
+                .logo-container {
+                    flex-direction: column;
+                }
+                .header .logo {
+                    margin-right: 0;
+                    margin-bottom: 10px;
+                }
+            }
+            .content {
+                padding: 30px;
+            }
+            .alert {
+                background-color: #fff3cd;
+                border: 1px solid #ffeaa7;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 20px 0;
+            }
+            .alert-info {
+                background-color: #d1ecf1;
+                border-color: #bee5eb;
+            }
+            .class-info {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                border-left: 4px solid #5D768B;
+            }
+            .class-info h3 {
+                margin-top: 0;
+                color: #5D768B;
+            }
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid #eee;
+            }
+            .detail-row:last-child {
+                border-bottom: none;
+            }
+            .detail-label {
+                font-weight: bold;
+                color: #666;
+            }
+            .alternatives {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+            .alternatives h3 {
+                color: #155724;
+                margin-top: 0;
+            }
+            .class-option {
+                background-color: white;
+                border-radius: 6px;
+                padding: 15px;
+                margin: 10px 0;
+                border-left: 3px solid #28a745;
+            }
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                background-color: #5D768B;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                margin: 10px 5px;
+                font-weight: bold;
+                text-align: center;
+            }
+            .btn-primary {
+                background-color: #007bff;
+            }
+            .btn-success {
+                background-color: #28a745;
+            }
+            .contact-info {
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 20px 0;
+                text-align: center;
+            }
+            .footer {
+                background-color: #343a40;
+                color: white;
+                text-align: center;
+                padding: 20px;
+                font-size: 14px;
+            }
+            .footer a {
+                color: #C8B39B;
+            }
+            @media (max-width: 600px) {
+                .content {
+                    padding: 20px;
+                }
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content">
+                    <div class="logo-container">
+                        <div class="logo">
+                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100%; height: auto;">
+                        </div>
+                    </div>
+                    <div>
+                        <h1>Pilates Gravity</h1>
+                        <p>Tu reserva ha sido cancelada</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <p>Hola <strong>{{ reserva.usuario.first_name|default:reserva.usuario.username }}</strong>,</p>
+                
+                <p>Te escribimos para informarte que tu reserva ha sido cancelada por nuestro equipo administrativo.</p>
+
+                <!-- Alert sobre la cancelación -->
+                <div class="alert">
+                    <strong>⚠️ Reserva Cancelada</strong><br>
+                    Tu reserva <strong>{{ reserva.numero_reserva }}</strong> ha sido cancelada.
+                    {% if motivo %}
+                    <br><strong>Motivo:</strong> {{ motivo }}
+                    {% endif %}
+                </div>
+
+                <!-- Información de la clase cancelada -->
+                <div class="class-info">
+                    <h3>📅 Detalles de la Clase Cancelada</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Tipo de Clase:</span>
+                        <span>{{ reserva.clase.get_nombre_display }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Día y Horario:</span>
+                        <span>{{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Sede:</span>
+                        <span>{{ reserva.clase.get_direccion_display }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Número de Reserva:</span>
+                        <span>{{ reserva.numero_reserva }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Fecha de Reserva:</span>
+                        <span>{{ reserva.fecha_reserva|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+
+                {% if motivo_detalle %}
+                <div class="alert alert-info">
+                    <strong>📝 Información Adicional:</strong><br>
+                    {{ motivo_detalle }}
+                </div>
+                {% endif %}
+
+                <!-- Alternativas si están habilitadas -->
+                {% if ofrecer_reemplazo and clases_alternativas %}
+                <div class="alternatives">
+                    <h3>🔄 Te sugerimos estas alternativas</h3>
+                    <p>Para que no te quedes sin tu clase de Pilates, te recomendamos estas opciones disponibles:</p>
+                    
+                    {% for clase in clases_alternativas %}
+                    <div class="class-option">
+                        <strong>{{ clase.get_nombre_display }}</strong><br>
+                        📅 {{ clase.dia }} a las {{ clase.horario|time:"H:i" }}<br>
+                        📍 {{ clase.get_direccion_display }}<br>
+                        👥 {{ clase.cupos_disponibles }} cupos disponibles
+                    </div>
+                    {% endfor %}
+                    
+                    <div style="margin-top: 15px; text-align: center;">
+                        <a href="{{ domain_url }}{% url 'gravity:reservar_clase' %}" class="btn btn-success">
+                            Reservar Nueva Clase
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Botones de acción -->
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{{ domain_url }}{% url 'accounts:mis_reservas' %}" class="btn">
+                        Ver Mis Reservas
+                    </a>
+                    <a href="{{ domain_url }}{% url 'gravity:clases_disponibles' %}" class="btn btn-primary">
+                        Ver Clases Disponibles
+                    </a>
+                </div>
+
+                <!-- Información de disculpas -->
+                <div class="alert">
+                    <strong>💙 Nuestras disculpas</strong><br>
+                    Lamentamos cualquier inconveniente que esta cancelación pueda haberte causado. 
+                    En Pilates Gravity trabajamos constantemente para brindarte el mejor servicio posible.
+                    {% if not motivo %}
+                    Si tienes alguna pregunta sobre esta cancelación, no dudes en contactarnos.
+                    {% endif %}
+                </div>
+
+                <!-- Información de contacto -->
+                <div class="contact-info">
+                    <h3>📞 ¿Necesitas ayuda?</h3>
+                    <p>Nuestro equipo está aquí para ayudarte:</p>
+                    <p>
+                        <strong>WhatsApp:</strong> +54 342 511 4448<br>
+                        <strong>Email:</strong> pilatesgravity@gmail.com<br>
+                        <strong>Horarios:</strong> Lunes a Viernes 8:00 - 20:00
+                    </p>
+                </div>
+
+                <p>¡Te esperamos pronto en nuestro estudio!</p>
+                
+                <p>Saludos cordiales,<br>
+                <strong>El equipo de Pilates Gravity</strong></p>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer" style="background-color: #5D768B;">
+                <p>
+                    <strong>Pilates Gravity</strong><br>
+                    📍 Sede Principal: La Rioja 3044, Capital, Santa Fe<br>
+                    📍 Sede 2: 9 de julio 3698, Capital, Santa Fe<br>
+                    📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
+                </p>
+                <p>
+                    <a href="{{ domain_url }}">Visitar nuestro sitio web</a> | 
+                    <a href="{{ domain_url }}{% url 'accounts:profile' %}">Gestionar mi cuenta</a>
+                </p>
+                <p style="font-size: 12px; opacity: 0.7;">
+                    Este email se envió porque tu reserva fue cancelada por nuestro equipo administrativo.
+                </p>
+                <div>
+                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto; margin-top: 10px;">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

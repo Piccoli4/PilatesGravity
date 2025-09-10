@@ -3,29 +3,44 @@
 {% block title %}Eliminar Clase - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{% url 'gravity:admin_clases_lista' %}">Clases</a></li>
-    <li class="breadcrumb-item active">Eliminar</li>
+    <li class="flex items-center">
+        <span class="text-gray-400">/</span>
+        <a href="{% url 'gravity:admin_clases_lista' %}" class="ml-1 text-principal hover:text-principal/80 transition-colors duration-200">
+            Clases
+        </a>
+    </li>
+    <li class="flex items-center">
+        <span class="text-gray-400">/</span>
+        <span class="ml-1 text-gray-500">Eliminar</span>
+    </li>
 {% endblock %}
 
 {% block content %}
+    {% load static %}
+
     <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-danger">
+    <div class="flex flex-col mb-6">
+        <div class="w-full">
+            <div class="card border-red-500">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h2 class="mb-2 text-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
+                    <div class="flex flex-col p-3 md:flex-row md:items-center md:justify-between gap-4">
+                        <div class="flex-1">
+                            <h2 class="text-4xl mb-2 text-red-600 flex items-center gap-2">
+                                <svg class="size-10" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
                                 Confirmar Eliminación
                             </h2>
-                            <p class="text-muted mb-0">
+                            <p class="text-gris-medio mb-0">
                                 Esta acción no se puede deshacer. Revisa cuidadosamente antes de continuar.
                             </p>
                         </div>
-                        <div class="col-md-4 text-end">
-                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+                        <div class="flex justify-end">
+                            <a href="{% url 'gravity:admin_clases_lista' %}" class="flex items-center gap-1 border border-principal text-principal hover:bg-principal/50 hover:text-fondo font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                                Volver a Lista
                             </a>
                         </div>
                     </div>
@@ -35,59 +50,73 @@
     </div>
 
     <!-- Main Content -->
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+    <div class="flex flex-col lg:flex-row gap-6">
+        <div class="lg:w-2/3">
             <!-- Class Information Card -->
-            <div class="card mb-4">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-calendar-alt me-2"></i>
+            <div class="card mb-6">
+                <div class="card-header bg-red-600 text-white">
+                    <h5 class="text-xl font-medium mb-0 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="size-6 mb-0.5" fill="currentColor">
+                            <path d="M224 64C241.7 64 256 78.3 256 96L256 128L384 128L384 96C384 78.3 398.3 64 416 64C433.7 64 448 78.3 448 96L448 128L480 128C515.3 128 544 156.7 544 192L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 192C96 156.7 124.7 128 160 128L192 128L192 96C192 78.3 206.3 64 224 64zM160 304L160 336C160 344.8 167.2 352 176 352L208 352C216.8 352 224 344.8 224 336L224 304C224 295.2 216.8 288 208 288L176 288C167.2 288 160 295.2 160 304zM288 304L288 336C288 344.8 295.2 352 304 352L336 352C344.8 352 352 344.8 352 336L352 304C352 295.2 344.8 288 336 288L304 288C295.2 288 288 295.2 288 304zM432 288C423.2 288 416 295.2 416 304L416 336C416 344.8 423.2 352 432 352L464 352C472.8 352 480 344.8 480 336L480 304C480 295.2 472.8 288 464 288L432 288zM160 432L160 464C160 472.8 167.2 480 176 480L208 480C216.8 480 224 472.8 224 464L224 432C224 423.2 216.8 416 208 416L176 416C167.2 416 160 423.2 160 432zM304 416C295.2 416 288 423.2 288 432L288 464C288 472.8 295.2 480 304 480L336 480C344.8 480 352 472.8 352 464L352 432C352 423.2 344.8 416 336 416L304 416zM416 432L416 464C416 472.8 423.2 480 432 480L464 480C472.8 480 480 472.8 480 464L480 432C480 423.2 472.8 416 464 416L432 416C423.2 416 416 423.2 416 432z"/>
+                        </svg>
                         Clase a Eliminar
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="text-center mb-4">
+                    <div class="flex flex-col md:flex-row items-center justify-evenly gap-6">
+                        <div class="text-center">
+                            <div class="mb-4">
                                 {% if clase.tipo == 'Reformer' %}
-                                    <i class="fas fa-dumbbell fa-4x text-primary mb-3"></i>
+                                    <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="w-16 h-16 mx-auto mb-3">
+                                {% elif clase.tipo == 'Cadillac' %}
+                                    <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="w-16 h-16 mx-auto mb-3">
                                 {% else %}
-                                    <i class="fas fa-bed fa-4x text-info mb-3"></i>
+                                    <img src="{% static 'icons/especial.png' %}" alt="Icono de Clase Especial" class="w-16 h-16 mx-auto mb-3">
                                 {% endif %}
-                                <h4 class="mb-1">{{ clase.get_tipo_display }}</h4>
-                                <p class="text-muted mb-0">
-                                    <i class="fas fa-calendar me-1"></i>{{ clase.dia }} - 
-                                    <i class="fas fa-clock me-1"></i>{{ clase.horario|time:"H:i" }}
+                                <h4 class="text-2xl mb-1">{{ clase.get_nombre_display }}</h4>
+                                <p class="text-gris-medio mb-0 flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    {{ clase.dia }} - 
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    {{ clase.horario|time:"H:i" }}
                                 </p>
                             </div>
                         </div>
                         
-                        <div class="col-md-6">
-                            <h6 class="mb-3">Detalles de la Clase:</h6>
-                            <ul class="list-unstyled">
-                                <li class="mb-2">
-                                    <strong>ID:</strong>
-                                    <span class="badge bg-secondary ms-2">#{{ clase.id }}</span>
+                        <div class="p-2">
+                            <h6 class="text-base font-bold mb-3">Detalles de la Clase:</h6>
+                            <ul class="space-y-2">
+                                <li class="flex items-center justify-between">
+                                    <p class="font-medium">ID:</p>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-sm bg-principal text-fondo">#{{ clase.id }}</span>
                                 </li>
-                                <li class="mb-2">
-                                    <strong>Cupo Máximo:</strong>
-                                    <span class="ms-2">{{ clase.cupo_maximo }} personas</span>
+                                <li class="flex items-center justify-between">
+                                    <p class="font-medium">Sede:</p>
+                                    <span>{{ clase.get_direccion_corta }}</span>
                                 </li>
-                                <li class="mb-2">
-                                    <strong>Estado:</strong>
+                                <li class="flex items-center justify-between">
+                                    <p class="font-medium">Cupo Máximo:</p>
+                                    <span>{{ clase.cupo_maximo }} personas</span>
+                                </li>
+                                <li class="flex items-center justify-between">
+                                    <p class="font-medium">Estado:</p>
                                     {% if clase.activa %}
-                                        <span class="badge bg-success ms-2">Activa</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-green-100 text-green-800">Activa</span>
                                     {% else %}
-                                        <span class="badge bg-danger ms-2">Inactiva</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">Inactiva</span>
                                     {% endif %}
                                 </li>
-                                <li class="mb-2">
-                                    <strong>Creada:</strong>
-                                    <span class="ms-2">{{ clase.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                <li class="flex items-center justify-between">
+                                    <p class="font-medium">Creada:</p>
+                                    <span class="text-sm">{{ clase.fecha_creacion|date:"d/m/Y H:i" }}</span>
                                 </li>
-                                <li class="mb-0">
-                                    <strong>Última modificación:</strong>
-                                    <span class="ms-2">{{ clase.fecha_modificacion|date:"d/m/Y H:i" }}</span>
+                                <li class="flex items-center justify-between gap-2">
+                                    <p class="font-medium">Última modificación:</p>
+                                    <span class="text-sm">{{ clase.fecha_modificacion|date:"d/m/Y H:i" }}</span>
                                 </li>
                             </ul>
                         </div>
@@ -97,57 +126,73 @@
 
             <!-- Reservas Information -->
             {% if reservas_activas %}
-                <div class="card mb-4 border-warning">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">
-                            <i class="fas fa-exclamation-circle me-2"></i>
+                <div class="card mb-6 border-yellow-400">
+                    <div class="card-header bg-yellow-400 text-yellow-900">
+                        <h5 class="text-lg font-medium mb-0 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
                             ¡Atención! Esta clase tiene reservas activas
                         </h5>
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-warning">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>No se puede eliminar esta clase</strong> porque tiene <strong>{{ reservas_activas.count }} reserva{{ reservas_activas.count|pluralize }}</strong> activa{{ reservas_activas.count|pluralize }}.
+                    <div class="card-body p-2">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
+                            <div class="flex">
+                                <div class="">
+                                    <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-800">
+                                        <strong>No se puede eliminar esta clase</strong> porque tiene <strong>{{ reservas_activas.count }} reserva{{ reservas_activas.count|pluralize }}</strong> activa{{ reservas_activas.count|pluralize }}.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         
-                        <h6 class="mb-3">Usuarios con reservas activas:</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
+                        <h6 class="text-base font-medium mb-3">Usuarios con reservas activas:</h6>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
-                                        <th>Usuario</th>
-                                        <th>Reserva</th>
-                                        <th>Fecha de Reserva</th>
-                                        <th>Acciones</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reserva</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Reserva</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="bg-white divide-y divide-gray-200">
                                     {% for reserva in reservas_activas %}
                                         <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="user-avatar me-2" style="width: 30px; height: 30px; font-size: 0.7rem;">
-                                                        {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-8 w-8">
+                                                        <div class="h-8 w-8 rounded-full bg-principal text-white flex items-center justify-center text-sm font-medium">
+                                                            {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <div class="fw-bold" style="font-size: 0.85rem;">
+                                                    <div class="ml-3">
+                                                        <div class="text-sm font-medium text-gray-900">
                                                             {{ reserva.get_nombre_completo_usuario }}
                                                         </div>
-                                                        <small class="text-muted">{{ reserva.usuario.email }}</small>
+                                                        <div class="text-sm text-gray-500">{{ reserva.usuario.email }}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <span class="badge bg-info">{{ reserva.numero_reserva }}</span>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ reserva.numero_reserva }}</span>
                                             </td>
-                                            <td>
-                                                <small>{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}</small>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ reserva.fecha_reserva|date:"d/m/Y H:i" }}
                                             </td>
-                                            <td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
-                                                class="btn btn-sm btn-outline-danger"
+                                                class="btn btn-sm bg-red-100 hover:bg-red-200 text-red-700 border border-red-200"
                                                 title="Cancelar reserva">
-                                                    <i class="fas fa-times"></i>
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                    </svg>
                                                 </a>
                                             </td>
                                         </tr>
@@ -156,36 +201,58 @@
                             </table>
                         </div>
                         
-                        <div class="mt-3">
-                            <div class="alert alert-info">
-                                <i class="fas fa-lightbulb me-2"></i>
-                                <strong>Sugerencias:</strong>
-                                <ul class="mb-0 mt-2">
-                                    <li>Cancela todas las reservas activas antes de eliminar la clase</li>
-                                    <li>O considera desactivar la clase en lugar de eliminarla</li>
-                                    <li>Notifica a los usuarios sobre los cambios</li>
-                                </ul>
+                        <div class="mt-4">
+                            <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M9.504 1.132a1 1 0 01.992 0l1.75 1a1 1 0 11-.992 1.736L10 3.152l-1.254.716a1 1 0 11-.992-1.736l1.75-1zM5.618 4.504a1 1 0 01-.372 1.364L5.016 6l.23.132a1 1 0 11-.992 1.736L3 7.723V8a1 1 0 01-2 0V6a.996.996 0 01.52-.878l1.734-.99a1 1 0 011.364.372zm8.764 0a1 1 0 011.364-.372l1.734.99A.996.996 0 0118 6v2a1 1 0 11-2 0v-.277l-1.254.145a1 1 0 11-.992-1.736L14.984 6l-.23-.132a1 1 0 01-.372-1.364zm-7 4a1 1 0 011.364-.372L10 8.848l1.254-.716a1 1 0 11.992 1.736L11 10.723V12a1 1 0 11-2 0v-1.277l-1.246-.855a1 1 0 01-.372-1.364zM3 11a1 1 0 011 1v1.277l1.254-.855a1 1 0 01.992 1.736l-1.75 1a1 1 0 01-.992 0l-1.75-1A1 1 0 012 12v-1a1 1 0 011-1zm14 0a1 1 0 011 1v1a1 1 0 01-.504.868l-1.75 1a1 1 0 01-.992 0l-1.75-1a1 1 0 01.992-1.736L15 13.277V12a1 1 0 011-1zm-9.618 5.504a1 1 0 011.364-.372l.254.145V16a1 1 0 112 0v.277l.254-.145a1 1 0 11.992 1.736l-1.735.992a.995.995 0 01-1.022 0l-1.735-.992a1 1 0 01-.372-1.364z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h3 class="text-sm font-medium text-blue-800">Sugerencias:</h3>
+                                        <div class="mt-2 text-sm text-blue-700">
+                                            <ul class="list-disc list-inside space-y-1">
+                                                <li>Cancela todas las reservas activas antes de eliminar la clase</li>
+                                                <li>O considera desactivar la clase en lugar de eliminarla</li>
+                                                <li>Notifica a los usuarios sobre los cambios</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             {% else %}
                 <!-- Safe to Delete -->
-                <div class="card mb-4 border-success">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-check-circle me-2"></i>
+                <div class="card mb-6 border-green-400">
+                    <div class="card-header bg-green-600 text-white">
+                        <h5 class="text-lg font-medium mb-0 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
                             Clase sin reservas activas
                         </h5>
                     </div>
-                    <div class="card-body">
-                        <div class="alert alert-success">
-                            <i class="fas fa-check me-2"></i>
-                            Esta clase no tiene reservas activas y <strong>se puede eliminar de forma segura</strong>.
+                    <div class="card-body p-2">
+                        <div class="bg-green-50 border border-green-200 rounded-md p-4 mb-4">
+                            <div class="flex">
+                                <div class="">
+                                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-green-800">
+                                        Esta clase no tiene reservas activas y <strong>se puede eliminar de forma segura</strong>.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                         
                         <p class="mb-3">Al eliminar esta clase:</p>
-                        <ul class="mb-0">
+                        <ul class="list-disc list-inside space-y-1 text-sm text-gray-600">
                             <li>Se borrará permanentemente del sistema</li>
                             <li>No afectará a ningún usuario activo</li>
                             <li>Los usuarios no podrán hacer nuevas reservas para esta clase</li>
@@ -201,51 +268,69 @@
                     <div class="text-center">
                         {% if reservas_activas %}
                             <!-- Cannot delete - has active reservations -->
-                            <div class="mb-4">
-                                <i class="fas fa-ban fa-3x text-danger mb-3"></i>
-                                <h5 class="text-danger">No se puede eliminar</h5>
-                                <p class="text-muted">Esta clase tiene reservas activas</p>
+                            <div class="mb-6 pt-3">
+                                <svg class="w-12 h-12 mx-auto mb-3 text-red-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                <h5 class="text-lg font-medium text-red-600 mb-2">No se puede eliminar</h5>
+                                <p class="text-gris-medio">Esta clase tiene reservas activas</p>
                             </div>
                             
-                            <div class="d-flex gap-3 justify-content-center">
+                            <div class="flex flex-col sm:flex-row gap-3 justify-center pb-3">
                                 <a href="{% url 'gravity:admin_clases_lista' %}" 
-                                class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+                                class="flex items-center gap-1 border border-gray-400 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Volver a Lista
                                 </a>
                                 
                                 <a href="{% url 'gravity:admin_clase_editar' clase.id %}" 
-                                class="btn btn-warning">
-                                    <i class="fas fa-edit me-2"></i>Desactivar Clase
+                                class="flex items-center gap-1 border border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                                    </svg>
+                                    Desactivar Clase
                                 </a>
                                 
                                 <a href="{% url 'gravity:admin_reservas_lista' %}?tipo_clase={{ clase.tipo }}&dia={{ clase.dia }}" 
-                                class="btn btn-info">
-                                    <i class="fas fa-bookmark me-2"></i>Ver Reservas
+                                class="flex items-center gap-1 border border-principal text-principal/80 hover:bg-principal hover:text-fondo font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                    </svg>
+                                    Ver Reservas
                                 </a>
                             </div>
                         {% else %}
                             <!-- Can delete - no active reservations -->
-                            <div class="mb-4">
-                                <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
-                                <h5 class="text-danger">¿Estás seguro?</h5>
-                                <p class="text-muted">
+                            <div class="mb-6">
+                                <svg class="w-12 h-12 mx-auto mb-3 text-red-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                <h5 class="text-lg font-medium text-red-600 mb-2">¿Estás seguro?</h5>
+                                <p class="text-gris-medio">
                                     Esta acción eliminará permanentemente la clase<br>
-                                    <strong>{{ clase.get_tipo_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}</strong>
+                                    <strong>{{ clase.get_nombre_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}</strong>
                                 </p>
                             </div>
                             
-                            <form method="post" id="deleteForm" class="d-inline">
+                            <form method="post" id="deleteForm" class="inline-block">
                                 {% csrf_token %}
-                                <div class="d-flex gap-3 justify-content-center">
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center pb-3">
                                     <a href="{% url 'gravity:admin_clases_lista' %}" 
-                                    class="btn btn-outline-secondary">
-                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    class="flex items-center gap-1 border border-gray-400 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Cancelar
                                     </a>
                                     
                                     <button type="submit" 
-                                            class="btn btn-danger" 
+                                            class="flex items-center gap-1 bg-red-600 text-white hover:bg-red-700 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50" 
                                             id="confirmDeleteBtn">
-                                        <i class="fas fa-trash-alt me-2"></i>
+                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                        </svg>
                                         <span id="deleteText">Eliminar Definitivamente</span>
                                     </button>
                                 </div>
@@ -257,35 +342,54 @@
         </div>
 
         <!-- Information Sidebar -->
-        <div class="col-lg-4">
+        <div class="lg:w-1/3">
             <!-- Safety Tips -->
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <h6 class="mb-0">
-                        <i class="fas fa-shield-alt me-2"></i>Consejos de Seguridad
+            <div class="card mb-6">
+                <div class="card-header bg-blue-600 text-blanco">
+                    <h6 class="text-base font-medium mb-0 flex items-center gap-2">
+                        <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        Consejos de Seguridad
                     </h6>
                 </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-3">
-                            <i class="fas fa-check text-success me-2"></i>
-                            <strong>Verificar:</strong>
-                            <small class="d-block text-muted">Asegúrate de que es la clase correcta</small>
+                <div class="card-body p-2">
+                    <ul class="space-y-3">
+                        <li class="flex flex-col items-start">
+                            <div class="flex items-center gap-1">
+                                <svg class="size-5 text-green-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <strong class="text-sm font-medium">Verificar:</strong>
+                            </div>
+                            <div class="text-sm text-gris-medio mt-1">Asegúrate de que es la clase correcta</div>
                         </li>
-                        <li class="mb-3">
-                            <i class="fas fa-users text-warning me-2"></i>
-                            <strong>Reservas:</strong>
-                            <small class="d-block text-muted">Revisa si hay usuarios afectados</small>
+                        <li class="flex flex-col items-start">
+                            <div class="flex items-center gap-1">
+                                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                                </svg>
+                                <strong class="text-sm font-medium">Reservas:</strong>
+                            </div>
+                            <div class="text-sm text-gris-medio mt-1">Revisa si hay usuarios afectados</div>
                         </li>
-                        <li class="mb-3">
-                            <i class="fas fa-history text-info me-2"></i>
-                            <strong>Alternativa:</strong>
-                            <small class="d-block text-muted">Considera desactivar en lugar de eliminar</small>
+                        <li class="flex flex-col items-start">
+                            <div class="flex items-center gap-1">
+                                <svg class="size-5 text-blue-500" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M320 128C426 128 512 214 512 320C512 426 426 512 320 512C254.8 512 197.1 479.5 162.4 429.7C152.3 415.2 132.3 411.7 117.8 421.8C103.3 431.9 99.8 451.9 109.9 466.4C156.1 532.6 233 576 320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C234.3 64 158.5 106.1 112 170.7L112 144C112 126.3 97.7 112 80 112C62.3 112 48 126.3 48 144L48 256C48 273.7 62.3 288 80 288L104.6 288C105.1 288 105.6 288 106.1 288L192.1 288C209.8 288 224.1 273.7 224.1 256C224.1 238.3 209.8 224 192.1 224L153.8 224C186.9 166.6 249 128 320 128zM344 216C344 202.7 333.3 192 320 192C306.7 192 296 202.7 296 216L296 320C296 326.4 298.5 332.5 303 337L375 409C384.4 418.4 399.6 418.4 408.9 409C418.2 399.6 418.3 384.4 408.9 375.1L343.9 310.1L343.9 216z"/>
+                                </svg>
+                                <strong class="text-sm font-medium">Alternativa:</strong>
+                            </div>
+                            <div class="text-sm text-gris-medio mt-1">Considera desactivar en lugar de eliminar</div>
                         </li>
-                        <li class="mb-0">
-                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-                            <strong>Permanente:</strong>
-                            <small class="d-block text-muted">Esta acción no se puede deshacer</small>
+                        <li class="flex flex-col items-start">
+                            <div class="flex items-center gap-1">
+                                <svg class="size-5 text-red-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                <strong class="text-sm font-medium">Permanente:</strong>
+                            </div>
+                            <div class="text-sm text-gris-medio mt-1">Esta acción no se puede deshacer</div>
                         </li>
                     </ul>
                 </div>
@@ -293,32 +397,48 @@
 
             <!-- Alternative Actions -->
             <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0">
-                        <i class="fas fa-tools me-2"></i>Acciones Alternativas
+                <div class="card-header bg-gray-600 text-white">
+                    <h6 class="text-base font-medium mb-0 flex items-center gap-2">
+                        <svg class="size-5" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M102.8 57.3C108.2 51.9 116.6 51.1 123 55.3L241.9 134.5C250.8 140.4 256.1 150.4 256.1 161.1L256.1 210.7L346.9 301.5C380.2 286.5 420.8 292.6 448.1 320L574.2 446.1C592.9 464.8 592.9 495.2 574.2 514L514.1 574.1C495.4 592.8 465 592.8 446.2 574.1L320.1 448C292.7 420.6 286.6 380.1 301.6 346.8L210.8 256L161.2 256C150.5 256 140.5 250.7 134.6 241.8L55.4 122.9C51.2 116.6 52 108.1 57.4 102.7L102.8 57.3zM247.8 360.8C241.5 397.7 250.1 436.7 274 468L179.1 563C151 591.1 105.4 591.1 77.3 563C49.2 534.9 49.2 489.3 77.3 461.2L212.7 325.7L247.9 360.8zM416.1 64C436.2 64 455.5 67.7 473.2 74.5C483.2 78.3 485 91 477.5 98.6L420.8 155.3C417.8 158.3 416.1 162.4 416.1 166.6L416.1 208C416.1 216.8 423.3 224 432.1 224L473.5 224C477.7 224 481.8 222.3 484.8 219.3L541.5 162.6C549.1 155.1 561.8 156.9 565.6 166.9C572.4 184.6 576.1 203.9 576.1 224C576.1 267.2 558.9 306.3 531.1 335.1L482 286C448.9 253 403.5 240.3 360.9 247.6L304.1 190.8L304.1 161.1L303.9 156.1C303.1 143.7 299.5 131.8 293.4 121.2C322.8 86.2 366.8 64 416.1 63.9z"/>
+                        </svg>
+                        Acciones Alternativas
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
+                    <div class="space-y-2 p-2">
                         <a href="{% url 'gravity:admin_clase_editar' clase.id %}" 
-                        class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-edit me-2"></i>Editar Clase
+                        class="flex items-center justify-center gap-1 border border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                            </svg>
+                            Editar Clase
                         </a>
                         
                         <a href="{% url 'gravity:admin_clase_detalle' clase.id %}" 
-                        class="btn btn-outline-info btn-sm">
-                            <i class="fas fa-eye me-2"></i>Ver Detalle
+                        class="flex items-center justify-center gap-1 border border-cyan-500 text-cyan-600 hover:bg-cyan-500 hover:text-white font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-opacity-50">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            Ver Detalle
                         </a>
                         
                         {% if clase.activa %}
-                            <button class="btn btn-outline-warning btn-sm" 
+                            <button class="w-full flex items-center justify-center gap-1 border border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50" 
                                     onclick="toggleClaseStatus(false)">
-                                <i class="fas fa-pause me-2"></i>Desactivar
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5 0a1 1 0 012 0v4a1 1 0 11-2 0V8z" clip-rule="evenodd"></path>
+                                </svg>
+                                Desactivar
                             </button>
                         {% else %}
-                            <button class="btn btn-outline-success btn-sm" 
+                            <button class="w-full flex items-center justify-center gap-1 border border-green-500 text-green-600 hover:bg-green-500 hover:text-white font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50" 
                                     onclick="toggleClaseStatus(true)">
-                                <i class="fas fa-play me-2"></i>Activar
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                                </svg>
+                                Activar
                             </button>
                         {% endif %}
                     </div>
@@ -336,20 +456,20 @@
             const deleteText = document.getElementById('deleteText');
             
             if (deleteForm && confirmDeleteBtn) {
-                // Add double confirmation for delete
+                // Agregar doble confirmación para eliminar
                 deleteForm.addEventListener('submit', function(e) {
                     e.preventDefault();
                     
-                    const className = '{{ clase.get_tipo_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
+                    const className = '{{ clase.get_nombre_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
                     const confirmMessage = '¿Estás completamente seguro de que quieres eliminar la clase "' + className + '"?\n\nEsta acción NO se puede deshacer.';
                     
                     if (confirm(confirmMessage)) {
-                        // Show loading state
+                        // Mostrar estado de carga
                         deleteText.textContent = 'Eliminando...';
                         confirmDeleteBtn.disabled = true;
-                        confirmDeleteBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>' + deleteText.textContent;
+                        confirmDeleteBtn.innerHTML = '<div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>' + deleteText.textContent;
                         
-                        // Submit form after a short delay to show loading state
+                        // Enviar el formulario después de un breve retraso para mostrar el estado de carga
                         setTimeout(function() {
                             deleteForm.submit();
                         }, 500);
@@ -357,7 +477,7 @@
                 });
             }
             
-            // Add hover effects to action buttons
+            // Agregar efectos hover a los botones de acción
             const actionButtons = document.querySelectorAll('.btn');
             actionButtons.forEach(function(button) {
                 button.addEventListener('mouseenter', function() {
@@ -371,27 +491,29 @@
             });
         });
 
-        // Function to toggle class status (activate/deactivate)
+        // Función para alternar el estado de la clase (activar/desactivar)
         function toggleClaseStatus(newStatus) {
             const action = newStatus ? 'activar' : 'desactivar';
-            const className = '{{ clase.get_tipo_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
+            const className = '{{ clase.get_nombre_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
             
             if (confirm('¿Estás seguro de que quieres ' + action + ' la clase "' + className + '"?')) {
-                // Create a form to submit the status change
+                // Crear un formulario para enviar el cambio de estado
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '{% url "gravity:admin_clase_editar" clase.id %}';
                 
-                // Add CSRF token
+                // Agregar CSRF token
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = 'csrfmiddlewaretoken';
                 csrfInput.value = '{{ csrf_token }}';
                 form.appendChild(csrfInput);
                 
-                // Add form fields with current values
+                // Agregar campos del formulario con los valores actuales
                 const fields = {
                     'tipo': '{{ clase.tipo }}',
+                    'nombre_personalizado': '{{ clase.nombre_personalizado|default:"" }}',
+                    'direccion': '{{ clase.direccion }}',
                     'dia': '{{ clase.dia }}',
                     'horario': '{{ clase.horario|time:"H:i" }}',
                     'cupo_maximo': '{{ clase.cupo_maximo }}',
@@ -400,7 +522,8 @@
                 
                 for (const [name, value] of Object.entries(fields)) {
                     if (name === 'activa' && !newStatus) {
-                        continue; // Don't add checkbox input if we want to deactivate
+                        // No agregar el input de checkbox si queremos desactivar
+                        continue;
                     }
                     const input = document.createElement('input');
                     input.type = name === 'activa' ? 'checkbox' : 'hidden';

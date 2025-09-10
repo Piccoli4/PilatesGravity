@@ -3,47 +3,58 @@
 {% block title %}Gestión de Clases - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item active">Clases</li>
+    <li class="flex items-center">
+        <span class="mx-2 text-gray-400">/</span>
+        <span class="ml-1 text-gray-500">Clases</span>
+    </li>
 {% endblock %}
 
 {% block content %}
-<!-- Header Section -->
-<div class="row mb-4">
-    <div class="col-12">
+    {% load static %}
+    <!-- Header Section -->
+    <div class="mb-6">
         <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h2 class="mb-2">
-                            <i class="fas fa-calendar-alt me-2"></i>
+            <div class="p-6 card-body">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <h2 class="text-2xl font-bold text-principal mb-2 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mb-1">
+                                <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+                                <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
+                            </svg>
                             Gestión de Clases
                         </h2>
-                        <p class="text-muted mb-0">Administra todas las clases del estudio</p>
+                        <p class="text-gray-600 mb-0">Administra todas las clases del estudio</p>
                     </div>
-                    <div class="col-md-6 text-end">
-                        <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Nueva Clase
+                    <div>
+                        <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-primary inline-flex items-center px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal/90 transition-colors duration-200">
+                            <img src="{% static 'icons/plus.png' %}" alt="Icono de más" class="w-4 h-4 mr-2">
+                            Nueva Clase
                         </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Filters Section -->
-<div class="row mb-4">
-    <div class="col-12">
+    <!-- Filters Section -->
+    <div class="mb-6">
         <div class="card">
             <div class="card-header">
-                <h5><i class="fas fa-filter me-2"></i>Filtros</h5>
+                <h5 class="text-xl font-semibold text-blanco flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" />
+                    </svg>
+                    Filtros
+                </h5>
             </div>
             <div class="card-body">
                 <form method="get" id="filterForm">
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="tipo" class="form-label">Tipo de Clase</label>
-                            <select name="tipo" id="tipo" class="form-select">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-3 items-center justify-center">
+                        <!-- Tipo de Clase -->
+                        <div>
+                            <label for="tipo" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Clase</label>
+                            <select name="tipo" id="tipo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200">
                                 <option value="">Todos los tipos</option>
                                 {% for value, label in tipos_clases %}
                                     <option value="{{ value }}" {% if tipo_filtro == value %}selected{% endif %}>
@@ -53,9 +64,10 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-3 mb-3">
-                            <label for="dia" class="form-label">Día de la Semana</label>
-                            <select name="dia" id="dia" class="form-select">
+                        <!-- Día de la Semana -->
+                        <div>
+                            <label for="dia" class="block text-sm font-medium text-gray-700 mb-1">Día de la Semana</label>
+                            <select name="dia" id="dia" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200">
                                 <option value="">Todos los días</option>
                                 {% for value, label in dias_semana %}
                                     <option value="{{ value }}" {% if dia_filtro == value %}selected{% endif %}>
@@ -64,10 +76,24 @@
                                 {% endfor %}
                             </select>
                         </div>
+
+                        <!-- Sede -->
+                        <div>
+                            <label for="sede" class="block text-sm font-medium text-gray-700 mb-1">Sede</label>
+                            <select name="sede" id="sede" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200">
+                                <option value="">Todas las sedes</option>
+                                {% for value, label in sedes %}
+                                    <option value="{{ value }}" {% if sede_filtro == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         
-                        <div class="col-md-3 mb-3">
-                            <label for="estado" class="form-label">Estado</label>
-                            <select name="estado" id="estado" class="form-select">
+                        <!-- Estado -->
+                        <div>
+                            <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select name="estado" id="estado" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200">
                                 <option value="">Todos los estados</option>
                                 <option value="activas" {% if estado_filtro == 'activas' %}selected{% endif %}>
                                     Activas
@@ -77,340 +103,407 @@
                                 </option>
                             </select>
                         </div>
-                        
-                        <div class="col-md-3 mb-3 d-flex align-items-end">
-                            <div class="d-grid gap-2 w-100">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search me-2"></i>Filtrar
-                                </button>
-                                <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times me-2"></i>Limpiar
-                                </a>
-                            </div>
+
+                        <!-- Botones -->
+                        <div class="flex flex-col justify-center gap-3 md:col-span-2 lg:col-span-1">
+                            <!-- Botón Filtrar -->
+                            <button type="submit" class="btn btn-primary text-blanco w-full flex flex-row items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                    <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" clip-rule="evenodd" />
+                                </svg>
+                                Filtrar
+                            </button>
+
+                            <!-- Botón Limpiar -->
+                            <a href="{% url 'gravity:admin_clases_lista' %}" class="btn w-full flex flex-row items-center justify-center gap-2 border border-gray-400 text-gray-700 hover:bg-gray-200 hover:text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                    <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                </svg>
+                                Limpiar
+                            </a>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Results Section -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>
-                    <i class="fas fa-list me-2"></i>
-                    Lista de Clases 
-                    {% if page_obj.paginator.count %}
-                        <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
-                    {% endif %}
-                </h5>
-                
-                <!-- Quick Stats -->
-                <div class="d-flex gap-3">
-                    {% if page_obj.paginator.count %}
-                        <small class="text-muted">
-                            <i class="fas fa-eye me-1"></i>
-                            Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
-                        </small>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="card-body">
-                {% if page_obj.object_list %}
-                    <!-- Desktop Table -->
-                    <div class="table-responsive d-none d-md-block">
-                        <table class="table table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Tipo</th>
-                                    <th>Día y Horario</th>
-                                    <th>Cupos</th>
-                                    <th>Ocupación</th>
-                                    <th>Estado</th>
-                                    <th>Reservas</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in page_obj.object_list %}
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-3">
-                                                    {% if item.clase.tipo == 'Reformer' %}
-                                                        <i class="fas fa-dumbbell fa-lg text-primary"></i>
-                                                    {% else %}
-                                                        <i class="fas fa-bed fa-lg text-info"></i>
-                                                    {% endif %}
-                                                </div>
-                                                <div>
-                                                    <div class="fw-bold">{{ item.clase.get_tipo_display }}</div>
-                                                    <small class="text-muted">ID: {{ item.clase.id }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                <div class="fw-bold">{{ item.clase.dia }}</div>
-                                                <small class="text-muted">{{ item.clase.horario|time:"H:i" }}</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="text-center">
-                                                <span class="fw-bold">{{ item.cupos_disponibles }}</span>/{{ item.clase.cupo_maximo }}
-                                                <br>
-                                                <small class="text-muted">disponibles</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress me-2" style="width: 80px; height: 8px;">
-                                                    <div class="progress-bar 
-                                                        {% if item.porcentaje_ocupacion >= 90 %}bg-danger
-                                                        {% elif item.porcentaje_ocupacion >= 75 %}bg-warning
-                                                        {% elif item.porcentaje_ocupacion >= 50 %}bg-info
-                                                        {% else %}bg-success{% endif %}"
-                                                        data-width="{{ item.porcentaje_ocupacion|default:0 }}">
-                                                    </div>
-                                                </div>
-                                                <small>{{ item.porcentaje_ocupacion|default:0 }}%</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {% if item.clase.activa %}
-                                                <span class="badge bg-success">
-                                                    <i class="fas fa-check me-1"></i>Activa
-                                                </span>
-                                            {% else %}
-                                                <span class="badge bg-danger">
-                                                    <i class="fas fa-times me-1"></i>Inactiva
-                                                </span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-info">
-                                                {{ item.total_reservas }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex gap-1 justify-content-center">
-                                                <a href="{% url 'gravity:admin_clase_detalle' item.clase.id %}" 
-                                                   class="btn btn-sm btn-outline-info" 
-                                                   title="Ver detalle">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{% url 'gravity:admin_clase_editar' item.clase.id %}" 
-                                                   class="btn btn-sm btn-outline-primary" 
-                                                   title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                {% if item.puede_eliminarse %}
-                                                    <a href="{% url 'gravity:admin_clase_eliminar' item.clase.id %}" 
-                                                       class="btn btn-sm btn-outline-danger" 
-                                                       title="Eliminar"
-                                                       onclick="return confirm('¿Estás seguro de que quieres eliminar esta clase?')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
-                                                {% else %}
-                                                    <button class="btn btn-sm btn-outline-secondary" 
-                                                            title="No se puede eliminar (tiene reservas activas)" 
-                                                            disabled>
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Mobile Cards -->
-                    <div class="d-md-none">
-                        {% for item in page_obj.object_list %}
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-3 text-center">
-                                            {% if item.clase.tipo == 'Reformer' %}
-                                                <i class="fas fa-dumbbell fa-2x text-primary mb-2"></i>
-                                            {% else %}
-                                                <i class="fas fa-bed fa-2x text-info mb-2"></i>
-                                            {% endif %}
-                                            <br>
-                                            {% if item.clase.activa %}
-                                                <span class="badge bg-success">Activa</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Inactiva</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="col-9">
-                                            <h6 class="card-title mb-1">{{ item.clase.get_tipo_display }}</h6>
-                                            <p class="card-text mb-2">
-                                                <small class="text-muted">
-                                                    <i class="fas fa-calendar me-1"></i>{{ item.clase.dia }} - 
-                                                    <i class="fas fa-clock me-1"></i>{{ item.clase.horario|time:"H:i" }}
-                                                </small>
-                                            </p>
-                                            
-                                            <div class="row text-center mb-2">
-                                                <div class="col-4">
-                                                    <small class="text-muted">Cupos</small><br>
-                                                    <strong>{{ item.cupos_disponibles }}/{{ item.clase.cupo_maximo }}</strong>
-                                                </div>
-                                                <div class="col-4">
-                                                    <small class="text-muted">Ocupación</small><br>
-                                                    <strong>{{ item.porcentaje_ocupacion|default:0 }}%</strong>
-                                                </div>
-                                                <div class="col-4">
-                                                    <small class="text-muted">Reservas</small><br>
-                                                    <strong>{{ item.total_reservas }}</strong>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="d-flex gap-1">
-                                                <a href="{% url 'gravity:admin_clase_detalle' item.clase.id %}" 
-                                                   class="btn btn-sm btn-outline-info">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{% url 'gravity:admin_clase_editar' item.clase.id %}" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                {% if item.puede_eliminarse %}
-                                                    <a href="{% url 'gravity:admin_clase_eliminar' item.clase.id %}" 
-                                                       class="btn btn-sm btn-outline-danger"
-                                                       onclick="return confirm('¿Estás seguro de que quieres eliminar esta clase?')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Pagination -->
-                    {% if page_obj.has_other_pages %}
-                        <nav aria-label="Paginación de clases" class="mt-4">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=1{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-double-left"></i>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-left"></i>
-                                        </a>
-                                    </li>
-                                {% endif %}
-
-                                {% for num in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == num %}
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ num }}</span>
-                                        </li>
-                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ num }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
-                                                {{ num }}
-                                            </a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-right"></i>
-                                        </a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}">
-                                            <i class="fas fa-angle-double-right"></i>
-                                        </a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    {% endif %}
-
-                {% else %}
-                    <!-- Empty State -->
-                    <div class="text-center py-5">
-                        <i class="fas fa-calendar-times fa-4x text-muted mb-4"></i>
-                        <h4 class="text-muted mb-3">No se encontraron clases</h4>
-                        {% if tipo_filtro or dia_filtro or estado_filtro %}
-                            <p class="text-muted mb-4">No hay clases que coincidan con los filtros seleccionados.</p>
-                            <div class="d-flex gap-2 justify-content-center">
-                                <a href="{% url 'gravity:admin_clases_lista' %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times me-2"></i>Limpiar Filtros
-                                </a>
-                                <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-primary">
-                                    <i class="fas fa-plus me-2"></i>Crear Nueva Clase
-                                </a>
-                            </div>
-                        {% else %}
-                            <p class="text-muted mb-4">Aún no has creado ninguna clase en el sistema.</p>
-                            <a href="{% url 'gravity:admin_clase_crear' %}" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Crear Primera Clase
-                            </a>
-                        {% endif %}
-                    </div>
+    <!-- Results Section -->
+    <div class="card">
+        <div class="card-header flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <h5 class="text-lg font-semibold text-vlanco flex items-center gap-1 mb-2 sm:mb-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                    <path fill-rule="evenodd" d="M2.625 6.75a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Zm4.875 0A.75.75 0 0 1 8.25 6h12a.75.75 0 0 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM2.625 12a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0ZM7.5 12a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 0 1.5h-12A.75.75 0 0 1 7.5 12Zm-4.875 5.25a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Zm4.875 0a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 0 1.5h-12a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
+                </svg>
+                Lista de Clases 
+                {% if page_obj.paginator.count %}
+                    <span class="ml-2 px-2 py-1 bg-gray-600 text-gray-200 text-sm rounded-lg">{{ page_obj.paginator.count }} total</span>
+                {% endif %}
+            </h5>
+            
+            <!-- Quick Stats -->
+            <div class="flex gap-3">
+                {% if page_obj.paginator.count %}
+                    <small class="text-gray-700 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                            <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
+                        </svg>
+                        Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                    </small>
                 {% endif %}
             </div>
         </div>
+        
+        <div class="card-body">
+            {% if page_obj.object_list %}
+                <!-- Desktop Table -->
+                <div class="hidden md:block overflow-x-auto m-2">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-300 bg-gray-200 rounded-t-lg">
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700 rounded-tl-lg">Tipo</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Día y Horario</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Sede</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Cupos</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Ocupación</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Estado</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Reservas</th>
+                                <th class="text-center py-3 px-2 font-semibold text-gray-700 rounded-tr-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in page_obj.object_list %}
+                                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
+                                    <td class="py-4 px-1">
+                                        <div class="flex items-center">
+                                            <div class="mr-3">
+                                                {% if item.clase.tipo == 'Reformer' %}
+                                                    <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="w-8 h-8">
+                                                {% elif item.clase.tipo == 'Cadillac' %}
+                                                    <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="w-8 h-8">
+                                                {% else %}
+                                                    <img src="{% static 'icons/especial.png' %}" alt="Icono de clase especial" class="w-8 h-8">
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold text-gray-900">
+                                                    {{ item.clase.get_nombre_display }}
+                                                </div>
+                                                <div class="text-sm text-gray-500">ID: {{ item.clase.id }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-1">
+                                        <div>
+                                            <div class="font-semibold text-gray-900">{{ item.clase.dia }}</div>
+                                            <div class="text-sm text-gray-500">{{ item.clase.horario|time:"H:i" }}</div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-1">
+                                        <div class="text-sm text-gray-600">
+                                            {{ item.clase.get_direccion_corta }}
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-1">
+                                        <div class="text-center">
+                                            <span class="font-bold text-gray-900">{{ item.cupos_disponibles }}</span><span class="text-gray-700">/{{ item.clase.cupo_maximo }}</span>
+                                            <br>
+                                            <small class="text-gray-500">disponibles</small>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-1">
+                                        <div class="flex items-center">
+                                            <div class="w-20 bg-gray-200 rounded-full h-2 mr-2 overflow-hidden">
+                                                <div class="h-2 rounded-full transition-all duration-1000 ease-in-out
+                                                    {% if item.porcentaje_ocupacion >= 80 %}bg-red-500
+                                                    {% elif item.porcentaje_ocupacion >= 50 %}bg-yellow-500
+                                                    {% else %}bg-green-500{% endif %}"
+                                                    data-width="{{ item.porcentaje_ocupacion|default:0 }}"
+                                                    style="width: 0%;">
+                                                </div>
+                                            </div>
+                                            <small class="text-gray-600">{{ item.porcentaje_ocupacion|default:0 }}%</small>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-1">
+                                        {% if item.clase.activa %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-700 text-blanco">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                                    <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
+                                                </svg>
+                                                Activa
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-sm font-medium bg-red-700 text-blanco">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-4">
+                                                    <path d="M183.1 137.4C170.6 124.9 150.3 124.9 137.8 137.4C125.3 149.9 125.3 170.2 137.8 182.7L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7L320.5 365.3L457.9 502.6C470.4 515.1 490.7 515.1 503.2 502.6C515.7 490.1 515.7 469.8 503.2 457.3L365.8 320L503.1 182.6C515.6 170.1 515.6 149.8 503.1 137.3C490.6 124.8 470.3 124.8 457.8 137.3L320.5 274.7L183.1 137.4z"/>
+                                                </svg>
+                                                Inactiva
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-4 px-1 text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-principal text-fondo">
+                                            {{ item.total_reservas }}
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-1">
+                                        <div class="flex gap-1 justify-center">
+                                            <a href="{% url 'gravity:admin_clase_detalle' item.clase.id %}" 
+                                            class="inline-flex items-center justify-center w-8 h-8 text-sm border border-principal-600 text-principal rounded-lg hover:bg-blue-50 transition-colors duration-200" 
+                                            title="Ver detalle">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                                                    <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                            <a href="{% url 'gravity:admin_clase_editar' item.clase.id %}" 
+                                            class="inline-flex items-center justify-center w-8 h-8 text-sm border border-green-300 text-green-600 rounded-lg hover:bg-green-50 transition-colors duration-200" 
+                                            title="Editar">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                                    <path d="M432.5 82.3L382.4 132.4L507.7 257.7L557.8 207.6C579.7 185.7 579.7 150.3 557.8 128.4L511.7 82.3C489.8 60.4 454.4 60.4 432.5 82.3zM343.3 161.2L342.8 161.3L198.7 204.5C178.8 210.5 163 225.7 156.4 245.5L67.8 509.8C64.9 518.5 65.9 528 70.3 535.8L225.7 380.4C224.6 376.4 224.1 372.3 224.1 368C224.1 341.5 245.6 320 272.1 320C298.6 320 320.1 341.5 320.1 368C320.1 394.5 298.6 416 272.1 416C267.8 416 263.6 415.4 259.7 414.4L104.3 569.7C112.1 574.1 121.5 575.1 130.3 572.2L394.6 483.6C414.3 477 429.6 461.2 435.6 441.3L478.8 297.2L478.9 296.7L343.4 161.2z"/>
+                                                </svg>
+                                            </a>
+                                            {% if item.puede_eliminarse %}
+                                                <a href="{% url 'gravity:admin_clase_eliminar' item.clase.id %}" 
+                                                class="inline-flex items-center justify-center w-8 h-8 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200" 
+                                                title="Eliminar"
+                                                onclick="return confirm('¿Estás seguro de que quieres eliminar esta clase?')">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                                        <path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/>
+                                                    </svg>
+                                                </a>
+                                            {% else %}
+                                                <button class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-400 rounded-lg cursor-not-allowed" 
+                                                        title="No se puede eliminar (tiene reservas activas)" 
+                                                        disabled>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                                        <path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/>
+                                                    </svg>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-4">
+                    {% for item in page_obj.object_list %}
+                        <div class="bg-blanco rounded-b-lg border border-gray-200 p-4 shadow-sm">
+                            <div class="flex card-body">
+                                <div class="w-16 flex flex-col items-center justify-evenly gap-1">
+                                    {% if item.clase.tipo == 'Reformer' %}
+                                        <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="w-8 h-8">
+                                    {% elif item.clase.tipo == 'Cadillac' %}
+                                        <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="w-8 h-8">
+                                    {% else %}
+                                        <img src="{% static 'icons/especial.png' %}" alt="Icono de clase especial" class="w-8 h-8">
+                                    {% endif %}
+                                    <br>
+                                    {% if item.clase.activa %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-700 text-blanco">Activa</span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-700 text-blanco">Inactiva</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1 ml-4">
+                                    <h6 class="font-semibold text-gray-900 mb-1">{{ item.clase.get_nombre_display }}</h6>
+                                    <p class="text-sm text-gray-500 mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-4 inline-block mr-0.5 mb-1">
+                                            <path d="M224 64C206.3 64 192 78.3 192 96L192 128L160 128C124.7 128 96 156.7 96 192L96 240L544 240L544 192C544 156.7 515.3 128 480 128L448 128L448 96C448 78.3 433.7 64 416 64C398.3 64 384 78.3 384 96L384 128L256 128L256 96C256 78.3 241.7 64 224 64zM96 288L96 480C96 515.3 124.7 544 160 544L480 544C515.3 544 544 515.3 544 480L544 288L96 288z"/>
+                                        </svg>
+                                        {{ item.clase.dia }} - 
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-4 inline-block mr-0.5 mb-0.5">
+                                            <path d="M320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64zM296 184L296 320C296 328 300 335.5 306.7 340L402.7 404C413.7 411.4 428.6 408.4 436 397.3C443.4 386.2 440.4 371.4 429.3 364L344 307.2L344 184C344 170.7 333.3 160 320 160C306.7 160 296 170.7 296 184z"/>
+                                        </svg>
+                                        {{ item.clase.horario|time:"H:i" }}
+                                        <br>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-4 inline-block mr-0.5 mb-1">
+                                            <path d="M352 348.4C416.1 333.9 464 276.5 464 208C464 128.5 399.5 64 320 64C240.5 64 176 128.5 176 208C176 276.5 223.9 333.9 288 348.4L288 544C288 561.7 302.3 576 320 576C337.7 576 352 561.7 352 544L352 348.4zM328 160C297.1 160 272 185.1 272 216C272 229.3 261.3 240 248 240C234.7 240 224 229.3 224 216C224 158.6 270.6 112 328 112C341.3 112 352 122.7 352 136C352 149.3 341.3 160 328 160z"/>
+                                        </svg>
+                                        {{ item.clase.get_direccion_corta }}
+                                    </p>
+                                    
+                                    <div class="grid grid-cols-3 gap-4 text-center mb-3">
+                                        <div>
+                                            <div class="text-xs text-gray-500">Cupos</div>
+                                            <div class="font-bold text-gray-900">{{ item.cupos_disponibles }}/{{ item.clase.cupo_maximo }}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-500">Ocupación</div>
+                                            <div class="font-bold text-gray-900">{{ item.porcentaje_ocupacion|default:0 }}%</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-500">Reservas</div>
+                                            <div class="font-bold text-gray-900">{{ item.total_reservas }}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        <a href="{% url 'gravity:admin_clase_detalle' item.clase.id %}" 
+                                        class="inline-flex items-center justify-center w-8 h-8 text-sm border border-principal text-principal rounded-lg hover:bg-blue-50 transition-colors duration-200">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                                <path d="M320 96C239.2 96 174.5 132.8 127.4 176.6C80.6 220.1 49.3 272 34.4 307.7C31.1 315.6 31.1 324.4 34.4 332.3C49.3 368 80.6 420 127.4 463.4C174.5 507.1 239.2 544 320 544C400.8 544 465.5 507.2 512.6 463.4C559.4 419.9 590.7 368 605.6 332.3C608.9 324.4 608.9 315.6 605.6 307.7C590.7 272 559.4 220 512.6 176.6C465.5 132.9 400.8 96 320 96zM176 320C176 240.5 240.5 176 320 176C399.5 176 464 240.5 464 320C464 399.5 399.5 464 320 464C240.5 464 176 399.5 176 320zM320 256C320 291.3 291.3 320 256 320C244.5 320 233.7 317 224.3 311.6C223.3 322.5 224.2 333.7 227.2 344.8C240.9 396 293.6 426.4 344.8 412.7C396 399 426.4 346.3 412.7 295.1C400.5 249.4 357.2 220.3 311.6 224.3C316.9 233.6 320 244.4 320 256z"/>
+                                            </svg>
+                                        </a>
+                                        <a href="{% url 'gravity:admin_clase_editar' item.clase.id %}" 
+                                        class="inline-flex items-center justify-center w-8 h-8 text-sm border border-green-300 text-green-600 rounded-lg hover:bg-green-50 transition-colors duration-200">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                                <path d="M432.5 82.3L382.4 132.4L507.7 257.7L557.8 207.6C579.7 185.7 579.7 150.3 557.8 128.4L511.7 82.3C489.8 60.4 454.4 60.4 432.5 82.3zM343.3 161.2L342.8 161.3L198.7 204.5C178.8 210.5 163 225.7 156.4 245.5L67.8 509.8C64.9 518.5 65.9 528 70.3 535.8L225.7 380.4C224.6 376.4 224.1 372.3 224.1 368C224.1 341.5 245.6 320 272.1 320C298.6 320 320.1 341.5 320.1 368C320.1 394.5 298.6 416 272.1 416C267.8 416 263.6 415.4 259.7 414.4L104.3 569.7C112.1 574.1 121.5 575.1 130.3 572.2L394.6 483.6C414.3 477 429.6 461.2 435.6 441.3L478.8 297.2L478.9 296.7L343.4 161.2z"/>
+                                            </svg>
+                                        </a>
+                                        {% if item.puede_eliminarse %}
+                                            <a href="{% url 'gravity:admin_clase_eliminar' item.clase.id %}" 
+                                            class="inline-flex items-center justify-center w-8 h-8 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200"
+                                            onclick="return confirm('¿Estás seguro de que quieres eliminar esta clase?')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                                    <path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/>
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Paginación de clases" class="mt-6 pb-3">
+                        <ul class="flex justify-center space-x-1">
+                            {% if page_obj.has_previous %}
+                                <li>
+                                    <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                    href="?page=1{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                            <path d="M105.4 297.4C92.9 309.9 92.9 330.2 105.4 342.7L265.4 502.7C277.9 515.2 298.2 515.2 310.7 502.7C323.2 490.2 323.2 469.9 310.7 457.4L173.3 320L310.6 182.6C323.1 170.1 323.1 149.8 310.6 137.3C298.1 124.8 277.8 124.8 265.3 137.3L105.3 297.3zM457.4 137.4L297.4 297.4C284.9 309.9 284.9 330.2 297.4 342.7L457.4 502.7C469.9 515.2 490.2 515.2 502.7 502.7C515.2 490.2 515.2 469.9 502.7 457.4L365.3 320L502.6 182.6C515.1 170.1 515.1 149.8 502.6 137.3C490.1 124.8 469.8 124.8 457.3 137.3z"/>
+                                        </svg>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                    href="?page={{ page_obj.previous_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                            <path d="M201.4 297.4C188.9 309.9 188.9 330.2 201.4 342.7L361.4 502.7C373.9 515.2 394.2 515.2 406.7 502.7C419.2 490.2 419.2 469.9 406.7 457.4L269.3 320L406.6 182.6C419.1 170.1 419.1 149.8 406.6 137.3C394.1 124.8 373.8 124.8 361.3 137.3L201.3 297.3z"/>
+                                        </svg>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li>
+                                        <span class="inline-flex items-center justify-center w-8 h-8 text-sm bg-principal text-white rounded-lg">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li>
+                                        <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                        href="?page={{ num }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li>
+                                    <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                    href="?page={{ page_obj.next_page_number }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                            <path d="M439.1 297.4C451.6 309.9 451.6 330.2 439.1 342.7L279.1 502.7C266.6 515.2 246.3 515.2 233.8 502.7C221.3 490.2 221.3 469.9 233.8 457.4L371.2 320L233.9 182.6C221.4 170.1 221.4 149.8 233.9 137.3C246.4 124.8 266.7 124.8 279.2 137.3L439.2 297.3z"/>
+                                        </svg>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                    href="?page={{ page_obj.paginator.num_pages }}{% if tipo_filtro %}&tipo={{ tipo_filtro }}{% endif %}{% if dia_filtro %}&dia={{ dia_filtro }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-5">
+                                            <path d="M535.1 342.6C547.6 330.1 547.6 309.8 535.1 297.3L375.1 137.3C362.6 124.8 342.3 124.8 329.8 137.3C317.3 149.8 317.3 170.1 329.8 182.6L467.2 320L329.9 457.4C317.4 469.9 317.4 490.2 329.9 502.7C342.4 515.2 362.7 515.2 375.2 502.7L535.2 342.7zM183.1 502.6L343.1 342.6C355.6 330.1 355.6 309.8 343.1 297.3L183.1 137.3C170.6 124.8 150.3 124.8 137.8 137.3C125.3 149.8 125.3 170.1 137.8 182.6L275.2 320L137.9 457.4C125.4 469.9 125.4 490.2 137.9 502.7C150.4 515.2 170.7 515.2 183.2 502.7z"/>
+                                        </svg>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <i class="fas fa-calendar-times text-6xl text-gray-400 mb-6"></i>
+                    <h4 class="text-xl font-semibold text-gray-600 mb-3">No se encontraron clases</h4>
+                    {% if tipo_filtro or dia_filtro or estado_filtro or sede_filtro %}
+                        <p class="text-gray-500 mb-6">No hay clases que coincidan con los filtros seleccionados.</p>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                            <a href="{% url 'gravity:admin_clases_lista' %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                <i class="fas fa-times mr-2"></i>Limpiar Filtros
+                            </a>
+                            <a href="{% url 'gravity:admin_clase_crear' %}" class="inline-flex items-center justify-center px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal/90 transition-colors duration-200">
+                                <i class="fas fa-plus mr-2"></i>Crear Nueva Clase
+                            </a>
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 mb-6">Aún no has creado ninguna clase en el sistema.</p>
+                        <a href="{% url 'gravity:admin_clase_crear' %}" class="inline-flex items-center justify-center px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal/90 transition-colors duration-200">
+                            <i class="fas fa-plus mr-2"></i>Crear Primera Clase
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit form when filters change
-    const filterSelects = document.querySelectorAll('#filterForm select');
-    filterSelects.forEach(function(select) {
-        select.addEventListener('change', function() {
-            document.getElementById('filterForm').submit();
-        });
-    });
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-submit form cuando cambian los filtros
+            const filterSelects = document.querySelectorAll('#filterForm select');
+            filterSelects.forEach(function(select) {
+                select.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
+            });
 
-    // Enhance progress bars with animation
-    const progressBars = document.querySelectorAll('.progress-bar');
-    progressBars.forEach(function(bar) {
-        const width = bar.dataset.width + '%';
-        bar.style.width = '0%';
-        setTimeout(function() {
-            bar.style.transition = 'width 1s ease-in-out';
-            bar.style.width = width;
-        }, 100);
-    });
+            // Mejorar las barras de progreso con animación
+            const progressBars = document.querySelectorAll('[data-width]');
+            progressBars.forEach(function(bar) {
+                const width = bar.dataset.width + '%';
+                bar.style.width = '0%';
+                setTimeout(function() {
+                    bar.style.width = width;
+                }, 100);
+            });
 
-    // Add tooltips to action buttons
-    const actionButtons = document.querySelectorAll('[title]');
-    actionButtons.forEach(function(button) {
-        new bootstrap.Tooltip(button);
-    });
+            // Agregar efectos de hover mejorados
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(function(row) {
+                row.addEventListener('mouseenter', function() {
+                    this.classList.add('bg-gray-50');
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.classList.remove('bg-gray-50');
+                });
+            });
 
-    // Highlight rows on hover
-    const tableRows = document.querySelectorAll('tbody tr');
-    tableRows.forEach(function(row) {
-        row.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#f8f9fa';
+            // Efectos de hover para las tarjetas móviles
+            const mobileCards = document.querySelectorAll('.md\\:hidden .bg-white');
+            mobileCards.forEach(function(card) {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('shadow-md');
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('shadow-md');
+                });
+            });
         });
-        
-        row.addEventListener('mouseleave', function() {
-            this.style.backgroundColor = '';
-        });
-    });
-});
-</script>
+    </script>
 {% endblock %}

@@ -17,6 +17,11 @@ from accounts.models import UserProfile, ConfiguracionEstudio
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import transaction
+import logging
+from .email_service import enviar_email_cancelacion_reserva
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
 
 # Página de inicio (pública)
 def home(request):
@@ -352,18 +357,25 @@ def sedes_disponibles(request):
             return JsonResponse({'error': 'Tipo de clase requerido'}, status=400)
 
         # Obtener sedes únicas para el tipo de clase (solo clases activas)
+        # Usar distinct() correctamente con order_by
         sedes_disponibles = Clase.objects.filter(
             tipo=tipo_clase, 
             activa=True
-        ).values_list('direccion', flat=True).distinct()
+        ).values('direccion').distinct().order_by('direccion')
 
-        # Convertir a formato legible
+        # Convertir a formato legible, asegurándonos de que sean únicas
         sedes_info = []
-        for sede in sedes_disponibles:
-            sedes_info.append({
-                'value': sede,
-                'text': dict(Clase.DIRECCIONES).get(sede, sede)
-            })
+        sedes_agregadas = set()  # Para evitar duplicados
+        
+        for sede_dict in sedes_disponibles:
+            sede = sede_dict['direccion']
+            if sede not in sedes_agregadas:
+                sede_display = dict(Clase.DIRECCIONES).get(sede, sede)
+                sedes_info.append({
+                    'value': sede,
+                    'text': sede_display
+                })
+                sedes_agregadas.add(sede)
 
         return JsonResponse({
             'sedes': sedes_info
@@ -570,7 +582,6 @@ def admin_required(view_func):
         return view_func(request, *args, **kwargs)
     
     return wrapper
-
 
 # ==============================================================================
 # DASHBOARD PRINCIPAL DEL ADMINISTRADOR
@@ -1049,30 +1060,138 @@ def admin_reservas_lista(request):
 def admin_reserva_cancelar(request, reserva_id):
     """
     Cancelar una reserva como administrador (sin restricciones de tiempo)
+    Ahora con sistema de emails automático
     """
     reserva = get_object_or_404(Reserva, id=reserva_id, activa=True)
     
     if request.method == 'POST':
-        motivo = request.POST.get('motivo', '')
+        # Obtener datos del formulario
+        motivo = request.POST.get('motivo', '').strip()
+        motivo_detalle = request.POST.get('motivo_detalle', '').strip()
+        notificar_usuario = request.POST.get('notificar_usuario') == 'on'
+        ofrecer_reemplazo = request.POST.get('ofrecer_reemplazo') == 'on'
+        ofrecer_otras_sedes = request.POST.get('ofrecer_otras_sedes') == 'on'
+        registrar_incidencia = request.POST.get('registrar_incidencia') == 'on'
         
-        # Cancelar la reserva
-        reserva.activa = False
-        if motivo:
-            reserva.notas = f"Cancelada por administrador: {motivo}"
-        reserva.save()
+        # Validar que se haya seleccionado un motivo
+        if not motivo:
+            messages.error(request, 'Debes seleccionar un motivo para la cancelación.')
+            return render(request, 'gravity/admin/reserva_cancelar.html', {'reserva': reserva})
         
-        messages.success(
-            request,
-            f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} cancelada exitosamente.'
-        )
+        try:
+            with transaction.atomic():
+                # Guardar información adicional en las notas antes de cancelar
+                notas_cancelacion = f"Cancelada por administrador - Motivo: {motivo}"
+                if motivo_detalle:
+                    notas_cancelacion += f" - Detalle: {motivo_detalle}"
+                
+                # Actualizar las notas de la reserva
+                if reserva.notas:
+                    reserva.notas += f"\n{notas_cancelacion}"
+                else:
+                    reserva.notas = notas_cancelacion
+                
+                # Cancelar la reserva
+                reserva.activa = False
+                reserva.save()
+                
+                # Registrar incidencia si se solicitó
+                if registrar_incidencia:
+                    registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, request.user)
+                
+                # Enviar email de notificación si se solicitó
+                email_enviado = False
+                if notificar_usuario and reserva.usuario.email:
+                    try:
+                        email_enviado = enviar_email_cancelacion_reserva(
+                            reserva=reserva,
+                            motivo=motivo,
+                            motivo_detalle=motivo_detalle,
+                            ofrecer_reemplazo=ofrecer_reemplazo,
+                            ofrecer_otras_sedes=ofrecer_otras_sedes
+                        )
+                    except Exception as e:
+                        logger.error(f"Error enviando email de cancelación: {str(e)}")
+                        email_enviado = False
+                
+                # Mensaje de éxito
+                mensaje_exito = (
+                    f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
+                    f'cancelada exitosamente.'
+                )
+                
+                if notificar_usuario:
+                    if email_enviado:
+                        mensaje_exito += f' Se envió notificación por email a {reserva.usuario.email}.'
+                    elif reserva.usuario.email:
+                        mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
+                    else:
+                        mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
+                
+                if registrar_incidencia:
+                    mensaje_exito += ' Se registró como incidencia para seguimiento.'
+                
+                messages.success(request, mensaje_exito)
+                
+        except Exception as e:
+            messages.error(
+                request, 
+                f'Error al cancelar la reserva: {str(e)}. '
+                'La cancelación no se completó.'
+            )
+            return render(request, 'gravity/admin/reserva_cancelar.html', {'reserva': reserva})
         
         return redirect('gravity:admin_reservas_lista')
     
+    # GET request - mostrar formulario
     context = {
         'reserva': reserva
     }
     
     return render(request, 'gravity/admin/reserva_cancelar.html', context)
+
+def registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, admin_user):
+    """
+    Registra una incidencia cuando una cancelación es marcada para seguimiento.
+    
+    Args:
+        reserva: Reserva cancelada
+        motivo: Motivo de la cancelación
+        motivo_detalle: Detalle adicional
+        admin_user: Usuario administrador que realizó la cancelación
+    """
+    try:
+        # Por ahora, vamos a registrar la incidencia en los logs
+        # En el futuro, podrías crear un modelo IncidenciaCancelacion
+        
+        incidencia_info = {
+            'tipo': 'cancelacion_reserva',
+            'reserva_numero': reserva.numero_reserva,
+            'usuario': reserva.usuario.username,
+            'usuario_email': reserva.usuario.email,
+            'clase_tipo': reserva.clase.tipo,
+            'clase_dia': reserva.clase.dia,
+            'clase_horario': reserva.clase.horario.strftime('%H:%M'),
+            'clase_sede': reserva.clase.direccion,
+            'motivo': motivo,
+            'motivo_detalle': motivo_detalle,
+            'admin_user': admin_user.username,
+            'fecha_cancelacion': timezone.now(),
+        }
+        
+        logger.info(f"INCIDENCIA_CANCELACION: {incidencia_info}")
+        
+        # Aquí podrías agregar lógica adicional como:
+        # - Enviar email al gerente
+        # - Guardar en base de datos específica
+        # - Enviar notificación a Slack
+        # - Crear ticket en sistema de soporte
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error registrando incidencia de cancelación: {str(e)}")
+        return False
 
 # ==============================================================================
 # GESTIÓN DE USUARIOS

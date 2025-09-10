@@ -3,158 +3,171 @@
 {% block title %}Reportes y Estadísticas - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item active">Reportes</li>
+    <li class="flex items-center space-x-2 text-gris-medio">
+        <span class="text-gray-400">/</span>
+        <span class="text-principal">Reportes</span>
+    </li>
 {% endblock %}
 
 {% block content %}
+    {% load static %}
     <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h2 class="mb-2">
-                                <i class="fas fa-chart-bar me-2"></i>
-                                Reportes y Estadísticas
-                            </h2>
-                            <p class="text-muted mb-0">
-                                Análisis detallado del rendimiento del estudio
-                            </p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-outline-success" onclick="exportarReporte()">
-                                    <i class="fas fa-download me-2"></i>Exportar
-                                </button>
-                                <button type="button" class="btn btn-primary" onclick="actualizarDatos()">
-                                    <i class="fas fa-sync me-2"></i>Actualizar
-                                </button>
-                            </div>
-                        </div>
+    <div class="grid grid-cols-1 gap-6 mb-6">
+        <div class="card">
+            <div class="card-body p-3">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                    <div class="flex-1">
+                        <h2 class="flex items-center gap-2 text-2xl text-principal mb-2">
+                            <svg class="size-8" fill="currentColor" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M32 32c17.7 0 32 14.3 32 32l0 336c0 8.8 7.2 16 16 16l400 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L80 480c-44.2 0-80-35.8-80-80L0 64C0 46.3 14.3 32 32 32zm96 64c0-17.7 14.3-32 32-32l192 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-192 0c-17.7 0-32-14.3-32-32zm32 80l128 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-128 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 112l256 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-256 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
+                            </svg>
+                            Reportes y Estadísticas
+                        </h2>
+                        <p class="text-gris-medio mb-0">
+                            Análisis detallado del rendimiento del estudio
+                        </p>
                     </div>
+                    <button 
+                        type="button" 
+                        class="flex items-center gap-1 border border-principal bg-principal text-fondo hover:bg-fondo hover:text-principal font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" 
+                        onclick="actualizarDatos()"
+                    >
+                        <svg class="size-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>Actualizar</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Quick Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Reservas Esta Semana</h6>
-                            <h2 class="card-title mb-0">{{ reservas_esta_semana|default:0 }}</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-calendar-week fa-3x opacity-75"></i>
-                        </div>
+    <div class="flex flex-col md:flex-row justify-evenly gap-4 mb-6">
+        <div class="card bg-principal text-blanco w-full">
+            <div class="card-body p-3">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-blanco/80 text-sm mb-2">Reservas Esta Semana</h6>
+                        <h2 class="text-2xl font-bold mb-0">{{ reservas_esta_semana|default:0 }}</h2>
+                    </div>
+                    <div>
+                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                        </svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Reservas Este Mes</h6>
-                            <h2 class="card-title mb-0">{{ reservas_este_mes|default:0 }}</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-bookmark fa-3x opacity-75"></i>
-                        </div>
+        <div class="card bg-secundario text-blanco w-full">
+            <div class="card-body p-3">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-blanco/80 text-sm mb-2">Reservas Este Mes</h6>
+                        <h2 class="text-2xl font-bold mb-0">{{ reservas_este_mes|default:0 }}</h2>
+                    </div>
+                    <div>
+                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+                        </svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Usuarios Esta Semana</h6>
-                            <h2 class="card-title mb-0">{{ usuarios_esta_semana|default:0 }}</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-user-plus fa-3x opacity-75"></i>
-                        </div>
+        <div class="card bg-principal-dark text-blanco w-full">
+            <div class="card-body p-3">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-blanco/80 text-sm mb-2">Usuarios Esta Semana</h6>
+                        <h2 class="text-2xl font-bold mb-0">{{ usuarios_esta_semana|default:0 }}</h2>
+                    </div>
+                    <div>
+                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
+                        </svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card text-white bg-warning">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2">Usuarios Este Mes</h6>
-                            <h2 class="card-title mb-0">{{ usuarios_este_mes|default:0 }}</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-users fa-3x opacity-75"></i>
-                        </div>
+        <div class="card bg-fondo border border-secundario text-principal w-full">
+            <div class="card-body p-3">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h6 class="text-principal text-sm mb-2">Usuarios Este Mes</h6>
+                        <h2 class="text-2xl font-bold mb-0">{{ usuarios_este_mes|default:0 }}</h2>
+                    </div>
+                    <div>
+                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                        </svg>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Statistics by Class Type -->
-    <div class="row mb-4">
-        <div class="col-lg-8">
+    <!-- Estadísticas por tipo de clase -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        <div class="lg:col-span-8">
             <div class="card">
                 <div class="card-header">
-                    <h5>
-                        <i class="fas fa-table me-2"></i>
+                    <h5 class="flex items-center gap-2 text-lg font-semibold">
+                        <svg class="size-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" clip-rule="evenodd"/>
+                        </svg>
                         Estadísticas por Tipo de Clase
                     </h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-3">
                     {% if stats_por_tipo %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-separate border-spacing-0">
                                 <thead>
-                                    <tr>
-                                        <th>Tipo de Clase</th>
-                                        <th class="text-center">Total Clases</th>
-                                        <th class="text-center">Total Reservas</th>
-                                        <th class="text-center">Cupos Totales</th>
-                                        <th class="text-center">% Ocupación</th>
+                                    <tr class="bg-principal/10">
+                                        <th class="text-left py-3 px-4 font-semibold text-gris-oscuro rounded-tl-lg">Tipo de Clase</th>
+                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro">Total Clases</th>
+                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro">Total Reservas</th>
+                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro">Cupos Totales</th>
+                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro rounded-tr-lg">% Ocupación</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for stat in stats_por_tipo %}
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
+                                        <tr class="hover:bg-gris-claro/50 transition-colors duration-200">
+                                            <td class="py-3 px-4">
+                                                <div class="flex items-center space-x-3">
                                                     {% if stat.tipo == 'Reformer' %}
-                                                        <i class="fas fa-dumbbell me-2 text-primary"></i>
+                                                        <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="w-6 h-6 object-contain">
+                                                    {% elif stat.tipo == 'Cadillac' %}
+                                                        <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="w-6 h-6 object-contain">
+                                                    {% elif stat.tipo == 'Especial' %}
+                                                        <img src="{% static 'icons/especial.png' %}" alt="Icono de Clase Especial" class="w-6 h-6 object-contain">
                                                     {% else %}
-                                                        <i class="fas fa-bed me-2 text-info"></i>
+                                                        <!-- Icono por defecto si no coincide ningún tipo -->
+                                                        <div class="w-6 h-6 bg-gris-claro rounded flex items-center justify-center">
+                                                            <span class="text-xs font-bold text-gris-medio">?</span>
+                                                        </div>
                                                     {% endif %}
                                                     <strong>{{ stat.nombre }}</strong>
                                                 </div>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-secondary">{{ stat.total_clases|default:0 }}</span>
+                                            <td class="text-center py-3 px-4">
+                                                <span class="px-2 py-1 text-xs font-medium bg-principal text-fondo rounded-md">{{ stat.total_clases|default:0 }}</span>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-primary">{{ stat.total_reservas|default:0 }}</span>
+                                            <td class="text-center py-3 px-4">
+                                                <span class="px-2 py-1 text-xs font-medium bg-secundario text-gris-oscuro rounded-md">{{ stat.total_reservas|default:0 }}</span>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-info">{{ stat.total_cupos|default:0 }}</span>
+                                            <td class="text-center py-3 px-4">
+                                                <span class="px-2 py-1 text-xs font-medium bg-fondo text-principal rounded-md">{{ stat.total_cupos|default:0 }}</span>
                                             </td>
-                                            <td class="text-center">
-                                                <span class="badge 
-                                                    {% if stat.porcentaje_ocupacion >= 80 %}bg-success
-                                                    {% elif stat.porcentaje_ocupacion >= 60 %}bg-warning
-                                                    {% else %}bg-danger{% endif %}">
+                                            <td class="text-center py-3 px-4">
+                                                <span class="px-2 py-1 text-xs font-medium rounded-md
+                                                    {% if stat.porcentaje_ocupacion >= 80 %}bg-exito text-blanco
+                                                    {% elif stat.porcentaje_ocupacion >= 60 %}bg-advertencia text-blanco
+                                                    {% else %}bg-error text-blanco{% endif %}">
                                                     {{ stat.porcentaje_ocupacion|default:0 }}%
                                                 </span>
                                             </td>
@@ -164,101 +177,109 @@
                             </table>
                         </div>
                     {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
-                            <h6 class="text-muted">No hay estadísticas disponibles</h6>
-                            <p class="text-muted">Crea algunas clases para ver estadísticas</p>
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 text-gris-medio mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 001.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z"/>
+                            </svg>
+                            <h6 class="text-gris-medio font-medium mb-2">No hay estadísticas disponibles</h6>
+                            <p class="text-gris-medio">Crea algunas clases para ver estadísticas</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Quick Insights -->
-        <div class="col-lg-4">
+        <!-- Resumen rápido -->
+        <div class="lg:col-span-4">
             <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-lightbulb me-2"></i>
+                <div class="card-header text-blanco">
+                    <h5 class="flex items-center gap-1">
+                        <svg class="size-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.477.859h4z"/>
+                        </svg>
                         Resumen Rápido
                     </h5>
                 </div>
-                <div class="card-body">
-                    <!-- Best Day -->
-                    <div class="mb-4">
-                        <h6 class="text-success">Día Más Popular</h6>
+                <div class="card-body p-3">
+                    <!-- Mejor Día -->
+                    <div class="mb-6">
+                        <h6 class="text-principal font-medium mb-2">Día Más Popular</h6>
                         {% if stats_por_dia %}
                             {% for stat in stats_por_dia %}
                                 {% if forloop.first %}
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-bold">{{ stat.dia }}</span>
-                                        <span class="badge bg-success">{{ stat.total_reservas|default:0 }}</span>
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold">{{ stat.dia }}</span>
+                                        <span class="px-2 py-1 text-xs font-medium bg-principal text-fondo rounded-md">{{ stat.total_reservas|default:0 }}</span>
                                     </div>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
-                            <small class="text-muted">Sin datos disponibles</small>
+                            <small class="text-gris-medio">Sin datos disponibles</small>
                         {% endif %}
                     </div>
 
-                    <!-- Best Class Type -->
-                    <div class="mb-4">
-                        <h6 class="text-primary">Mejor Rendimiento</h6>
+                    <!-- Mejor tipo de clase -->
+                    <div class="mb-6">
+                        <h6 class="text-principal font-medium mb-2">Mejor Rendimiento</h6>
                         {% if stats_por_tipo %}
                             {% for stat in stats_por_tipo %}
                                 {% if forloop.first %}
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-bold">{{ stat.nombre }}</span>
-                                        <span class="badge bg-primary">{{ stat.porcentaje_ocupacion|default:0 }}%</span>
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold">{{ stat.nombre }}</span>
+                                        <span class="px-2 py-1 text-xs font-medium bg-principal text-fondo rounded-md">{{ stat.porcentaje_ocupacion|default:0 }}%</span>
                                     </div>
                                 {% endif %}
                             {% endfor %}
                         {% else %}
-                            <small class="text-muted">Sin datos disponibles</small>
+                            <small class="text-gris-medio">Sin datos disponibles</small>
                         {% endif %}
                     </div>
 
-                    <!-- Recommendations -->
-                    <div class="mb-4">
-                        <h6 class="text-warning">Recomendaciones</h6>
+                    <!-- Recomendaciones -->
+                    <div class="mb-6">
+                        <h6 class="text-secundario font-medium mb-2">Recomendaciones</h6>
                         {% if stats_por_tipo %}
-                            <ul class="list-unstyled mb-0">
+                            <ul class="list-none space-y-2">
                                 {% for stat in stats_por_tipo %}
                                     {% if stat.porcentaje_ocupacion < 50 %}
-                                        <li class="mb-2">
-                                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                        <li class="flex items-center gap-1">
+                                            <svg class="w-4 h-4 text-secundario" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                            </svg>
                                             <small>Promocionar {{ stat.nombre }}</small>
                                         </li>
                                     {% elif stat.porcentaje_ocupacion > 90 %}
-                                        <li class="mb-2">
-                                            <i class="fas fa-plus-circle text-success me-2"></i>
+                                        <li class="flex items-center">
+                                            <svg class="w-4 h-4 text-exito mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
+                                            </svg>
                                             <small>Más clases de {{ stat.nombre }}</small>
                                         </li>
                                     {% endif %}
                                 {% endfor %}
                             </ul>
                         {% else %}
-                            <small class="text-muted">Sin recomendaciones disponibles</small>
+                            <small class="text-gris-medio">Sin recomendaciones disponibles</small>
                         {% endif %}
                     </div>
 
-                    <!-- Summary -->
-                    <div class="bg-light p-3 rounded">
-                        <h6 class="text-dark mb-2">Resumen General</h6>
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <div class="fw-bold text-primary">{{ reservas_este_mes|default:0 }}</div>
-                                <small class="text-muted">Reservas/Mes</small>
+                    <!-- Resumen General -->
+                    <div class="bg-gris-claro p-4 rounded-lg">
+                        <h6 class="text-gris-oscuro font-medium mb-3">Resumen General</h6>
+                        <div class="grid grid-cols-2 text-center">
+                            <div>
+                                <div class="text-lg font-bold text-principal">{{ reservas_este_mes|default:0 }}</div>
+                                <small class="text-gris-medio">Reservas/Mes</small>
                             </div>
-                            <div class="col-6">
-                                <div class="fw-bold text-success">
+                            <div>
+                                <div class="text-lg font-bold text-exito">
                                     {% if stats_por_tipo %}
                                         {{ stats_por_tipo.0.porcentaje_ocupacion|default:0 }}%
                                     {% else %}
                                         0%
                                     {% endif %}
                                 </div>
-                                <small class="text-muted">Ocupación Avg.</small>
+                                <small class="text-gris-medio">Ocupación Avg.</small>
                             </div>
                         </div>
                     </div>
@@ -267,86 +288,39 @@
         </div>
     </div>
 
-    <!-- Activity by Day -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>
-                        <i class="fas fa-calendar me-2"></i>
-                        Actividad por Día de la Semana
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if stats_por_dia %}
-                        <div class="row text-center">
-                            {% for stat in stats_por_dia %}
-                                <div class="col">
-                                    <div class="card bg-light">
-                                        <div class="card-body py-3">
-                                            <h4 class="text-primary mb-1">{{ stat.total_reservas|default:0 }}</h4>
-                                            <h6 class="text-muted mb-1">{{ stat.dia }}</h6>
-                                            <small class="text-muted">
-                                                {{ stat.total_clases|default:0 }} clase{{ stat.total_clases|pluralize }}
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
-                            <h6 class="text-muted">No hay datos de actividad</h6>
-                            <p class="text-muted">Los datos aparecerán cuando tengas clases y reservas</p>
-                        </div>
-                    {% endif %}
-                </div>
+    <!-- Actividad por día -->
+    <div class="grid grid-cols-1 gap-6 mb-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="flex items-center gap-2 text-lg font-semibold">
+                    <svg class="size-6 mb-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                    </svg>
+                    Actividad por Día de la Semana
+                </h5>
             </div>
-        </div>
-    </div>
-
-    <!-- Export Options -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>
-                        <i class="fas fa-download me-2"></i>
-                        Exportar Reportes
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="mb-3">Reportes Disponibles:</h6>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-primary" onclick="exportReport('reservas')">
-                                    <i class="fas fa-bookmark me-2"></i>Reporte de Reservas
-                                </button>
-                                <button class="btn btn-outline-success" onclick="exportReport('usuarios')">
-                                    <i class="fas fa-users me-2"></i>Reporte de Usuarios
-                                </button>
-                                <button class="btn btn-outline-info" onclick="exportReport('clases')">
-                                    <i class="fas fa-calendar-alt me-2"></i>Reporte de Clases
-                                </button>
+            <div class="card-body p-3">
+                {% if stats_por_dia %}
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+                        {% for stat in stats_por_dia %}
+                            <div class="bg-gris-claro rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
+                                <h4 class="text-2xl font-bold text-principal mb-1">{{ stat.total_reservas|default:0 }}</h4>
+                                <h6 class="text-gris-medio font-medium mb-1">{{ stat.dia }}</h6>
+                                <small class="text-gris-medio">
+                                    {{ stat.total_clases|default:0 }} clase{{ stat.total_clases|pluralize }}
+                                </small>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="mb-3">Información:</h6>
-                            <div class="alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Los reportes incluyen:</strong>
-                                <ul class="mb-0 mt-2">
-                                    <li>Datos actuales del sistema</li>
-                                    <li>Estadísticas de ocupación</li>
-                                    <li>Información de usuarios</li>
-                                    <li>Formato CSV para Excel</li>
-                                </ul>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
-                </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <svg class="w-12 h-12 text-gris-medio mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                        </svg>
+                        <h6 class="text-gris-medio font-medium mb-2">No hay datos de actividad</h6>
+                        <p class="text-gris-medio">Los datos aparecerán cuando tengas clases y reservas</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -354,112 +328,84 @@
 
 {% block extra_js %}
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Reportes cargados correctamente');
-    });
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Reportes cargados correctamente');
+        });
 
-    // Update data function
-    function actualizarDatos() {
-        const button = document.querySelector('[onclick="actualizarDatos()"]');
-        if (!button) return;
-        
-        const originalText = button.innerHTML;
-        button.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Actualizando...';
-        button.disabled = true;
-        
-        // Simulate refresh
-        setTimeout(function() {
-            button.innerHTML = originalText;
-            button.disabled = false;
-            showNotification('Datos actualizados correctamente', 'success');
-            location.reload();
-        }, 2000);
-    }
+        // Update data function
+        function actualizarDatos() {
+            const button = document.querySelector('[onclick="actualizarDatos()"]');
+            if (!button) return;
+            
+            const originalText = button.innerHTML;
+            button.innerHTML = '<div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Actualizando...';
+            button.disabled = true;
+            
+            // Simulate refresh
+            setTimeout(function() {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                showNotification('Datos actualizados correctamente', 'success');
+                location.reload();
+            }, 2000);
+        }
 
-    // Export specific report
-    function exportReport(reportType) {
-        showNotification('Preparando reporte de ' + reportType + '...', 'info');
-        
-        setTimeout(function() {
-            const fileName = 'reporte_' + reportType + '_' + new Date().toISOString().split('T')[0] + '.csv';
+        // Show notification
+        function showNotification(message, type) {
+            const alertClasses = {
+                'success': 'bg-exito border-exito text-blanco',
+                'info': 'bg-info border-info text-blanco',
+                'warning': 'bg-advertencia border-advertencia text-blanco',
+                'error': 'bg-error border-error text-blanco'
+            };
             
-            let csvContent = '';
-            switch(reportType) {
-                case 'reservas':
-                    csvContent = 'Fecha,Usuario,Clase,Estado\n';
-                    csvContent += '"{{ "now"|date:"d/m/Y" }}","Usuario Ejemplo","Reformer Lunes 09:00","Activa"\n';
-                    break;
-                case 'usuarios':
-                    csvContent = 'Nombre,Email,Fecha Registro,Reservas\n';
-                    csvContent += '"Usuario Ejemplo","usuario@email.com","{{ "now"|date:"d/m/Y" }}","5"\n';
-                    break;
-                case 'clases':
-                    csvContent = 'Tipo,Día,Horario,Ocupación\n';
-                    csvContent += '"Reformer","Lunes","09:00","80%"\n';
-                    break;
-            }
+            const iconClasses = {
+                'success': 'text-blanco',
+                'info': 'text-blanco',
+                'warning': 'text-blanco',
+                'error': 'text-blanco'
+            };
             
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', fileName);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const icons = {
+                'success': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>',
+                'info': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>',
+                'warning': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>',
+                'error': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>'
+            };
             
-            showNotification('Reporte exportado: ' + fileName, 'success');
-        }, 1500);
-    }
-
-    // Export general report
-    function exportarReporte() {
-        showNotification('Preparando reporte completo...', 'info');
-        
-        setTimeout(function() {
-            const csvContent = 
-                'Tipo de Reporte,Valor\n' +
-                '"Reservas Esta Semana","{{ reservas_esta_semana|default:0 }}"\n' +
-                '"Reservas Este Mes","{{ reservas_este_mes|default:0 }}"\n' +
-                '"Usuarios Esta Semana","{{ usuarios_esta_semana|default:0 }}"\n' +
-                '"Usuarios Este Mes","{{ usuarios_este_mes|default:0 }}"\n';
+            const notification = document.createElement('div');
+            notification.className = `fixed top-5 right-5 z-50 min-w-80 border rounded-lg shadow-lg p-4 transform transition-all duration-300 ease-in-out ${alertClasses[type] || alertClasses.info}`;
+            notification.style.transform = 'translateX(100%)';
             
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', 'reporte_completo_' + new Date().toISOString().split('T')[0] + '.csv');
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            notification.innerHTML = 
+                '<div class="flex items-start space-x-3">' +
+                    '<div class="flex-shrink-0 ' + iconClasses[type] + '">' + icons[type] + '</div>' +
+                    '<div class="flex-1 text-sm font-medium">' + message + '</div>' +
+                    '<button type="button" class="flex-shrink-0 ml-4" onclick="this.parentElement.parentElement.remove()">' +
+                        '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">' +
+                            '<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>' +
+                        '</svg>' +
+                    '</button>' +
+                '</div>';
             
-            showNotification('Reporte completo exportado', 'success');
-        }, 1500);
-    }
-
-    // Show notification
-    function showNotification(message, type) {
-        const alertClass = 'alert-' + type;
-        const iconClass = type === 'success' ? 'fa-check-circle' : 
-                        type === 'info' ? 'fa-info-circle' : 
-                        'fa-exclamation-circle';
-        
-        const notification = document.createElement('div');
-        notification.className = 'alert ' + alertClass + ' alert-dismissible fade show position-fixed';
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        notification.innerHTML = 
-            '<i class="fas ' + iconClass + ' me-2"></i>' + message +
-            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(function() {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
-    }
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(function() {
+                if (notification.parentNode) {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        }
     </script>
 {% endblock %}
