@@ -540,14 +540,20 @@
                             {% if estado_filtro or tipo_clase_filtro or sede_filtro or dia_filtro or usuario_filtro %}
                                 <p class="text-gray-500 mb-6">No hay reservas que coincidan con los filtros seleccionados.</p>
                                 <div class="flex gap-2 justify-center">
-                                    <a href="{% url 'gravity:admin_reservas_lista' %}" class="btn bg-white text-gray-700 border-gray-300 hover:bg-gray-50">
-                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <a 
+                                        href="{% url 'gravity:admin_reservas_lista' %}" 
+                                        class="flex items-center gap-1 border border-principal text-principal hover:bg-principal hover:text-fondo font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                                    >
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                                         </svg>
                                         Limpiar Filtros
                                     </a>
-                                    <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn bg-principal text-white border-principal hover:bg-blue-600">
-                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <a 
+                                        href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" 
+                                        class="flex items-center gap-1 border border-secundario bg-secundario text-principal hover:bg-fondo hover:text-principal font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+                                    >
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"></path>
                                         </svg>
                                         Agregar Cliente

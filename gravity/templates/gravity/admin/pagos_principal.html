@@ -1,0 +1,672 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Sistema de Pagos - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <span class="mx-2 text-gray-400">/</span>
+        <span class="ml-1 text-gray-500">Pagos</span>
+    </li>
+{% endblock %}
+
+{% block content %}
+    {% load static %}
+    
+    <!-- Header Section -->
+    <div class="mb-6">
+        <div class="card">
+            <div class="p-3 card-body">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <h2 class="text-2xl font-bold text-principal mb-2 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10">
+                                <path d="M10.464 8.746c.227-.18.497-.311.786-.394v2.795a2.252 2.252 0 0 1-.786-.393c-.394-.313-.546-.681-.546-1.004 0-.323.152-.691.546-1.004ZM12.75 15.662v-2.824c.347.085.664.228.921.421.427.32.579.686.579.991 0 .305-.152.671-.579.991a2.534 2.534 0 0 1-.921.42Z" />
+                                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v.816a3.836 3.836 0 0 0-1.72.756c-.712.566-1.112 1.35-1.112 2.178 0 .829.4 1.612 1.113 2.178.502.4 1.102.647 1.719.756v2.978a2.536 2.536 0 0 1-.921-.421l-.879-.66a.75.75 0 0 0-.9 1.2l.879.66c.533.4 1.169.645 1.821.75V18a.75.75 0 0 0 1.5 0v-.81a4.124 4.124 0 0 0 1.821-.749c.745-.559 1.179-1.344 1.179-2.191 0-.847-.434-1.632-1.179-2.191a4.122 4.122 0 0 0-1.821-.75V8.354c.29.082.559.213.786.393l.415.33a.75.75 0 0 0 .933-1.175l-.415-.33a3.836 3.836 0 0 0-1.719-.755V6Z" clip-rule="evenodd" />
+                            </svg>
+                            Sistema de Pagos
+                        </h2>
+                        <p class="text-gray-600 mb-0">Gestión centralizada de pagos y planes del estudio</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'gravity:admin_pagos_configurar_planes' %}" class="btn btn-primary inline-flex items-center gap-1 px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal/90 transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                <path d="M17.004 10.407c.138.435-.216.842-.672.842h-3.465a.75.75 0 0 1-.65-.375l-1.732-3c-.229-.396-.053-.907.393-1.004a5.252 5.252 0 0 1 6.126 3.537ZM8.12 8.464c.307-.338.838-.235 1.066.16l1.732 3a.75.75 0 0 1 0 .75l-1.732 3c-.229.397-.76.5-1.067.161A5.23 5.23 0 0 1 6.75 12a5.23 5.23 0 0 1 1.37-3.536ZM10.878 17.13c-.447-.098-.623-.608-.394-1.004l1.733-3.002a.75.75 0 0 1 .65-.375h3.465c.457 0 .81.407.672.842a5.252 5.252 0 0 1-6.126 3.539Z" />
+                                <path fill-rule="evenodd" d="M21 12.75a.75.75 0 1 0 0-1.5h-.783a8.22 8.22 0 0 0-.237-1.357l.734-.267a.75.75 0 1 0-.513-1.41l-.735.268a8.24 8.24 0 0 0-.689-1.192l.6-.503a.75.75 0 1 0-.964-1.149l-.6.504a8.3 8.3 0 0 0-1.054-.885l.391-.678a.75.75 0 1 0-1.299-.75l-.39.676a8.188 8.188 0 0 0-1.295-.47l.136-.77a.75.75 0 0 0-1.477-.26l-.136.77a8.36 8.36 0 0 0-1.377 0l-.136-.77a.75.75 0 1 0-1.477.26l.136.77c-.448.121-.88.28-1.294.47l-.39-.676a.75.75 0 0 0-1.3.75l.392.678a8.29 8.29 0 0 0-1.054.885l-.6-.504a.75.75 0 1 0-.965 1.149l.6.503a8.243 8.243 0 0 0-.689 1.192L3.8 8.216a.75.75 0 1 0-.513 1.41l.735.267a8.222 8.222 0 0 0-.238 1.356h-.783a.75.75 0 0 0 0 1.5h.783c.042.464.122.917.238 1.356l-.735.268a.75.75 0 0 0 .513 1.41l.735-.268c.197.417.428.816.69 1.191l-.6.504a.75.75 0 0 0 .963 1.15l.601-.505c.326.323.679.62 1.054.885l-.392.68a.75.75 0 0 0 1.3.75l.39-.679c.414.192.847.35 1.294.471l-.136.77a.75.75 0 0 0 1.477.261l.137-.772a8.332 8.332 0 0 0 1.376 0l.136.772a.75.75 0 1 0 1.477-.26l-.136-.771a8.19 8.19 0 0 0 1.294-.47l.391.677a.75.75 0 0 0 1.3-.75l-.393-.679a8.29 8.29 0 0 0 1.054-.885l.601.504a.75.75 0 0 0 .964-1.15l-.6-.503c.261-.375.492-.774.69-1.191l.735.267a.75.75 0 1 0 .512-1.41l-.734-.267c.115-.439.195-.892.237-1.356h.784Zm-2.657-3.06a6.744 6.744 0 0 0-1.19-2.053 6.784 6.784 0 0 0-1.82-1.51A6.705 6.705 0 0 0 12 5.25a6.8 6.8 0 0 0-1.225.11 6.7 6.7 0 0 0-2.15.793 6.784 6.784 0 0 0-2.952 3.489.76.76 0 0 1-.036.098A6.74 6.74 0 0 0 5.251 12a6.74 6.74 0 0 0 3.366 5.842l.009.005a6.704 6.704 0 0 0 2.18.798l.022.003a6.792 6.792 0 0 0 2.368-.004 6.704 6.704 0 0 0 2.205-.811 6.785 6.785 0 0 0 1.762-1.484l.009-.01.009-.01a6.743 6.743 0 0 0 1.18-2.066c.253-.707.39-1.469.39-2.263a6.74 6.74 0 0 0-.408-2.309Z" clip-rule="evenodd" />
+                            </svg>
+                            Configurar Planes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Clientes -->
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow-1">
+                            <h6 class="text-sm font-medium text-gray-600 mb-1">Total Clientes</h6>
+                            <h3 class="text-2xl font-bold text-gray-900">{{ total_clientes }}</h3>
+                        </div>
+                        <div class="bg-principal/10 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-principal">
+                                <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Al Día -->
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow-1">
+                            <h6 class="text-sm font-medium text-gray-600 mb-1">Al Día</h6>
+                            <h3 class="text-2xl font-bold text-green-600">{{ clientes_al_dia }}</h3>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-green-600">
+                                <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Con Deuda -->
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow-1">
+                            <h6 class="text-sm font-medium text-gray-600 mb-1">Con Deuda</h6>
+                            <h3 class="text-2xl font-bold text-red-600">{{ clientes_con_deuda }}</h3>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-red-600">
+                                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ingresos del Mes -->
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-grow-1">
+                            <h6 class="text-sm font-medium text-gray-600 mb-1">Ingresos {{ mes_actual|date:"M" }}</h6>
+                            <h3 class="text-2xl font-bold text-principal">$ {{ ingresos_mes|floatformat:0 }}</h3>
+                        </div>
+                        <div class="bg-principal/10 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-principal">
+                                <path d="M12 7.5a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5Z" />
+                                <path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v9.75c0 1.036-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 0 1 1.5 14.625v-9.75ZM8.25 9.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM18.75 9a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V9.75a.75.75 0 0 0-.75-.75h-.008ZM4.5 9.75A.75.75 0 0 1 5.25 9h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H5.25a.75.75 0 0 1-.75-.75V9.75Z" clip-rule="evenodd" />
+                                <path d="M2.25 18a.75.75 0 0 0 .75.75h18a.75.75 0 0 0 .75-.75v1.5c0 .621-.504 1.125-1.125 1.125H3.375c-.621 0-1.125-.504-1.125-1.125V18Z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración de Planes -->
+    <div class="mb-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <h5 class="text-xl text-blanco flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                            <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.570.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" clip-rule="evenodd" />
+                        </svg>
+                        Planes Disponibles
+                    </h5>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if planes_activos %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {% for plan in planes_activos %}
+                            <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                <div class="font-semibold text-gray-900 mb-1">{{ plan.nombre }}</div>
+                                <div class="text-principal text-xl font-bold mb-1">${{ plan.precio_mensual|floatformat:0 }}</div>
+                                <small class="text-gray-600">{{ plan.clases_por_semana }} clases por semana</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-gray-500 py-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mx-auto mb-2 text-gray-400">
+                            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                        </svg>
+                        No hay planes configurados. 
+                        <a href="{% url 'gravity:admin_pagos_configurar_planes' %}" class="text-principal hover:underline">Crear el primer plan</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="mb-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="text-xl text-blanco flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" />
+                    </svg>
+                    Filtros de Búsqueda
+                </h5>
+            </div>
+            <div class="card-body p-2">
+                <form method="get" id="filterForm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-3 items-center justify-center">
+                        <!-- Estado -->
+                        <div>
+                            <label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado de Pago</label>
+                            <select name="estado" id="estado" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200">
+                                <option value="">Todos los clientes</option>
+                                <option value="al_dia" {% if filtro_estado == 'al_dia' %}selected{% endif %}>Al día</option>
+                                <option value="debe" {% if filtro_estado == 'debe' %}selected{% endif %}>Con deuda</option>
+                                <option value="sin_plan" {% if filtro_estado == 'sin_plan' %}selected{% endif %}>Sin plan</option>
+                            </select>
+                        </div>
+
+                        <!-- Buscar Cliente -->
+                        <div>
+                            <label for="buscar" class="block text-sm font-medium text-gray-700 mb-1">Buscar Cliente</label>
+                            <input type="text" name="buscar" id="buscar" value="{{ buscar_nombre }}" 
+                                   placeholder="Nombre, apellido o usuario..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200">
+                        </div>
+
+                        <!-- Mes -->
+                        <div>
+                            <label for="mes" class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+                            <input type="month" name="mes" id="mes" value="{{ filtro_mes }}" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200">
+                        </div>
+
+                        <!-- Espacio vacío -->
+                        <div></div>
+
+                        <!-- Botones -->
+                        <div class="flex flex-col justify-center gap-3">
+                            <!-- Botón Filtrar -->
+                            <button type="submit" class="btn btn-primary text-blanco w-full flex flex-row items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                    <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" clip-rule="evenodd" />
+                                </svg>
+                                Filtrar
+                            </button>
+
+                            <!-- Botón Limpiar -->
+                            <a href="{% url 'gravity:admin_pagos_vista_principal' %}" class="btn w-full flex flex-row items-center justify-center gap-2 border border-gray-400 text-gray-700 hover:bg-gray-200 hover:text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                    <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                </svg>
+                                Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Principal de Clientes -->
+    <div class="card">
+        <div class="card-header flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <h5 class="text-lg font-semibold text-blanco flex items-center gap-1 mb-2 sm:mb-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                    <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
+                </svg>
+                Clientes y Estados de Pago
+                {% if page_obj.paginator.count %}
+                    <span class="ml-2 px-2 py-1 bg-secundario text-principal text-sm rounded-lg">{{ page_obj.paginator.count }} total</span>
+                {% endif %}
+            </h5>
+            
+            <!-- Quick Stats -->
+            <div class="flex gap-3">
+                {% if page_obj.paginator.count %}
+                    <small class="text-blanco flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                            <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
+                        </svg>
+                        Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+                    </small>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card-body p-3">
+            {% if page_obj.object_list %}
+                <!-- Desktop Table -->
+                <div class="hidden md:block overflow-x-auto m-2">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-300 bg-gray-200 rounded-t-lg">
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700 rounded-tl-lg">Cliente</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Plan Actual</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Costo Mensual</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Último Pago</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Estado</th>
+                                <th class="text-left py-3 px-2 font-semibold text-gray-700">Saldo</th>
+                                <th class="text-center py-3 px-2 font-semibold text-gray-700 rounded-tr-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cliente_estado in page_obj.object_list %}
+                                <tr class="border-b border-gray-100 hover:bg-fondo transition-colors duration-150">
+                                    <td class="py-4 px-1">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-principal/10">
+                                                {% if cliente_estado.usuario.profile.avatar %}
+                                                    <img src="{{ cliente_estado.usuario.profile.avatar.url }}" 
+                                                        alt="Avatar de {{ cliente_estado.usuario.get_full_name|default:cliente_estado.usuario.username }}" 
+                                                        class="w-full h-full object-cover">
+                                                {% else %}
+                                                    <span class="w-full h-full bg-gradient-to-r from-principal to-secundario flex items-center justify-center text-blanco font-bold text-sm">
+                                                        {% if cliente_estado.usuario.first_name and cliente_estado.usuario.last_name %}
+                                                            {{ cliente_estado.usuario.first_name|first|upper }}{{ cliente_estado.usuario.last_name|first|upper }}
+                                                        {% elif cliente_estado.usuario.first_name %}
+                                                            {{ cliente_estado.usuario.first_name|first|upper }}{{ cliente_estado.usuario.first_name|slice:"1:2"|upper }}
+                                                        {% else %}
+                                                            {{ cliente_estado.usuario.username|first|upper }}{{ cliente_estado.usuario.username|slice:"1:2"|upper }}
+                                                        {% endif %}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold text-gray-900">
+                                                    {% if cliente_estado.usuario.first_name %}
+                                                        {{ cliente_estado.usuario.first_name }} {{ cliente_estado.usuario.last_name }}
+                                                    {% else %}
+                                                        {{ cliente_estado.usuario.username }}
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-sm text-gray-500">{{ cliente_estado.usuario.email|default:"Sin email" }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="py-4 px-1">
+                                        {% if cliente_estado.plan_actual %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-principal text-fondo">{{ cliente_estado.plan_actual.nombre }}</span>
+                                            <br><small class="text-gray-500">{{ cliente_estado.plan_actual.clases_por_semana }} clases por semana</small>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800">Sin plan</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="py-4 px-1">
+                                        {% if cliente_estado.plan_actual %}
+                                            <span class="font-semibold text-gray-900">${{ cliente_estado.plan_actual.precio_mensual|floatformat:0 }}</span>
+                                        {% else %}
+                                            <span class="text-gray-400">-</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="py-4 px-1">
+                                        {% if cliente_estado.ultimo_pago_obj %}
+                                            <div class="font-semibold text-gray-900">{{ cliente_estado.ultimo_pago_obj.fecha_pago|date:"d/m/Y" }}</div>
+                                            <small class="text-gray-500">${{ cliente_estado.ultimo_pago_obj.monto|floatformat:0 }}</small>
+                                        {% else %}
+                                            <span class="text-gray-400">Sin pagos</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="py-4 px-1">
+                                        {% if not cliente_estado.plan_actual %}
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                                    <path d="M18.75 12.75h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 000 1.5zM12 6a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 6zM12 18a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 18zM3.75 6.75h1.5a.75.75 0 100-1.5h-1.5a.75.75 0 000 1.5zM5.25 18.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 010 1.5zM3 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 013 12zM9 3.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12.75 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM9 15.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
+                                                </svg>
+                                                Sin plan
+                                            </span>
+                                        {% else %}
+                                            {% with saldo=cliente_estado.saldo_actual hoy=cliente_estado.fecha_actualizacion|date:"d" %}
+                                                {% if saldo >= 0 %}
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-100 text-green-800">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                                            <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Al día
+                                                    </span>
+                                                    {% if hoy > 10 and not cliente_estado.ultimo_pago_obj %}
+                                                        <br><small class="text-orange-600">Sin pago este mes</small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-sm font-medium bg-red-100 text-red-800">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                                                            <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        {% if hoy > 10 %}Moroso{% else %}Debe{% endif %}
+                                                    </span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="py-4 px-1">
+                                        {% if cliente_estado.saldo_actual > 0 %}
+                                            <div class="text-green-600 font-semibold">+${{ cliente_estado.saldo_actual|floatformat:0 }}</div>
+                                            <small class="text-gray-500">Crédito</small>
+                                        {% elif cliente_estado.saldo_actual == 0 %}
+                                            <span class="text-gray-400">$ 0</span>
+                                        {% else %}
+                                            <div class="text-red-600 font-semibold">${{ cliente_estado.saldo_actual|floatformat:0 }}</div>
+                                            <small class="text-gray-500">Deuda</small>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="py-4 px-1">
+                                        <div class="flex gap-2 items-center justify-center">
+                                            <a 
+                                                href="{% url 'gravity:admin_pagos_historial_cliente' cliente_estado.usuario.id %}" 
+                                                class="flex items-center justify-center p-2 text-sm border border-principal text-principal rounded-lg hover:bg-principal hover:text-fondo transition-colors duration-200" 
+                                                title="Ver historial"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                                                    <path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z" clip-rule="evenodd" />
+                                                    <path fill-rule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375ZM6 12a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V12Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 15a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V15Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 18a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V18Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
+                                                </svg>                                            </a>
+                                            <a 
+                                                href="{% url 'gravity:admin_pagos_registrar_pago' cliente_estado.usuario.id %}" 
+                                                class="flex items-center justify-center p-2 text-sm border border-green-700 text-green-700 rounded-lg hover:bg-green-700 hover:text-blanco transition-colors duration-200" 
+                                                title="Registrar pago"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-6">
+                                                    <path d="M320 32C373 32 416 75 416 128C416 181 373 224 320 224C267 224 224 181 224 128C224 75 267 32 320 32zM80 368C80 297.9 127 236.6 197.1 203.1C222.4 244.4 268 272 320 272C375.7 272 424.1 240.3 448 194C463.8 182.7 483.1 176 504 176L523.5 176C533.9 176 541.5 185.8 539 195.9L521.9 264.2C531.8 276.6 540.1 289.9 546.3 304L568 304C581.3 304 592 314.7 592 328L592 440C592 453.3 581.3 464 568 464L528 464C511.5 486 489.5 503.6 464 514.7L464 544C464 561.7 449.7 576 432 576L399 576C384.7 576 372.2 566.5 368.2 552.8L361.1 528L278.8 528L271.7 552.8C267.8 566.5 255.3 576 241 576L208 576C190.3 576 176 561.7 176 544L176 514.7C119.5 490 80 433.6 80 368zM456 384C469.3 384 480 373.3 480 360C480 346.7 469.3 336 456 336C442.7 336 432 346.7 432 360C432 373.3 442.7 384 456 384z"/>
+                                                </svg>
+                                            </a>
+                                            <a 
+                                                href="{% url 'gravity:admin_pagos_editar_estado_cliente' cliente_estado.usuario.id %}" 
+                                                class="flex items-center justify-center p-2 text-sm border border-secundario-dark text-secundario-dark rounded-lg hover:bg-secundario-dark hover:text-principal transition-colors duration-200" 
+                                                title="Editar estado"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                                                    <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+                                                    <path d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-4">
+                    {% for cliente_estado in page_obj.object_list %}
+                        <div class="bg-blanco rounded-lg border border-gray-200 p-4 shadow-sm">
+                            <div class="flex">
+                                <div class="w-16 flex flex-col items-center justify-center gap-2">
+                                    <div class="size-16 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-r from-principal to-secundario">
+                                        {% if cliente_estado.usuario.profile.avatar %}
+                                            <img src="{{ cliente_estado.usuario.profile.avatar.url }}" 
+                                                 alt="Avatar de {{ cliente_estado.usuario.get_full_name|default:cliente_estado.usuario.username }}" 
+                                                 class="w-full h-full object-cover">
+                                        {% else %}
+                                            <span class="text-2xl font-semibold text-blanco">
+                                                {% if cliente_estado.usuario.first_name and cliente_estado.usuario.last_name %}
+                                                    {{ cliente_estado.usuario.first_name|first|upper }}{{ cliente_estado.usuario.last_name|first|upper }}
+                                                {% elif cliente_estado.usuario.first_name %}
+                                                    {{ cliente_estado.usuario.first_name|first|upper }}{{ cliente_estado.usuario.first_name|slice:"1:2"|upper }}
+                                                {% else %}
+                                                    {{ cliente_estado.usuario.username|first|upper }}{{ cliente_estado.usuario.username|slice:"1:2"|upper }}
+                                                {% endif %}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if not cliente_estado.plan_actual %}
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">Sin plan</span>
+                                    {% else %}
+                                        {% with saldo=cliente_estado.saldo_actual hoy=cliente_estado.fecha_actualizacion|date:"d" %}
+                                            {% if saldo >= 0 %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">Al día</span>
+                                                {% if hoy > 10 and not cliente_estado.ultimo_pago_obj %}
+                                                    <small class="text-orange-600 text-xs text-center">Sin pago este mes</small>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-100 text-red-800">
+                                                    {% if hoy > 10 %}Moroso{% else %}Debe{% endif %}
+                                                </span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-1 ml-4">
+                                    <h6 class="font-semibold text-gray-900 mb-1">
+                                        {% if cliente_estado.usuario.first_name %}
+                                            {{ cliente_estado.usuario.first_name }} {{ cliente_estado.usuario.last_name }}
+                                        {% else %}
+                                            {{ cliente_estado.usuario.username }}
+                                        {% endif %}
+                                    </h6>
+                                    <p class="text-sm text-gray-500 mb-3">{{ cliente_estado.usuario.email|default:"Sin email" }}</p>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 text-center mb-3">
+                                        <div>
+                                            <div class="text-xs text-gray-500">Plan</div>
+                                            <div class="font-bold text-gray-900">
+                                                {% if cliente_estado.plan_actual %}
+                                                    {{ cliente_estado.plan_actual.nombre }}
+                                                {% else %}
+                                                    Sin plan
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs text-gray-500">Saldo</div>
+                                            <div class="font-bold {% if cliente_estado.saldo_actual > 0 %}text-green-600{% elif cliente_estado.saldo_actual == 0 %}text-gray-400{% else %}text-red-600{% endif %}">
+                                                {% if cliente_estado.saldo_actual > 0 %}+{% endif %} $ {{ cliente_estado.saldo_actual|floatformat:0 }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-evenly gap-2">
+                                        <a 
+                                            href="{% url 'gravity:admin_pagos_historial_cliente' cliente_estado.usuario.id %}" 
+                                            class="flex items-center justify-center p-4 text-sm border border-principal text-principal rounded-lg hover:bg-principal hover:text-fondo transition-colors duration-200"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                                                <path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z" clip-rule="evenodd" />
+                                                <path fill-rule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375ZM6 12a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V12Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 15a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V15Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 18a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V18Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
+                                            </svg> 
+                                        </a>
+                                        <a 
+                                            href="{% url 'gravity:admin_pagos_registrar_pago' cliente_estado.usuario.id %}" 
+                                            class="flex items-center justify-center p-4 text-sm border border-green-700 text-green-700 rounded-lg hover:bg-green-700 hover:text-blanco transition-colors duration-200"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" class="size-8">
+                                                <path d="M320 32C373 32 416 75 416 128C416 181 373 224 320 224C267 224 224 181 224 128C224 75 267 32 320 32zM80 368C80 297.9 127 236.6 197.1 203.1C222.4 244.4 268 272 320 272C375.7 272 424.1 240.3 448 194C463.8 182.7 483.1 176 504 176L523.5 176C533.9 176 541.5 185.8 539 195.9L521.9 264.2C531.8 276.6 540.1 289.9 546.3 304L568 304C581.3 304 592 314.7 592 328L592 440C592 453.3 581.3 464 568 464L528 464C511.5 486 489.5 503.6 464 514.7L464 544C464 561.7 449.7 576 432 576L399 576C384.7 576 372.2 566.5 368.2 552.8L361.1 528L278.8 528L271.7 552.8C267.8 566.5 255.3 576 241 576L208 576C190.3 576 176 561.7 176 544L176 514.7C119.5 490 80 433.6 80 368zM456 384C469.3 384 480 373.3 480 360C480 346.7 469.3 336 456 336C442.7 336 432 346.7 432 360C432 373.3 442.7 384 456 384z"/>
+                                            </svg>
+                                        </a>
+                                        <a 
+                                            href="{% url 'gravity:admin_pagos_editar_estado_cliente' cliente_estado.usuario.id %}" 
+                                            class="flex items-center justify-center p-4 text-sm border border-secundario-dark text-secundario-dark rounded-lg hover:bg-secundario-dark hover:text-principal transition-colors duration-200"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                                                <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+                                                <path d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Paginación de clientes" class="mt-6 pb-3">
+                        <ul class="flex justify-center space-x-1">
+                            {% if page_obj.has_previous %}
+                                <li>
+                                    <a 
+                                        class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                        href="?page=1{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if buscar_nombre %}&buscar={{ buscar_nombre }}{% endif %}{% if filtro_mes %}&mes={{ filtro_mes }}{% endif %}"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                            <path fill-rule="evenodd" d="M10.72 11.47a.75.75 0 0 0 0 1.06l7.5 7.5a.75.75 0 1 0 1.06-1.06L12.31 12l6.97-6.97a.75.75 0 0 0-1.06-1.06l-7.5 7.5Z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd" d="M4.72 11.47a.75.75 0 0 0 0 1.06l7.5 7.5a.75.75 0 1 0 1.06-1.06L6.31 12l6.97-6.97a.75.75 0 0 0-1.06-1.06l-7.5 7.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                    href="?page={{ page_obj.previous_page_number }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if buscar_nombre %}&buscar={{ buscar_nombre }}{% endif %}{% if filtro_mes %}&mes={{ filtro_mes }}{% endif %}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                            <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li>
+                                        <span class="inline-flex items-center justify-center w-8 h-8 text-sm bg-principal text-white rounded-lg">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li>
+                                        <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                        href="?page={{ num }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if buscar_nombre %}&buscar={{ buscar_nombre }}{% endif %}{% if filtro_mes %}&mes={{ filtro_mes }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li>
+                                    <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                    href="?page={{ page_obj.next_page_number }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if buscar_nombre %}&buscar={{ buscar_nombre }}{% endif %}{% if filtro_mes %}&mes={{ filtro_mes }}{% endif %}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                            <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200" 
+                                    href="?page={{ page_obj.paginator.num_pages }}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}{% if buscar_nombre %}&buscar={{ buscar_nombre }}{% endif %}{% if filtro_mes %}&mes={{ filtro_mes }}{% endif %}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                                            <path fill-rule="evenodd" d="M13.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L11.69 12 4.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clip-rule="evenodd" />
+                                            <path fill-rule="evenodd" d="M19.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06L17.69 12l-6.97-6.97a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-16 text-gray-400 mx-auto mb-4">
+                        <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
+                    </svg>
+                    <h4 class="text-xl font-semibold text-gray-600 mb-3">No se encontraron clientes</h4>
+                    {% if filtro_estado or buscar_nombre or filtro_mes %}
+                        <p class="text-gray-500 mb-6">No hay clientes que coincidan con los filtros seleccionados.</p>
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                            <a href="{% url 'gravity:admin_pagos_vista_principal' %}" class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 mr-2">
+                                    <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                </svg>
+                                Limpiar Filtros
+                            </a>
+                            <a href="{% url 'gravity:admin_pagos_configurar_planes' %}" class="inline-flex items-center justify-center px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal/90 transition-colors duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 mr-2">
+                                    <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.570.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" clip-rule="evenodd" />
+                                </svg>
+                                Configurar Planes
+                            </a>
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 mb-6">Aún no hay clientes registrados en el sistema de pagos.</p>
+                        <a href="{% url 'gravity:admin_pagos_configurar_planes' %}" class="inline-flex items-center justify-center px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal/90 transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 mr-2">
+                                <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 0 0-2.282.819l-.922 1.597a1.875 1.875 0 0 0 .432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 0 0 0 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 0 0-.432 2.385l.922 1.597a1.875 1.875 0 0 0 2.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.570.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 0 0 2.28-.819l.923-1.597a1.875 1.875 0 0 0-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 0 0 0-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 0 0-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 0 0-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 0 0-1.85-1.567h-1.843ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" clip-rule="evenodd" />
+                            </svg>
+                            Configurar Primer Plan
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-submit form cuando cambian los filtros (excepto el campo de búsqueda)
+            const filterSelects = document.querySelectorAll('#filterForm select');
+            const monthInput = document.querySelector('#filterForm input[type="month"]');
+            
+            filterSelects.forEach(function(select) {
+                select.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
+            });
+
+            if (monthInput) {
+                monthInput.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
+            }
+
+            // Agregar efectos de hover mejorados para las filas de la tabla
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(function(row) {
+                row.addEventListener('mouseenter', function() {
+                    this.classList.add('bg-fondo');
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.classList.remove('bg-fondo');
+                });
+            });
+
+            // Efectos de hover para las tarjetas móviles
+            const mobileCards = document.querySelectorAll('.md\\:hidden .bg-blanco');
+            mobileCards.forEach(function(card) {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('shadow-md');
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('shadow-md');
+                });
+            });
+
+            // Confirmación para acciones importantes
+            const actionButtons = document.querySelectorAll('[title*="Registrar"], [title*="Editar"]');
+            actionButtons.forEach(function(button) {
+                button.addEventListener('click', function(e) {
+                    if (this.title.includes('Editar')) {
+                        if (!confirm('¿Estás seguro de que quieres editar el estado de este cliente?')) {
+                            e.preventDefault();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

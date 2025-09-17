@@ -12,6 +12,7 @@ module.exports = {
         'principal': '#5D768B',
         'principal-dark': '#4A5F73',
         'secundario': '#C8B39B',
+        'secundario-dark': '#a79178ff',
         'fondo': '#F8EFE5',
         'blanco': '#FDFDFD',
         'gris-claro': '#f0f0f0ff',

@@ -2,10 +2,13 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from .models import Clase, Reserva, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from accounts.models import UserProfile
 from django.core.validators import RegexValidator
 import re
+from .models import PlanPago, EstadoPagoCliente, RegistroPago
+from decimal import Decimal
+from django.utils import timezone
 
 
 class ReservaForm(forms.Form):
@@ -1114,3 +1117,560 @@ class FiltrosReportesForm(forms.Form):
             })
         
         return cleaned_data
+    
+# ==============================================================================
+# FORMULARIOS PARA SISTEMA DE PAGOS
+# ==============================================================================
+
+class PlanPagoForm(forms.ModelForm):
+    """
+    Formulario para crear y editar planes de pago.
+    """
+    
+    class Meta:
+        model = PlanPago
+        fields = ['nombre', 'clases_por_semana', 'precio_mensual', 'descripcion', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Plan 1 clase semanal',
+                'id': 'id_nombre'
+            }),
+            'clases_por_semana': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '10',
+                'id': 'id_clases_por_semana'
+            }),
+            'precio_mensual': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0,00',
+                'id': 'id_precio_mensual'
+            }),
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Descripción opcional del plan...',
+                'id': 'id_descripcion'
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'id_activo'
+            })
+        }
+        error_messages = {
+            'nombre': {
+                'required': 'El nombre del plan es obligatorio.',
+                'max_length': 'El nombre no puede exceder 100 caracteres.'
+            },
+            'clases_por_semana': {
+                'required': 'Debes especificar la cantidad de clases por semana.',
+                'invalid': 'Ingresa un número válido.',
+                'min_value': 'Debe ser al menos 1 clase por semana.',
+                'max_value': 'Máximo 10 clases por semana.'
+            },
+            'precio_mensual': {
+                'required': 'El precio mensual es obligatorio.',
+                'invalid': 'Ingresa un precio válido.',
+                'min_value': 'El precio debe ser mayor a cero.'
+            }
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Valores por defecto
+        if not self.instance.pk:  # Solo para nuevos planes
+            self.fields['activo'].initial = True
+        
+        # Labels personalizados
+        self.fields['nombre'].label = "Nombre del Plan"
+        self.fields['clases_por_semana'].label = "Clases por Semana"
+        self.fields['precio_mensual'].label = "Precio Mensual ($)"
+        self.fields['descripcion'].label = "Descripción"
+        self.fields['activo'].label = "Plan activo"
+        
+        # Help text
+        self.fields['clases_por_semana'].help_text = "Cantidad de clases que incluye por semana"
+        self.fields['precio_mensual'].help_text = "Costo mensual del plan"
+        self.fields['descripcion'].help_text = "Descripción opcional del plan"
+        self.fields['activo'].help_text = "Si el plan está disponible para asignar"
+
+    def clean_clases_por_semana(self):
+        clases_por_semana = self.cleaned_data.get('clases_por_semana')
+        
+        if clases_por_semana:
+            # Validar rango razonable
+            if clases_por_semana < 1 or clases_por_semana > 7:
+                raise ValidationError('La cantidad de clases debe estar entre 1 y 7 por semana.')
+        
+        return clases_por_semana
+
+    def clean_precio_mensual(self):
+        precio_mensual = self.cleaned_data.get('precio_mensual')
+        
+        if precio_mensual is not None:
+            if precio_mensual <= 0:
+                raise ValidationError('El precio debe ser mayor a cero.')
+            
+            # Validar que no sea un precio excesivamente alto
+            if precio_mensual > Decimal('999999.99'):
+                raise ValidationError('El precio es demasiado alto.')
+        
+        return precio_mensual
+
+    def clean(self):
+        cleaned_data = super().clean()
+        clases_por_semana = cleaned_data.get('clases_por_semana')
+        precio_mensual = cleaned_data.get('precio_mensual')
+        
+        # Validaciones básicas
+        if clases_por_semana and clases_por_semana < 1:
+            raise ValidationError({
+                'clases_por_semana': 'Debe ser al menos 1 clase por semana.'
+            })
+        
+        if precio_mensual and precio_mensual < 0:
+            raise ValidationError({
+                'precio_mensual': 'El precio no puede ser negativo.'
+            })
+        
+        return cleaned_data
+
+class RegistroPagoForm(forms.ModelForm):
+    """
+    Formulario para registrar un nuevo pago de un cliente.
+    """
+    
+    class Meta:
+        model = RegistroPago
+        fields = ['monto', 'fecha_pago', 'tipo_pago', 'concepto', 'comprobante', 'observaciones']
+        widgets = {
+            'monto': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0,00',
+                'id': 'id_monto'
+            }),
+            'fecha_pago': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'id': 'id_fecha_pago'
+            }),
+            'tipo_pago': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_tipo_pago'
+            }),
+            'concepto': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Pago mensual Enero 2025',
+                'id': 'id_concepto'
+            }),
+            'observaciones': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Observaciones adicionales sobre este pago...',
+                'id': 'id_observaciones'
+            }),
+            'comprobante': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Número de recibo, transferencia, etc.',
+                'id': 'id_comprobante'
+            }),
+            'estado': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_estado'
+            })
+        }
+        error_messages = {
+            'monto': {
+                'required': 'El monto es obligatorio.',
+                'invalid': 'Ingresa un monto válido.',
+                'min_value': 'El monto debe ser mayor a cero.'
+            },
+            'fecha_pago': {
+                'required': 'La fecha del pago es obligatoria.',
+                'invalid': 'Ingresa una fecha válida.'
+            },
+            'concepto': {
+                'required': 'El concepto del pago es obligatorio.',
+                'max_length': 'El concepto no puede exceder 200 caracteres.'
+            }
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Labels personalizados
+        self.fields['monto'].label = "Monto Pagado ($)"
+        self.fields['fecha_pago'].label = "Fecha del Pago"
+        self.fields['tipo_pago'].label = "Tipo de Pago"
+        self.fields['concepto'].label = "Concepto"
+        self.fields['comprobante'].label = "N° Comprobante"
+        self.fields['observaciones'].label = "Observaciones"
+        
+        # Help text
+        self.fields['monto'].help_text = "Monto en pesos argentinos"
+        self.fields['fecha_pago'].help_text = "Fecha en que se realizó el pago"
+        self.fields['concepto'].help_text = "Descripción del pago"
+        self.fields['comprobante'].help_text = "Opcional: número de recibo o transferencia"
+        self.fields['observaciones'].help_text = "Opcional: notas adicionales"
+        
+        # Campo opcional
+        self.fields['comprobante'].required = False
+        self.fields['observaciones'].required = False
+
+    def clean_monto(self):
+        monto = self.cleaned_data.get('monto')
+        if monto and monto <= 0:
+            raise ValidationError('El monto debe ser mayor a cero.')
+        return monto
+
+    def clean_fecha_pago(self):
+        fecha_pago = self.cleaned_data.get('fecha_pago')
+        if fecha_pago and fecha_pago > timezone.now().date():
+            raise ValidationError('La fecha del pago no puede ser futura.')
+        return fecha_pago
+
+    def clean_concepto(self):
+        concepto = self.cleaned_data.get('concepto')
+        
+        if concepto:
+            # Limpiar y capitalizar
+            concepto = concepto.strip()
+            if concepto:
+                concepto = concepto[0].upper() + concepto[1:]
+        
+        return concepto
+
+    def save(self, commit=True):
+        """Override save para asignar el usuario que registra el pago"""
+        instance = super().save(commit=False)
+        
+        # El usuario que registra se asignará desde la vista
+        # aquí solo se prepara la instancia
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+class BuscarPagosForm(forms.Form):
+    """
+    Formulario para buscar y filtrar pagos en el panel de administración.
+    """
+    cliente = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por nombre de cliente...',
+            'id': 'id_cliente'
+        }),
+        label="Cliente"
+    )
+    
+    ESTADOS_FILTRO = [
+        ('', 'Todos los estados'),
+        ('confirmado', 'Solo confirmados'),
+        ('pendiente', 'Solo pendientes'),
+        ('rechazado', 'Solo rechazados')
+    ]
+    
+    estado = forms.ChoiceField(
+        required=False,
+        choices=ESTADOS_FILTRO,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_estado'
+        }),
+        label="Estado del pago"
+    )
+    
+    tipo_pago = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Todos los tipos')] + RegistroPago.TIPOS_PAGO,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_tipo_pago'
+        }),
+        label="Tipo de pago"
+    )
+    
+    fecha_desde = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'id': 'id_fecha_desde'
+        }),
+        label="Desde"
+    )
+    
+    fecha_hasta = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'id': 'id_fecha_hasta'
+        }),
+        label="Hasta"
+    )
+    
+    monto_minimo = forms.DecimalField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '0',
+            'step': '0.01',
+            'placeholder': '0.00',
+            'id': 'id_monto_minimo'
+        }),
+        label="Monto mínimo"
+    )
+    
+    monto_maximo = forms.DecimalField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '0',
+            'step': '0.01',
+            'placeholder': '0.00',
+            'id': 'id_monto_maximo'
+        }),
+        label="Monto máximo"
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_desde = cleaned_data.get('fecha_desde')
+        fecha_hasta = cleaned_data.get('fecha_hasta')
+        monto_minimo = cleaned_data.get('monto_minimo')
+        monto_maximo = cleaned_data.get('monto_maximo')
+        
+        # Validar que fecha_desde no sea mayor que fecha_hasta
+        if fecha_desde and fecha_hasta and fecha_desde > fecha_hasta:
+            raise ValidationError({
+                'fecha_hasta': 'La fecha final no puede ser anterior a la fecha inicial.'
+            })
+        
+        # Validar que monto_minimo no sea mayor que monto_maximo
+        if monto_minimo and monto_maximo and monto_minimo > monto_maximo:
+            raise ValidationError({
+                'monto_maximo': 'El monto máximo no puede ser menor que el monto mínimo.'
+            })
+        
+        return cleaned_data
+
+class EstadoPagoClienteForm(forms.ModelForm):
+    """
+    Formulario para editar manualmente el estado de pago de un cliente.
+    """
+    
+    class Meta:
+        model = EstadoPagoCliente
+        fields = ['plan_actual', 'saldo_actual', 'observaciones', 'activo']
+        widgets = {
+            'plan_actual': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_plan_actual'
+            }),
+            'saldo_actual': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': '0,00',
+                'id': 'id_saldo_actual'
+            }),
+            'observaciones': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Observaciones sobre el estado de pago del cliente...',
+                'id': 'id_observaciones'
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'id_activo'
+            })
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Solo mostrar planes activos
+        self.fields['plan_actual'].queryset = PlanPago.objects.filter(activo=True)
+        self.fields['plan_actual'].empty_label = "Sin plan asignado"
+        
+        # Labels personalizados
+        self.fields['plan_actual'].label = "Plan Asignado"
+        self.fields['saldo_actual'].label = "Saldo Actual ($)"
+        self.fields['observaciones'].label = "Observaciones"
+        self.fields['activo'].label = "Cliente activo en sistema de pagos"
+        
+        # Help text
+        self.fields['plan_actual'].help_text = "Plan asignado manualmente (o automático según reservas)"
+        self.fields['saldo_actual'].help_text = "Saldo actual: positivo = crédito, negativo = deuda"
+        self.fields['observaciones'].help_text = "Notas internas sobre el estado de pago"
+        self.fields['activo'].help_text = "Si el cliente está activo en el sistema de pagos"
+        
+        # Campos opcionales
+        self.fields['observaciones'].required = False
+
+class EnviarEmailPagoForm(forms.Form):
+    """
+    Formulario para enviar emails relacionados con pagos.
+    """
+    TIPOS_EMAIL = [
+        ('pago_recibido', 'Confirmación de pago recibido'),
+        ('pago_atrasado', 'Recordatorio de pago atrasado'),
+        ('estado_cuenta', 'Estado de cuenta'),
+    ]
+    
+    tipo_email = forms.ChoiceField(
+        choices=TIPOS_EMAIL,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_tipo_email'
+        }),
+        label="Tipo de email"
+    )
+    
+    mensaje_personalizado = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 6,
+            'placeholder': 'Mensaje adicional personalizado (opcional)...',
+            'id': 'id_mensaje_personalizado'
+        }),
+        label="Mensaje personalizado",
+        help_text="Mensaje adicional que se incluirá en el email"
+    )
+    
+    incluir_detalle_pagos = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'id_incluir_detalle_pagos'
+        }),
+        label="Incluir detalle de pagos recientes"
+    )
+    
+    incluir_estado_reservas = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'id_incluir_estado_reservas'
+        }),
+        label="Incluir estado de reservas actuales"
+    )
+
+    def __init__(self, cliente, *args, **kwargs):
+        self.cliente = cliente
+        super().__init__(*args, **kwargs)
+
+class BuscarClientesPagosForm(forms.Form):
+    """
+    Formulario para buscar clientes en el sistema de pagos.
+    """
+    busqueda = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Buscar por nombre, apellido, email o username...',
+            'id': 'id_busqueda'
+        }),
+        label="Buscar Cliente"
+    )
+    
+    FILTROS_ESTADO = [
+        ('', 'Todos los estados'),
+        ('al_dia', 'Al día'),
+        ('con_credito', 'Con crédito'),
+        ('con_deuda', 'Con deuda'),
+        ('sin_plan', 'Sin plan asignado'),
+        ('activos', 'Solo activos'),
+        ('inactivos', 'Solo inactivos')
+    ]
+    
+    filtro = forms.ChoiceField(
+        required=False,
+        choices=FILTROS_ESTADO,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_filtro'
+        }),
+        label="Filtrar por estado"
+    )
+    
+    plan_filtro = forms.ModelChoiceField(
+        queryset=PlanPago.objects.filter(activo=True),
+        required=False,
+        empty_label="Todos los planes",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_plan_filtro'
+        }),
+        label="Filtrar por plan"
+    )
+    
+    ordenar_por = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('nombre', 'Nombre'),
+            ('saldo', 'Saldo'),
+            ('ultimo_pago', 'Último pago'),
+            ('fecha_creacion', 'Fecha de registro')
+        ],
+        initial='nombre',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_ordenar_por'
+        }),
+        label="Ordenar por"
+    )
+
+class FiltrosPagosForm(forms.Form):
+    """
+    Formulario para filtros en la vista principal de pagos.
+    """
+    ESTADOS_FILTRO = [
+        ('', 'Todos los clientes'),
+        ('al_dia', 'Al día'),
+        ('debe', 'Con deuda'),
+        ('sin_plan', 'Sin plan'),
+    ]
+    
+    estado = forms.ChoiceField(
+        choices=ESTADOS_FILTRO,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'filtro_estado'
+        })
+    )
+    
+    buscar = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nombre, apellido o usuario...',
+            'id': 'buscar_cliente'
+        })
+    )
+    
+    mes = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'type': 'month',
+            'id': 'filtro_mes'
+        })
+    )

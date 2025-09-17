@@ -19,6 +19,10 @@ from django.core.paginator import Paginator
 from django.db import transaction
 import logging
 from .email_service import enviar_email_cancelacion_reserva
+from .models import PlanPago, EstadoPagoCliente, RegistroPago
+from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
+from django.db.models import Sum, Count, Q
+from decimal import Decimal
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -343,7 +347,7 @@ def conoce_mas(request):
     """Vista informativa sobre el estudio"""
     return render(request, 'gravity/conoce_mas.html')
 
-# API Endpoints para funcionalidad AJAX - ACTUALIZADOS PARA MÚLTIPLES SEDES
+# API Endpoints para funcionalidad AJAX
 @require_http_methods(["POST"])
 def sedes_disponibles(request):
     """
@@ -664,7 +668,7 @@ def admin_dashboard(request):
     return render(request, 'gravity/admin/dashboard.html', context)
 
 # ==============================================================================
-# GESTIÓN DE CLASES - ACTUALIZADO PARA MÚLTIPLES SEDES
+# GESTIÓN DE CLASES
 # ==============================================================================
 
 @admin_required
@@ -996,7 +1000,7 @@ def admin_clase_detalle(request, clase_id):
     return render(request, 'gravity/admin/clase_detalle.html', context)
 
 # ==============================================================================
-# GESTIÓN DE RESERVAS - ACTUALIZADO CON FILTROS DE SEDE
+# GESTIÓN DE RESERVAS
 # ==============================================================================
 
 @admin_required
@@ -1208,6 +1212,7 @@ def admin_usuarios_lista(request):
     
     # Filtros
     busqueda = request.GET.get('busqueda', '')
+    filtro = request.GET.get('filtro', '')
     
     if busqueda:
         usuarios = usuarios.filter(
@@ -1216,6 +1221,15 @@ def admin_usuarios_lista(request):
             Q(last_name__icontains=busqueda) |
             Q(email__icontains=busqueda)
         )
+    
+    # Aplicar filtros específicos
+    if filtro == 'con_reservas':
+        usuarios = usuarios.filter(reservas_pilates__activa=True).distinct()
+    elif filtro == 'nuevos':
+        hace_7_dias = timezone.now() - timedelta(days=7)
+        usuarios = usuarios.filter(date_joined__gte=hace_7_dias)
+    elif filtro == 'activos':
+        usuarios = usuarios.filter(is_active=True)
     
     # Agregar información adicional a cada usuario
     usuarios_info = []
@@ -1242,6 +1256,7 @@ def admin_usuarios_lista(request):
     context = {
         'page_obj': page_obj,
         'busqueda': busqueda,
+        'filtro': filtro,
     }
     
     return render(request, 'gravity/admin/usuarios_lista.html', context)
@@ -1279,7 +1294,7 @@ def admin_usuario_detalle(request, usuario_id):
     return render(request, 'gravity/admin/usuario_detalle.html', context)
 
 # ==============================================================================
-# AGREGAR CLIENTES NO REGISTRADOS - ACTUALIZADO CON SEDES
+# AGREGAR CLIENTES NO REGISTRADOS
 # ==============================================================================
 
 @admin_required
@@ -1428,7 +1443,7 @@ def admin_clientes_no_registrados_lista(request):
     return render(request, 'gravity/admin/clientes_no_registrados_lista.html', context)
 
 # ==============================================================================
-# REPORTES Y ESTADÍSTICAS - ACTUALIZADO CON SEDES
+# REPORTES Y ESTADÍSTICAS
 # ==============================================================================
 
 @admin_required
@@ -1531,3 +1546,265 @@ def admin_reportes(request):
     }
     
     return render(request, 'gravity/admin/reportes.html', context)
+
+# ==============================================================================
+# VISTAS DEL SISTEMA DE PAGOS
+# ==============================================================================
+
+@admin_required
+def admin_pagos_vista_principal(request):
+    """
+    VISTA ÚNICA CENTRALIZADA para todo el sistema de pagos.
+    Contiene: configuración de costos, lista de clientes, resumen general, filtros.
+    """
+    # ===== FILTROS =====
+    filtro_estado = request.GET.get('estado', '')
+    filtro_mes = request.GET.get('mes', '')
+    buscar_nombre = request.GET.get('buscar', '')
+    
+    # ===== OBTENER TODOS LOS CLIENTES CON ESTADO DE PAGO =====
+    # Crear estados para usuarios que no los tengan
+    usuarios_sin_estado = User.objects.filter(
+        is_staff=False,
+        estado_pago__isnull=True
+    )
+    for usuario in usuarios_sin_estado:
+        EstadoPagoCliente.objects.get_or_create(
+            usuario=usuario,
+            defaults={'activo': True}
+        )
+    
+    # Obtener todos los estados de pago
+    clientes_pagos = EstadoPagoCliente.objects.select_related(
+        'usuario', 'plan_actual'
+    ).prefetch_related('usuario__pagos_realizados')
+    
+    # ===== ACTUALIZAR SALDOS Y OBTENER ÚLTIMO PAGO =====
+    clientes_procesados = []
+    
+    for cliente_estado in clientes_pagos:
+        # Obtener último pago para mostrar en la tabla
+        ultimo_pago = RegistroPago.objects.filter(
+            cliente=cliente_estado.usuario,
+            estado='confirmado'
+        ).order_by('-fecha_pago').first()
+        
+        cliente_estado.ultimo_pago_obj = ultimo_pago
+        clientes_procesados.append(cliente_estado)
+    
+    # ===== APLICAR FILTROS =====
+    if filtro_estado == 'al_dia':
+        clientes_procesados = [c for c in clientes_procesados if c.saldo_actual >= 0 and c.plan_actual]
+    elif filtro_estado == 'debe':
+        clientes_procesados = [c for c in clientes_procesados if c.saldo_actual < 0]
+    elif filtro_estado == 'sin_plan':
+        clientes_procesados = [c for c in clientes_procesados if not c.plan_actual]
+    
+    # Filtro por búsqueda de nombre
+    if buscar_nombre:
+        clientes_procesados = [c for c in clientes_procesados if (
+            buscar_nombre.lower() in (c.usuario.first_name or '').lower() or
+            buscar_nombre.lower() in (c.usuario.last_name or '').lower() or
+            buscar_nombre.lower() in c.usuario.username.lower()
+        )]
+    
+    # Ordenar por estado (deudores primero, luego por apellido)
+    clientes_procesados.sort(key=lambda x: (x.saldo_actual, x.usuario.last_name or x.usuario.username))
+    
+    # ===== RESUMEN GENERAL =====
+    mes_actual = timezone.now().date().replace(day=1)
+    
+    total_clientes = len(clientes_procesados)
+    clientes_al_dia = len([c for c in clientes_procesados if c.saldo_actual >= 0 and c.plan_actual])
+    clientes_con_deuda = len([c for c in clientes_procesados if c.saldo_actual < 0])
+    clientes_sin_plan = len([c for c in clientes_procesados if not c.plan_actual])
+    
+    ingresos_mes = RegistroPago.objects.filter(
+        fecha_pago__gte=mes_actual,
+        estado='confirmado'
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    
+    total_deuda = sum([abs(c.saldo_actual) for c in clientes_procesados if c.saldo_actual < 0])
+    
+    # ===== PLANES DE PAGO =====
+    planes_activos = PlanPago.objects.filter(activo=True).order_by('clases_por_semana')
+    
+    # ===== CREAR PAGINADOR MANUAL =====
+    from django.core.paginator import Paginator
+    
+    # Crear paginador con la lista procesada
+    paginator = Paginator(clientes_procesados, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'planes_activos': planes_activos,
+        'filtro_estado': filtro_estado,
+        'filtro_mes': filtro_mes,
+        'buscar_nombre': buscar_nombre,
+        'total_clientes': total_clientes,
+        'clientes_al_dia': clientes_al_dia,
+        'clientes_con_deuda': clientes_con_deuda,
+        'clientes_sin_plan': clientes_sin_plan,
+        'ingresos_mes': ingresos_mes,
+        'total_deuda': total_deuda,
+        'mes_actual': mes_actual,
+    }
+    
+    return render(request, 'gravity/admin/pagos_principal.html', context)
+
+@admin_required
+def admin_pagos_registrar_pago(request, cliente_id):
+    """
+    Modal/página simple para registrar un pago de un cliente específico.
+    """
+    cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
+    estado_pago, created = EstadoPagoCliente.objects.get_or_create(
+        usuario=cliente,
+        defaults={'activo': True}
+    )
+    
+    if request.method == 'POST':
+        form = RegistroPagoForm(request.POST)
+        
+        if form.is_valid():
+            pago = form.save(commit=False)
+            pago.cliente = cliente
+            pago.registrado_por = request.user
+            pago.save()
+            
+            # NO recalcular desde cero, sino actualizar acumulativamente
+            estado_pago.actualizar_saldo_automatico()
+            estado_pago.ultimo_pago = pago.fecha_pago
+            estado_pago.monto_ultimo_pago = pago.monto
+            estado_pago.save()
+            
+            messages.success(
+                request,
+                f'Pago de ${pago.monto} registrado exitosamente para {cliente.get_full_name() or cliente.username}'
+            )
+            return redirect('gravity:admin_pagos_vista_principal')
+    else:
+        # Prellenar con datos sugeridos
+        form = RegistroPagoForm(initial={
+            'fecha_pago': timezone.now().date(),
+            'concepto': f'Pago mensual {timezone.now().strftime("%B %Y")}',
+            'monto': estado_pago.plan_actual.precio_mensual if estado_pago.plan_actual else None
+        })
+    
+    context = {
+        'form': form,
+        'cliente': cliente,
+        'estado_pago': estado_pago,
+    }
+    
+    return render(request, 'gravity/admin/pagos_registrar.html', context)
+
+@admin_required
+def admin_pagos_historial_cliente(request, cliente_id):
+    """
+    Página simple para ver historial de pagos de un cliente específico.
+    """
+    cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
+    estado_pago = get_object_or_404(EstadoPagoCliente, usuario=cliente)
+    
+    # Obtener historial de pagos
+    pagos = RegistroPago.objects.filter(
+        cliente=cliente
+    ).order_by('-fecha_pago', '-fecha_registro')
+    
+    # Estadísticas del cliente
+    total_pagado = pagos.filter(estado='confirmado').aggregate(
+        total=Sum('monto')
+    )['total'] or Decimal('0')
+    
+    total_pagos = pagos.filter(estado='confirmado').count()
+    
+    context = {
+        'cliente': cliente,
+        'estado_pago': estado_pago,
+        'pagos': pagos,
+        'total_pagado': total_pagado,
+        'total_pagos': total_pagos,
+    }
+    
+    return render(request, 'gravity/admin/pagos_historial.html', context)
+
+@admin_required
+def admin_pagos_configurar_planes(request):
+    """
+    Página simple para configurar planes de pago (costos).
+    """
+    planes = PlanPago.objects.all().order_by('clases_por_semana')
+    
+    # Inicializar el formulario SIEMPRE
+    form = PlanPagoForm()
+
+    if request.method == 'POST':
+        if 'crear_plan' in request.POST:
+            form = PlanPagoForm(request.POST)
+            if form.is_valid():
+                plan = form.save()
+                messages.success(request, f'Plan "{plan.nombre}" creado exitosamente.')
+                return redirect('gravity:admin_pagos_configurar_planes')
+        elif 'editar_plan' in request.POST:
+            plan_id = request.POST.get('editar_plan')
+            plan = get_object_or_404(PlanPago, id=plan_id)
+            form = PlanPagoForm(request.POST, instance=plan)
+            if form.is_valid():
+                form.save()
+                messages.success(request, f'Plan "{plan.nombre}" actualizado exitosamente.')
+                return redirect('gravity:admin_pagos_configurar_planes')
+        elif 'eliminar_plan' in request.POST:
+            plan_id = request.POST.get('eliminar_plan')
+            plan = get_object_or_404(PlanPago, id=plan_id)
+            
+            # Verificar que no tenga clientes asignados
+            if plan.estadopagocliente_set.count() > 0:
+                messages.error(request, f'No se puede eliminar el plan "{plan.nombre}" porque tiene clientes asignados.')
+            else:
+                plan_nombre = plan.nombre
+                plan.delete()
+                messages.success(request, f'Plan "{plan_nombre}" eliminado exitosamente.')
+            
+            return redirect('gravity:admin_pagos_configurar_planes')
+    
+    context = {
+        'planes': planes,
+        'form': form,
+    }
+    
+    return render(request, 'gravity/admin/pagos_configurar_planes.html', context)
+
+@admin_required
+def admin_pagos_editar_estado_cliente(request, cliente_id):
+    """
+    Modal/página simple para editar manualmente el estado de pago de un cliente.
+    """
+    cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
+    estado_pago, created = EstadoPagoCliente.objects.get_or_create(
+        usuario=cliente,
+        defaults={'activo': True}
+    )
+    
+    if request.method == 'POST':
+        form = EstadoPagoClienteForm(request.POST, instance=estado_pago)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                f'Estado de pago actualizado para {cliente.get_full_name() or cliente.username}'
+            )
+            return redirect('gravity:admin_pagos_vista_principal')
+    else:
+        form = EstadoPagoClienteForm(instance=estado_pago)
+    
+    context = {
+        'form': form,
+        'cliente': cliente,
+        'estado_pago': estado_pago,
+    }
+    
+    return render(request, 'gravity/admin/pagos_editar_estado.html', context)

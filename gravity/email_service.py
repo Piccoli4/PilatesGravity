@@ -255,3 +255,4 @@ def enviar_recordatorio_clase(reserva, horas_antes=24):
     except Exception as e:
         logger.error(f"Error enviando recordatorio para reserva {reserva.numero_reserva}: {str(e)}")
         return False
+    

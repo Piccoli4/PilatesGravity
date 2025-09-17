@@ -38,6 +38,21 @@ class UserProfile(models.Model):
         help_text="Número de teléfono para contacto (opcional)"
     )
     
+    # Sede preferida del usuario
+    SEDES_PREFERENCIA = [
+        ('cualquiera', 'Cualquier sede'),
+        ('sede_principal', 'Sede Principal - La Rioja 3044'),
+        ('sede_2', 'Sede 2 - 9 de julio 3698'),
+    ]
+    
+    sede_preferida = models.CharField(
+        max_length=20,
+        choices=SEDES_PREFERENCIA,
+        default='cualquiera',
+        verbose_name="Sede preferida",
+        help_text="Sede de preferencia para recibir notificaciones sobre clases"
+    )
+    
     # Información personal adicional
     fecha_nacimiento = models.DateField(
         blank=True,
@@ -88,12 +103,38 @@ class UserProfile(models.Model):
         help_text="Marcar para recibir recordatorios de tus clases reservadas"
     )
     
+    # Preferencias específicas por sede
+    notificar_clases_sede_principal = models.BooleanField(
+        default=True,
+        verbose_name="Notificar sobre clases en Sede Principal",
+        help_text="Recibir notificaciones sobre nuevas clases en La Rioja 3044"
+    )
+    
+    notificar_clases_sede_2 = models.BooleanField(
+        default=True,
+        verbose_name="Notificar sobre clases en Sede 2",
+        help_text="Recibir notificaciones sobre nuevas clases en 9 de julio 3698"
+    )
+    
     # Información del estudio
     fecha_primera_clase = models.DateField(
         blank=True,
         null=True,
         verbose_name="Fecha de primera clase",
         help_text="Fecha en que tomó su primera clase en el estudio"
+    )
+    
+    # Sede donde tomó su primera clase
+    sede_primera_clase = models.CharField(
+        max_length=20,
+        choices=[
+            ('sede_principal', 'Sede Principal - La Rioja 3044'),
+            ('sede_2', 'Sede 2 - 9 de julio 3698'),
+        ],
+        blank=True,
+        null=True,
+        verbose_name="Sede de primera clase",
+        help_text="Sede donde tomó su primera clase"
     )
     
     # Notas internas (solo para administradores)
@@ -232,6 +273,39 @@ class UserProfile(models.Model):
         """Verifica si el usuario tiene reservas activas"""
         return self.get_reservas_activas().exists()
 
+    # Métodos específicos para sedes
+    def get_reservas_por_sede(self, sede=None):
+        """Devuelve las reservas del usuario filtradas por sede"""
+        reservas = self.get_reservas_activas()
+        if sede:
+            reservas = reservas.filter(clase__direccion=sede)
+        return reservas
+
+    def get_sede_preferida_display(self):
+        """Devuelve el nombre legible de la sede preferida"""
+        return dict(self.SEDES_PREFERENCIA).get(self.sede_preferida, 'Cualquier sede')
+
+    def debe_notificar_sede(self, sede):
+        """Verifica si debe recibir notificaciones de una sede específica"""
+        if not self.acepta_marketing:
+            return False
+        
+        if sede == 'sede_principal':
+            return self.notificar_clases_sede_principal
+        elif sede == 'sede_2':
+            return self.notificar_clases_sede_2
+        
+        return False
+
+    def get_sedes_notificacion(self):
+        """Devuelve las sedes para las que acepta notificaciones"""
+        sedes = []
+        if self.notificar_clases_sede_principal:
+            sedes.append('sede_principal')
+        if self.notificar_clases_sede_2:
+            sedes.append('sede_2')
+        return sedes
+
     def puede_hacer_reserva(self):
         """
         Verifica si el usuario puede hacer nuevas reservas.
@@ -265,7 +339,7 @@ def save_user_profile(sender, instance, **kwargs):
 
 class ConfiguracionEstudio(models.Model):
     """
-    Modelo para configuraciones globales del estudio.
+    Modelo para configuraciones globales del estudio con soporte para múltiples sedes.
     Singleton pattern - solo debe existir una instancia.
     """
     
@@ -278,21 +352,91 @@ class ConfiguracionEstudio(models.Model):
     
     direccion = models.TextField(
         blank=True,
-        verbose_name="Dirección del estudio"
+        verbose_name="Dirección del estudio",
+        help_text="Dirección general o principal del estudio"
     )
     
     telefono_contacto = models.CharField(
         max_length=20,
         blank=True,
-        verbose_name="Teléfono de contacto"
+        verbose_name="Teléfono de contacto general"
     )
     
     email_contacto = models.EmailField(
         blank=True,
-        verbose_name="Email de contacto"
+        verbose_name="Email de contacto general"
     )
     
-    # Configuraciones de reservas
+    # === CONFIGURACIONES ESPECÍFICAS POR SEDE ===
+    
+    # Sede Principal
+    sede_principal_activa = models.BooleanField(
+        default=True,
+        verbose_name="Sede Principal activa",
+        help_text="Si la Sede Principal está operativa"
+    )
+    
+    sede_principal_telefono = models.CharField(
+        max_length=20,
+        blank=True,
+        default="+54 342 511 4448",
+        verbose_name="Teléfono Sede Principal",
+        help_text="Teléfono específico de La Rioja 3044"
+    )
+    
+    sede_principal_email = models.EmailField(
+        blank=True,
+        verbose_name="Email Sede Principal",
+        help_text="Email específico de la sede principal"
+    )
+    
+    sede_principal_horarios = models.TextField(
+        blank=True,
+        verbose_name="Horarios Sede Principal",
+        help_text="Horarios de atención de la Sede Principal"
+    )
+    
+    sede_principal_capacidad_maxima = models.PositiveIntegerField(
+        default=10,
+        verbose_name="Capacidad máxima por clase - Sede Principal",
+        help_text="Número máximo de personas por clase en la sede principal"
+    )
+    
+    # Sede 2
+    sede_2_activa = models.BooleanField(
+        default=True,
+        verbose_name="Sede 2 activa",
+        help_text="Si la Sede 2 está operativa"
+    )
+    
+    sede_2_telefono = models.CharField(
+        max_length=20,
+        blank=True,
+        default="+54 342 511 4448",
+        verbose_name="Teléfono Sede 2",
+        help_text="Teléfono específico de 9 de julio 3698"
+    )
+    
+    sede_2_email = models.EmailField(
+        blank=True,
+        verbose_name="Email Sede 2",
+        help_text="Email específico de la sede 2"
+    )
+    
+    sede_2_horarios = models.TextField(
+        blank=True,
+        verbose_name="Horarios Sede 2",
+        help_text="Horarios de atención de la Sede 2"
+    )
+    
+    sede_2_capacidad_maxima = models.PositiveIntegerField(
+        default=8,
+        verbose_name="Capacidad máxima por clase - Sede 2",
+        help_text="Número máximo de personas por clase en la sede 2"
+    )
+    
+    # === CONFIGURACIONES GENERALES DE RESERVAS ===
+    
     horas_anticipacion_cancelacion = models.PositiveIntegerField(
         default=12,
         verbose_name="Horas de anticipación para cancelar",
@@ -318,11 +462,36 @@ class ConfiguracionEstudio(models.Model):
         help_text="Cuántas horas antes de la clase enviar el recordatorio"
     )
     
+    # Configuraciones de marketing por sede
+    enviar_marketing_sede_principal = models.BooleanField(
+        default=True,
+        verbose_name="Marketing activo - Sede Principal",
+        help_text="Enviar emails de marketing sobre la Sede Principal"
+    )
+    
+    enviar_marketing_sede_2 = models.BooleanField(
+        default=True,
+        verbose_name="Marketing activo - Sede 2",
+        help_text="Enviar emails de marketing sobre la Sede 2"
+    )
+    
     # Información adicional
     mensaje_bienvenida = models.TextField(
         blank=True,
         verbose_name="Mensaje de bienvenida",
         help_text="Mensaje que aparece en la página principal"
+    )
+    
+    mensaje_sede_principal = models.TextField(
+        blank=True,
+        verbose_name="Mensaje específico Sede Principal",
+        help_text="Mensaje específico para mostrar sobre la Sede Principal"
+    )
+    
+    mensaje_sede_2 = models.TextField(
+        blank=True,
+        verbose_name="Mensaje específico Sede 2", 
+        help_text="Mensaje específico para mostrar sobre la Sede 2"
     )
     
     activo = models.BooleanField(
@@ -353,9 +522,100 @@ class ConfiguracionEstudio(models.Model):
                 'max_reservas_por_usuario': 3,
                 'enviar_recordatorios': True,
                 'horas_antes_recordatorio': 24,
+                'sede_principal_activa': True,
+                'sede_2_activa': True,
+                'sede_principal_telefono': '+54 342 511 4448',
+                'sede_2_telefono': '+54 342 511 4448',
+                'sede_principal_capacidad_maxima': 10,
+                'sede_2_capacidad_maxima': 8,
             }
         )
         return config
+
+    # === MÉTODOS ESPECÍFICOS PARA SEDES ===
+    
+    def get_sedes_activas(self):
+        """Devuelve las sedes activas como lista de tuplas"""
+        sedes = []
+        if self.sede_principal_activa:
+            sedes.append(('sede_principal', 'Sede Principal - La Rioja 3044'))
+        if self.sede_2_activa:
+            sedes.append(('sede_2', 'Sede 2 - 9 de julio 3698'))
+        return sedes
+
+    def get_telefono_sede(self, sede):
+        """Devuelve el teléfono de una sede específica"""
+        if sede == 'sede_principal':
+            return self.sede_principal_telefono or self.telefono_contacto
+        elif sede == 'sede_2':
+            return self.sede_2_telefono or self.telefono_contacto
+        return self.telefono_contacto
+
+    def get_email_sede(self, sede):
+        """Devuelve el email de una sede específica"""
+        if sede == 'sede_principal':
+            return self.sede_principal_email or self.email_contacto
+        elif sede == 'sede_2':
+            return self.sede_2_email or self.email_contacto
+        return self.email_contacto
+
+    def get_capacidad_maxima_sede(self, sede):
+        """Devuelve la capacidad máxima recomendada para una sede"""
+        if sede == 'sede_principal':
+            return self.sede_principal_capacidad_maxima
+        elif sede == 'sede_2':
+            return self.sede_2_capacidad_maxima
+        return 10  # Default
+
+    def get_horarios_sede(self, sede):
+        """Devuelve los horarios de una sede específica"""
+        if sede == 'sede_principal':
+            return self.sede_principal_horarios
+        elif sede == 'sede_2':
+            return self.sede_2_horarios
+        return ""
+
+    def sede_puede_enviar_marketing(self, sede):
+        """Verifica si una sede puede enviar emails de marketing"""
+        if sede == 'sede_principal':
+            return self.enviar_marketing_sede_principal
+        elif sede == 'sede_2':
+            return self.enviar_marketing_sede_2
+        return True
+
+    def get_mensaje_sede(self, sede):
+        """Devuelve el mensaje específico de una sede"""
+        if sede == 'sede_principal':
+            return self.mensaje_sede_principal or self.mensaje_bienvenida
+        elif sede == 'sede_2':
+            return self.mensaje_sede_2 or self.mensaje_bienvenida
+        return self.mensaje_bienvenida
+
+    def get_info_completa_sede(self, sede):
+        """Devuelve toda la información de una sede en un diccionario"""
+        if sede == 'sede_principal':
+            return {
+                'nombre': 'Sede Principal - La Rioja 3044',
+                'direccion': 'La Rioja 3044',
+                'telefono': self.get_telefono_sede('sede_principal'),
+                'email': self.get_email_sede('sede_principal'),
+                'horarios': self.get_horarios_sede('sede_principal'),
+                'capacidad_maxima': self.sede_principal_capacidad_maxima,
+                'activa': self.sede_principal_activa,
+                'mensaje': self.get_mensaje_sede('sede_principal')
+            }
+        elif sede == 'sede_2':
+            return {
+                'nombre': 'Sede 2 - 9 de julio 3698',
+                'direccion': '9 de julio 3698',
+                'telefono': self.get_telefono_sede('sede_2'),
+                'email': self.get_email_sede('sede_2'),
+                'horarios': self.get_horarios_sede('sede_2'),
+                'capacidad_maxima': self.sede_2_capacidad_maxima,
+                'activa': self.sede_2_activa,
+                'mensaje': self.get_mensaje_sede('sede_2')
+            }
+        return {}
 
     def __str__(self):
         return f"Configuración de {self.nombre_estudio}"

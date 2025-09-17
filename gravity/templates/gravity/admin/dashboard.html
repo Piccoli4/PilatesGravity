@@ -249,30 +249,36 @@
                 </h3>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <a href="{% url 'gravity:admin_clase_crear' %}" class="btn-pilates-primary text-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
-                        <img src="{% static 'icons/plus.png' %}" alt="Icono Nueva Clase" class="w-6 h-6">
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <a href="{% url 'gravity:admin_clase_crear' %}" class="btn-pilates-primary w-full text-blanco rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <img src="{% static 'icons/plus.png' %}" alt="Icono Nueva Clase" class="size-8">
                         <span class="font-medium">Nueva Clase</span>
                     </a>
-                    <a href="{% url 'gravity:admin_clases_lista' %}" class="btn-pilates-secondary text-white rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                    <a href="{% url 'gravity:admin_clases_lista' %}" class="btn-pilates-secondary w-full text-blanco rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10">
                             <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
                             <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
                         </svg>
                         <span class="font-medium">Ver Clases</span>
                     </a>
-                    <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn-pilates-accent text-fondo rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-">
+                    <a href="{% url 'gravity:admin_usuarios_lista' %}" class="btn-pilates-accent w-full text-fondo rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10">
                             <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
                             <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
                         </svg>
                         <span class="font-medium">Ver Usuarios</span>
                     </a>
-                    <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn-pilates-light rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-28 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                    <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn-pilates-light w-full rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10">
                             <path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
                         </svg>
                         <span class="font-medium">Agregar Cliente</span>
+                    </a>
+                    <a href="{% url 'gravity:admin_pagos_vista_principal' %}" class="w-full btn-pilates-primary text-fondo border border-secundario rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
+                        <svg class="size-10" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M128 128C92.7 128 64 156.7 64 192L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 192C576 156.7 547.3 128 512 128L128 128zM360 352L488 352C501.3 352 512 362.7 512 376C512 389.3 501.3 400 488 400L360 400C346.7 400 336 389.3 336 376C336 362.7 346.7 352 360 352zM336 264C336 250.7 346.7 240 360 240L488 240C501.3 240 512 250.7 512 264C512 277.3 501.3 288 488 288L360 288C346.7 288 336 277.3 336 264zM212 208C223 208 232 217 232 228L232 232L240 232C251 232 260 241 260 252C260 263 251 272 240 272L192.5 272C185.6 272 180 277.6 180 284.5C180 290.6 184.4 295.8 190.4 296.8L232.1 303.8C257.4 308 276 329.9 276 355.6C276 381.7 257 403.3 232 407.4L232 412.1C232 423.1 223 432.1 212 432.1C201 432.1 192 423.1 192 412.1L192 408.1L168 408.1C157 408.1 148 399.1 148 388.1C148 377.1 157 368.1 168 368.1L223.5 368.1C230.4 368.1 236 362.5 236 355.6C236 349.5 231.6 344.3 225.6 343.3L183.9 336.3C158.5 332 140 310.1 140 284.5C140 255.7 163.2 232.3 192 232L192 228C192 217 201 208 212 208z"/>
+                        </svg>
+                        <span class="font-medium">Pagos</span>
                     </a>
                 </div>
             </div>
@@ -357,14 +363,14 @@
                                 <h6 class="font-semibold mb-1">{{ reserva.get_nombre_completo_usuario }}</h6>
                                 <div class="text-sm text-gray-500">
                                     <div class="flex items-center gap-1 mb-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dumbbell-icon lucide-dumbbell">
-                                            <path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/>
-                                            <path d="m2.5 21.5 1.4-1.4"/>
-                                            <path d="m20.1 3.9 1.4-1.4"/>
-                                            <path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/>
-                                            <path d="m9.6 14.4 4.8-4.8"/>
-                                        </svg>
-                                        <span>{{ reserva.clase.get_nombre_display }} - {{ reserva.clase.dia }}</span>
+                                        {% if reserva.clase.tipo == 'Reformer' %}
+                                            <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="size-4">
+                                        {% elif reserva.clase.tipo == 'Cadillac' %} 
+                                            <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="size-4">  
+                                        {% else %}
+                                            <img src="{% static 'icons/especial.png' %}" alt="Icono de Clase Especial" class="size-4">
+                                        {% endif %}
+                                        <span>{{ reserva.clase.tipo }} - {{ reserva.clase.dia }}</span>
                                     </div>
                                     <div class="flex items-center gap-1">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
@@ -376,7 +382,7 @@
                             </div>
                             <div class="text-right">
                                 <small class="text-gray-500 block">{{ reserva.fecha_reserva|date:"d/m H:i" }}</small>
-                                <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs">{{ reserva.numero_reserva }}</span>
+                                <span class="bg-secundario text-white px-2 py-1 rounded text-xs">{{ reserva.numero_reserva }}</span>
                             </div>
                         </div>
                     {% endfor %}

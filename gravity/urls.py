@@ -6,12 +6,15 @@ from .views import (
     eliminar_reserva, buscar_reservas_usuario,
     clases_disponibles_api, clases_disponibles, detalle_reserva,
     sedes_disponibles,
-    # NUEVAS IMPORTACIONES PARA ADMINISTRADOR
+    # IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_clases_lista, admin_clase_crear, admin_clase_editar,
-    admin_clase_eliminar, admin_clase_detalle, admin_reservas_lista,
-    admin_reserva_cancelar, admin_usuarios_lista, admin_usuario_detalle,
+    admin_clase_eliminar, admin_clase_detalle,
+    admin_reservas_lista, admin_reserva_cancelar, admin_usuarios_lista, admin_usuario_detalle,
     admin_agregar_cliente_no_registrado, admin_clientes_no_registrados_lista,
-    admin_reportes
+    admin_reportes,
+    # IMPORTACIONES PARA SISTEMA DE PAGOS
+    admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, admin_pagos_historial_cliente,
+    admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente
 )
 from django.views.generic import TemplateView
 
@@ -69,4 +72,14 @@ urlpatterns = [
     
     # Reportes y estadísticas
     path('admin-panel/reportes/', admin_reportes, name='admin_reportes'),
+
+    # ==============================================================================
+    # URLS DEL SISTEMA DE PAGOS
+    # ==============================================================================
+    
+    path('admin-panel/pagos/', admin_pagos_vista_principal, name='admin_pagos_vista_principal'),
+    path('admin-panel/pagos/registrar/<int:cliente_id>/', admin_pagos_registrar_pago, name='admin_pagos_registrar_pago'),
+    path('admin-panel/pagos/historial/<int:cliente_id>/', admin_pagos_historial_cliente, name='admin_pagos_historial_cliente'),
+    path('admin-panel/pagos/configurar-planes/', admin_pagos_configurar_planes, name='admin_pagos_configurar_planes'),
+    path('admin-panel/pagos/editar-estado/<int:cliente_id>/', admin_pagos_editar_estado_cliente, name='admin_pagos_editar_estado_cliente'),
 ]

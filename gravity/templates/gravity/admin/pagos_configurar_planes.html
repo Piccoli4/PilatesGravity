@@ -1,0 +1,369 @@
+{% extends "gravity/admin/base_admin.html" %}
+
+{% block title %}Configurar Planes de Pago{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center gap-1">
+        <span class="text-gray-400">/</span>
+        <span class="text-gray-500">Pagos</span>
+    </li>
+    <li class="flex items-center">
+        <span class="text-gray-400">/</span>
+        <span class="ml-1 text-gray-500">Configurar Planes</span>
+    </li>
+{% endblock %}
+
+{% block content %}
+    <!-- HEADER -->
+    <div class="card p-3 flex justify-between items-center mb-8">
+        <div>
+            <div class="flex items-center gap-2 text-principal">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                    <path d="M17.004 10.407c.138.435-.216.842-.672.842h-3.465a.75.75 0 0 1-.65-.375l-1.732-3c-.229-.396-.053-.907.393-1.004a5.252 5.252 0 0 1 6.126 3.537ZM8.12 8.464c.307-.338.838-.235 1.066.16l1.732 3a.75.75 0 0 1 0 .75l-1.732 3c-.229.397-.76.5-1.067.161A5.23 5.23 0 0 1 6.75 12a5.23 5.23 0 0 1 1.37-3.536ZM10.878 17.13c-.447-.098-.623-.608-.394-1.004l1.733-3.002a.75.75 0 0 1 .65-.375h3.465c.457 0 .81.407.672.842a5.252 5.252 0 0 1-6.126 3.539Z" />
+                    <path fill-rule="evenodd" d="M21 12.75a.75.75 0 1 0 0-1.5h-.783a8.22 8.22 0 0 0-.237-1.357l.734-.267a.75.75 0 1 0-.513-1.41l-.735.268a8.24 8.24 0 0 0-.689-1.192l.6-.503a.75.75 0 1 0-.964-1.149l-.6.504a8.3 8.3 0 0 0-1.054-.885l.391-.678a.75.75 0 1 0-1.299-.75l-.39.676a8.188 8.188 0 0 0-1.295-.47l.136-.77a.75.75 0 0 0-1.477-.26l-.136.77a8.36 8.36 0 0 0-1.377 0l-.136-.77a.75.75 0 1 0-1.477.26l.136.77c-.448.121-.88.28-1.294.47l-.39-.676a.75.75 0 0 0-1.3.75l.392.678a8.29 8.29 0 0 0-1.054.885l-.6-.504a.75.75 0 1 0-.965 1.149l.6.503a8.243 8.243 0 0 0-.689 1.192L3.8 8.216a.75.75 0 1 0-.513 1.41l.735.267a8.222 8.222 0 0 0-.238 1.356h-.783a.75.75 0 0 0 0 1.5h.783c.042.464.122.917.238 1.356l-.735.268a.75.75 0 0 0 .513 1.41l.735-.268c.197.417.428.816.69 1.191l-.6.504a.75.75 0 0 0 .963 1.15l.601-.505c.326.323.679.62 1.054.885l-.392.68a.75.75 0 0 0 1.3.75l.39-.679c.414.192.847.35 1.294.471l-.136.77a.75.75 0 0 0 1.477.261l.137-.772a8.332 8.332 0 0 0 1.376 0l.136.772a.75.75 0 1 0 1.477-.26l-.136-.771a8.19 8.19 0 0 0 1.294-.47l.391.677a.75.75 0 0 0 1.3-.75l-.393-.679a8.29 8.29 0 0 0 1.054-.885l.601.504a.75.75 0 0 0 .964-1.15l-.6-.503c.261-.375.492-.774.69-1.191l.735.267a.75.75 0 1 0 .512-1.41l-.734-.267c.115-.439.195-.892.237-1.356h.784Zm-2.657-3.06a6.744 6.744 0 0 0-1.19-2.053 6.784 6.784 0 0 0-1.82-1.51A6.705 6.705 0 0 0 12 5.25a6.8 6.8 0 0 0-1.225.11 6.7 6.7 0 0 0-2.15.793 6.784 6.784 0 0 0-2.952 3.489.76.76 0 0 1-.036.098A6.74 6.74 0 0 0 5.251 12a6.74 6.74 0 0 0 3.366 5.842l.009.005a6.704 6.704 0 0 0 2.18.798l.022.003a6.792 6.792 0 0 0 2.368-.004 6.704 6.704 0 0 0 2.205-.811 6.785 6.785 0 0 0 1.762-1.484l.009-.01.009-.01a6.743 6.743 0 0 0 1.18-2.066c.253-.707.39-1.469.39-2.263a6.74 6.74 0 0 0-.408-2.309Z" clip-rule="evenodd" />
+                </svg>
+                <h1 class="text-3xl font-bold text-principal">Configurar Planes de Pago</h1>
+            </div>
+            <p class="text-gris-medio">Gestiona los costos y planes disponibles para tus clientes</p>
+        </div>
+        <a href="{% url 'gravity:admin_pagos_vista_principal' %}" 
+           class="inline-flex items-center px-4 py-2 bg-gris-claro text-gris-oscuro rounded-lg hover:bg-principal hover:text-fondo transition-colors duration-200 shadow-sm">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Volver a Pagos
+        </a>
+    </div>
+
+    <!-- CREAR NUEVO PLAN -->
+    <div class="card bg-blanco rounded-xl shadow-sm border border-gray-200 mb-8">
+        <div class="card-header border-b border-gray-200 px-6 py-4 rounded-t-xl">
+            <h2 class="text-blanco text-xl flex items-center gap-2">
+                <svg class="size-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                </svg>
+                Crear Nuevo Plan
+            </h2>
+        </div>
+        <div class="card-body p-3">
+            <form method="post" class="space-y-2">
+                {% csrf_token %}
+                <input type="hidden" name="crear_plan" value="1">
+                
+                <div class="flex flex-col md:flex-row gap-4 items-center justify-evenly">
+                    <!-- Nombre del Plan -->
+                    <div class="w-full">
+                        <label for="{{ form.nombre.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                            {{ form.nombre.label }}
+                        </label>
+                        <input type="text" name="nombre" id="{{ form.nombre.id_for_label }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-secundario focus:border-secundario"
+                               placeholder="Ej: 2 clases semanales" value="{{ form.nombre.value|default:'' }}" required>
+                        {% if form.nombre.errors %}
+                            <p class="text-error text-xs mt-1">{{ form.nombre.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Clases por Semana -->
+                    <div class="w-full">
+                        <label for="{{ form.clases_por_semana.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                            {{ form.clases_por_semana.label }}
+                        </label>
+                        <input type="number" name="clases_por_semana" id="{{ form.clases_por_semana.id_for_label }}"
+                               class="block px-3 py-2 border border-gray-300 rounded-lg focus:ring-secundario focus:border-secundario"
+                               placeholder="2" min="1" max="10" value="{{ form.clases_por_semana.value|default:'' }}" required>
+                        {% if form.clases_por_semana.errors %}
+                            <p class="text-error text-xs mt-1">{{ form.clases_por_semana.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Precio Mensual -->
+                    <div class="w-full">
+                        <label for="{{ form.precio_mensual.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                            {{ form.precio_mensual.label }}
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gris-medio text-sm">$</span>
+                            </div>
+                            <input type="number" name="precio_mensual" id="{{ form.precio_mensual.id_for_label }}"
+                                   class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-secundario focus:border-secundario"
+                                   placeholder="0.00" min="0" step="0.01" value="{{ form.precio_mensual.value|default:'' }}">
+                        </div>
+                        {% if form.precio_mensual.errors %}
+                            <p class="text-error text-xs mt-1">{{ form.precio_mensual.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Botón Crear -->
+                    <div class="w-full self-end mb-0.5">
+                        <button type="submit" 
+                                class="w-full bg-principal hover:bg-principal-dark text-blanco font-medium py-2 px-4 rounded-lg transition-colors duration-200 shadow-btn-primary hover:shadow-btn-primary-hover flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            Crear Plan
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PLANES EXISTENTES -->
+    <div class="card bg-blanco rounded-xl shadow-sm border border-gray-200">
+        <div class="card-header border-b border-gray-200 px-6 py-4 rounded-t-xl">
+            <h2 class="text-lg text-blanco flex items-center gap-2">
+                <svg class="size-6 mb-1" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M384 64C407.7 64 428.4 76.9 439.4 96L448 96C483.3 96 512 124.7 512 160L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 160C128 124.7 156.7 96 192 96L200.6 96C211.6 76.9 232.3 64 256 64L384 64zM410.9 276.6C400.2 268.8 385.2 271.2 377.4 281.9L291.8 399.6L265.3 372.2C256.1 362.7 240.9 362.4 231.4 371.6C221.9 380.8 221.6 396 230.8 405.5L277.2 453.5C282.1 458.6 289 461.3 296.1 460.8C303.2 460.3 309.7 456.7 313.9 451L416.2 310.1C424 299.4 421.6 284.4 410.9 276.6zM264 128C250.7 128 240 138.7 240 152C240 165.3 250.7 176 264 176L376 176C389.3 176 400 165.3 400 152C400 138.7 389.3 128 376 128L264 128z"/>
+                </svg>
+                Planes Configurados
+            </h2>
+        </div>
+        
+        {% if planes %}
+        <div class="card-body overflow-x-auto p-3">
+            <table class="w-full">
+                <thead class="bg-principal/10 rounded-t-lg">
+                    <tr class="border-b border-gray-300 rounded-t-lg">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gris-medio uppercase tracking-wider rounded-tl-lg">
+                            Nombre del Plan
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gris-medio uppercase tracking-wider">
+                            Clases por Semana
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gris-medio uppercase tracking-wider">
+                            Precio Mensual
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gris-medio uppercase tracking-wider">
+                            Estado
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gris-medio uppercase tracking-wider">
+                            Clientes Asignados
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gris-medio uppercase tracking-wider rounded-tr-lg">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-blanco divide-y divide-gray-200">
+                    {% for plan in planes %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-gris-oscuro">{{ plan.nombre }}</div>
+                            {% if plan.descripcion %}
+                                <div class="text-sm text-gris-medio">{{ plan.descripcion|truncatechars:50 }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex px-2 py-1 text-xs font-medium bg-info text-white rounded-md">
+                                {{ plan.clases_por_semana }} clases
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-exito text-lg">${{ plan.precio_mensual }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if plan.activo %}
+                                <span class="inline-flex px-2 py-1 text-xs font-medium bg-exito text-white rounded-md">
+                                    Activo
+                                </span>
+                            {% else %}
+                                <span class="inline-flex px-2 py-1 text-xs font-medium bg-gris-medio text-white rounded-md">
+                                    Inactivo
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% with clientes_count=plan.estadopagocliente_set.count %}
+                                {% if clientes_count > 0 %}
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium bg-principal text-white rounded-md">
+                                        {{ clientes_count }} clientes
+                                    </span>
+                                {% else %}
+                                    <span class="text-gris-medio text-sm">0 clientes</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <!-- Botón Editar -->
+                                <button 
+                                    type="button" 
+                                    class="p-2 text-principal hover:text-principal-dark hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                                    onclick="openModal('editPlanModal{{ plan.id }}')"
+                                    title="Editar plan"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Botón Eliminar (solo si no tiene clientes) -->
+                                {% if plan.estadopagocliente_set.count == 0 %}
+                                <button type="button" 
+                                        class="p-2 text-error hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                                        onclick="confirmarEliminacionPlan('{{ plan.id }}', '{{ plan.nombre }}')"
+                                        title="Eliminar plan">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                                {% else %}
+                                <span class="p-2 text-gris-claro cursor-not-allowed" title="No se puede eliminar un plan con clientes asignados">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- Estado vacío -->
+        <div class="text-center py-12">
+            <svg class="mx-auto h-16 w-16 text-gris-claro mb-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+            </svg>
+            <h3 class="text-xl font-medium text-gris-medio mb-2">No hay planes configurados</h3>
+            <p class="text-gris-medio mb-4">Crea el primer plan de pago usando el formulario de arriba.</p>
+            <div class="text-sm text-gris-medio">
+                <p><strong>Tip:</strong> Los planes te permiten organizar diferentes opciones de pago para tus clientes.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- MODALES DE EDICIÓN (se generan dinámicamente para cada plan) -->
+    {% for plan in planes %}
+        <div id="editPlanModal{{ plan.id }}" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl m-4">
+                <div class="flex justify-between items-center p-6 border-b">
+                    <h3 class="text-lg font-semibold text-gris-oscuro">Editar Plan: {{ plan.nombre }}</h3>
+                    <button type="button" onclick="closeModal('editPlanModal{{ plan.id }}')" 
+                            class="text-gris-medio hover:text-gris-oscuro">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form method="post" class="p-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="editar_plan" value="{{ plan.id }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Nombre del Plan</label>
+                            <input type="text" name="nombre" value="{{ plan.nombre }}" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Clases por Semana</label>
+                            <input type="number" name="clases_por_semana" value="{{ plan.clases_por_semana }}" min="1" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Precio Mensual</label>
+                            <input type="number" name="precio_mensual" value="{{ plan.precio_mensual }}" min="0" step="0.01" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Estado</label>
+                            <select name="activo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                                <option value="True" {% if plan.activo %}selected{% endif %}>Activo</option>
+                                <option value="False" {% if not plan.activo %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-span-full">
+                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Descripción (Opcional)</label>
+                            <textarea name="descripcion" rows="3" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">{{ plan.descripcion|default:'' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" onclick="closeModal('editPlanModal{{ plan.id }}')"
+                                class="px-4 py-2 bg-gris-claro text-gris-oscuro rounded-lg hover:bg-gray-300 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark transition-colors">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+    <!-- JavaScript para confirmación de eliminación -->
+    <script>
+        function confirmarEliminacionPlan(planId, planNombre) {
+            if (confirm(`¿Estás seguro de que quieres eliminar el plan "${planNombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                // Crear formulario dinámico para eliminar
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = window.location.href;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'eliminar_plan';
+                actionInput.value = planId;
+                
+                form.appendChild(csrfInput);
+                form.appendChild(actionInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Cerrar modal al hacer clic en el fondo
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('bg-opacity-50')) {
+                e.target.classList.add('hidden');
+            }
+        });
+
+        function confirmarEliminacionPlan(planId, planNombre) {
+            if (confirm(`¿Estás seguro de que quieres eliminar el plan "${planNombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = window.location.href;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'eliminar_plan';
+                actionInput.value = planId;
+                
+                form.appendChild(csrfInput);
+                form.appendChild(actionInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+{% endblock %}

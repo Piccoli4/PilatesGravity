@@ -1,0 +1,204 @@
+{% extends "gravity/admin/base_admin.html" %}
+
+{% block title %}Registrar Pago{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center gap-1">
+        <span class="text-gris-medio">/</span>
+        <span class="text-gris-medio">Pagos</span>
+    </li>
+    <li class="flex items-center">
+        <span class="text-gris-medio">/</span>
+        <span class="ml-1 text-gris-medio">Regustrar pago de {{ cliente.get_full_name|default:cliente.username }}</span>
+    </li>
+{% endblock %}
+
+{% block content %}
+    <!-- Header Section -->
+    <div class="card p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div>
+            <div class="flex items-center gap-2 text-principal">
+                <svg class="size-10 mb-1" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M192 160L192 144C192 99.8 278 64 384 64C490 64 576 99.8 576 144L576 160C576 190.6 534.7 217.2 474 230.7C471.6 227.9 469.1 225.2 466.6 222.7C451.1 207.4 431.1 195.8 410.2 187.2C368.3 169.7 313.7 160.1 256 160.1C234.1 160.1 212.7 161.5 192.2 164.2C192 162.9 192 161.5 192 160.1zM496 417L496 370.8C511.1 366.9 525.3 362.3 538.2 356.9C551.4 351.4 564.3 344.7 576 336.6L576 352C576 378.8 544.5 402.5 496 417zM496 321L496 288C496 283.5 495.6 279.2 495 275C510.5 271.1 525 266.4 538.2 260.8C551.4 255.2 564.3 248.6 576 240.5L576 255.9C576 282.7 544.5 306.4 496 320.9zM64 304L64 288C64 243.8 150 208 256 208C362 208 448 243.8 448 288L448 304C448 348.2 362 384 256 384C150 384 64 348.2 64 304zM448 400C448 444.2 362 480 256 480C150 480 64 444.2 64 400L64 384.6C75.6 392.7 88.5 399.3 101.8 404.9C143.7 422.4 198.3 432 256 432C313.7 432 368.3 422.3 410.2 404.9C423.4 399.4 436.3 392.7 448 384.6L448 400zM448 480.6L448 496C448 540.2 362 576 256 576C150 576 64 540.2 64 496L64 480.6C75.6 488.7 88.5 495.3 101.8 500.9C143.7 518.4 198.3 528 256 528C313.7 528 368.3 518.3 410.2 500.9C423.4 495.4 436.3 488.7 448 480.6z"/>
+                </svg>
+                <h1 class="text-2xl font-bold mb-2">Registrar Pago</h1>
+            </div>
+            <p class="text-gris-medio mb-0">
+                Cliente: <strong class="text-principal">{{ cliente.get_full_name|default:cliente.username }}</strong>
+            </p>
+        </div>
+        <a href="{% url 'gravity:admin_pagos_vista_principal' %}" 
+           class="inline-flex items-center px-4 py-2 bg-principal border border-gray-300 rounded-lg text-sm font-medium text-fondo hover:bg-fondo hover:text-principal transition-colors duration-200 mt-3 sm:mt-0">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Volver a Pagos
+        </a>
+    </div>
+
+    <!-- INFO DEL CLIENTE -->
+    <div class="card bg-blanco rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h6 class="text-sm font-medium text-principal mb-2">Plan Actual</h6>
+                    {% if estado_pago.plan_actual %}
+                        <p class="font-semibold text-gris-oscuro mb-1">{{ estado_pago.plan_actual.nombre }}</p>
+                        <span class="text-xs text-gris-medio">{{ estado_pago.plan_actual.clases_por_semana }} clases/semana</span>
+                    {% else %}
+                        <p class="text-gris-medio">Sin plan asignado</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <h6 class="text-sm font-medium text-principal mb-2">Saldo Actual</h6>
+                    {% if estado_pago.saldo_actual > 0 %}
+                        <p class="font-semibold text-exito mb-1">+${{ estado_pago.saldo_actual }}</p>
+                        <span class="text-xs text-gris-medio">Crédito a favor</span>
+                    {% elif estado_pago.saldo_actual == 0 %}
+                        <p class="font-semibold text-gris-oscuro mb-1">$0</p>
+                        <span class="text-xs text-gris-medio">Al día</span>
+                    {% else %}
+                        <p class="font-semibold text-error mb-1">${{ estado_pago.saldo_actual }}</p>
+                        <span class="text-xs text-gris-medio">Deuda pendiente</span>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <h6 class="text-sm font-medium text-principal mb-2">Último Pago</h6>
+                    {% if estado_pago.ultimo_pago %}
+                        <p class="font-semibold text-gris-oscuro mb-1">{{ estado_pago.ultimo_pago|date:"d/m/Y" }}</p>
+                        <span class="text-xs text-gris-medio">${{ estado_pago.monto_ultimo_pago }}</span>
+                    {% else %}
+                        <p class="text-gris-medio">Sin pagos registrados</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULARIO DE PAGO -->
+    <div class="card bg-blanco rounded-lg shadow-sm border border-gray-200">
+        <div class="card-header flex items-center gap-2">
+            <svg class="size-6 mb-0.5" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                <path d="M392 176L248 176L210.7 101.5C208.9 97.9 208 93.9 208 89.9C208 75.6 219.6 64 233.9 64L406.1 64C420.4 64 432 75.6 432 89.9C432 93.9 431.1 97.9 429.3 101.5L392 176zM233.6 224L406.4 224L455.1 264.6C521.6 320 560 402 560 488.5C560 536.8 520.8 576 472.5 576L167.4 576C119.2 576 80 536.8 80 488.5C80 402 118.4 320 184.9 264.6L233.6 224zM324 288C313 288 304 297 304 308L304 312C275.2 312.3 252 335.7 252 364.5C252 390.2 270.5 412.1 295.9 416.3L337.6 423.3C343.6 424.3 348 429.5 348 435.6C348 442.5 342.4 448.1 335.5 448.1L280 448C269 448 260 457 260 468C260 479 269 488 280 488L304 488L304 492C304 503 313 512 324 512C335 512 344 503 344 492L344 487.3C369 483.2 388 461.6 388 435.5C388 409.8 369.5 387.9 344.1 383.7L302.4 376.7C296.4 375.7 292 370.5 292 364.4C292 357.5 297.6 351.9 304.5 351.9L352 351.9C363 351.9 372 342.9 372 331.9C372 320.9 363 311.9 352 311.9L344 311.9L344 307.9C344 296.9 335 287.9 324 287.9z"/>
+            </svg>
+            <h5 class="text-lg text-blanco">Registrar Nuevo Pago</h5>
+        </div>
+        
+        <div class="card-body p-3">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.monto.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                            {{ form.monto.label }}
+                        </label>
+                        <input type="number" 
+                               name="{{ form.monto.name }}" 
+                               id="{{ form.monto.id_for_label }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.monto.errors %}border-error{% endif %}"
+                               value="{{ form.monto.value|default:'' }}"
+                               step="0.01"
+                               min="0"
+                               placeholder="0,00">
+                        {% if form.monto.errors %}
+                            <p class="mt-1 text-sm text-error">{{ form.monto.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.fecha_pago.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                            {{ form.fecha_pago.label }}
+                        </label>
+                        <input type="date" 
+                               name="{{ form.fecha_pago.name }}" 
+                               id="{{ form.fecha_pago.id_for_label }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.fecha_pago.errors %}border-error{% endif %}"
+                               value="{{ form.fecha_pago.value|default:'' }}">
+                        {% if form.fecha_pago.errors %}
+                            <p class="mt-1 text-sm text-error">{{ form.fecha_pago.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.tipo_pago.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                            {{ form.tipo_pago.label }}
+                        </label>
+                        <select name="{{ form.tipo_pago.name }}" 
+                                id="{{ form.tipo_pago.id_for_label }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.tipo_pago.errors %}border-error{% endif %}">
+                            <option value="">Selecciona método de pago</option>
+                            {% for value, label in form.tipo_pago.field.choices %}
+                                <option value="{{ value }}" {% if form.tipo_pago.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.tipo_pago.errors %}
+                            <p class="mt-1 text-sm text-error">{{ form.tipo_pago.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.comprobante.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                            {{ form.comprobante.label }}
+                        </label>
+                        <input type="text" 
+                               name="{{ form.comprobante.name }}" 
+                               id="{{ form.comprobante.id_for_label }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.comprobante.errors %}border-error{% endif %}"
+                               value="{{ form.comprobante.value|default:'' }}"
+                               placeholder="Número de recibo, transferencia, etc.">
+                        {% if form.comprobante.errors %}
+                            <p class="mt-1 text-sm text-error">{{ form.comprobante.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="{{ form.concepto.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                        {{ form.concepto.label }}
+                    </label>
+                    <input type="text" 
+                        name="{{ form.concepto.name }}" 
+                        id="{{ form.concepto.id_for_label }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.concepto.errors %}border-error{% endif %}"
+                        placeholder="Ej: Pago mensual Enero 2025">
+                    {% if form.concepto.errors %}
+                        <p class="mt-1 text-sm text-error">{{ form.concepto.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
+                        {{ form.observaciones.label }}
+                    </label>
+                    <textarea name="{{ form.observaciones.name }}" 
+                              id="{{ form.observaciones.id_for_label }}"
+                              rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.observaciones.errors %}border-error{% endif %}"
+                              placeholder="Información adicional sobre el pago (opcional)">{{ form.observaciones.value|default:'' }}</textarea>
+                    {% if form.observaciones.errors %}
+                        <p class="mt-1 text-sm text-error">{{ form.observaciones.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-3 pt-4">
+                    <a href="{% url 'gravity:admin_pagos_vista_principal' %}" 
+                       class="inline-flex justify-center items-center px-4 py-3 bg-fondo border border-principal rounded-lg text-md text-principal hover:bg-principal hover:text-fondo transition-colors duration-200">
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center px-6 py-3 bg-principal hover:bg-secundario text-fondo hover:text-principal rounded-lg text-md transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Registrar Pago
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

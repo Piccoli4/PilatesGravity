@@ -5,6 +5,11 @@ from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from datetime import timedelta
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
+from decimal import Decimal
+from django.db.models import Sum
 
 DIAS_SEMANA = [
     ('Lunes', 'Lunes'),
@@ -475,3 +480,534 @@ class Turno(models.Model):
     class Meta:
         verbose_name = "Turno (Legacy)"
         verbose_name_plural = "Turnos (Legacy)"
+
+# ==============================================================================
+# MODELOS REGISTROS DE PAGOS
+# ==============================================================================
+
+class PlanPago(models.Model):
+    """
+    Plan de pagos según cantidad de clases por semana.
+    Define cuánto debe pagar un cliente según cuántas clases tenga reservadas.
+    """
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name="Nombre del plan",
+        help_text="Ej: '1 clase semanal', '2 clases semanales', etc."
+    )
+    
+    clases_por_semana = models.PositiveIntegerField(
+        verbose_name="Clases por semana",
+        help_text="Cantidad de clases reservadas por semana"
+    )
+    
+    precio_mensual = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Precio mensual",
+        help_text="Precio que debe pagar el cliente por mes"
+    )
+    
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name="Descripción",
+        help_text="Descripción opcional del plan"
+    )
+    
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Plan activo",
+        help_text="Si este plan está disponible para asignar"
+    )
+    
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de creación"
+    )
+    
+    fecha_modificacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última modificación"
+    )
+
+    def clean(self):
+        """Validaciones personalizadas del modelo"""
+        super().clean()
+        
+        # Validar que el precio sea positivo
+        if self.precio_mensual <= 0:
+            raise ValidationError({
+                'precio_mensual': 'El precio debe ser mayor a cero.'
+            })
+        
+        # Validar que no haya duplicados activos
+        if self.activo:
+            existing = PlanPago.objects.filter(
+                clases_por_semana=self.clases_por_semana,
+                activo=True
+            ).exclude(pk=self.pk)
+            
+            if existing.exists():
+                raise ValidationError({
+                    'clases_por_semana': f'Ya existe un plan activo para {self.clases_por_semana} clases por semana.'
+                })
+
+    def __str__(self):
+        estado = "Activo" if self.activo else "Inactivo"
+        return f"{self.nombre} - ${self.precio_mensual} ({estado})"
+
+    class Meta:
+        verbose_name = "Plan de Pago"
+        verbose_name_plural = "Planes de Pago"
+        ordering = ['clases_por_semana']
+
+class EstadoPagoCliente(models.Model):
+    """
+    Estado de pagos de cada cliente/usuario.
+    Mantiene el seguimiento de cuánto debe pagar cada cliente según sus reservas.
+    """
+    usuario = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Usuario",
+        related_name='estado_pago'
+    )
+    
+    plan_actual = models.ForeignKey(
+        PlanPago,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Plan actual",
+        help_text="Plan de pago asignado según sus reservas activas"
+    )
+    
+    ultimo_pago = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha del último pago",
+        help_text="Fecha en que realizó su último pago"
+    )
+    
+    monto_ultimo_pago = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Monto del último pago"
+    )
+    
+    saldo_actual = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Saldo actual",
+        help_text="Positivo = crédito a favor, Negativo = deuda"
+    )
+    
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones",
+        help_text="Notas internas sobre el estado de pago del cliente"
+    )
+    
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Estado activo",
+        help_text="Si el cliente está activo para el sistema de pagos"
+    )
+    
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de creación"
+    )
+    
+    fecha_actualizacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última actualización"
+    )
+
+    def clean(self):
+        """Validaciones personalizadas del modelo"""
+        super().clean()
+        
+        # Validar fecha de último pago
+        if self.ultimo_pago and self.ultimo_pago > timezone.now().date():
+            raise ValidationError({
+                'ultimo_pago': 'La fecha del último pago no puede ser futura.'
+            })
+
+    def calcular_plan_segun_reservas(self):
+        """
+        Calcula qué plan debería tener según sus reservas activas.
+        Retorna el PlanPago correspondiente o None.
+        """
+        try:
+            # Contar reservas activas del usuario
+            reservas_activas = self.usuario.reservas_pilates.filter(activa=True).count()
+            
+            if reservas_activas == 0:
+                return None
+            
+            # Buscar el plan que corresponde a esa cantidad de clases
+            plan = PlanPago.objects.filter(
+                clases_por_semana=reservas_activas,
+                activo=True
+            ).first()
+            
+            return plan
+            
+        except Exception:
+            return None
+
+    def actualizar_plan_automatico(self):
+        """
+        Actualiza automáticamente el plan según las reservas actuales.
+        """
+        plan_correcto = self.calcular_plan_segun_reservas()
+        
+        if plan_correcto != self.plan_actual:
+            self.plan_actual = plan_correcto
+            self.save()
+        
+        return plan_correcto
+
+    def calcular_deuda_mensual(self):
+        """
+        Calcula cuánto debe pagar este mes según su plan actual.
+        """
+        if not self.plan_actual:
+            return 0
+        
+        return self.plan_actual.precio_mensual
+
+    def calcular_saldo_actual(self):
+        """
+        Calcula el saldo basado en:
+        1. Total pagado históricamente
+        2. Menos: costo mensual × meses que debe haber pagado
+        """
+        if not self.plan_actual:
+            return Decimal('0')
+        
+        # Total pagado por el cliente (histórico completo)
+        total_pagado = RegistroPago.objects.filter(
+            cliente=self.usuario,
+            estado='confirmado'
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+        
+        # Calcular cuántos meses debe
+        meses_que_debe = self._calcular_meses_que_debe()
+        
+        # Total que debería haber pagado
+        total_que_debe = self.plan_actual.precio_mensual * meses_que_debe
+        
+        # Saldo = Total pagado - Total que debe
+        return total_pagado - total_que_debe
+
+    def _calcular_meses_que_debe(self):
+        """
+        Calcula cuántos meses debe haber pagado el cliente
+        """
+        if not self.plan_actual:
+            return 0
+        
+        # Buscar el primer pago o cuando se asignó el plan
+        primer_pago = RegistroPago.objects.filter(
+            cliente=self.usuario,
+            estado='confirmado'
+        ).order_by('fecha_pago').first()
+        
+        # Si no hay pagos, usar fecha de creación del estado de pago
+        fecha_inicio = primer_pago.fecha_pago if primer_pago else self.fecha_creacion.date()
+        
+        hoy = timezone.now().date()
+        
+        # Calcular meses transcurridos
+        meses_transcurridos = (hoy.year - fecha_inicio.year) * 12 + (hoy.month - fecha_inicio.month)
+        
+        # Si ya pasó el día 10 del mes actual, contar este mes también
+        if hoy.day > 10:
+            meses_transcurridos += 1
+        
+        return max(0, meses_transcurridos)
+
+    def actualizar_saldo_automatico(self):
+        """
+        Actualiza el saldo recalculando desde el histórico completo
+        """
+        nuevo_saldo = self.calcular_saldo_actual()
+        
+        if self.saldo_actual != nuevo_saldo:
+            self.saldo_actual = nuevo_saldo
+            self.save()
+        
+        return nuevo_saldo
+
+    def _obtener_saldo_mes_anterior(self):
+        """
+        Obtiene el saldo que tenía el cliente al final del mes anterior
+        """
+        # Por simplicidad, usaremos el saldo_actual actual como base
+        # En un sistema más complejo tendríamos un historial mensual
+        return self.saldo_actual
+        
+        return nuevo_saldo
+
+    def esta_al_dia(self):
+        """
+        Verifica si el cliente está al día con sus pagos (incluyendo cálculo automático)
+        """
+        saldo_calculado = self.calcular_saldo_actual()
+        return saldo_calculado >= 0
+
+    def get_meses_atrasado(self):
+        """
+        Calcula cuántos meses de atraso tiene el cliente.
+        """
+        if not self.ultimo_pago or not self.plan_actual:
+            return 0
+        
+        hoy = timezone.now().date()
+        meses_transcurridos = (hoy.year - self.ultimo_pago.year) * 12 + (hoy.month - self.ultimo_pago.month)
+        
+        # Si han pasado más de 30 días desde el último pago, contar como al menos 1 mes
+        if (hoy - self.ultimo_pago).days > 30:
+            meses_transcurridos = max(1, meses_transcurridos)
+        
+        return max(0, meses_transcurridos)
+
+    def get_estado_display(self):
+        """
+        Retorna una descripción legible del estado de pago.
+        """
+        if not self.plan_actual:
+            return "Sin plan asignado"
+        
+        if self.saldo_actual > 0:
+            return f"Crédito: ${self.saldo_actual}"
+        elif self.saldo_actual == 0:
+            return "Al día"
+        else:
+            return f"Debe: ${abs(self.saldo_actual)}"
+
+    def get_nombre_completo(self):
+        """Devuelve el nombre completo del usuario"""
+        if self.usuario.first_name and self.usuario.last_name:
+            return f"{self.usuario.first_name} {self.usuario.last_name}"
+        return self.usuario.username
+
+    def __str__(self):
+        return f"Estado de pago - {self.get_nombre_completo()}"
+
+    class Meta:
+        verbose_name = "Estado de Pago de Cliente"
+        verbose_name_plural = "Estados de Pago de Clientes"
+        ordering = ['-fecha_actualizacion']
+
+class RegistroPago(models.Model):
+    """
+    Historial de pagos realizados por cada cliente.
+    Cada registro representa un pago individual.
+    """
+    TIPOS_PAGO = [
+        ('efectivo', 'Efectivo'),
+        ('transferencia', 'Transferencia'),
+        ('tarjeta', 'Tarjeta'),
+        ('otro', 'Otro'),
+    ]
+    
+    ESTADOS_PAGO = [
+        ('confirmado', 'Confirmado'),
+        ('pendiente', 'Pendiente de confirmación'),
+        ('rechazado', 'Rechazado'),
+    ]
+    
+    cliente = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,  # ← Agregar esto temporalmente
+        blank=True,  # ← Agregar esto temporalmente
+        verbose_name="Cliente",
+        related_name='pagos_realizados'
+    )
+    
+    monto = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto pagado"
+    )
+    
+    fecha_pago = models.DateField(
+        verbose_name="Fecha del pago",
+        help_text="Fecha en que se realizó el pago"
+    )
+    
+    tipo_pago = models.CharField(
+        max_length=20,
+        choices=TIPOS_PAGO,
+        default='efectivo',
+        verbose_name="Tipo de pago"
+    )
+    
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADOS_PAGO,
+        default='confirmado',
+        verbose_name="Estado del pago"
+    )
+    
+    concepto = models.CharField(
+        max_length=200,
+        verbose_name="Concepto",
+        help_text="Descripción del pago (ej: 'Pago mensual Enero 2025')"
+    )
+    
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones",
+        help_text="Notas adicionales sobre este pago"
+    )
+    
+    comprobante = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Número de comprobante",
+        help_text="Número de recibo, transferencia, etc."
+    )
+    
+    # Usuario administrador que registró este pago
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='pagos_registrados',
+        verbose_name="Registrado por",
+        help_text="Administrador que registró este pago"
+    )
+    
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de registro"
+    )
+    
+    fecha_modificacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última modificación"
+    )
+
+    def clean(self):
+        """Validaciones personalizadas del modelo"""
+        super().clean()
+        
+        # Validar que el monto sea positivo
+        if self.monto <= 0:
+            raise ValidationError({
+                'monto': 'El monto debe ser mayor a cero.'
+            })
+        
+        # Validar fecha de pago
+        if self.fecha_pago > timezone.now().date():
+            raise ValidationError({
+                'fecha_pago': 'La fecha del pago no puede ser futura.'
+            })
+
+    def save(self, *args, **kwargs):
+        """Override save para actualizar el estado del cliente automáticamente"""
+        # Ejecutar validaciones
+        self.full_clean()
+        
+        # Guardar el registro
+        super().save(*args, **kwargs)
+        
+        # Actualizar estado del cliente solo si el pago está confirmado
+        if self.estado == 'confirmado':
+            self.actualizar_estado_cliente()
+
+    def actualizar_estado_cliente(self):
+        """
+        Actualiza el estado de pago del cliente cuando se confirma un pago.
+        """
+        try:
+            # Obtener o crear estado de pago del cliente
+            estado_cliente, created = EstadoPagoCliente.objects.get_or_create(
+                usuario=self.cliente,
+                defaults={'activo': True}
+            )
+            
+            # Actualizar fecha y monto del último pago
+            estado_cliente.ultimo_pago = self.fecha_pago
+            estado_cliente.monto_ultimo_pago = self.monto
+            
+            # Actualizar saldo (sumar el pago al saldo actual)
+            estado_cliente.saldo_actual += self.monto
+            
+            # Actualizar plan según reservas actuales
+            estado_cliente.actualizar_plan_automatico()
+            
+            # Guardar cambios
+            estado_cliente.save()
+            
+        except Exception as e:
+            # Log del error pero no fallar la operación
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error actualizando estado de cliente en pago {self.id}: {str(e)}")
+
+    def get_nombre_completo_cliente(self):
+        """Devuelve el nombre completo del cliente"""
+        if not self.cliente:
+            return "Cliente no especificado"
+        
+        if self.cliente.first_name and self.cliente.last_name:
+            return f"{self.cliente.first_name} {self.cliente.last_name}"
+        return self.cliente.username
+
+    def __str__(self):
+        return f"Pago ${self.monto} - {self.get_nombre_completo_cliente()} - {self.fecha_pago}"
+
+    class Meta:
+        verbose_name = "Registro de Pago"
+        verbose_name_plural = "Registros de Pagos"
+        ordering = ['-fecha_pago', '-fecha_registro']
+
+# Señales para actualizar automáticamente el estado de pagos cuando cambian las reservas
+@receiver(post_save, sender=Reserva)
+def actualizar_estado_pago_por_reserva(sender, instance, created, **kwargs):
+    """
+    Actualiza el estado de pago cuando se crea o modifica una reserva.
+    """
+    try:
+        estado_cliente, created_estado = EstadoPagoCliente.objects.get_or_create(
+            usuario=instance.usuario,
+            defaults={'activo': True}
+        )
+        
+        # Actualizar plan según reservas actuales
+        estado_cliente.actualizar_plan_automatico()
+        
+    except Exception as e:
+        # Log del error pero no fallar la operación
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error actualizando estado de pago por reserva {instance.id}: {str(e)}")
+
+# función para crear estados de pago para usuarios existentes
+def crear_estados_pago_usuarios_existentes():
+    """
+    Función para crear estados de pago para usuarios que ya existen en el sistema.
+    Se ejecuta una sola vez para migrar datos existentes.
+    """
+    from django.contrib.auth.models import User
+    
+    usuarios_sin_estado = User.objects.filter(
+        is_staff=False,
+        estado_pago__isnull=True
+    )
+    
+    for usuario in usuarios_sin_estado:
+        estado = EstadoPagoCliente.objects.create(
+            usuario=usuario,
+            activo=True
+        )
+        # Actualizar plan según reservas actuales
+        estado.actualizar_plan_automatico()
