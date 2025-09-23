@@ -20,5 +20,9 @@
         <!-- Scripts en orden -->
         <script src="{% static 'js/base_scripts.js' %}"></script>
         <script src="{% static 'js/hero_animations.js' %}"></script>
+
+        <!-- Bloque para JavaScript específico de cada página -->
+        {% block extra_js %}
+        {% endblock %}
     </body>
 </html>

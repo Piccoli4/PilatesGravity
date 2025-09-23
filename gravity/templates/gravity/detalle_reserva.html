@@ -202,15 +202,17 @@
                 <div class="text-center space-y-4 animate-fadeInUp" style="animation-delay: 1s;">
                     {% if puede_modificar %}
                         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                            <a href="{% url 'gravity:eliminar_reserva' reserva.numero_reserva %}" 
-                               class="action-button bg-error hover:bg-error/90 text-white flex items-center px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                            <button 
+                                id="cancelButton"
+                                class="action-button bg-error hover:bg-error/90 text-white flex items-center px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1"
+                            >
                                 <span class="mr-2 mb-0.5 flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                                         <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd" />
                                     </svg>
                                 </span> 
                                 Cancelar Reserva
-                            </a>
+                            </button>
                         </div>
                     {% endif %}
                     
@@ -291,12 +293,155 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Cancelación -->
+        <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform scale-95 opacity-0 transition-all duration-300" id="modalContent">
+                <div class="p-6">
+                    <div class="text-center mb-6">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-error/10 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 text-error">
+                                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-principal mb-2">Cancelar Reserva</h3>
+                        <p class="text-gris-oscuro">¿Estás seguro de que quieres cancelar esta reserva?</p>
+                    </div>
+                    
+                    <div class="bg-gris-claro/50 rounded-lg p-4 mb-6">
+                        <div class="text-sm space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-gris-medio">Clase:</span>
+                                <span class="font-medium">{{ reserva.clase.get_nombre_display }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gris-medio">Día:</span>
+                                <span class="font-medium">{{ reserva.clase.dia }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gris-medio">Horario:</span>
+                                <span class="font-medium">{{ reserva.clase.horario|time:"H:i" }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gris-medio">Sede:</span>
+                                <span class="font-medium">{{ reserva.clase.get_direccion_corta }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-advertencia/10 border border-advertencia/30 rounded-lg p-3 mb-6">
+                        <div class="flex items-start gap-2">
+                            <span class="text-advertencia text-lg">⚠️</span>
+                            <p class="text-advertencia text-sm font-medium">
+                                Esta acción cancelará tu reserva recurrente. No podrás asistir a ninguna clase de esta reserva hasta que hagas una nueva.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form id="cancelForm" method="post" action="{% url 'gravity:cancelar_reserva' reserva.numero_reserva %}">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" name="confirmar_cancelacion" value="confirmar" required 
+                                    class="mt-1 h-4 w-4 text-error border-gris-medio rounded focus:ring-error">
+                                <span class="text-sm text-gris-oscuro">
+                                    Confirmo que deseo cancelar mi reserva para la clase de 
+                                    <strong>{{ reserva.clase.get_nombre_display }}</strong> los 
+                                    <strong>{{ reserva.clase.dia }}</strong> a las 
+                                    <strong>{{ reserva.clase.horario|time:"H:i" }}</strong> en 
+                                    <strong>{{ reserva.clase.get_direccion_corta }}</strong>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button type="button" id="closeModalButton"
+                                    class="flex-1 px-4 py-2 border border-gris-medio text-gris-oscuro rounded-lg hover:bg-gris-claro transition-colors duration-200">
+                                Mantener Reserva
+                            </button>
+                            <button type="submit" 
+                                    class="flex-1 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors duration-200 font-medium">
+                                Sí, Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </section>
 {% endblock %}
 
 {% block extra_js %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Funciones del modal
+            function openCancelModal() {
+                const modal = document.getElementById('cancelModal');
+                const modalContent = document.getElementById('modalContent');
+                
+                if (!modal || !modalContent) return;
+                
+                modal.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                }, 50);
+                
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeCancelModal() {
+                const modal = document.getElementById('cancelModal');
+                const modalContent = document.getElementById('modalContent');
+                
+                if (!modal || !modalContent) return;
+                
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = 'auto';
+                }, 300);
+            }
+
+            // Event listener para el botón de cancelar
+            const cancelButton = document.getElementById('cancelButton');
+            if (cancelButton) {
+                cancelButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openCancelModal();
+                });
+            }
+
+            // Event listeners para cerrar el modal
+            const cancelModal = document.getElementById('cancelModal');
+            if (cancelModal) {
+                // Cerrar al hacer clic fuera
+                cancelModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeCancelModal();
+                    }
+                });
+            }
+
+            // Cerrar con Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeCancelModal();
+                }
+            });
+
+            // Botón de cerrar modal
+            const closeButton = document.getElementById('closeModalButton');
+            if (closeButton) {
+                closeButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeCancelModal();
+                });
+            }
+
             // Animaciones de entrada
             const observerOptions = {
                 threshold: 0.1,
@@ -312,7 +457,6 @@
                 });
             }, observerOptions);
 
-            // Observar elementos para animaciones
             document.querySelectorAll('.info-item, .reservation-card').forEach(item => {
                 item.style.opacity = '0';
                 item.style.transform = 'translateY(20px)';
@@ -320,7 +464,7 @@
                 observer.observe(item);
             });
 
-            // Efecto de hover mejorado en botones
+            // Efectos de hover
             document.querySelectorAll('.action-button').forEach(button => {
                 button.addEventListener('mouseenter', function() {
                     this.style.transform = 'translateY(-3px) scale(1.02)';
@@ -331,25 +475,7 @@
                 });
             });
 
-            // Confirmación para acciones importantes
-            const cancelButton = document.querySelector('a[href*="eliminar_reserva"]');
-            if (cancelButton) {
-                cancelButton.addEventListener('click', function(e) {
-                    if (!confirm('¿Estás seguro de que quieres cancelar esta reserva? Esta acción no se puede deshacer.')) {
-                        e.preventDefault();
-                    }
-                });
-            }
-
-            // Mostrar tooltip con información adicional de la sede
-            const sedeInfo = document.querySelector('.sede-badge');
-            if (sedeInfo) {
-                sedeInfo.addEventListener('mouseenter', function() {
-                    this.title = 'Haz clic para ver más información sobre esta sede';
-                });
-            }
-
-            // Copiar número de reserva al hacer clic
+            // Copiar número de reserva
             const numeroReserva = document.querySelector('span.font-bold.text-principal');
             if (numeroReserva) {
                 numeroReserva.style.cursor = 'pointer';
@@ -357,7 +483,6 @@
                 
                 numeroReserva.addEventListener('click', function() {
                     navigator.clipboard.writeText(this.textContent).then(function() {
-                        // Mostrar feedback visual
                         const originalText = numeroReserva.textContent;
                         numeroReserva.textContent = '¡Copiado!';
                         numeroReserva.classList.add('text-exito');
@@ -369,15 +494,6 @@
                         }, 2000);
                     });
                 });
-            }
-
-            // Actualización automática del estado de modificación
-            function verificarEstadoModificacion() {
-                const ahora = new Date();
-                const proximaClase = new Date('{{ reserva.get_proxima_clase_info|date:"c" }}'); // Esto requeriría ajuste en el modelo
-                
-                // Esta función podría expandirse para actualizar dinámicamente
-                // el estado de si se puede modificar la reserva
             }
         });
     </script>

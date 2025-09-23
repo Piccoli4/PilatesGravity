@@ -365,122 +365,18 @@ class Reserva(models.Model):
     class Meta:
         verbose_name = "Reserva"
         verbose_name_plural = "Reservas"
-        unique_together = ['usuario', 'clase']  # Un usuario no puede tener múltiples reservas activas para la misma clase
+        constraints = [
+            models.UniqueConstraint(
+                fields=['usuario', 'clase'],
+                condition=models.Q(activa=True),
+                name='unique_active_reservation_per_user_class'
+            )
+        ]
         ordering = ['-fecha_reserva']
         permissions = [
             ('can_manage_all_reservas', 'Puede gestionar todas las reservas'),
             ('can_view_all_reservas', 'Puede ver todas las reservas'),
         ]
-
-# Modelo Cliente se mantiene por compatibilidad con el sistema actual
-# pero ahora será usado solo para casos donde no hay usuario autenticado
-class Cliente(models.Model):
-    """
-    DEPRECATED: Este modelo se mantiene por compatibilidad.
-    Se recomienda usar el modelo User de Django para nuevas implementaciones.
-    """
-    numero_cliente = models.CharField(max_length=10, unique=True, editable=False)
-    nombre = models.CharField(
-        max_length=100,
-        verbose_name="Nombre",
-        error_messages={
-            'required': 'El nombre es obligatorio.',
-            'max_length': 'El nombre no puede tener más de 100 caracteres.',
-        }
-    )
-    apellido = models.CharField(
-        max_length=100,
-        verbose_name="Apellido",
-        error_messages={
-            'required': 'El apellido es obligatorio.',
-            'max_length': 'El apellido no puede tener más de 100 caracteres.',
-        }
-    )
-    email = models.EmailField(
-        blank=True, 
-        null=True,
-        verbose_name="Correo electrónico",
-        error_messages={
-            'invalid': 'Ingresa una dirección de correo electrónico válida.',
-        }
-    )
-    telefono = models.CharField(
-        max_length=20,
-        verbose_name="Teléfono",
-        error_messages={
-            'required': 'El teléfono es obligatorio.',
-            'max_length': 'El teléfono no puede tener más de 20 caracteres.',
-        }
-    )
-    codigo_verificacion = models.CharField(
-        max_length=4,
-        validators=[
-            RegexValidator(
-                r'^\d{4}$', 
-                'El código debe tener exactamente 4 dígitos.'
-            )
-        ],
-        help_text="Código de 4 dígitos que se usará para validar modificaciones o cancelaciones.",
-        verbose_name="Código de verificación",
-        error_messages={
-            'required': 'El código de verificación es obligatorio.',
-            'invalid': 'El código debe tener exactamente 4 dígitos.',
-            'max_length': 'El código no puede tener más de 4 caracteres.',
-        }
-    )
-    # Relación opcional con User para migrar datos existentes
-    usuario = models.OneToOneField(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Usuario asociado",
-        help_text="Usuario de Django asociado a este cliente"
-    )
-
-    def save(self, *args, **kwargs):
-        if not self.numero_cliente:
-            self.numero_cliente = get_random_string(4, allowed_chars='0123456789')
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.nombre} {self.apellido} - {self.numero_cliente}"
-
-    class Meta:
-        verbose_name = "Cliente (Legacy)"
-        verbose_name_plural = "Clientes (Legacy)"
-
-# Modelo Turno se mantiene por compatibilidad
-class Turno(models.Model):
-    """
-    DEPRECATED: Este modelo se mantiene por compatibilidad.
-    Las reservas ahora son recurrentes y no requieren fechas específicas.
-    """
-    numero_turno = models.CharField(max_length=10, unique=True, editable=False)
-    cliente = models.ForeignKey(
-        Cliente, 
-        on_delete=models.CASCADE, 
-        verbose_name="Cliente"
-    )
-    clase = models.ForeignKey(
-        Clase, 
-        on_delete=models.CASCADE, 
-        verbose_name="Clase"
-    )
-    fecha = models.DateField(verbose_name="Fecha del turno")
-
-    def save(self, *args, **kwargs):
-        if not self.numero_turno:
-            self.numero_turno = get_random_string(10)
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"Turno {self.numero_turno} - {self.cliente} - {self.fecha}"
-
-    class Meta:
-        verbose_name = "Turno (Legacy)"
-        verbose_name_plural = "Turnos (Legacy)"
-
 # ==============================================================================
 # MODELOS REGISTROS DE PAGOS
 # ==============================================================================

@@ -3,14 +3,14 @@ from .views import (
     home, reservar_clase, conoce_mas,
     dias_disponibles, horarios_disponibles, 
     verificar_disponibilidad, modificar_reserva,
-    eliminar_reserva, buscar_reservas_usuario,
+    cancelar_reserva, buscar_reservas_usuario,
     clases_disponibles_api, clases_disponibles, detalle_reserva,
     sedes_disponibles,
     # IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_clases_lista, admin_clase_crear, admin_clase_editar,
     admin_clase_eliminar, admin_clase_detalle,
     admin_reservas_lista, admin_reserva_cancelar, admin_usuarios_lista, admin_usuario_detalle,
-    admin_agregar_cliente_no_registrado, admin_clientes_no_registrados_lista,
+    admin_agregar_usuario,
     admin_reportes,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, admin_pagos_historial_cliente,
@@ -31,7 +31,7 @@ urlpatterns = [
     path('buscar-reservas/', buscar_reservas_usuario, name='buscar_reservas_usuario'),
     path('reserva/<str:numero_reserva>/', detalle_reserva, name='detalle_reserva'),
     path('reserva/<str:numero_reserva>/modificar/', modificar_reserva, name='modificar_reserva'),
-    path('reserva/<str:numero_reserva>/eliminar/', eliminar_reserva, name='eliminar_reserva'),
+    path('reserva/<str:numero_reserva>/cancelar/', cancelar_reserva, name='cancelar_reserva'),
     
     # Páginas informativas
     path('politica-de-privacidad/', TemplateView.as_view(template_name='gravity/politica_privacidad.html'), name='politica_privacidad'),
@@ -62,13 +62,12 @@ urlpatterns = [
     path('admin-panel/reservas/', admin_reservas_lista, name='admin_reservas_lista'),
     path('admin-panel/reservas/<int:reserva_id>/cancelar/', admin_reserva_cancelar, name='admin_reserva_cancelar'),
     
-    # Gestión de usuarios registrados
+    # Gestión de usuarios 
     path('admin-panel/usuarios/', admin_usuarios_lista, name='admin_usuarios_lista'),
     path('admin-panel/usuarios/<int:usuario_id>/', admin_usuario_detalle, name='admin_usuario_detalle'),
     
-    # Gestión de clientes no registrados
-    path('admin-panel/agregar-cliente/', admin_agregar_cliente_no_registrado, name='admin_agregar_cliente_no_registrado'),
-    path('admin-panel/clientes-no-registrados/', admin_clientes_no_registrados_lista, name='admin_clientes_no_registrados_lista'),
+    # # Agregar usuarios al sistema
+    path('admin-panel/agregar-cliente/', admin_agregar_usuario, name='admin_agregar_usuario'),
     
     # Reportes y estadísticas
     path('admin-panel/reportes/', admin_reportes, name='admin_reportes'),

@@ -430,29 +430,6 @@
                 element.style.animationDelay = `${(index + 1) * 0.1}s`;
             });
 
-            // Copiar número de reserva al hacer clic
-            document.querySelectorAll('[class*="font-bold"]:contains("' + document.querySelector('.font-bold') + '")').forEach(element => {
-                if (element.textContent.match(/^[A-Z0-9]{8}$/)) { // Patrón de número de reserva
-                    element.style.cursor = 'pointer';
-                    element.title = 'Haz clic para copiar el número de reserva';
-                    
-                    element.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        navigator.clipboard.writeText(this.textContent).then(function() {
-                            // Mostrar feedback visual
-                            const originalText = element.textContent;
-                            element.textContent = '¡Copiado!';
-                            element.classList.add('text-exito');
-                            
-                            setTimeout(() => {
-                                element.textContent = originalText;
-                                element.classList.remove('text-exito');
-                            }, 2000);
-                        });
-                    });
-                }
-            });
-
             // Actualización en tiempo real del estado de modificación
             function actualizarEstadosModificacion() {
                 const ahora = new Date();

@@ -4,15 +4,13 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from .models import Reserva, Clase, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS, Cliente, Turno
-from .forms import ReservaForm, ModificarReservaForm, EliminarReservaForm, BuscarReservaForm
+from .models import Reserva, Clase, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
+from .forms import ReservaForm, ModificarReservaForm, BuscarReservaForm
 import json
 from accounts.models import UserProfile
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Count, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Cliente, Turno
 from accounts.models import UserProfile, ConfiguracionEstudio
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -163,10 +161,10 @@ def modificar_reserva(request, numero_reserva):
 
 # Vista para eliminar/cancelar una reserva
 @login_required
-def eliminar_reserva(request, numero_reserva):
+def cancelar_reserva(request, numero_reserva):
     """
     Permite a un usuario cancelar su propia reserva.
-    Utiliza EliminarReservaForm con validación de confirmación.
+    Maneja tanto GET (para mostrar confirmación) como POST (para cancelar).
     """
     # Obtener la reserva y verificar que pertenece al usuario
     reserva = get_object_or_404(
@@ -184,34 +182,36 @@ def eliminar_reserva(request, numero_reserva):
         return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
 
     if request.method == 'POST':
-        form = EliminarReservaForm(
-            request.POST, 
-            reserva=reserva, 
-            user=request.user
-        )
+        # Verificar confirmación
+        confirmar = request.POST.get('confirmar_cancelacion')
         
-        if form.is_valid():
-            # Cancelar la reserva
-            reserva.activa = False
-            reserva.save()
-            
-            messages.success(
-                request,
-                f'Tu reserva para la clase de {reserva.clase.get_nombre_display()} '
-                f'los {reserva.clase.dia} a las {reserva.clase.horario.strftime("%H:%M")} '
-                f'en {reserva.clase.get_direccion_corta()} ha sido cancelada exitosamente.'
-            )
-            
-            return redirect('gravity:home')
-    else:
-        form = EliminarReservaForm(reserva=reserva, user=request.user)
-
-    return render(request, 'gravity/eliminar_reserva.html', {
-        'form': form,
-        'reserva': reserva,
-        'puede_cancelar': puede_cancelar,
-        'mensaje_restriccion': mensaje if not puede_cancelar else None
-    })
+        if confirmar == 'confirmar':
+            try:
+                # Cancelar la reserva
+                reserva.activa = False
+                reserva.save()
+                
+                messages.success(
+                    request,
+                    f'Tu reserva para la clase de {reserva.clase.get_nombre_display()} '
+                    f'los {reserva.clase.dia} a las {reserva.clase.horario.strftime("%H:%M")} '
+                    f'en {reserva.clase.get_direccion_corta()} ha sido cancelada exitosamente.'
+                )
+                
+                return redirect('accounts:mis_reservas')
+                
+            except Exception as e:
+                messages.error(
+                    request,
+                    'Ocurrió un error al cancelar tu reserva. Por favor intenta nuevamente.'
+                )
+                return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+        else:
+            messages.error(request, 'Debes confirmar la cancelación de tu reserva.')
+            return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+    
+    # Si es GET, redirigir al detalle (ya que ahora usamos modal)
+    return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
 
 # Vista para buscar reservas de usuario (pública)
 def buscar_reservas_usuario(request):
@@ -601,7 +601,6 @@ def admin_dashboard(request):
     total_clases = Clase.objects.filter(activa=True).count()
     total_reservas_activas = Reserva.objects.filter(activa=True).count()
     total_usuarios = User.objects.filter(is_active=True, is_staff=False).count()
-    total_clientes_legacy = Cliente.objects.count()
     
     # Estadísticas por sede
     stats_por_sede = []
@@ -656,7 +655,6 @@ def admin_dashboard(request):
         'total_clases': total_clases,
         'total_reservas_activas': total_reservas_activas,
         'total_usuarios': total_usuarios,
-        'total_clientes_legacy': total_clientes_legacy,
         'usuarios_nuevos': usuarios_nuevos,
         'stats_por_sede': stats_por_sede,
         'clases_populares': clases_populares,
@@ -1014,7 +1012,7 @@ def admin_reservas_lista(request):
     ).order_by('-fecha_reserva')
     
     # Filtros
-    estado_filtro = request.GET.get('estado', 'activas')
+    estado_filtro = request.GET.get('estado', '')
     tipo_clase_filtro = request.GET.get('tipo_clase', '')
     sede_filtro = request.GET.get('sede', '')
     dia_filtro = request.GET.get('dia', '')
@@ -1294,13 +1292,13 @@ def admin_usuario_detalle(request, usuario_id):
     return render(request, 'gravity/admin/usuario_detalle.html', context)
 
 # ==============================================================================
-# AGREGAR CLIENTES NO REGISTRADOS
+# AGREGAR USUARIOS AL SISTEMA
 # ==============================================================================
 
 @admin_required
-def admin_agregar_cliente_no_registrado(request):
+def admin_agregar_usuario(request):
     """
-    Agregar un cliente directamente a una clase sin que esté registrado en el sistema
+    Agregar un usuario directamente al sistema y reservarlo en una clase
     """
     if request.method == 'POST':
         # Obtener datos del formulario
@@ -1308,11 +1306,12 @@ def admin_agregar_cliente_no_registrado(request):
         apellido = request.POST.get('apellido', '').strip()
         email = request.POST.get('email', '').strip()
         telefono = request.POST.get('telefono', '').strip()
+        password = request.POST.get('password', '').strip()
         clase_id = request.POST.get('clase_id')
         
         # Validaciones básicas
-        if not nombre or not apellido or not telefono or not clase_id:
-            messages.error(request, 'Nombre, apellido, teléfono y clase son obligatorios.')
+        if not nombre or not apellido or not password or not telefono or not clase_id:
+            messages.error(request, 'Nombre, apellido, contraseña, teléfono y clase son obligatorios.')
             return render(request, 'gravity/admin/agregar_cliente_form.html', {
                 'clases_disponibles': Clase.objects.filter(activa=True).order_by(
                     'direccion', 'tipo', 'dia', 'horario'
@@ -1333,58 +1332,62 @@ def admin_agregar_cliente_no_registrado(request):
                     'form_data': request.POST
                 })
             
-            # Crear cliente no registrado
-            cliente = Cliente.objects.create(
-                nombre=nombre,
-                apellido=apellido,
-                email=email if email else None,
-                telefono=telefono,
-                codigo_verificacion='0000'  # Código dummy para clientes admin
-            )
+            # Generar username único
+            base_username = f"{nombre.lower()}{apellido.lower()}"
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
             
-            # Crear turno para el cliente (usando el modelo legacy)
-            # Calcular la próxima fecha de esta clase
-            today = timezone.now().date()
-            dias_semana_num = {
-                'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
-            }
-            
-            dia_clase_num = dias_semana_num.get(clase.dia)
-            if dia_clase_num is not None:
-                dias_hasta_clase = (dia_clase_num - today.weekday()) % 7
-                if dias_hasta_clase == 0:
-                    # Si es hoy, verificar si la clase ya pasó
-                    now = timezone.now()
-                    clase_hoy = now.replace(
-                        hour=clase.horario.hour,
-                        minute=clase.horario.minute,
-                        second=0,
-                        microsecond=0
-                    )
-                    if clase_hoy <= now:
-                        dias_hasta_clase = 7
+            # Usar transacción para asegurar consistencia
+            with transaction.atomic():
+                # Crear usuario (esto automáticamente crea el UserProfile via señal)
+                user = User.objects.create_user(
+                    username=username,
+                    email=email if email else '',
+                    first_name=nombre,
+                    last_name=apellido,
+                    password=password,
+                )
                 
-                fecha_clase = today + timedelta(days=dias_hasta_clase)
-            else:
-                fecha_clase = today + timedelta(days=1)  # Fallback
-            
-            turno = Turno.objects.create(
-                cliente=cliente,
-                clase=clase,
-                fecha=fecha_clase
-            )
-            
-            messages.success(
-                request,
-                f'Cliente {nombre} {apellido} agregado exitosamente a la clase de '
-                f'{clase.get_nombre_display()} del {clase.dia} a las {clase.horario.strftime("%H:%M")} '
-                f'en {clase.get_direccion_corta()}. Número de cliente: {cliente.numero_cliente}'
-            )
-            
-            return redirect('gravity:admin_clases_lista')
-            
+                # Obtener el perfil que se creó automáticamente y actualizarlo
+                # Usar get_or_create para mayor seguridad
+                profile, created = UserProfile.objects.get_or_create(
+                    user=user,
+                    defaults={
+                        'telefono': telefono,
+                        'sede_preferida': 'cualquiera'
+                    }
+                )
+                
+                # Si el perfil ya existía, actualizar solo el teléfono
+                if not created:
+                    profile.telefono = telefono
+                    profile.sede_preferida = 'cualquiera'
+                    profile.save()
+                
+                # Crear la reserva
+                reserva = Reserva.objects.create(
+                    usuario=user,
+                    clase=clase
+                )
+                
+                messages.success(
+                    request,
+                    f'Usuario {nombre} {apellido} creado exitosamente y reservado en '
+                    f'{clase.get_nombre_display()} del {clase.dia} a las {clase.horario.strftime("%H:%M")} '
+                    f'en {clase.get_direccion_corta()}. '
+                    f'Credenciales: usuario={username}, contraseña={password}. '
+                    f'Reserva: {reserva.numero_reserva}'
+                )
+                
+                return redirect('gravity:admin_usuarios_lista')
+                
+        except IntegrityError as e:
+            messages.error(request, f'Error de integridad en la base de datos: {str(e)}')
         except Exception as e:
-            messages.error(request, f'Error al agregar cliente: {str(e)}')
+            messages.error(request, f'Error al crear usuario: {str(e)}')
     
     # Obtener clases disponibles con cupos, organizadas por sede
     clases_disponibles = []
@@ -1401,46 +1404,6 @@ def admin_agregar_cliente_no_registrado(request):
     }
     
     return render(request, 'gravity/admin/agregar_cliente_form.html', context)
-
-@admin_required
-def admin_clientes_no_registrados_lista(request):
-    """
-    Lista de clientes no registrados (modelo Cliente legacy)
-    """
-    clientes = Cliente.objects.filter(usuario__isnull=True).order_by('-id')
-    
-    # Busqueda
-    busqueda = request.GET.get('busqueda', '')
-    if busqueda:
-        clientes = clientes.filter(
-            Q(nombre__icontains=busqueda) |
-            Q(apellido__icontains=busqueda) |
-            Q(email__icontains=busqueda) |
-            Q(telefono__icontains=busqueda) |
-            Q(numero_cliente__icontains=busqueda)
-        )
-    
-    # Agregar información de turnos a cada cliente
-    clientes_info = []
-    for cliente in clientes:
-        turnos = Turno.objects.filter(cliente=cliente).select_related('clase')
-        clientes_info.append({
-            'cliente': cliente,
-            'turnos': turnos,
-            'total_turnos': turnos.count()
-        })
-    
-    # Paginación
-    paginator = Paginator(clientes_info, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'busqueda': busqueda,
-    }
-    
-    return render(request, 'gravity/admin/clientes_no_registrados_lista.html', context)
 
 # ==============================================================================
 # REPORTES Y ESTADÍSTICAS

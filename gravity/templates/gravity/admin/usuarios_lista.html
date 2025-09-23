@@ -33,7 +33,7 @@
                             Exportar
                         </button>
                         <a 
-                            href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" 
+                            href="{% url 'gravity:admin_agregar_usuario' %}" 
                             class="flex items-center gap-1 border border-principal bg-principal text-fondo hover:bg-principal/70 font-medium py-2 px-4 rounded-r transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
                         >
                             <svg class="size-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -612,7 +612,7 @@
                                     </svg>
                                     Limpiar Búsqueda
                                 </a>
-                                <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                                <a href="{% url 'gravity:admin_agregar_usuario' %}" class="btn btn-primary">
                                     <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
                                     </svg>
@@ -621,7 +621,7 @@
                             </div>
                         {% else %}
                             <p class="text-gris-medio mb-6">Aún no hay usuarios registrados en el sistema.</p>
-                            <a href="{% url 'gravity:admin_agregar_cliente_no_registrado' %}" class="btn btn-primary">
+                            <a href="{% url 'gravity:admin_agregar_usuario' %}" class="btn btn-primary">
                                 <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
                                 </svg>

@@ -66,14 +66,7 @@ def profile(request):
     # Asegura que el usuario tenga un perfil 
     try:
         user_profile = request.user.profile
-        print(f"DEBUG: Perfil encontrado para {request.user.username}")
-        if user_profile.avatar:
-            print(f"DEBUG: Avatar existe: {user_profile.avatar.name}")
-            print(f"DEBUG: URL del avatar: {user_profile.avatar.url}")
-        else:
-            print(f"DEBUG: No hay avatar para {request.user.username}")
     except UserProfile.DoesNotExist:
-        print(f"DEBUG: Creando perfil para {request.user.username}")
         user_profile = UserProfile.objects.create(user=request.user)
     
     if request.method == 'POST':

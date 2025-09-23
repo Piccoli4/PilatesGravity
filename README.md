@@ -30,10 +30,8 @@ Una aplicación web moderna y completa desarrollada en Django para la gestión i
   - Administración de reservas con cancelación sin restricciones
   - Gestión de usuarios registrados
 
-- **Sistema de Clientes No Registrados**
-  - Agregar clientes directamente a clases
-  - Gestión de turnos para clientes walk-in
-  - Sistema legacy compatible
+- **Sistema de Usuarios**
+  - Agregar usuarios asignandole directamente una clases
 
 - **Reportes y Estadísticas**
   - Estadísticas por tipo de clase
