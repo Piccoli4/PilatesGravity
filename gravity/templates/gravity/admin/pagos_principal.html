@@ -100,8 +100,8 @@
                 <div class="card-body p-3">
                     <div class="flex items-center justify-between">
                         <div class="flex-grow-1">
-                            <h6 class="text-sm font-medium text-gray-600 mb-1">Ingresos {{ mes_actual|date:"M" }}</h6>
-                            <h3 class="text-2xl font-bold text-principal">$ {{ ingresos_mes|floatformat:0 }}</h3>
+                            <h6 class="text-sm font-medium text-gray-600 mb-1">Ingresos {{ mes_actual|date:"F" }}</h6>
+                            <h3 class="text-2xl font-bold text-principal money">$ {{ ingresos_mes|floatformat:0 }}</h3>
                         </div>
                         <div class="bg-principal/10 p-3 rounded-lg">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-principal">
@@ -135,7 +135,7 @@
                         {% for plan in planes_activos %}
                             <div class="bg-gray-50 p-4 rounded-lg text-center">
                                 <div class="font-semibold text-gray-900 mb-1">{{ plan.nombre }}</div>
-                                <div class="text-principal text-xl font-bold mb-1">${{ plan.precio_mensual|floatformat:0 }}</div>
+                                <div class="text-principal text-xl font-bold mb-1 money">${{ plan.precio_mensual|floatformat:0 }}</div>
                                 <small class="text-gray-600">{{ plan.clases_por_semana }} clases por semana</small>
                             </div>
                         {% endfor %}
@@ -309,7 +309,7 @@
                                     
                                     <td class="py-4 px-1">
                                         {% if cliente_estado.plan_actual %}
-                                            <span class="font-semibold text-gray-900">${{ cliente_estado.plan_actual.precio_mensual|floatformat:0 }}</span>
+                                            <span class="font-semibold text-gray-900 money">${{ cliente_estado.plan_actual.precio_mensual|floatformat:0 }}</span>
                                         {% else %}
                                             <span class="text-gray-400">-</span>
                                         {% endif %}
@@ -318,7 +318,7 @@
                                     <td class="py-4 px-1">
                                         {% if cliente_estado.ultimo_pago_obj %}
                                             <div class="font-semibold text-gray-900">{{ cliente_estado.ultimo_pago_obj.fecha_pago|date:"d/m/Y" }}</div>
-                                            <small class="text-gray-500">${{ cliente_estado.ultimo_pago_obj.monto|floatformat:0 }}</small>
+                                            <small class="text-gray-500 money">${{ cliente_estado.ultimo_pago_obj.monto|floatformat:0 }}</small>
                                         {% else %}
                                             <span class="text-gray-400">Sin pagos</span>
                                         {% endif %}
@@ -358,12 +358,12 @@
                                     
                                     <td class="py-4 px-1">
                                         {% if cliente_estado.saldo_actual > 0 %}
-                                            <div class="text-green-600 font-semibold">+${{ cliente_estado.saldo_actual|floatformat:0 }}</div>
+                                            <div class="text-green-600 font-semibold money">+${{ cliente_estado.saldo_actual|floatformat:0 }}</div>
                                             <small class="text-gray-500">Crédito</small>
                                         {% elif cliente_estado.saldo_actual == 0 %}
                                             <span class="text-gray-400">$ 0</span>
                                         {% else %}
-                                            <div class="text-red-600 font-semibold">${{ cliente_estado.saldo_actual|floatformat:0 }}</div>
+                                            <div class="text-red-600 font-semibold money">${{ cliente_estado.saldo_actual|floatformat:0 }}</div>
                                             <small class="text-gray-500">Deuda</small>
                                         {% endif %}
                                     </td>
@@ -471,7 +471,7 @@
                                         </div>
                                         <div>
                                             <div class="text-xs text-gray-500">Saldo</div>
-                                            <div class="font-bold {% if cliente_estado.saldo_actual > 0 %}text-green-600{% elif cliente_estado.saldo_actual == 0 %}text-gray-400{% else %}text-red-600{% endif %}">
+                                            <div class="font-bold money {% if cliente_estado.saldo_actual > 0 %}text-green-600{% elif cliente_estado.saldo_actual == 0 %}text-gray-400{% else %}text-red-600{% endif %}">
                                                 {% if cliente_estado.saldo_actual > 0 %}+{% endif %} $ {{ cliente_estado.saldo_actual|floatformat:0 }}
                                             </div>
                                         </div>
@@ -667,6 +667,23 @@
                     }
                 });
             });
+
+            // Función para formatear números como moneda
+            function formatMoney(num) {
+                return new Intl.NumberFormat('es-AR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(num);
+            }
+
+            // Aplicar formato a todos los elementos con clase 'money'
+            document.querySelectorAll('.money').forEach(function(el) {
+                const value = parseFloat(el.textContent.replace(/[^\d.-]/g, ''));
+                if (!isNaN(value)) {
+                    el.textContent = '$ ' + formatMoney(value);
+                }
+            });
+            
         });
     </script>
 {% endblock %}

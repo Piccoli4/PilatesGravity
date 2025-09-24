@@ -10,7 +10,7 @@ from .views import (
     admin_dashboard, admin_clases_lista, admin_clase_crear, admin_clase_editar,
     admin_clase_eliminar, admin_clase_detalle,
     admin_reservas_lista, admin_reserva_cancelar, admin_usuarios_lista, admin_usuario_detalle,
-    admin_agregar_usuario,
+    admin_usuario_toggle_status, admin_usuario_add_note, admin_agregar_usuario,
     admin_reportes,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, admin_pagos_historial_cliente,
@@ -65,6 +65,8 @@ urlpatterns = [
     # Gestión de usuarios 
     path('admin-panel/usuarios/', admin_usuarios_lista, name='admin_usuarios_lista'),
     path('admin-panel/usuarios/<int:usuario_id>/', admin_usuario_detalle, name='admin_usuario_detalle'),
+    path('admin-panel/usuarios/<int:usuario_id>/toggle-status/', admin_usuario_toggle_status, name='admin_usuario_toggle_status'),
+    path('admin-panel/usuarios/<int:usuario_id>/add-note/', admin_usuario_add_note, name='admin_usuario_add_note'),
     
     # # Agregar usuarios al sistema
     path('admin-panel/agregar-cliente/', admin_agregar_usuario, name='admin_agregar_usuario'),

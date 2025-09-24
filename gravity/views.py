@@ -1291,6 +1291,87 @@ def admin_usuario_detalle(request, usuario_id):
     
     return render(request, 'gravity/admin/usuario_detalle.html', context)
 
+@admin_required
+def admin_usuario_toggle_status(request, usuario_id):
+    """
+    Activa o desactiva un usuario (AJAX)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        activate = data.get('activate', False)
+        
+        # Cambiar el estado del usuario
+        usuario.is_active = activate
+        usuario.save()
+        
+        action = 'activado' if activate else 'desactivado'
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Usuario {usuario.get_full_name() or usuario.username} {action} exitosamente.',
+            'new_status': usuario.is_active
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@admin_required
+def admin_usuario_add_note(request, usuario_id):
+    """
+    Agregar una nota administrativa a un usuario (AJAX)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        nota = data.get('nota', '').strip()
+        
+        if not nota:
+            return JsonResponse({'success': False, 'error': 'La nota no puede estar vacía'}, status=400)
+        
+        # Obtener o crear el perfil del usuario
+        try:
+            profile = usuario.profile
+        except UserProfile.DoesNotExist:
+            profile = UserProfile.objects.create(user=usuario)
+        
+        # Agregar la nueva nota con timestamp y usuario admin
+        fecha_actual = timezone.now().strftime('%d/%m/%Y %H:%M')
+        admin_name = request.user.get_full_name() or request.user.username
+        
+        nueva_nota = f"[{fecha_actual} - {admin_name}]: {nota}"
+        
+        if profile.notas_admin:
+            profile.notas_admin = f"{profile.notas_admin}\n\n{nueva_nota}"
+        else:
+            profile.notas_admin = nueva_nota
+        
+        profile.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Nota agregada exitosamente al perfil de {usuario.get_full_name() or usuario.username}.',
+            'nueva_nota': nueva_nota,
+            'notas_completas': profile.notas_admin
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 # ==============================================================================
 # AGREGAR USUARIOS AL SISTEMA
 # ==============================================================================

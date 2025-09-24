@@ -16,7 +16,7 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
     
     def get_success_url(self):
-        return reverse_lazy('gravity:home')
+        return reverse_lazy('accounts:profile')
     
     def form_invalid(self, form):
         messages.error(self.request, 'Usuario o contraseña incorrectos')
@@ -108,7 +108,7 @@ def profile_complete(request):
                 '¡Tu perfil ha sido completado exitosamente! '
                 'Ahora puedes empezar a reservar tus clases.'
             )
-            return redirect('gravity:home')
+            return redirect('accounts:profile')
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario')
     else:

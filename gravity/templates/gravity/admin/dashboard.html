@@ -272,7 +272,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10">
                             <path d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
                         </svg>
-                        <span class="font-medium">Agregar Cliente</span>
+                        <span class="font-medium">Agregar Usuario</span>
                     </a>
                     <a href="{% url 'gravity:admin_pagos_vista_principal' %}" class="w-full btn-pilates-primary text-fondo border border-secundario rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
                         <svg class="size-10" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
@@ -428,7 +428,7 @@
                                             {{ item.clase.dia }} - {{ item.clase.get_direccion_corta }}
                                         </small>
                                     </div>
-                                    <span class="bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-sm">
+                                    <span class="bg-secundario text-fondo px-2 py-1 rounded text-sm">
                                         {{ item.porcentaje_ocupacion }}%
                                     </span>
                                 </div>

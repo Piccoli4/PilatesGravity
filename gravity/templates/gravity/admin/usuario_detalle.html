@@ -113,7 +113,7 @@
             background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
             border: none;
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.55rem 1rem;
             border-radius: 0.5rem;
             text-decoration: none;
             display: inline-flex;
@@ -134,7 +134,7 @@
             background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
             border: none;
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.55rem 1rem;
             border-radius: 0.5rem;
             text-decoration: none;
             display: inline-flex;
@@ -250,6 +250,7 @@
 {% endblock %}
 
 {% block content %}
+    {% csrf_token %}
     <!-- Header Section -->
     <div class="grid grid-cols-1 gap-4 mb-4">
         <div class="w-full">
@@ -257,7 +258,7 @@
                 <div class="p-6">
                     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div class="flex-1">
-                            <h2 class="text-3xl text-gray-900 flex items-center gap-2">
+                            <h2 class="text-3xl text-principal flex items-center gap-2">
                                 <svg class="size-10 mb-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                     <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
                                 </svg>
@@ -588,6 +589,12 @@
                                 Activar Usuario
                             </button>
                         {% endif %}
+                        <button class="btn-action-secondary" onclick="openAddNoteModal()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                            </svg>
+                            Agregar Nota
+                        </button>
                     </div>
                 </div>
             </div>
@@ -728,16 +735,100 @@
             </div>
         </div>
     {% endif %}
+
+    <!-- Modal de Confirmación -->
+    <div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md md:max-w-xl shadow-lg rounded-md bg-blanco">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl leading-6 font-medium text-gray-900" id="modal-title">Confirmar Acción</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-lg text-gray-500" id="modal-message">
+                        ¿Estás seguro de que quieres realizar esta acción?
+                    </p>
+                    <div class="mt-3 p-3 bg-gray-50 rounded-md">
+                        <p class="text-md text-gray-600 text-left" id="modal-explanation">
+                            <!-- El texto se llenará dinámicamente con JavaScript -->
+                        </p>
+                    </div>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="modal-confirm" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Confirmar
+                    </button>
+                    <button id="modal-cancel" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-24 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Notas -->
+    <div id="addNoteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md md:max-w-2xl shadow-lg rounded-md bg-blanco">
+            <div class="mt-3">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                </div>
+                <h3 class="text-2xl leading-6 font-medium text-gray-900 text-center mb-4">Agregar Nota Administrativa</h3>
+                <div class="px-4">
+                    <p class="text-lg text-gray-600 text-center mb-4">
+                        Para: <strong>{{ usuario.get_full_name|default:usuario.username }}</strong>
+                    </p>
+                    <div class="mb-4">
+                        <label for="note-text" class="block text-md font-medium text-gray-700 mb-2">Nota:</label>
+                        <textarea 
+                            id="note-text" 
+                            rows="4" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Escribe tu nota administrativa aquí..."
+                            maxlength="500"
+                        ></textarea>
+                        <div class="text-right text-xs text-gray-500 mt-1">
+                            <span id="char-count">0</span>/500 caracteres
+                        </div>
+                    </div>
+                    <div class="text-md text-gray-500 bg-gray-50 p-3 rounded-md mb-4">
+                        <strong>Información automática:</strong><br>
+                        • Fecha y hora: Se agregará automáticamente<br>
+                        • Administrador: {{ user.get_full_name|default:user.username }}<br>
+                        • La nota será visible para todos los administradores
+                    </div>
+                </div>
+                <div class="flex justify-center gap-3 px-4 py-3">
+                    <button 
+                        id="save-note-btn" 
+                        class="px-6 py-2 bg-principal text-fondo text-base font-medium rounded-md hover:bg-fondo hover:text-principal focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                        Guardar Nota
+                    </button>
+                    <button 
+                        id="cancel-note-btn" 
+                        class="px-6 py-2 bg-secundario text-prindipal text-base font-medium rounded-md hover:bg-principal hover:text-fondo focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Add tooltips functionality for elements with title attribute
+            // Agregar funcionalidad de tooltips para elementos con el atributo title
             const tooltipElements = document.querySelectorAll('[title]');
             tooltipElements.forEach(function(element) {
                 element.addEventListener('mouseenter', function() {
-                    // Simple tooltip implementation without Bootstrap
+                    // Simple tooltip implementación sin Bootstrap
                     const title = this.getAttribute('title');
                     if (title) {
                         const tooltip = document.createElement('div');
@@ -762,22 +853,55 @@
             });
         });
 
-        // Function to toggle user status (activate/deactivate)
+        // Función para alternar el estado del usuario (activar/desactivar)
         function toggleUserStatus(userId, activate) {
             const action = activate ? 'activar' : 'desactivar';
-            const message = `¿Estás seguro de que quieres ${action} este usuario?`;
+            const userName = '{{ usuario.get_full_name|default:usuario.username }}';
+            const message = `¿Estás seguro de que quieres ${action} al usuario "${userName}"?`;
             
-            if (confirm(message)) {
-                // Aquí iría la llamada AJAX para cambiar el estado del usuario
-                // Por ahora solo mostramos un mensaje
-                alert(`Funcionalidad en desarrollo: ${action} usuario ${userId}`);
+            // Configurar el modal
+            document.getElementById('modal-title').textContent = activate ? 'Activar Usuario' : 'Desactivar Usuario';
+            document.getElementById('modal-message').textContent = message;
+
+            // Configurar el texto explicativo
+            const explanationElement = document.getElementById('modal-explanation');
+            if (activate) {
+                explanationElement.innerHTML = `
+                    <strong>Activar usuario:</strong><br>
+                    • El usuario podrá iniciar sesión normalmente<br>
+                    • Podrá hacer nuevas reservas<br>
+                    • Recibirá notificaciones si las tiene habilitadas<br>
+                    • Sus reservas existentes seguirán activas
+                `;
+            } else {
+                explanationElement.innerHTML = `
+                    <strong>Desactivar usuario:</strong><br>
+                    • El usuario NO podrá iniciar sesión<br>
+                    • NO podrá hacer nuevas reservas<br>
+                    • Sus reservas actuales permanecen activas<br>
+                    • No se eliminan sus datos del sistema
+                `;
+            }
+            
+            const confirmButton = document.getElementById('modal-confirm');
+            confirmButton.textContent = activate ? 'Activar' : 'Desactivar';
+            confirmButton.className = activate 
+                ? 'px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300'
+                : 'px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300';
+            
+            // Mostrar el modal
+            document.getElementById('confirmModal').classList.remove('hidden');
+            
+            // Configurar el evento del botón confirmar
+            confirmButton.onclick = function() {
+                // Ocultar el modal
+                document.getElementById('confirmModal').classList.add('hidden');
                 
-                // En una implementación real, harías algo como:
-                /*
+                // Realizar la petición AJAX
                 fetch(`/admin-panel/usuarios/${userId}/toggle-status/`, {
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || getCookie('csrftoken'),
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ activate: activate })
@@ -785,25 +909,179 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        // Mostrar mensaje de éxito y recargar
+                        showSuccessMessage(data.message);
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
                     } else {
-                        alert('Error al cambiar el estado del usuario');
+                        showErrorMessage(data.error || 'Error al cambiar el estado del usuario');
                     }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorMessage('Error de conexión. Por favor intenta nuevamente.');
                 });
-                */
-            }
+            };
+            
+            // Configurar el evento del botón cancelar
+            document.getElementById('modal-cancel').onclick = function() {
+                document.getElementById('confirmModal').classList.add('hidden');
+            };
         }
 
-        // Function to add admin notes
-        function addAdminNote() {
-            const note = prompt('Ingresa una nota administrativa:');
-            if (note && note.trim()) {
-                // Aquí iría la llamada para guardar la nota
-                alert(`Funcionalidad en desarrollo: agregar nota "${note}"`);
+        // Función para obtener el CSRF token de las cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
             }
+            return cookieValue;
         }
 
-        // Auto-refresh every 5 minutes to show updated reservation status
+        // Funciones para mostrar mensajes
+        function showSuccessMessage(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            alertDiv.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    ${message}
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        function showErrorMessage(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            alertDiv.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                    ${message}
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 4000);
+        }
+
+        // Función para abrir el modal de agregar notas
+        function openAddNoteModal() {
+            document.getElementById('addNoteModal').classList.remove('hidden');
+            document.getElementById('note-text').focus();
+            updateCharCount();
+        }
+
+        // Función para actualizar el contador de caracteres
+        function updateCharCount() {
+            const textarea = document.getElementById('note-text');
+            const charCount = document.getElementById('char-count');
+            const saveBtn = document.getElementById('save-note-btn');
+            
+            textarea.addEventListener('input', function() {
+                const currentLength = this.value.length;
+                charCount.textContent = currentLength;
+                
+                // Deshabilitar el botón si está vacío
+                if (currentLength === 0 || this.value.trim() === '') {
+                    saveBtn.disabled = true;
+                } else {
+                    saveBtn.disabled = false;
+                }
+                
+                // Cambiar color si se acerca al límite
+                if (currentLength > 450) {
+                    charCount.classList.add('text-red-500');
+                } else {
+                    charCount.classList.remove('text-red-500');
+                }
+            });
+        }
+
+        // Event listeners para el modal de notas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Botón cancelar
+            document.getElementById('cancel-note-btn').addEventListener('click', function() {
+                closeNoteModal();
+            });
+
+            // Botón guardar
+            document.getElementById('save-note-btn').addEventListener('click', function() {
+                saveAdminNote();
+            });
+
+            // Cerrar modal con Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeNoteModal();
+                }
+            });
+        });
+
+        function closeNoteModal() {
+            document.getElementById('addNoteModal').classList.add('hidden');
+            document.getElementById('note-text').value = '';
+            document.getElementById('char-count').textContent = '0';
+            document.getElementById('save-note-btn').disabled = true;
+        }
+
+        function saveAdminNote() {
+            const noteText = document.getElementById('note-text').value.trim();
+            const saveBtn = document.getElementById('save-note-btn');
+            
+            if (!noteText) {
+                showErrorMessage('La nota no puede estar vacía.');
+                return;
+            }
+
+            // Deshabilitar botón mientras se guarda
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Guardando...';
+
+            fetch(`/admin-panel/usuarios/{{ usuario.id }}/add-note/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ nota: noteText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage(data.message);
+                    closeNoteModal();
+                    // Recargar después de un momento para mostrar la nueva nota
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showErrorMessage(data.error || 'Error al guardar la nota');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Guardar Nota';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorMessage('Error de conexión. Por favor intenta nuevamente.');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Guardar Nota';
+            });
+        }
+
+        // Auto-refresh cada 5 minutos para mostrar el estado actualizado de las reservas
         setInterval(function() {
             // Solo refrescar si no hay modales abiertos o acciones en curso
             if (!document.querySelector('.modal.show')) {

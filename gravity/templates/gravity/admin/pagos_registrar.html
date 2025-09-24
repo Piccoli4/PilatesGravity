@@ -53,13 +53,13 @@
                 <div>
                     <h6 class="text-sm font-medium text-principal mb-2">Saldo Actual</h6>
                     {% if estado_pago.saldo_actual > 0 %}
-                        <p class="font-semibold text-exito mb-1">+${{ estado_pago.saldo_actual }}</p>
+                        <p class="font-semibold text-exito mb-1 money">+${{ estado_pago.saldo_actual }}</p>
                         <span class="text-xs text-gris-medio">Crédito a favor</span>
                     {% elif estado_pago.saldo_actual == 0 %}
                         <p class="font-semibold text-gris-oscuro mb-1">$0</p>
                         <span class="text-xs text-gris-medio">Al día</span>
                     {% else %}
-                        <p class="font-semibold text-error mb-1">${{ estado_pago.saldo_actual }}</p>
+                        <p class="font-semibold text-error mb-1 money">${{ estado_pago.saldo_actual }}</p>
                         <span class="text-xs text-gris-medio">Deuda pendiente</span>
                     {% endif %}
                 </div>
@@ -68,7 +68,7 @@
                     <h6 class="text-sm font-medium text-principal mb-2">Último Pago</h6>
                     {% if estado_pago.ultimo_pago %}
                         <p class="font-semibold text-gris-oscuro mb-1">{{ estado_pago.ultimo_pago|date:"d/m/Y" }}</p>
-                        <span class="text-xs text-gris-medio">${{ estado_pago.monto_ultimo_pago }}</span>
+                        <span class="text-xs text-gris-medio money">${{ estado_pago.monto_ultimo_pago }}</span>
                     {% else %}
                         <p class="text-gris-medio">Sin pagos registrados</p>
                     {% endif %}
@@ -201,4 +201,32 @@
             </form>
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Función para formatear números como moneda
+        function formatMoney(num) {
+            return new Intl.NumberFormat('es-AR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        }
+
+        // Aplicar formato a todos los elementos con clase 'money'
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.money').forEach(function(el) {
+                let text = el.textContent.trim();
+                // Extraer solo la parte numérica después del símbolo $
+                let match = text.match(/\$?\s*(\d+(?:\.\d{2})?)/);
+                
+                if (match) {
+                    let value = parseFloat(match[1]);
+                    if (!isNaN(value)) {
+                        el.textContent = '$ ' + formatMoney(value);
+                    }
+                }
+            });
+        });
+    </script>
 {% endblock %}

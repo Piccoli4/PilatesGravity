@@ -161,7 +161,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="font-semibold text-exito text-lg">${{ plan.precio_mensual }}</span>
+                            <span class="font-semibold text-exito text-lg money">${{ plan.precio_mensual }}</span>
                         </td>
                         <td class="px-6 py-4">
                             {% if plan.activo %}
@@ -365,5 +365,29 @@
                 form.submit();
             }
         }
+
+        // Función para formatear números como moneda
+        function formatMoney(num) {
+            return new Intl.NumberFormat('es-AR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        }
+
+        // Aplicar formato a todos los elementos con clase 'money'
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.money').forEach(function(el) {
+                let text = el.textContent.trim();
+                // Extraer solo la parte numérica después del símbolo $
+                let match = text.match(/\$?\s*(\d+(?:\.\d{2})?)/);
+                
+                if (match) {
+                    let value = parseFloat(match[1]);
+                    if (!isNaN(value)) {
+                        el.textContent = '$ ' + formatMoney(value);
+                    }
+                }
+            });
+        });
     </script>
 {% endblock %}

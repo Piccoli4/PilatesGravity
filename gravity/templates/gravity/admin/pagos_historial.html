@@ -49,7 +49,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-blanco rounded-lg shadow-md border border-gray-100 p-6 text-center hover:shadow-lg transition-shadow duration-200">
             <h6 class="text-gris-medio text-sm font-medium mb-2">Total Pagado</h6>
-            <h3 class="text-2xl font-bold text-principal">${{ total_pagado }}</h3>
+            <h3 class="text-2xl font-bold text-principal money">${{ total_pagado }}</h3>
         </div>
         <div class="bg-blanco rounded-lg shadow-md border border-gray-100 p-6 text-center hover:shadow-lg transition-shadow duration-200">
             <h6 class="text-gris-medio text-sm font-medium mb-2">Total Pagos</h6>
@@ -58,16 +58,17 @@
         <div class="bg-blanco rounded-lg shadow-md border border-gray-100 p-6 text-center hover:shadow-lg transition-shadow duration-200">
             <h6 class="text-gris-medio text-sm font-medium mb-2">Saldo Actual</h6>
             {% if estado_pago.saldo_actual >= 0 %}
-                <h3 class="text-2xl font-bold text-exito">${{ estado_pago.saldo_actual }}</h3>
+                <h3 class="text-2xl font-bold text-exito money">${{ estado_pago.saldo_actual }}</h3>
             {% else %}
-                <h3 class="text-2xl font-bold text-error">${{ estado_pago.saldo_actual }}</h3>
+                <h3 class="text-2xl font-bold text-error money">${{ estado_pago.saldo_actual }}</h3>
             {% endif %}
         </div>
         <div class="bg-blanco rounded-lg shadow-md border border-gray-100 p-6 text-center hover:shadow-lg transition-shadow duration-200">
             <h6 class="text-gris-medio text-sm font-medium mb-2">Plan Actual</h6>
             {% if estado_pago.plan_actual %}
                 <div class="font-bold text-principal">{{ estado_pago.plan_actual.nombre }}</div>
-                <small class="text-gris-medio">${{ estado_pago.plan_actual.precio_mensual }}/mes</small>
+                <small class="text-gris-medio money">${{ estado_pago.plan_actual.precio_mensual }}</small>
+                <small class="text-gris-medio">/ mes</small>
             {% else %}
                 <div class="text-gris-medio">Sin plan</div>
             {% endif %}
@@ -107,7 +108,7 @@
                                 <small class="text-gris-medio">{{ pago.fecha_registro|date:"H:i" }}</small>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="font-semibold text-exito">${{ pago.monto }}</span>
+                                <span class="font-semibold text-exito money">${{ pago.monto }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-info text-white">{{ pago.get_tipo_pago_display }}</span>
@@ -161,4 +162,32 @@
             {% endif %}
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Función para formatear números como moneda
+        function formatMoney(num) {
+            return new Intl.NumberFormat('es-AR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        }
+
+        // Aplicar formato a todos los elementos con clase 'money'
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.money').forEach(function(el) {
+                let text = el.textContent.trim();
+                // Extraer solo la parte numérica después del símbolo $
+                let match = text.match(/\$?\s*(\d+(?:\.\d{2})?)/);
+                
+                if (match) {
+                    let value = parseFloat(match[1]);
+                    if (!isNaN(value)) {
+                        el.textContent = '$ ' + formatMoney(value);
+                    }
+                }
+            });
+        });
+    </script>
 {% endblock %}

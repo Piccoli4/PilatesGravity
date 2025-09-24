@@ -304,9 +304,10 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
                         {% for stat in stats_por_dia %}
                             <div class="bg-gris-claro rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
-                                <h4 class="text-2xl font-bold text-principal mb-1">{{ stat.total_reservas|default:0 }}</h4>
-                                <h6 class="text-gris-medio font-medium mb-1">{{ stat.dia }}</h6>
-                                <small class="text-gris-medio">
+                                <h4 class="text-2xl font-bold text-principal">{{ stat.total_reservas|default:0 }}</h4>
+                                <h4 class="text-sm text-gris-medio mb-1">Reservas</h4>
+                                <h6 class="text-2xl text-principal font-bold mb-1">{{ stat.dia }}</h6>
+                                <small class="text-sm text-gris-medio mb-1">
                                     {{ stat.total_clases|default:0 }} clase{{ stat.total_clases|pluralize }}
                                 </small>
                             </div>
