@@ -118,10 +118,30 @@
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                     </a>
                 {% endif %}
+
+                <!-- Enlace directo a Mis Planes -->
+                <a 
+                    href="{% url 'gravity:mis_planes' %}" 
+                    class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in group"
+                >
+                    <div 
+                        class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+                        style="background: linear-gradient(135deg, #C8B39B, #5D768B);"
+                    >
+                        <img src="{% static 'icons/mis_planes.png' %}" alt="Icono de Reservas" class="w-[28px] h-auto">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-lg mb-1 group-hover:text-[#5D768B] transition-colors duration-300" style="color: #4a5568;">Mis Planes</h4>
+                        <p class="text-slate-600 text-sm group-hover:text-[#C8B39B] transition-colors duration-300">Gestionar planes de pago</p>
+                    </div>
+                    <span class="text-2xl font-bold transition-transform duration-300 group-hover:translate-x-1" style="color: #C8B39B;">→</span>
+                </a>
                 
-                <!-- Nuevo: Enlace directo a Mis Reservas -->
-                <a href="{% url 'accounts:mis_reservas' %}" 
-                class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in group">
+                <!-- Enlace directo a Mis Reservas -->
+                <a 
+                    href="{% url 'accounts:mis_reservas' %}" 
+                    class="flex items-center p-6 bg-white rounded-2xl no-underline text-inherit transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border-2 border-transparent hover:border-[#C8B39B] animate-fade-in group"
+                >
                     <div 
                         class="w-12 h-12 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
                         style="background: linear-gradient(135deg, #C8B39B, #5D768B);"

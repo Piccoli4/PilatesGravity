@@ -10,6 +10,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from decimal import Decimal
 from django.db.models import Sum
+from datetime import timedelta
 
 DIAS_SEMANA = [
     ('Lunes', 'Lunes'),
@@ -265,7 +266,7 @@ class Reserva(models.Model):
 
     def puede_modificarse(self):
         """
-        Verifica si la reserva puede modificarse (12 horas de anticipación).
+        Verifica si la reserva puede modificarse (3 horas de anticipación).
         Calcula basándose en el próximo día de clase.
         """
         if not self.activa:
@@ -312,12 +313,12 @@ class Reserva(models.Model):
                 microsecond=0
             )
         
-        # Verificar si faltan más de 12 horas
-        tiempo_limite = proxima_fecha_clase - timedelta(hours=12)
+        # Verificar si faltan más de 3 horas
+        tiempo_limite = proxima_fecha_clase - timedelta(hours=3)
         
         if hoy >= tiempo_limite:
             horas_restantes = (proxima_fecha_clase - hoy).total_seconds() / 3600
-            return False, f"Solo puedes modificar tu reserva con 12 horas de anticipación. Próxima clase en {horas_restantes:.1f} horas."
+            return False, f"Solo puedes modificar tu reserva con 3 horas de anticipación. Próxima clase en {horas_restantes:.1f} horas."
         
         return True, "Puedes modificar tu reserva"
 
@@ -362,21 +363,77 @@ class Reserva(models.Model):
         direccion = self.clase.get_direccion_corta()
         return f"Reserva {self.numero_reserva} - {self.get_nombre_completo_usuario()} - {self.clase.get_nombre_display()} en {direccion} ({estado})"
 
-    class Meta:
-        verbose_name = "Reserva"
-        verbose_name_plural = "Reservas"
-        constraints = [
-            models.UniqueConstraint(
-                fields=['usuario', 'clase'],
-                condition=models.Q(activa=True),
-                name='unique_active_reservation_per_user_class'
-            )
-        ]
-        ordering = ['-fecha_reserva']
-        permissions = [
-            ('can_manage_all_reservas', 'Puede gestionar todas las reservas'),
-            ('can_view_all_reservas', 'Puede ver todas las reservas'),
-        ]
+    @staticmethod
+    def contar_reservas_usuario_semana(usuario, fecha_inicio_semana=None):
+        """
+        Cuenta las reservas activas de un usuario en una semana específica
+        """
+        if fecha_inicio_semana is None:
+            # Obtener el lunes de la semana actual
+            hoy = timezone.now().date()
+            fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
+        
+        fecha_fin_semana = fecha_inicio_semana + timedelta(days=5)  # Hasta sábado
+        
+        # Mapear días de la semana
+        dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+        
+        reservas_count = Reserva.objects.filter(
+            usuario=usuario,
+            activa=True,
+            clase__dia__in=dias_semana
+        ).count()
+        
+        return reservas_count
+
+    @staticmethod
+    def usuario_puede_reservar(usuario, nueva_clase=None):
+        """
+        Verifica si un usuario puede hacer una nueva reserva según sus planes
+        """
+        # Verificar si tiene planes activos
+        clases_disponibles, planes = PlanUsuario.obtener_clases_disponibles_usuario(usuario)
+        
+        if clases_disponibles == 0:
+            return False, "No tienes un plan activo. Debes seleccionar un plan antes de reservar."
+        
+        # Contar reservas actuales de la semana
+        reservas_actuales = Reserva.contar_reservas_usuario_semana(usuario)
+        
+        # Si ya tiene el máximo de reservas
+        if reservas_actuales >= clases_disponibles:
+            return False, f"Ya tienes {reservas_actuales} reservas esta semana. Tu plan permite máximo {clases_disponibles} clases semanales."
+        
+        # Si es una modificación, verificar que no sea la misma clase
+        if nueva_clase:
+            reserva_existente = Reserva.objects.filter(
+                usuario=usuario,
+                clase=nueva_clase,
+                activa=True
+            ).exists()
+            
+            if reserva_existente:
+                return False, "Ya tienes una reserva para esta clase."
+        
+        return True, f"Puedes reservar. Tienes {clases_disponibles - reservas_actuales} clases disponibles esta semana."
+
+        class Meta:
+            verbose_name = "Reserva"
+            verbose_name_plural = "Reservas"
+            constraints = [
+                models.UniqueConstraint(
+                    fields=['usuario', 'clase'],
+                    condition=models.Q(activa=True),
+                    name='unique_active_reservation_per_user_class'
+                )
+            ]
+            ordering = ['-fecha_reserva']
+            permissions = [
+                ('can_manage_all_reservas', 'Puede gestionar todas las reservas'),
+                ('can_view_all_reservas', 'Puede ver todas las reservas'),
+            ]
+
+
 # ==============================================================================
 # MODELOS REGISTROS DE PAGOS
 # ==============================================================================
@@ -907,3 +964,193 @@ def crear_estados_pago_usuarios_existentes():
         )
         # Actualizar plan según reservas actuales
         estado.actualizar_plan_automatico()
+
+# ==============================================================================
+# MODELO PARA PLANES DE PAGOS
+# ==============================================================================
+
+class PlanUsuario(models.Model):
+    """
+    Plan activo de un usuario. Un usuario puede tener múltiples planes activos
+    para diferentes períodos o tipos (ej: plan permanente + plan adicional temporal)
+    """
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Usuario",
+        related_name='planes_activos'
+    )
+    
+    plan = models.ForeignKey(
+        PlanPago,
+        on_delete=models.CASCADE,
+        verbose_name="Plan de pago"
+    )
+    
+    fecha_inicio = models.DateField(
+        verbose_name="Fecha de inicio",
+        help_text="Fecha desde cuando es válido este plan"
+    )
+    
+    fecha_fin = models.DateField(
+        verbose_name="Fecha de fin",
+        help_text="Fecha hasta cuando es válido este plan"
+    )
+    
+    activo = models.BooleanField(
+        default=True,
+        verbose_name="Plan activo",
+        help_text="Si este plan está activo para el usuario"
+    )
+    
+    tipo_plan = models.CharField(
+        max_length=20,
+        choices=[
+            ('permanente', 'Plan Permanente'),
+            ('temporal', 'Plan Temporal/Adicional'),
+        ],
+        default='permanente',
+        verbose_name="Tipo de plan",
+        help_text="Permanente se renueva automáticamente, temporal es de una sola vez"
+    )
+    
+    renovacion_automatica = models.BooleanField(
+        default=True,
+        verbose_name="Renovación automática",
+        help_text="Si el plan se renueva automáticamente al vencer"
+    )
+    
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones",
+        help_text="Notas sobre este plan específico"
+    )
+    
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de creación"
+    )
+    
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='planes_creados',
+        verbose_name="Creado por",
+        help_text="Administrador que asignó este plan"
+    )
+
+    def clean(self):
+        """Validaciones personalizadas del modelo"""
+        super().clean()
+        
+        # Validar que fecha_fin sea posterior a fecha_inicio
+        if self.fecha_inicio and self.fecha_fin:
+            if self.fecha_fin <= self.fecha_inicio:
+                raise ValidationError({
+                    'fecha_fin': 'La fecha de fin debe ser posterior a la fecha de inicio.'
+                })
+        
+        # Validar que el plan esté activo
+        if not self.plan.activo:
+            raise ValidationError({
+                'plan': 'No se puede asignar un plan inactivo.'
+            })
+
+    def esta_vigente(self, fecha=None):
+        """Verifica si el plan está vigente en una fecha específica"""
+        if not self.activo:
+            return False
+        
+        if fecha is None:
+            fecha = timezone.now().date()
+        
+        return self.fecha_inicio <= fecha <= self.fecha_fin
+
+    def clases_disponibles_semana(self, fecha_inicio_semana=None):
+        """
+        Calcula cuántas clases puede reservar en una semana específica
+        considerando todos sus planes activos
+        """
+        if fecha_inicio_semana is None:
+            # Obtener el lunes de la semana actual
+            hoy = timezone.now().date()
+            fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
+        
+        if not self.esta_vigente(fecha_inicio_semana):
+            return 0
+        
+        return self.plan.clases_por_semana
+
+    def dias_restantes(self):
+        """Calcula cuántos días faltan para que expire el plan"""
+        if not self.activo:
+            return 0
+        
+        hoy = timezone.now().date()
+        if self.fecha_fin < hoy:
+            return 0
+        
+        return (self.fecha_fin - hoy).days
+
+    def renovar_plan(self):
+        """
+        Renueva el plan por un mes más (solo para planes con renovación automática)
+        """
+        if not self.renovacion_automatica or self.tipo_plan != 'permanente':
+            return False
+        
+        # Extender fecha_fin por un mes más (aproximadamente 30 días)
+        from datetime import timedelta
+        self.fecha_fin = self.fecha_fin + timedelta(days=30)
+        self.save()
+        return True
+
+    def get_estado_display(self):
+        """Devuelve el estado actual del plan"""
+        if not self.activo:
+            return "Inactivo"
+        
+        hoy = timezone.now().date()
+        if hoy < self.fecha_inicio:
+            return "Pendiente"
+        elif hoy > self.fecha_fin:
+            return "Vencido"
+        else:
+            dias_restantes = self.dias_restantes()
+            if dias_restantes <= 7:
+                return f"Vence en {dias_restantes} días"
+            return "Activo"
+
+    def __str__(self):
+        estado = self.get_estado_display()
+        return f"{self.usuario.username} - {self.plan.nombre} ({estado})"
+
+    class Meta:
+        verbose_name = "Plan de Usuario"
+        verbose_name_plural = "Planes de Usuarios"
+        ordering = ['-fecha_creacion']
+
+    @staticmethod
+    def obtener_clases_disponibles_usuario(usuario, fecha_inicio_semana=None):
+        """
+        Método estático para obtener el total de clases disponibles 
+        para un usuario en una semana específica
+        """
+        if fecha_inicio_semana is None:
+            # Obtener el lunes de la semana actual
+            hoy = timezone.now().date()
+            fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
+        
+        # Obtener todos los planes activos y vigentes del usuario
+        planes_vigentes = PlanUsuario.objects.filter(
+            usuario=usuario,
+            activo=True,
+            fecha_inicio__lte=timezone.now().date(),
+            fecha_fin__gte=timezone.now().date()
+        )
+        
+        total_clases = sum(plan.plan.clases_por_semana for plan in planes_vigentes)
+        return total_clases, planes_vigentes
+    

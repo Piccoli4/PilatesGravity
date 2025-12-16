@@ -55,10 +55,33 @@
             opacity: 1;
             pointer-events: all;
         }
+        
+        /* Estilos para la sección de planes */
+        .plan-progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        
+        .plan-stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .plan-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(93, 118, 139, 0.15);
+        }
     </style>
 {% endblock %}
 
 {% block content %}
+    <!-- Data container para JavaScript (invisible) -->
+    <div id="page-data" 
+         data-tiene-planes="{% if planes_activos %}true{% else %}false{% endif %}"
+         data-clases-restantes="{{ clases_restantes|default:0 }}"
+         data-reservas-actuales="{{ reservas_actuales|default:0 }}"
+         data-clases-disponibles="{{ clases_disponibles|default:1 }}"
+         style="display: none;">
+    </div>
+
     <section class="min-h-screen bg-fondo pt-10 pb-12">
         <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto">
@@ -154,412 +177,593 @@
                             {% endif %}
                         </div>
 
-                        <!-- Selección de Clase -->
+                        <!-- Estado de Planes del Usuario -->
                         <div class="space-y-6">
+                            <h2 class="text-2xl font-bold text-principal border-b-2 border-gris-claro pb-3 flex items-center">
+                                <i class="fas fa-credit-card mr-3"></i>
+                                Tu Plan Actual
+                            </h2>
+                            
+                            <!-- Estado del plan activo -->
+                            <div class="bg-gradient-to-r from-fondo to-white rounded-xl border border-secundario/20 p-6">
+                                <!-- Si tiene planes activos -->
+                                {% if planes_activos %}
+                                    <div class="flex items-center justify-between flex-wrap gap-4">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center space-x-3 mb-2">
+                                                <div class="flex-shrink-0">
+                                                    <div class="w-10 h-10 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center">
+                                                        <i class="fas fa-check text-white text-sm"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <h3 class="text-lg font-semibold text-principal truncate">
+                                                        {{ planes_activos.first.plan.nombre }}
+                                                    </h3>
+                                                    <p class="text-sm text-gris-medio">
+                                                        Válido hasta {{ planes_activos.first.fecha_fin|date:"d/m/Y" }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Estadísticas de uso -->
+                                        <div class="flex items-center space-x-6">
+                                            <div class="text-center px-4 py-2 bg-white/80 rounded-lg border border-principal/20 plan-stat-card">
+                                                <div class="text-2xl font-bold text-principal">
+                                                    {{ clases_disponibles|default:0 }}
+                                                </div>
+                                                <div class="text-xs text-gris-medio font-medium">Disponibles</div>
+                                            </div>
+                                            <div class="text-center px-4 py-2 bg-white/80 rounded-lg border border-gris-medio/20 plan-stat-card">
+                                                <div class="text-2xl font-bold text-gris-oscuro">
+                                                    {{ reservas_actuales|default:0 }}
+                                                </div>
+                                                <div class="text-xs text-gris-medio font-medium">Usadas</div>
+                                            </div>
+                                            <div class="text-center px-4 py-2 bg-white/80 rounded-lg border border-exito/20 plan-stat-card">
+                                                <div class="text-2xl font-bold {% if clases_restantes > 0 %}text-exito{% else %}text-error{% endif %}">
+                                                    {{ clases_restantes|default:0 }}
+                                                </div>
+                                                <div class="text-xs text-gris-medio font-medium">Restantes</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Barra de progreso visual -->
+                                    <div class="mt-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-sm font-medium text-gris-oscuro">Uso semanal</span>
+                                            <span class="text-sm text-gris-medio">
+                                                {{ reservas_actuales|default:0 }}/{{ clases_disponibles|default:0 }} clases
+                                            </span>
+                                        </div>
+                                        <div class="w-full bg-gris-claro rounded-full h-2">
+                                            <div id="progress-bar" class="bg-gradient-to-r from-principal to-secundario h-2 rounded-full plan-progress-bar" 
+                                                 style="width: 0%;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Enlace a gestión de planes -->
+                                    <div class="mt-4 text-center">
+                                        <a href="{% url 'gravity:mis_planes' %}" 
+                                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-principal hover:text-secundario transition-colors duration-200 group">
+                                            <i class="fas fa-cog mr-2"></i>
+                                            Gestionar mis planes
+                                            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform duration-200"></i>
+                                        </a>
+                                    </div>
+                                    
+                                {% else %}
+                                    <!-- No tiene planes activos -->
+                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                                        <div class="text-center">
+                                            <div class="w-16 h-16 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <i class="fas fa-info text-white text-xl"></i>
+                                            </div>
+                                            <h3 class="text-lg font-semibold text-principal mb-2">
+                                                Necesitas seleccionar un plan
+                                            </h3>
+                                            <p class="text-gris-oscuro text-sm mb-4">
+                                                Para poder reservar clases, primero debes seleccionar un plan de pago que se ajuste a tus necesidades.
+                                            </p>
+                                            <a href="{% url 'gravity:seleccionar_plan' %}?next=reservar" 
+                                               class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-principal to-secundario text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200">
+                                                <i class="fas fa-credit-card mr-2"></i>
+                                                Seleccionar Plan
+                                                <i class="fas fa-arrow-right ml-2"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Advertencia si no puede reservar -->
+                            {% if planes_activos and clases_restantes == 0 %}
+                                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
+                                    <div class="flex items-start space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-amber-800 font-semibold mb-1">Límite de clases alcanzado</h4>
+                                            <p class="text-amber-700 text-sm mb-3">
+                                                Ya has usado todas las clases disponibles en tu plan para esta semana. 
+                                                Tu plan se renovará el {{ planes_activos.first.fecha_fin|date:"d/m/Y" }}.
+                                            </p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <a href="{% url 'gravity:seleccionar_plan' %}" 
+                                                   class="inline-flex items-center px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors duration-200">
+                                                    <i class="fas fa-plus mr-1"></i>
+                                                    Agregar plan adicional
+                                                </a>
+                                                <a href="{% url 'gravity:mis_planes' %}" 
+                                                   class="inline-flex items-center px-3 py-1 bg-white border border-amber-600 text-amber-600 text-sm font-medium rounded-lg hover:bg-amber-50 transition-colors duration-200">
+                                                    <i class="fas fa-cog mr-1"></i>
+                                                    Gestionar planes
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Selección de Clase -->
+                        <div class="space-y-6" id="seccion-formulario">
                             <h2 class="text-2xl font-bold text-principal border-b-2 border-gris-claro pb-3">
                                 Selección de Clase
+                                <span id="form-status-indicator" class="text-sm font-normal text-error ml-2 hidden">(Requiere plan activo)</span>
                             </h2>
                             
                             <!-- Indicador de progreso -->
                             <div class="flex items-center justify-between mb-6">
                                 <div class="flex items-center space-x-2">
-                                    <div id="step-1" class="w-8 h-8 rounded-full bg-principal text-white flex items-center justify-center text-sm font-bold">1</div>
-                                    <span class="text-sm text-principal font-medium">Tipo</span>
-                                </div>
-                                <div class="flex-1 h-1 bg-gris-claro mx-2">
-                                    <div id="progress-1" class="h-full bg-principal transition-all duration-300" style="width: 0%"></div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <div id="step-2" class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio flex items-center justify-center text-sm font-bold">2</div>
-                                    <span class="text-sm text-gris-medio font-medium">Sede</span>
-                                </div>
-                                <div class="flex-1 h-1 bg-gris-claro mx-2">
-                                    <div id="progress-2" class="h-full bg-principal transition-all duration-300" style="width: 0%"></div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <div id="step-3" class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio flex items-center justify-center text-sm font-bold">3</div>
-                                    <span class="text-sm text-gris-medio font-medium">Día</span>
-                                </div>
-                                <div class="flex-1 h-1 bg-gris-claro mx-2">
-                                    <div id="progress-3" class="h-full bg-principal transition-all duration-300" style="width: 0%"></div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <div id="step-4" class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio flex items-center justify-center text-sm font-bold">4</div>
-                                    <span class="text-sm text-gris-medio font-medium">Horario</span>
+                                    <div class="step-indicator step-active" data-step="1">
+                                        <span class="step-number">1</span>
+                                        <span class="step-text">Tipo de Clase</span>
+                                    </div>
+                                    <div class="step-connector"></div>
+                                    <div class="step-indicator" data-step="2">
+                                        <span class="step-number">2</span>
+                                        <span class="step-text">Sede</span>
+                                    </div>
+                                    <div class="step-connector"></div>
+                                    <div class="step-indicator" data-step="3">
+                                        <span class="step-number">3</span>
+                                        <span class="step-text">Día</span>
+                                    </div>
+                                    <div class="step-connector"></div>
+                                    <div class="step-indicator" data-step="4">
+                                        <span class="step-number">4</span>
+                                        <span class="step-text">Horario</span>
+                                    </div>
                                 </div>
                             </div>
-                            
+
+                            <!-- Formulario de selección -->
                             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <!-- Tipo de Clase - Paso 1 -->
-                                <div class="space-y-2 form-step active" id="form-step-1">
-                                    <label for="{{ form.tipo_clase.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.tipo_clase.label }} <span class="text-error">*</span>
+                                <!-- Tipo de Clase -->
+                                <div class="form-step active">
+                                    <label for="id_tipo_clase" class="block text-sm font-medium text-gris-oscuro mb-2">
+                                        Tipo de Clase
                                     </label>
-                                    <div class="relative">
-                                        {{ form.tipo_clase }}
-                                    </div>
-                                    {% for error in form.tipo_clase.errors %}
-                                        <p class="text-error text-sm animate-slideInError">{{ error }}</p>
-                                    {% endfor %}
+                                    {{ form.tipo_clase }}
+                                    {% if form.tipo_clase.errors %}
+                                        <div class="mt-2 text-error text-sm">
+                                            {% for error in form.tipo_clase.errors %}
+                                                <span class="block">{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                
-                                <!-- Sede - Paso 2 -->
-                                <div class="space-y-2 form-step" id="form-step-2">
-                                    <label for="{{ form.sede.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.sede.label }} <span class="text-error">*</span>
+
+                                <!-- Sede -->
+                                <div class="form-step">
+                                    <label for="id_sede" class="block text-sm font-medium text-gris-oscuro mb-2">
+                                        Sede
                                     </label>
-                                    <div class="relative">
-                                        {{ form.sede }}
-                                    </div>
-                                    {% for error in form.sede.errors %}
-                                        <p class="text-error text-sm animate-slideInError">{{ error }}</p>
-                                    {% endfor %}
+                                    {{ form.sede }}
+                                    {% if form.sede.errors %}
+                                        <div class="mt-2 text-error text-sm">
+                                            {% for error in form.sede.errors %}
+                                                <span class="block">{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                
-                                <!-- Día - Paso 3 -->
-                                <div class="space-y-2 form-step" id="form-step-3">
-                                    <label for="{{ form.dia.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.dia.label }} <span class="text-error">*</span>
+
+                                <!-- Día -->
+                                <div class="form-step">
+                                    <label for="id_dia" class="block text-sm font-medium text-gris-oscuro mb-2">
+                                        Día de la Semana
                                     </label>
-                                    <div class="relative">
-                                        {{ form.dia }}
-                                    </div>
-                                    {% for error in form.dia.errors %}
-                                        <p class="text-error text-sm animate-slideInError">{{ error }}</p>
-                                    {% endfor %}
+                                    {{ form.dia }}
+                                    {% if form.dia.errors %}
+                                        <div class="mt-2 text-error text-sm">
+                                            {% for error in form.dia.errors %}
+                                                <span class="block">{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                
-                                <!-- Horario - Paso 4 -->
-                                <div class="space-y-2 form-step" id="form-step-4">
-                                    <label for="{{ form.horario.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                                        {{ form.horario.label }} <span class="text-error">*</span>
+
+                                <!-- Horario -->
+                                <div class="form-step">
+                                    <label for="id_horario" class="block text-sm font-medium text-gris-oscuro mb-2">
+                                        Horario
                                     </label>
-                                    <div class="relative">
-                                        {{ form.horario }}
-                                    </div>
-                                    {% for error in form.horario.errors %}
-                                        <p class="text-error text-sm animate-slideInError">{{ error }}</p>
-                                    {% endfor %}
+                                    {{ form.horario }}
+                                    {% if form.horario.errors %}
+                                        <div class="mt-2 text-error text-sm">
+                                            {% for error in form.horario.errors %}
+                                                <span class="block">{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
 
-                            <!-- Indicador de disponibilidad -->
-                            <div id="disponibilidad-info" class="hidden">
-                                <div id="disponibilidad-mensaje" class="rounded-lg p-4 text-white font-medium flex items-center space-x-3">
-                                    <span id="disponibilidad-icon"></span>
-                                    <span id="disponibilidad-text"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Errores generales del formulario -->
-                        {% if form.non_field_errors %}
-                            <div class="bg-error/10 border border-error/30 rounded-lg p-4 flex items-start space-x-3 animate-slideInError">
-                                <div class="text-error text-xl">⚠️</div>
-                                <div>
-                                    <p class="text-error font-medium mb-1">Error en la reserva</p>
-                                    <div class="text-gris-oscuro text-sm">
-                                        {{ form.non_field_errors }}
+                            <!-- Información de disponibilidad -->
+                            <div id="disponibilidad-info" class="hidden mt-6">
+                                <div id="disponibilidad-mensaje" class="rounded-lg p-4 text-principal font-medium flex items-center space-x-3">
+                                    <div>
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <span id="disponibilidad-text"></span>
                                     </div>
                                 </div>
                             </div>
-                        {% endif %}
 
-                        <!-- Botón de envío -->
-                        <div class="text-center pt-6">
-                            <button type="submit" 
-                                    id="btn-reservar"
-                                    class="bg-principal hover:bg-principal/90 text-white px-12 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-principal/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <span id="btn-text">Completar Selección</span>
-                            </button>
+                            <!-- Botón de envío -->
+                            <div class="text-center pt-6">
+                                <button type="submit" id="btn-reservar"
+                                        class="inline-flex items-center px-8 py-4 text-white font-bold rounded-md transition-all duration-300 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-principal/25 relative overflow-hidden group"
+                                        style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                                    <!-- Ícono y texto en la misma fila -->
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <span id="btn-text">Confirmar Reserva Recurrente</span>
+                                    
+                                    <!-- Efecto de brillo -->
+                                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                </button>
+                            </div>
+
+                            <!-- Información importante -->
+                            <div id="info-importante" class="bg-gradient-to-r from-info/5 to-blue-50 border border-info/20 rounded-xl p-4 mt-6">
+                                <div class="flex items-start space-x-3">
+                                    <div class="text-info text-xl">💡</div>
+                                    <div>
+                                        <p class="text-info font-medium mb-1">Información importante</p>
+                                        <ul class="text-gris-oscuro text-sm space-y-1">
+                                            <li>• Tu reserva será <strong>recurrente</strong>: asistirás cada semana al mismo día y horario</li>
+                                            <li>• Puedes modificar o cancelar con 12 horas de anticipación</li>
+                                            <li>• Recibirás un recordatorio 24 horas antes de cada clase</li>
+                                            <li id="limite-clases-info">• Esta reserva contará contra tu límite semanal</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
+                </div>
+
+                <!-- Enlaces de navegación adicionales -->
+                <div class="text-center mt-8 space-y-2">
+                    <p class="text-gris-medio">
+                        ¿Necesitas ajustar tu plan?
+                        <a href="{% url 'gravity:mis_planes' %}" class="text-principal hover:text-secundario font-medium underline">
+                            Gestiona tus planes aquí
+                        </a>
+                    </p>
+                    <p class="text-gris-medio text-sm">
+                        ¿Dudas?
+                        <a href="{% url 'gravity:conoce_mas' %}#contacto" class="text-principal hover:text-secundario font-medium underline">
+                            Contáctanos
+                        </a>
+                    </p>
                 </div>
             </div>
         </div>
     </section>
-{% endblock %}
 
-{% block extra_js %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Elementos del formulario
+            // Obtener datos desde data attributes
+            const pageData = document.getElementById('page-data');
+            const tienePlanesActivos = pageData.dataset.tienePlanes === 'true';
+            const clasesRestantes = parseInt(pageData.dataset.clasesRestantes) || 0;
+            const reservasActuales = parseInt(pageData.dataset.reservasActuales) || 0;
+            const clasesDisponibles = parseInt(pageData.dataset.clasesDisponibles) || 1;
+
+            // Elementos del DOM
             const tipoClase = document.getElementById('id_tipo_clase');
             const sede = document.getElementById('id_sede');
             const dia = document.getElementById('id_dia');
             const horario = document.getElementById('id_horario');
-            const disponibilidadInfo = document.getElementById('disponibilidad-info');
-            const disponibilidadMensaje = document.getElementById('disponibilidad-mensaje');
-            const disponibilidadIcon = document.getElementById('disponibilidad-icon');
-            const disponibilidadText = document.getElementById('disponibilidad-text');
             const btnReservar = document.getElementById('btn-reservar');
             const btnText = document.getElementById('btn-text');
-            const form = document.querySelector('form');
+            const disponibilidadInfo = document.getElementById('disponibilidad-info');
+            const disponibilidadMensaje = document.getElementById('disponibilidad-mensaje');
+            const disponibilidadText = document.getElementById('disponibilidad-text');
+            const seccionFormulario = document.getElementById('seccion-formulario');
+            const formStatusIndicator = document.getElementById('form-status-indicator');
+            const infoImportante = document.getElementById('info-importante');
+            const limiteClasesInfo = document.getElementById('limite-clases-info');
 
-            // Configuración
-            const API_ENDPOINTS = {
-                sedesDisponibles: '{% url "gravity:sedes_disponibles" %}',
-                diasDisponibles: '{% url "gravity:dias_disponibles" %}',
-                horariosDisponibles: '{% url "gravity:horarios_disponibles" %}',
-                verificarDisponibilidad: '{% url "gravity:verificar_disponibilidad" %}'
-            };
+            // Configurar estado inicial del formulario
+            function configurarEstadoFormulario() {
+                if (!tienePlanesActivos || clasesRestantes <= 0) {
+                    // Deshabilitar formulario
+                    seccionFormulario.style.opacity = '0.5';
+                    seccionFormulario.style.pointerEvents = 'none';
+                    formStatusIndicator.classList.remove('hidden');
+                    
+                    // Cambiar texto del botón
+                    if (!tienePlanesActivos) {
+                        btnText.innerHTML = 'Selecciona un plan primero';
+                    } else if (clasesRestantes <= 0) {
+                        btnText.innerHTML = 'Sin clases disponibles';
+                    }
+                    
+                    btnReservar.disabled = true;
+                    btnReservar.classList.add('opacity-50', 'cursor-not-allowed');
+                    
+                    // Ocultar información importante
+                    if (infoImportante) {
+                        infoImportante.style.display = 'none';
+                    }
+                    
+                    // Deshabilitar campos del formulario
+                    const formElements = document.querySelectorAll('select');
+                    formElements.forEach(element => {
+                        element.disabled = true;
+                        element.classList.add('opacity-50');
+                    });
+                } else {
+                    // Actualizar información de límite de clases
+                    if (limiteClasesInfo) {
+                        limiteClasesInfo.textContent = `• Esta reserva contará contra tu límite semanal de ${clasesDisponibles} clases`;
+                    }
+                }
+            }
+
+            // Actualizar barra de progreso
+            function actualizarBarraProgreso() {
+                const progressBar = document.getElementById('progress-bar');
+                if (progressBar && clasesDisponibles > 0) {
+                    const percentage = Math.min((reservasActuales / clasesDisponibles) * 100, 100);
+                    progressBar.style.width = percentage + '%';
+                }
+            }
 
             // Clase principal para manejar el formulario
             class ReservaFormHandler {
                 constructor() {
                     this.currentStep = 1;
                     this.initEventListeners();
-                    this.initFormState();
-                    this.manejarPreseleccion();
-                }
-
-                // Inicializa el estado del formulario
-                initFormState() {
-                    btnReservar.disabled = true;
                     this.updateStepVisual(1);
                 }
 
-                // Inicializa los event listeners
                 initEventListeners() {
-                    if (tipoClase) {
-                        tipoClase.addEventListener('change', () => this.onTipoClaseChange());
-                    }
-                    if (sede) {
-                        sede.addEventListener('change', () => this.onSedeChange());
-                    }
-                    if (dia) {
-                        dia.addEventListener('change', () => this.onDiaChange());
-                    }
-                    if (horario) {
-                        horario.addEventListener('change', () => this.onHorarioChange());
-                    }
-                    if (form) {
-                        form.addEventListener('submit', (e) => this.onFormSubmit(e));
-                    }
+                    // Event listeners para los selects
+                    tipoClase?.addEventListener('change', () => this.onTipoClaseChange());
+                    sede?.addEventListener('change', () => this.onSedeChange());
+                    dia?.addEventListener('change', () => this.onDiaChange());
+                    horario?.addEventListener('change', () => this.onHorarioChange());
+                    
+                    // Event listener para el formulario
+                    document.querySelector('form')?.addEventListener('submit', (e) => this.onFormSubmit(e));
                 }
 
-                // Actualiza la visualización de pasos
-                updateStepVisual(completedStep) {
-                    for (let i = 1; i <= 4; i++) {
-                        const stepElement = document.getElementById(`step-${i}`);
-                        const progressElement = document.getElementById(`progress-${i}`);
-                        const formStep = document.getElementById(`form-step-${i}`);
-
-                        if (i <= completedStep) {
-                            // Paso completado
-                            stepElement.classList.remove('bg-gris-claro', 'text-gris-medio');
-                            stepElement.classList.add('bg-principal', 'text-white');
-                            if (progressElement) progressElement.style.width = '100%';
-                            if (formStep) formStep.classList.add('active');
-                        } else if (i === completedStep + 1) {
-                            // Paso actual
-                            stepElement.classList.remove('bg-gris-claro', 'text-gris-medio');
-                            stepElement.classList.add('bg-secundario', 'text-gris-oscuro');
-                            if (formStep) formStep.classList.add('active');
-                        } else {
-                            // Pasos futuros
-                            stepElement.classList.remove('bg-principal', 'text-white', 'bg-secundario', 'text-gris-oscuro');
-                            stepElement.classList.add('bg-gris-claro', 'text-gris-medio');
-                            if (progressElement) progressElement.style.width = '0%';
-                            if (formStep) formStep.classList.remove('active');
-                        }
-                    }
-                    
-                    // Actualizar texto del botón
-                    if (completedStep >= 4 && horario.value) {
-                        btnText.textContent = 'Reservar Clase';
-                        btnReservar.disabled = false;
-                    } else {
-                        btnText.textContent = 'Completar Selección';
-                        btnReservar.disabled = true;
-                    }
-                }
-
-                // Maneja el cambio de tipo de clase
-                async onTipoClaseChange() {
-                    const tipoSeleccionado = tipoClase.value;
-                    
-                    if (!tipoSeleccionado) {
-                        this.resetearFormulario();
-                        return;
-                    }
-
-                    try {
+                // Paso 1: Cambio de tipo de clase
+                onTipoClaseChange() {
+                    if (tipoClase.value) {
                         this.mostrarCargando('Cargando sedes disponibles...');
-                        await this.actualizarSedesDisponibles(tipoSeleccionado);
-                        this.currentStep = 1;
-                        this.updateStepVisual(1);
-                        this.ocultarDisponibilidad();
-                    } catch (error) {
-                        console.error('Error al actualizar sedes:', error);
-                        this.mostrarError('Error al cargar sedes disponibles');
-                    }
-                }
-
-                // Maneja el cambio de sede
-                async onSedeChange() {
-                    const tipoSeleccionado = tipoClase.value;
-                    const sedeSeleccionada = sede.value;
-                    
-                    if (!sedeSeleccionada) {
-                        this.resetearDiasYHorarios();
-                        return;
-                    }
-
-                    try {
-                        this.mostrarCargando('Cargando días disponibles...');
-                        await this.actualizarDiasDisponibles(tipoSeleccionado, sedeSeleccionada);
                         this.currentStep = 2;
                         this.updateStepVisual(2);
-                        this.ocultarDisponibilidad();
-                    } catch (error) {
-                        console.error('Error al actualizar días:', error);
-                        this.mostrarError('Error al cargar días disponibles');
+                        
+                        // Cargar sedes para el tipo seleccionado
+                        this.cargarSedes(tipoClase.value);
+                    } else {
+                        this.resetearFormulario();
                     }
                 }
 
-                // Maneja el cambio de día
-                async onDiaChange() {
-                    const tipoSeleccionado = tipoClase.value;
-                    const sedeSeleccionada = sede.value;
-                    const diaSeleccionado = dia.value;
-
-                    if (!diaSeleccionado) {
-                        this.resetearSelectHorario();
-                        return;
-                    }
-
-                    try {
-                        this.mostrarCargando('Cargando horarios disponibles...');
-                        const horariosDisponibles = await this.obtenerHorariosDisponibles(tipoSeleccionado, sedeSeleccionada, diaSeleccionado);
-                        this.actualizarSelectHorarios(horariosDisponibles);
+                // Paso 2: Cambio de sede
+                onSedeChange() {
+                    if (sede.value) {
+                        this.mostrarCargando('Cargando días disponibles...');
                         this.currentStep = 3;
                         this.updateStepVisual(3);
-                        this.ocultarDisponibilidad();
-                    } catch (error) {
-                        console.error('Error al obtener horarios disponibles:', error);
-                        this.mostrarError('Error al cargar horarios disponibles');
+                        
+                        // Cargar días para la combinación tipo-sede
+                        this.cargarDias(tipoClase.value, sede.value);
+                    } else {
+                        this.resetearDiasYHorarios();
                     }
                 }
 
-                // Maneja el cambio de horario
-                async onHorarioChange() {
-                    const tipoSeleccionado = tipoClase.value;
-                    const sedeSeleccionada = sede.value;
-                    const diaSeleccionado = dia.value;
-                    const horarioSeleccionado = horario.value;
-
-                    if (!horarioSeleccionado) {
-                        this.ocultarDisponibilidad();
-                        this.updateStepVisual(3);
-                        return;
-                    }
-
-                    try {
-                        this.mostrarCargando('Verificando disponibilidad...');
-                        const disponibilidad = await this.verificarDisponibilidad(tipoSeleccionado, sedeSeleccionada, diaSeleccionado, horarioSeleccionado);
-                        this.mostrarDisponibilidad(disponibilidad);
+                // Paso 3: Cambio de día
+                onDiaChange() {
+                    if (dia.value) {
+                        this.mostrarCargando('Cargando horarios disponibles...');
                         this.currentStep = 4;
                         this.updateStepVisual(4);
-                    } catch (error) {
-                        console.error('Error al verificar disponibilidad:', error);
-                        this.mostrarError('Error al verificar disponibilidad');
+                        
+                        // Cargar horarios para la combinación tipo-sede-día
+                        this.cargarHorarios(tipoClase.value, sede.value, dia.value);
+                    } else {
+                        this.resetearSelectHorario();
+                        this.currentStep = 3;
+                        this.updateStepVisual(3);
                     }
                 }
 
-                // Maneja la preselección de tipo de clase desde la URL
-                manejarPreseleccion() {
-                    const tipoPreseleccionado = '{{ tipo_preseleccionado|default:"" }}';
-                    
-                    if (tipoPreseleccionado && tipoClase) {
-                        const opciones = tipoClase.options;
-                        for (let i = 0; i < opciones.length; i++) {
-                            if (opciones[i].value === tipoPreseleccionado) {
-                                tipoClase.selectedIndex = i;
-                                tipoClase.dispatchEvent(new Event('change'));
-                                break;
-                            }
+                // Paso 4: Cambio de horario
+                onHorarioChange() {
+                    if (horario.value) {
+                        this.mostrarCargando('Verificando disponibilidad...');
+                        
+                        // Verificar disponibilidad de la combinación completa
+                        this.verificarDisponibilidad(tipoClase.value, sede.value, dia.value, horario.value);
+                    } else {
+                        this.ocultarDisponibilidad();
+                    }
+                }
+
+                // Actualizar indicador visual de pasos
+                updateStepVisual(activeStep) {
+                    // Actualizar indicadores de paso
+                    const stepIndicators = document.querySelectorAll('.step-indicator');
+                    stepIndicators.forEach((indicator, index) => {
+                        const stepNumber = index + 1;
+                        if (stepNumber <= activeStep) {
+                            indicator.classList.add('step-active');
+                        } else {
+                            indicator.classList.remove('step-active');
                         }
-                    }
-                }
-
-                // APIs
-                async actualizarSedesDisponibles(tipo) {
-                    const response = await fetch(API_ENDPOINTS.sedesDisponibles, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': this.getCSRFToken()
-                        },
-                        body: JSON.stringify({ tipo })
                     });
 
-                    if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
-                    }
-
-                    const data = await response.json();
-                    this.actualizarSelectSedes(data.sedes || []);
-                }
-
-                async actualizarDiasDisponibles(tipo, sedeSeleccionada) {
-                    const response = await fetch(API_ENDPOINTS.diasDisponibles, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': this.getCSRFToken()
-                        },
-                        body: JSON.stringify({ tipo, sede: sedeSeleccionada })
+                    // Habilitar/deshabilitar campos de formulario
+                    const formSteps = document.querySelectorAll('.form-step');
+                    formSteps.forEach((step, index) => {
+                        const stepNumber = index + 1;
+                        if (stepNumber <= activeStep) {
+                            step.classList.add('active');
+                        } else {
+                            step.classList.remove('active');
+                        }
                     });
-
-                    if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
-                    }
-
-                    const data = await response.json();
-                    this.actualizarSelectDias(data.dias || []);
                 }
 
-                async obtenerHorariosDisponibles(tipo, sede, dia) {
-                    const response = await fetch(API_ENDPOINTS.horariosDisponibles, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': this.getCSRFToken()
-                        },
-                        body: JSON.stringify({ tipo, sede, dia })
-                    });
+                // Método para cargar sedes via AJAX
+                async cargarSedes(tipo) {
+                    try {
+                        const response = await fetch('/api/sedes-disponibles/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCSRFToken()
+                            },
+                            body: JSON.stringify({tipo: tipo})
+                        });
 
-                    if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        this.actualizarSelectSedes(data.sedes);
+                        this.ocultarDisponibilidad();
+
+                    } catch (error) {
+                        console.error('Error cargando sedes:', error);
+                        this.mostrarError('Error al cargar las sedes. Intenta nuevamente.');
                     }
-
-                    const data = await response.json();
-                    return data.horarios || [];
                 }
 
-                async verificarDisponibilidad(tipo, sede, dia, horario) {
-                    const response = await fetch(API_ENDPOINTS.verificarDisponibilidad, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': this.getCSRFToken()
-                        },
-                        body: JSON.stringify({ tipo, sede, dia, horario })
-                    });
+                // Método para cargar días via AJAX
+                async cargarDias(tipo, sedeSeleccionada) {
+                    try {
+                        const response = await fetch('/api/dias-disponibles/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCSRFToken()
+                            },
+                            body: JSON.stringify({
+                                tipo: tipo,
+                                sede: sedeSeleccionada
+                            })
+                        });
 
-                    if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        this.actualizarSelectDias(data.dias);
+                        this.ocultarDisponibilidad();
+
+                    } catch (error) {
+                        console.error('Error cargando días:', error);
+                        this.mostrarError('Error al cargar los días disponibles. Intenta nuevamente.');
                     }
-
-                    return await response.json();
                 }
 
-                // UI Updates
-                actualizarSelectSedes(sedesDisponibles) {
+                // Método para cargar horarios via AJAX
+                async cargarHorarios(tipo, sedeSeleccionada, diaSeleccionado) {
+                    try {
+                        const response = await fetch('/api/horarios-disponibles/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCSRFToken()
+                            },
+                            body: JSON.stringify({
+                                tipo: tipo,
+                                sede: sedeSeleccionada,
+                                dia: diaSeleccionado
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        this.actualizarSelectHorarios(data.horarios);
+                        this.ocultarDisponibilidad();
+
+                    } catch (error) {
+                        console.error('Error cargando horarios:', error);
+                        this.mostrarError('Error al cargar los horarios disponibles. Intenta nuevamente.');
+                    }
+                }
+
+                // Método para verificar disponibilidad via AJAX
+                async verificarDisponibilidad(tipo, sedeSeleccionada, diaSeleccionado, horarioSeleccionado) {
+                    try {
+                        const response = await fetch('/api/verificar-disponibilidad/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCSRFToken()
+                            },
+                            body: JSON.stringify({
+                                tipo: tipo,
+                                sede: sedeSeleccionada,
+                                dia: diaSeleccionado,
+                                horario: horarioSeleccionado
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        this.mostrarDisponibilidad(data);
+
+                    } catch (error) {
+                        console.error('Error verificando disponibilidad:', error);
+                        this.mostrarError('Error al verificar disponibilidad. Intenta nuevamente.');
+                    }
+                }
+
+                actualizarSelectSedes(sedes) {
                     this.limpiarSelect(sede, 'Selecciona la sede');
                     
-                    sedesDisponibles.forEach(sedeInfo => {
+                    sedes.forEach(sedeInfo => {
                         const option = document.createElement('option');
                         option.value = sedeInfo.value;
                         option.textContent = sedeInfo.text;
@@ -700,42 +904,47 @@
                 }
             }
 
-            // Inicializar el manejador del formulario
-            new ReservaFormHandler();
-        });
+            // Configurar estado inicial
+            configurarEstadoFormulario();
+            actualizarBarraProgreso();
 
-        // Smooth scroll para evitar problemas con header fijo
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    const headerHeight = 80;
-                    const targetPosition = target.offsetTop - headerHeight;
-                    
-                    window.scrollTo({
-                        top: targetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-            });
-        });
+            // Inicializar formulario solo si tiene planes activos y clases disponibles
+            if (tienePlanesActivos && clasesRestantes > 0) {
+                new ReservaFormHandler();
+            }
 
-        // Validación en tiempo real
-        document.addEventListener('DOMContentLoaded', function() {
+            // Validación en tiempo real
             const selectFields = document.querySelectorAll('select');
-            
             selectFields.forEach(field => {
                 field.addEventListener('change', function() {
                     this.classList.remove('border-error');
                 });
                 
                 field.addEventListener('focus', function() {
-                    this.classList.add('ring-2', 'ring-principal/20', 'border-principal');
+                    if (!this.disabled) {
+                        this.classList.add('ring-2', 'ring-principal/20', 'border-principal');
+                    }
                 });
                 
                 field.addEventListener('blur', function() {
                     this.classList.remove('ring-2', 'ring-principal/20', 'border-principal');
+                });
+            });
+
+            // Smooth scroll para evitar problemas con header fijo
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        const headerHeight = 80;
+                        const targetPosition = target.offsetTop - headerHeight;
+                        
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
                 });
             });
         });

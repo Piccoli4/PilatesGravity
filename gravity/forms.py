@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
-from .models import Clase, Reserva, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
+from .models import Clase, Reserva, PlanUsuario, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
 from datetime import datetime, timedelta, timezone
 from accounts.models import UserProfile
 from django.core.validators import RegexValidator
@@ -125,75 +125,65 @@ class ReservaForm(forms.Form):
         ]
     
     def clean(self):
+        """Validaciones del formulario con verificación de planes"""
         cleaned_data = super().clean()
-        tipo_clase = cleaned_data.get('tipo_clase')
-        sede = cleaned_data.get('sede')
-        dia = cleaned_data.get('dia')
-        horario_str = cleaned_data.get('horario')
         
         if not self.user:
-            raise ValidationError('Usuario no autenticado.')
+            raise ValidationError('Error interno: usuario no especificado.')
         
-        if tipo_clase and sede and dia and horario_str:
+        tipo_clase = cleaned_data.get('tipo_clase')
+        dia = cleaned_data.get('dia')
+        horario = cleaned_data.get('horario')
+        sede = cleaned_data.get('sede')
+        
+        if tipo_clase and dia and horario and sede:
             try:
-                # Convertir string de horario a time object
-                horario_time = datetime.strptime(horario_str, '%H:%M').time()
+                # Convertir horario string a time object
+                horario_obj = datetime.strptime(horario, '%H:%M').time()
+                horario_str = horario_obj.strftime('%H:%M')
                 
-                # Buscar la clase específica incluyendo la sede
-                clase = Clase.objects.get(
-                    tipo=tipo_clase, 
-                    direccion=sede,
-                    dia=dia, 
-                    horario=horario_time,
-                    activa=True
-                )
-                
-                # Verificar si la clase tiene cupo disponible
-                if clase.esta_completa():
+                # Buscar la clase correspondiente
+                try:
+                    clase = Clase.objects.get(
+                        tipo=tipo_clase,
+                        dia=dia,
+                        horario=horario_obj,
+                        direccion=sede,
+                        activa=True
+                    )
+                except Clase.DoesNotExist:
                     sede_display = dict(Clase.DIRECCIONES).get(sede, sede)
                     raise ValidationError(
+                        f'No existe una clase de {tipo_clase} los {dia} a las {horario_str} '
+                        f'en {sede_display} o la clase no está activa. Por favor verifica tu selección.'
+                    )
+                
+                # **NUEVA VALIDACIÓN DE PLANES**
+                puede_reservar, mensaje = Reserva.usuario_puede_reservar(self.user, clase)
+                if not puede_reservar:
+                    raise ValidationError(mensaje)
+                
+                # Verificar cupos disponibles
+                if clase.cupos_disponibles() <= 0:
+                    raise ValidationError(
                         f'La clase de {clase.get_nombre_display()} los {dia} a las {horario_str} '
-                        f'en {sede_display} está completa. Por favor selecciona otra opción.'
+                        f'en {clase.get_direccion_corta()} está completa. No hay cupos disponibles.'
                     )
                 
-                # Verificar que el usuario no tenga ya una reserva activa para este día
-                reserva_existente = Reserva.objects.filter(
-                    usuario=self.user,
-                    clase__dia=dia,
+                # Verificar duplicados
+                if Reserva.objects.filter(
+                    usuario=self.user, 
+                    clase=clase, 
                     activa=True
-                ).first()
-                
-                if reserva_existente:
+                ).exists():
                     raise ValidationError(
-                        f'Ya tienes una reserva activa para los {dia} '
-                        f'({reserva_existente.clase.get_nombre_display()} a las '
-                        f'{reserva_existente.clase.horario.strftime("%H:%M")} en '
-                        f'{reserva_existente.clase.get_direccion_corta()}). '
-                        'Solo puedes tener una reserva por día.'
-                    )
-                
-                # Verificar que el usuario no tenga ya una reserva para esta clase específica
-                reserva_clase_existente = Reserva.objects.filter(
-                    usuario=self.user,
-                    clase=clase,
-                    activa=True
-                ).first()
-                
-                if reserva_clase_existente:
-                    raise ValidationError(
-                        f'Ya tienes una reserva activa para esta clase específica. '
+                        'Ya tienes una reserva activa para esta clase. '
                         'No puedes reservar la misma clase dos veces.'
                     )
                 
                 # Agregar la clase al cleaned_data para usar en la vista
                 cleaned_data['clase'] = clase
                 
-            except Clase.DoesNotExist:
-                sede_display = dict(Clase.DIRECCIONES).get(sede, sede)
-                raise ValidationError(
-                    f'No existe una clase de {tipo_clase} los {dia} a las {horario_str} '
-                    f'en {sede_display} o la clase no está activa. Por favor verifica tu selección.'
-                )
             except ValueError:
                 raise ValidationError('Formato de horario inválido.')
         
@@ -266,34 +256,43 @@ class ModificarReservaForm(forms.Form):
             ).order_by('direccion', 'tipo', 'dia', 'horario')
     
     def clean_nueva_clase(self):
+        """Validación de la nueva clase seleccionada con verificación de planes"""
         nueva_clase = self.cleaned_data.get('nueva_clase')
         
         if not nueva_clase:
             return nueva_clase
         
-        # Verificar que la clase siga teniendo cupo disponible
-        if nueva_clase.esta_completa():
+        if not self.reserva_actual or not self.user:
+            raise ValidationError('Error interno en la validación.')
+        
+        # Verificar que el usuario sea el dueño de la reserva
+        if self.reserva_actual.usuario != self.user:
+            raise ValidationError('No tienes permisos para modificar esta reserva.')
+        
+        # **NUEVA VALIDACIÓN DE PLANES PARA MODIFICACIÓN**
+        # Temporalmente "liberar" la reserva actual para la validación
+        reserva_actual_activa = self.reserva_actual.activa
+        self.reserva_actual.activa = False
+        
+        try:
+            puede_reservar, mensaje = Reserva.usuario_puede_reservar(self.user, nueva_clase)
+            if not puede_reservar:
+                raise ValidationError(f"No puedes cambiar a esta clase: {mensaje}")
+        finally:
+            # Restaurar el estado original
+            self.reserva_actual.activa = reserva_actual_activa
+        
+        # Verificar cupos en la nueva clase
+        if nueva_clase.cupos_disponibles() <= 0:
             raise ValidationError(
-                f'La clase de {nueva_clase.get_nombre_display()} los {nueva_clase.dia} '
-                f'a las {nueva_clase.horario.strftime("%H:%M")} en {nueva_clase.get_direccion_corta()} '
-                'ya no tiene cupos disponibles. Por favor selecciona otra clase.'
+                f'La clase seleccionada está completa. No hay cupos disponibles.'
             )
         
-        # Verificar que no haya conflicto con otras reservas activas del usuario
-        if self.user and self.reserva_actual:
-            conflicto = Reserva.objects.filter(
-                usuario=self.user,
-                clase__dia=nueva_clase.dia,
-                activa=True
-            ).exclude(
-                id=self.reserva_actual.id
-            ).exists()
-            
-            if conflicto:
-                raise ValidationError(
-                    f'Ya tienes una reserva activa para los {nueva_clase.dia}. '
-                    'Solo puedes tener una reserva por día.'
-                )
+        # Verificar que no sea la misma clase actual
+        if nueva_clase == self.reserva_actual.clase:
+            raise ValidationError(
+                'Debes seleccionar una clase diferente a la actual.'
+            )
         
         return nueva_clase
 

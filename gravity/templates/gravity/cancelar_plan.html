@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancelar Plan - Pilates Gravity{% endblock %}
+
+{% block extra_head %}
+<style>
+    .font-cinzel { font-family: 'Cinzel', serif; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-fondo via-white to-fondo/50 py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- Encabezado elegante -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-cinzel font-semibold text-principal mb-2">
+                Cancelar Plan
+            </h1>
+            <div class="w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto rounded-full"></div>
+            <p class="text-gris-oscuro mt-4 text-lg">
+                ¿Estás seguro que deseas cancelar este plan?
+            </p>
+        </div>
+
+        <!-- Card principal con información del plan -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gris-claro/30 overflow-hidden mb-6">
+            
+            <!-- Header de la card -->
+            <div class="bg-gradient-to-r from-principal to-secundario p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-cinzel font-semibold">{{ plan.plan.nombre }}</h2>
+                        <p class="text-white/90 mt-1">
+                            Válido hasta {{ plan.fecha_fin|date:"d/m/Y" }}
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-3xl font-bold">${{ plan.plan.precio_mensual|floatformat:0 }}</div>
+                        <div class="text-sm text-white/80">{{ plan.plan.clases_por_semana }} clases/semana</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido de la card -->
+            <div class="p-6">
+                
+                <!-- Información actual del plan -->
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gris-oscuro mb-3">Detalles del Plan</h3>
+                        
+                        <div class="flex items-center justify-between p-3 bg-fondo/30 rounded-lg">
+                            <span class="text-gris-medio">Tipo de plan:</span>
+                            <span class="font-medium text-gris-oscuro capitalize">{{ plan.tipo_plan }}</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-fondo/30 rounded-lg">
+                            <span class="text-gris-medio">Renovación automática:</span>
+                            <span class="font-medium {% if plan.renovacion_automatica %}text-exito{% else %}text-error{% endif %}">
+                                {% if plan.renovacion_automatica %}Sí{% else %}No{% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-fondo/30 rounded-lg">
+                            <span class="text-gris-medio">Clases disponibles:</span>
+                            <span class="font-bold text-lg text-principal">{{ clases_actuales }}</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gris-oscuro mb-3">Estado Actual</h3>
+                        
+                        <div class="flex items-center justify-between p-3 bg-fondo/30 rounded-lg">
+                            <span class="text-gris-medio">Reservas esta semana:</span>
+                            <span class="font-medium text-gris-oscuro">{{ reservas_actuales }}</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-fondo/30 rounded-lg">
+                            <span class="text-gris-medio">Clases después de cancelar:</span>
+                            <span class="font-bold text-lg {% if clases_despues_cancelacion > 0 %}text-exito{% else %}text-error{% endif %}">
+                                {{ clases_despues_cancelacion }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advertencia si podría afectar reservas -->
+                {% if podria_afectar_reservas %}
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 mb-6">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-amber-800 font-semibold mb-1">¡Atención!</h4>
+                            <p class="text-amber-700 text-sm">
+                                Al cancelar este plan, podrías tener menos clases disponibles que reservas confirmadas para esta semana. 
+                                <strong>Las reservas existentes no se cancelarán automáticamente</strong>, pero podrías exceder tu límite semanal.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Información adicional -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-blue-800 font-semibold mb-1">Información importante</h4>
+                            <ul class="text-blue-700 text-sm space-y-1">
+                                <li>• Las reservas actuales <strong>no se cancelarán</strong> automáticamente</li>
+                                <li>• La cancelación es <strong>inmediata</strong> y no se puede deshacer</li>
+                                <li>• Puedes volver a seleccionar un plan en cualquier momento</li>
+                                <li>• No se procesan reembolsos por tiempo restante</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario de confirmación -->
+                <form method="post" class="mt-8">
+                    {% csrf_token %}
+                    
+                    <!-- Checkbox de confirmación -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                        <label class="flex items-start space-x-3 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                id="confirmar_entiendo" 
+                                class="mt-1 w-5 h-5 text-principal border-gris-medio rounded focus:ring-principal/20"
+                                required
+                            >
+                            <div class="text-sm text-gris-oscuro">
+                                <strong>Confirmo que entiendo las consecuencias:</strong>
+                                <ul class="mt-2 space-y-1 text-gris-medio">
+                                    <li>• El plan será cancelado inmediatamente</li>
+                                    <li>• Las reservas actuales no se verán afectadas</li>
+                                    <li>• No habrá reembolso por tiempo restante</li>
+                                    <li>• Podré seleccionar un nuevo plan cuando desee</li>
+                                </ul>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <!-- Botón cancelar (volver) -->
+                        <a href="{% url 'gravity:mis_planes' %}" 
+                           class="px-8 py-3 border-2 border-gris-medio text-gris-oscuro rounded-xl font-medium
+                                  hover:bg-gris-claro hover:border-gris-oscuro transform hover:scale-105 
+                                  transition-all duration-200 text-center">
+                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Volver a Mis Planes
+                        </a>
+
+                        <!-- Botón confirmar cancelación -->
+                        <button 
+                            type="submit" 
+                            name="confirmar_cancelacion" 
+                            value="confirmar"
+                            id="btn_confirmar"
+                            disabled
+                            class="px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium
+                                   disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed
+                                   enabled:hover:from-red-600 enabled:hover:to-red-700 enabled:transform enabled:hover:scale-105 
+                                   transition-all duration-200 shadow-lg disabled:shadow-none">
+                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Confirmar Cancelación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Navegación adicional -->
+        <div class="text-center space-y-2">
+            <p class="text-gris-medio text-sm">
+                ¿Necesitas ayuda? 
+                <a href="{% url 'gravity:conoce_mas' %}#contacto" class="text-principal hover:text-secundario font-medium">
+                    Contáctanos
+                </a>
+            </p>
+            <p class="text-gris-medio text-sm">
+                O revisa 
+                <a href="{% url 'gravity:seleccionar_plan' %}" class="text-principal hover:text-secundario font-medium">
+                    otros planes disponibles
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmar_entiendo');
+    const btnConfirmar = document.getElementById('btn_confirmar');
+    
+    checkbox.addEventListener('change', function() {
+        btnConfirmar.disabled = !this.checked;
+    });
+    
+    // Confirmación adicional antes de enviar
+    btnConfirmar.addEventListener('click', function(e) {
+        if (!confirm('¿Estás completamente seguro de que deseas cancelar este plan? Esta acción no se puede deshacer.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

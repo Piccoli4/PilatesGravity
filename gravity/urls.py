@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     home, reservar_clase, conoce_mas,
-    dias_disponibles, horarios_disponibles, 
+    dias_disponibles, horarios_disponibles,
     verificar_disponibilidad, modificar_reserva,
     cancelar_reserva, buscar_reservas_usuario,
     clases_disponibles_api, clases_disponibles, detalle_reserva,
@@ -14,7 +14,9 @@ from .views import (
     admin_reportes,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, admin_pagos_historial_cliente,
-    admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente
+    admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente,
+    # IMPORTACIONES PARA PLANES DE PAGO
+    mis_planes, seleccionar_plan, cancelar_plan
 )
 from django.views.generic import TemplateView
 
@@ -62,7 +64,7 @@ urlpatterns = [
     path('admin-panel/reservas/', admin_reservas_lista, name='admin_reservas_lista'),
     path('admin-panel/reservas/<int:reserva_id>/cancelar/', admin_reserva_cancelar, name='admin_reserva_cancelar'),
     
-    # Gestión de usuarios 
+    # Gestión de usuarios
     path('admin-panel/usuarios/', admin_usuarios_lista, name='admin_usuarios_lista'),
     path('admin-panel/usuarios/<int:usuario_id>/', admin_usuario_detalle, name='admin_usuario_detalle'),
     path('admin-panel/usuarios/<int:usuario_id>/toggle-status/', admin_usuario_toggle_status, name='admin_usuario_toggle_status'),
@@ -83,4 +85,9 @@ urlpatterns = [
     path('admin-panel/pagos/historial/<int:cliente_id>/', admin_pagos_historial_cliente, name='admin_pagos_historial_cliente'),
     path('admin-panel/pagos/configurar-planes/', admin_pagos_configurar_planes, name='admin_pagos_configurar_planes'),
     path('admin-panel/pagos/editar-estado/<int:cliente_id>/', admin_pagos_editar_estado_cliente, name='admin_pagos_editar_estado_cliente'),
+
+    # Gestión de planes de pago
+    path('planes/', mis_planes, name='mis_planes'),
+    path('seleccionar-plan/', seleccionar_plan, name='seleccionar_plan'),
+    path('planes/<int:plan_id>/cancelar/', cancelar_plan, name='cancelar_plan'),
 ]

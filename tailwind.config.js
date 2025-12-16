@@ -24,7 +24,8 @@ module.exports = {
         'info': '#17A2B8',
       },
       fontFamily: {
-        'cinzel': ['Cinzel', 'serif']
+        'cinzel': ['Cinzel', 'serif'],
+        'brittany': ['BrittanySignature', 'cursive', 'sans-serif']
       },
       animation: {
         'fadeInUp': 'fadeInUp 0.3s ease-in-out',

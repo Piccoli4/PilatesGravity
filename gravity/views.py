@@ -4,13 +4,13 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from .models import Reserva, Clase, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
+from .models import Reserva, Clase, PlanUsuario, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
 from .forms import ReservaForm, ModificarReservaForm, BuscarReservaForm
 import json
 from accounts.models import UserProfile
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from accounts.models import UserProfile, ConfiguracionEstudio
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -46,6 +46,22 @@ def reservar_clase(request):
     # Obtener tipo preseleccionado ANTES del bloque if/else
     tipo_preseleccionado = request.GET.get('tipo', '')
     
+    # **NUEVA LÓGICA DE PLANES**
+    planes_activos = PlanUsuario.objects.filter(
+        usuario=request.user,
+        activo=True,
+        fecha_fin__gte=timezone.now().date()
+    ).select_related('plan')
+    
+    # Calcular clases disponibles según planes
+    clases_disponibles, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
+    
+    # Contar reservas de esta semana
+    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
+    
+    # Calcular clases restantes
+    clases_restantes = max(0, clases_disponibles - reservas_actuales)
+    
     if request.method == 'POST':
         form = ReservaForm(request.POST, user=request.user)
         
@@ -60,11 +76,15 @@ def reservar_clase(request):
                     clase=clase
                 )
                 
+                # Recalcular reservas después de crear
+                nuevas_reservas = Reserva.contar_reservas_usuario_semana(request.user)
+                
                 messages.success(
                     request,
                     f'¡Reserva exitosa! Tu número de reserva es {reserva.numero_reserva}. '
                     f'Asistirás todos los {clase.dia} a las {clase.horario.strftime("%H:%M")} '
-                    f'a la clase de {clase.get_nombre_display()} en {clase.get_direccion_corta()}.'
+                    f'a la clase de {clase.get_nombre_display()} en {clase.get_direccion_corta()}. '
+                    f'Reservas esta semana: {nuevas_reservas}/{clases_disponibles}'
                 )
                 
                 return redirect('gravity:home')
@@ -77,7 +97,7 @@ def reservar_clase(request):
                     'Si esto persiste, contacta al administrador.'
                 )
     else:
-       # Permitir preseleccionar tipo de clase desde URL
+        # Permitir preseleccionar tipo de clase desde URL
         initial_data = {'tipo_clase': tipo_preseleccionado} if tipo_preseleccionado else None
         form = ReservaForm(user=request.user, initial=initial_data)
 
@@ -94,7 +114,12 @@ def reservar_clase(request):
     return render(request, 'gravity/reservar_clase.html', {
         'form': form,
         'user_info': user_info,
-        'tipo_preseleccionado': tipo_preseleccionado
+        'tipo_preseleccionado': tipo_preseleccionado,
+        # **NUEVOS DATOS DE PLANES**
+        'planes_activos': planes_activos,
+        'clases_disponibles': clases_disponibles,
+        'reservas_actuales': reservas_actuales,
+        'clases_restantes': clases_restantes,
     })
 
 # Vista para modificar una reserva existente
@@ -106,9 +131,9 @@ def modificar_reserva(request, numero_reserva):
     """
     # Obtener la reserva y verificar que pertenece al usuario
     reserva = get_object_or_404(
-        Reserva, 
-        numero_reserva=numero_reserva, 
-        usuario=request.user, 
+        Reserva,
+        numero_reserva=numero_reserva,
+        usuario=request.user,
         activa=True
     )
     
@@ -564,7 +589,7 @@ def clases_disponibles_api(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 # ==============================================================================
-# VISTAS DEL ADMINISTRADOR 
+# VISTAS DEL ADMINISTRADOR
 # ==============================================================================
 # ==============================================================================
 # DECORADORES Y UTILIDADES PARA ADMINISTRADOR
@@ -1852,3 +1877,169 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
     }
     
     return render(request, 'gravity/admin/pagos_editar_estado.html', context)
+
+# ==============================================================================
+# VISTAS DE PLANES DE PAGO
+# ==============================================================================
+
+@login_required
+def seleccionar_plan(request):
+    """
+    Vista para que el usuario seleccione su primer plan o agregue planes adicionales
+    """
+    # Verificar si ya tiene planes activos - CORREGIR 'activa' por 'activo'
+    planes_actuales = PlanUsuario.objects.filter(
+        usuario=request.user,
+        activo=True,  # Cambiar 'activa' por 'activo'
+        fecha_fin__gte=timezone.now().date()
+    )
+    
+    # Obtener planes disponibles
+    planes_disponibles = PlanPago.objects.filter(activo=True).order_by('clases_por_semana')
+    
+    if request.method == 'POST':
+        plan_id = request.POST.get('plan_id')
+        tipo_plan = request.POST.get('tipo_plan', 'permanente')
+        
+        try:
+            plan_seleccionado = PlanPago.objects.get(id=plan_id, activo=True)
+            
+            # Calcular fechas (inicio hoy, fin en un mes)
+            fecha_inicio = timezone.now().date()
+            fecha_fin = fecha_inicio + timedelta(days=30)
+            
+            # Crear el plan del usuario
+            plan_usuario = PlanUsuario.objects.create(
+                usuario=request.user,
+                plan=plan_seleccionado,
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin,
+                tipo_plan=tipo_plan,
+                renovacion_automatica=True if tipo_plan == 'permanente' else False
+            )
+            
+            if planes_actuales.exists():
+                messages.success(
+                    request,
+                    f'¡Plan adicional agregado exitosamente! '
+                    f'Ahora tienes "{plan_seleccionado.nombre}" válido hasta {fecha_fin.strftime("%d/%m/%Y")}.'
+                )
+            else:
+                messages.success(
+                    request,
+                    f'¡Plan seleccionado exitosamente! '
+                    f'Tienes "{plan_seleccionado.nombre}" válido hasta {fecha_fin.strftime("%d/%m/%Y")}. '
+                    f'Ya puedes empezar a reservar tus clases.'
+                )
+            
+            # Redirigir según el contexto
+            next_url = request.GET.get('next')
+            if next_url == 'reservar':
+                return redirect('gravity:reservar_clase')
+            else:
+                return redirect('gravity:mis_planes')
+                
+        except PlanPago.DoesNotExist:
+            messages.error(request, 'Plan inválido. Por favor selecciona un plan válido.')
+        except Exception as e:
+            messages.error(request, f'Error al asignar el plan: {str(e)}')
+    
+    # Calcular clases disponibles actualmente
+    clases_disponibles, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
+    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
+    
+    context = {
+        'planes_disponibles': planes_disponibles,
+        'planes_actuales': planes_actuales,
+        'tiene_planes': planes_actuales.exists(),
+        'clases_disponibles': clases_disponibles,
+        'reservas_actuales': reservas_actuales,
+        'es_primer_plan': not planes_actuales.exists()
+    }
+    
+    return render(request, 'gravity/seleccionar_plan.html', context)
+
+@login_required
+def mis_planes(request):
+    """
+    Vista para mostrar los planes actuales del usuario y su estado
+    """
+    # Obtener planes activos - CORREGIR 'activa' por 'activo'
+    planes_activos = PlanUsuario.objects.filter(
+        usuario=request.user,
+        activo=True,  # Cambiar 'activa' por 'activo'
+        fecha_fin__gte=timezone.now().date()
+    ).select_related('plan').order_by('fecha_fin')
+    
+    # Obtener planes vencidos (últimos 5)
+    planes_vencidos = PlanUsuario.objects.filter(
+        Q(usuario=request.user) & 
+        (Q(activo=False) | Q(fecha_fin__lt=timezone.now().date()))
+    ).select_related('plan').order_by('-fecha_fin')[:5]
+    
+    # Calcular estadísticas de la semana actual
+    clases_disponibles, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
+    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
+    
+    # Obtener reservas activas
+    reservas_activas = request.user.reservas_pilates.filter(activa=True).select_related('clase')
+    
+    context = {
+        'planes_activos': planes_activos,
+        'planes_vencidos': planes_vencidos,
+        'clases_disponibles': clases_disponibles,
+        'reservas_actuales': reservas_actuales,
+        'clases_restantes': max(0, clases_disponibles - reservas_actuales),
+        'reservas_activas': reservas_activas,
+        'tiene_planes_activos': planes_activos.exists()
+    }
+    
+    return render(request, 'gravity/mis_planes.html', context)
+
+@login_required
+def cancelar_plan(request, plan_id):
+    """
+    Vista para cancelar un plan específico del usuario
+    """
+    plan = get_object_or_404(
+        PlanUsuario, 
+        id=plan_id, 
+        usuario=request.user, 
+        activo=True  # Cambiar 'activa' por 'activo'
+    )
+    
+    if request.method == 'POST':
+        confirmacion = request.POST.get('confirmar_cancelacion')
+        if confirmacion == 'confirmar':
+            plan.activo = False
+            plan.save()
+            
+            messages.success(
+                request,
+                f'Plan "{plan.plan.nombre}" cancelado exitosamente. '
+                f'Las reservas existentes no se ven afectadas.'
+            )
+        else:
+            messages.error(request, 'Error en la confirmación.')
+        
+        return redirect('gravity:mis_planes')
+    
+    # Verificar si tiene reservas que podrían verse afectadas
+    clases_disponibles_sin_plan, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
+    # Simular la cancelación para ver cuántas clases quedarían
+    plan.activo = False
+    clases_despues_cancelacion, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
+    plan.activo = True  # Restaurar
+    
+    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
+    
+    context = {
+        'plan': plan,
+        'clases_actuales': clases_disponibles_sin_plan,
+        'clases_despues_cancelacion': clases_despues_cancelacion,
+        'reservas_actuales': reservas_actuales,
+        'podria_afectar_reservas': clases_despues_cancelacion < reservas_actuales
+    }
+    
+    return render(request, 'gravity/cancelar_plan.html', context)
+
