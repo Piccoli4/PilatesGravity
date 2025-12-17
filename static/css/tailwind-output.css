@@ -3435,6 +3435,10 @@ video {
   text-align: right;
 }
 
+.font-brittany {
+  font-family: BrittanySignature, cursive, sans-serif;
+}
+
 .font-cinzel {
   font-family: Cinzel, serif;
 }
@@ -3445,10 +3449,6 @@ video {
 
 .font-sans {
   font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
-.font-brittany {
-  font-family: BrittanySignature, cursive, sans-serif;
 }
 
 .text-2xl {
@@ -5187,11 +5187,6 @@ video {
   .sm\:text-xl {
     font-size: 1.25rem;
     line-height: 1.75rem;
-  }
-
-  .sm\:text-2xl {
-    font-size: 1.5rem;
-    line-height: 2rem;
   }
 }
 
