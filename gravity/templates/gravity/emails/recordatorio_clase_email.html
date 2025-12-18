@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>¡Tu clase es mañana! - Pilates Gravity</title>
+        {% load static %}
+        <style type="text/css">
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.8) 100%);
+                margin: 0;
+                padding: 0;
+            }
+            .email-container {
+                max-width: 650px;
+                margin: 0 auto;
+                background: #FDFDFD;
+                border-radius: 15px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(93, 118, 139, 0.15);
+            }
+            
+            /* === HEADER === */
+            .header {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 40px 30px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .header::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+                background-size: 25px 25px;
+                animation: float 20s ease-in-out infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-10px) rotate(180deg); }
+            }
+            .header-content {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            .header .logo {
+                width: 80px;
+                height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: none;
+                background-color: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .header .logo img {
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                width: 100%;
+                height: auto;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 26px;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            }
+            .reminder-badge {
+                background: linear-gradient(135deg, #FFC107, #e0a800);
+                color: white;
+                padding: 8px 20px;
+                border-radius: 25px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: bold;
+                font-size: 14px;
+                box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+                animation: pulse 2s ease-in-out infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            
+            /* === CONTENT === */
+            .content {
+                padding: 40px 30px;
+            }
+
+            /* === GREETING === */
+            .greeting-message {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.8) 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin-bottom: 30px;
+                border-left: 5px solid #5D768B;
+                text-align: center;
+            }
+            .greeting-message h2 {
+                color: #5D768B;
+                margin-bottom: 15px;
+                font-size: 24px;
+            }
+            .greeting-message p {
+                margin: 15px 0;
+                color: #4A5F73;
+                font-size: 16px;
+                line-height: 1.7;
+            }
+            .highlight {
+                background: linear-gradient(135deg, #C8B39B, #a79178);
+                color: white;
+                padding: 3px 8px;
+                border-radius: 5px;
+                font-weight: 600;
+            }
+            .time-emoji {
+                font-size: 24px;
+                color: #FFC107;
+                margin: 0 5px;
+                display: inline-block;
+                animation: clockTick 1s ease-in-out infinite;
+            }
+            @keyframes clockTick {
+                0%, 100% { transform: rotate(0deg); }
+                25% { transform: rotate(-10deg); }
+                75% { transform: rotate(10deg); }
+            }
+
+            /* === CLASS DETAILS === */
+            .class-details {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.6) 100%);
+                border: 2px solid #17A2B8;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .class-details h3 {
+                color: #17A2B8;
+                margin-top: 0;
+                margin-bottom: 20px;
+                font-size: 18px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+            }
+            .class-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .class-info-card {
+                background: rgba(23, 162, 184, 0.1);
+                border-radius: 10px;
+                padding: 20px;
+                text-align: center;
+                border: 1px solid rgba(23, 162, 184, 0.3);
+            }
+            .class-info-card .icon {
+                font-size: 28px;
+                color: #17A2B8;
+                display: block;
+                margin-bottom: 10px;
+            }
+            .class-info-card .label {
+                font-size: 12px;
+                color: #5D768B;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 5px;
+            }
+            .class-info-card .value {
+                font-size: 16px;
+                font-weight: bold;
+                color: #17A2B8;
+                line-height: 1.3;
+            }
+
+            /* === COUNTDOWN SECTION === */
+            .countdown-section {
+                background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.15) 100%);
+                border: 2px solid #FFC107;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .countdown-section h3 {
+                color: #FFC107;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .countdown-display {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin: 20px 0;
+                flex-wrap: wrap;
+            }
+            .countdown-item {
+                background: linear-gradient(135deg, #FFC107, #e0a800);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 15px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-width: 80px;
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+            }
+            .countdown-number {
+                font-size: 24px;
+                font-weight: bold;
+                line-height: 1;
+            }
+            .countdown-label {
+                font-size: 12px;
+                font-weight: 500;
+                text-transform: uppercase;
+                margin-top: 5px;
+                opacity: 0.9;
+            }
+            .countdown-message {
+                background: rgba(255, 193, 7, 0.1);
+                border-radius: 8px;
+                padding: 15px;
+                margin: 15px 0;
+                font-size: 16px;
+                color: #FFC107;
+                font-weight: 600;
+                text-align: center;
+            }
+
+            /* === PREPARATION TIPS === */
+            .preparation-tips {
+                background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.15) 100%);
+                border: 2px solid #28A745;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .preparation-tips h3 {
+                color: #28A745;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+            }
+            .tips-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .tip-card {
+                display: flex;
+                align-items: flex-start;
+                padding: 15px;
+                background: rgba(40, 167, 69, 0.1);
+                border-radius: 10px;
+                border-left: 4px solid #28A745;
+            }
+            .tip-card .icon {
+                margin-right: 12px;
+                font-size: 20px;
+                color: #28A745;
+                min-width: 30px;
+                text-align: center;
+            }
+            .tip-card .content {
+                color: #4A5F73;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            .tip-card .content strong {
+                color: #28A745;
+                display: block;
+                margin-bottom: 3px;
+                font-size: 15px;
+            }
+
+            /* === LOCATION & DIRECTIONS === */
+            .location-directions {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.6) 100%);
+                border: 2px solid #17A2B8;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .location-directions h3 {
+                color: #17A2B8;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+            }
+            .location-info {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            .location-item {
+                display: flex;
+                align-items: flex-start;
+                padding: 15px;
+                background: rgba(23, 162, 184, 0.1);
+                border-radius: 10px;
+                border-left: 4px solid #17A2B8;
+            }
+            .location-item .icon {
+                margin-right: 15px;
+                font-size: 18px;
+                color: #17A2B8;
+                min-width: 25px;
+            }
+            .location-item .content {
+                color: #4A5F73;
+                font-size: 14px;
+                line-height: 1.5;
+                flex: 1;
+            }
+            .location-item .content strong {
+                display: block;
+                margin-bottom: 3px;
+                font-size: 15px;
+                color: #5D768B;
+            }
+            .directions-button {
+                background: linear-gradient(135deg, #17A2B8, #0d8fa4);
+                color: white;
+                padding: 12px 25px;
+                border-radius: 25px;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 14px;
+                display: inline-block;
+                margin: 15px auto;
+                box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+                transition: all 0.3s ease;
+            }
+
+            /* === QUICK ACTIONS === */
+            .quick-actions {
+                background: linear-gradient(135deg, rgba(200, 179, 155, 0.1) 0%, rgba(200, 179, 155, 0.2) 100%);
+                border: 2px solid #C8B39B;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .quick-actions h3 {
+                color: #C8B39B;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .actions-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .action-button {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px 15px;
+                background: rgba(200, 179, 155, 0.15);
+                border-radius: 12px;
+                text-decoration: none;
+                transition: all 0.3s ease;
+                border: 1px solid rgba(200, 179, 155, 0.3);
+            }
+            .action-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(200, 179, 155, 0.3);
+            }
+            .action-button .icon {
+                font-size: 24px;
+                color: #C8B39B;
+                margin-bottom: 10px;
+            }
+            .action-button .text {
+                color: #4A5F73;
+                font-weight: 600;
+                font-size: 14px;
+                text-align: center;
+                line-height: 1.3;
+            }
+
+            /* === BUTTONS === */
+            .btn {
+                display: inline-block;
+                padding: 12px 25px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                text-align: center;
+                transition: all 0.3s ease;
+                margin: 8px 5px;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+            }
+            .btn-success {
+                background: linear-gradient(135deg, #28A745, #20a94d);
+                color: white;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            .btn-warning {
+                background: linear-gradient(135deg, #FFC107, #e0a800);
+                color: white;
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+            }
+            .btn-info {
+                background: linear-gradient(135deg, #17A2B8, #0d8fa4);
+                color: white;
+                box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+            }
+            .btn-danger {
+                background: linear-gradient(135deg, #DC3545, #c82333);
+                color: white;
+                box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            }
+
+            /* === CANCELLATION WARNING === */
+            .cancellation-warning {
+                background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.15) 100%);
+                border: 2px solid #DC3545;
+                border-radius: 12px;
+                padding: 20px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .cancellation-warning h4 {
+                color: #DC3545;
+                margin-bottom: 10px;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+            .cancellation-warning p {
+                color: #4A5F73;
+                font-size: 14px;
+                margin: 8px 0;
+            }
+            .cancellation-warning .deadline {
+                background: rgba(220, 53, 69, 0.1);
+                padding: 8px 12px;
+                border-radius: 6px;
+                display: inline-block;
+                margin: 8px 0;
+                font-weight: bold;
+                color: #DC3545;
+            }
+
+            /* === CONTACT SECTION === */
+            .contact-section {
+                background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.15) 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+                border: 1px solid #28A745;
+            }
+            .contact-section h3 {
+                color: #28A745;
+                margin-top: 0;
+                margin-bottom: 15px;
+            }
+            .contact-section p {
+                margin: 10px 0;
+                color: #4A5F73;
+                font-size: 14px;
+            }
+            .contact-links {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin: 25px 0;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .contact-link {
+                display: inline-block;
+                padding: 10px 20px;
+                background: linear-gradient(135deg, #28A745, #20a94d);
+                color: white;
+                text-decoration: none;
+                border-radius: 25px;
+                font-weight: 600;
+                font-size: 14px;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                transition: all 0.3s ease;
+                margin: 5px 10px;
+            }
+            .contact-link:hover {
+                box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+                transform: translateY(-2px);
+            }
+
+            /* === FOOTER === */
+            .footer {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .footer-content {
+                margin-bottom: 20px;
+            }
+            .footer-content h3 {
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+            .footer-content p {
+                margin: 5px 0;
+                opacity: 0.9;
+                font-size: 14px;
+            }
+            .footer-logo {
+                margin: 20px 0;
+                display: flex;
+                justify-content: center;
+            }
+            .footer-logo img {
+                width: 250px;
+                height: auto;
+            }
+
+            /* === RESPONSIVE === */
+            @media (max-width: 600px) {
+                .email-container {
+                    margin: 10px;
+                    border-radius: 10px;
+                }
+                .header, .content {
+                    padding: 25px 20px;
+                }
+                .class-details, .countdown-section, .preparation-tips, .location-directions, .quick-actions, .contact-section {
+                    padding: 20px 15px;
+                }
+                .class-info-grid, .tips-grid, .actions-grid {
+                    grid-template-columns: 1fr;
+                    gap: 15px;
+                }
+                .countdown-display {
+                    gap: 10px;
+                }
+                .countdown-item {
+                    min-width: 70px;
+                    padding: 12px 15px;
+                }
+                .countdown-number {
+                    font-size: 20px;
+                }
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                    width: 100%;
+                    text-align: center;
+                }
+                .contact-links {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                .header h1 {
+                    font-size: 22px;
+                }
+                .greeting-message h2 {
+                    font-size: 20px;
+                }
+                .location-item, .tip-card {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+                .location-item .icon, .tip-card .icon {
+                    margin-bottom: 8px;
+                    margin-right: 0;
+                }
+            }
+
+            /* === FORCE STYLES === */
+            .header-content { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                text-align: center !important; 
+            }
+            .logo-container { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                margin-bottom: 20px !important;
+            }
+            .header .logo { 
+                background: none !important; 
+                background-color: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .header .logo img { 
+                background: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;">
+                    <!-- Logo primero (arriba) -->
+                    <div class="logo-container" style="display: flex !important; flex-direction: column !important; align-items: center !important; margin-bottom: 20px !important;">
+                        <div class="logo" style="background: none !important; background-color: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important;">
+                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100% !important; height: auto !important; background: transparent !important; border: none !important; box-shadow: none !important;">
+                        </div>
+                    </div>
+                    <!-- Texto debajo del logo -->
+                    <div style="text-align: center !important;">
+                        <h1 style="text-align: center !important; margin: 10px 0 !important;">¡Tu Clase es Mañana!</h1>
+                        <div class="reminder-badge" style="text-align: center !important; display: inline-block !important; margin: 15px auto !important;">⏰ ¡No te la pierdas!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Mensaje de saludo -->
+                <div class="greeting-message">
+                    <h2>¡Hola {{ usuario.first_name|default:usuario.username }}! <span class="time-emoji">⏰</span></h2>
+                    <p>Te recordamos que <span class="highlight">mañana tienes tu clase de Pilates</span> en <strong>{{ clase.get_direccion_corta }}</strong>.</p>
+                    <p style="font-size: 18px; margin: 20px 0;">
+                        <strong>¡Estamos emocionados de verte en el estudio!</strong> <span class="time-emoji">💪</span>
+                    </p>
+                    <p>Hemos preparado este recordatorio para que tengas toda la información que necesitas para una experiencia perfecta.</p>
+                </div>
+
+                <!-- Detalles de la clase -->
+                <div class="class-details">
+                    <h3>📋 Detalles de tu Clase</h3>
+                    
+                    <div class="class-info-grid">
+                        <div class="class-info-card">
+                            <span class="icon">🧘‍♀️</span>
+                            <div class="label">Tipo de Clase</div>
+                            <div class="value">{{ clase.get_nombre_display }}</div>
+                        </div>
+                        <div class="class-info-card">
+                            <span class="icon">📅</span>
+                            <div class="label">Día</div>
+                            <div class="value">{{ clase.dia }}</div>
+                        </div>
+                        <div class="class-info-card">
+                            <span class="icon">🕐</span>
+                            <div class="label">Horario</div>
+                            <div class="value">{{ clase.horario|time:"H:i" }}</div>
+                        </div>
+                        <div class="class-info-card">
+                            <span class="icon">📍</span>
+                            <div class="label">Sede</div>
+                            <div class="value">{{ clase.get_direccion_corta }}</div>
+                        </div>
+                        {% if clase.cupo_maximo %}
+                        <div class="class-info-card">
+                            <span class="icon">👥</span>
+                            <div class="label">Grupo</div>
+                            <div class="value">Máx. {{ clase.cupo_maximo }} personas</div>
+                        </div>
+                        {% endif %}
+                        <div class="class-info-card">
+                            <span class="icon">🎯</span>
+                            <div class="label">Tu Reserva</div>
+                            <div class="value">{{ numero_reserva|default:"Confirmada" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Countdown hasta la clase -->
+                <div class="countdown-section">
+                    <h3>⏳ Tiempo Restante</h3>
+                    
+                    <div class="countdown-display">
+                        {% if horas_restantes %}
+                        <div class="countdown-item">
+                            <div class="countdown-number">{{ horas_restantes }}</div>
+                            <div class="countdown-label">Horas</div>
+                        </div>
+                        {% endif %}
+                        {% if minutos_restantes %}
+                        <div class="countdown-item">
+                            <div class="countdown-number">{{ minutos_restantes }}</div>
+                            <div class="countdown-label">Minutos</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="countdown-message">
+                        {% if tiempo_exacto %}
+                        Tu clase es {{ tiempo_exacto }} ⏰
+                        {% else %}
+                        ¡Tu clase es mañana! Prepárate para una sesión increíble 💪
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Consejos de preparación -->
+                <div class="preparation-tips">
+                    <h3>✨ Consejos para tu Clase</h3>
+                    
+                    <div class="tips-grid">
+                        <div class="tip-card">
+                            <span class="icon">🕒</span>
+                            <div class="content">
+                                <strong>Llega 10 minutos antes</strong>
+                                Para firmar asistencia, cambiarte y prepararte mentalmente para la clase.
+                            </div>
+                        </div>
+                        <div class="tip-card">
+                            <span class="icon">👕</span>
+                            <div class="content">
+                                <strong>Ropa cómoda</strong>
+                                Usa ropa ajustada pero cómoda que te permita moverte libremente.
+                            </div>
+                        </div>
+                        <div class="tip-card">
+                            <span class="icon">💧</span>
+                            <div class="content">
+                                <strong>Hidratación</strong>
+                                Trae una botella de agua para mantenerte hidratado durante la clase.
+                            </div>
+                        </div>
+                        <div class="tip-card">
+                            <span class="icon">🧘‍♀️</span>
+                            <div class="content">
+                                <strong>Mente abierta</strong>
+                                Ven con actitud positiva y disposición para aprender y disfrutar.
+                            </div>
+                        </div>
+                        <div class="tip-card">
+                            <span class="icon">🍽️</span>
+                            <div class="content">
+                                <strong>Comida ligera</strong>
+                                Evita comidas pesadas 2 horas antes. Un snack liviano está bien.
+                            </div>
+                        </div>
+                        <div class="tip-card">
+                            <span class="icon">🧦</span>
+                            <div class="content">
+                                <strong>Medias antideslizantes</strong>
+                                Si tienes, trae medias con grip. Si no, ¡no te preocupes!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ubicación y direcciones -->
+                <div class="location-directions">
+                    <h3>📍 Ubicación y Cómo Llegar</h3>
+                    
+                    <div class="location-info">
+                        {% if clase.direccion == 'sede_principal' %}
+                        <div class="location-item">
+                            <span class="icon">🏢</span>
+                            <div class="content">
+                                <strong>Sede Principal</strong>
+                                La Rioja 3044, Capital, Santa Fe
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">📞</span>
+                            <div class="content">
+                                <strong>Teléfono</strong>
+                                +54 342 511 4448
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">🕐</span>
+                            <div class="content">
+                                <strong>Horarios de atención</strong>
+                                Lunes a Viernes 8:00 - 20:00 | Sábados 9:00 - 13:00
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">🚗</span>
+                            <div class="content">
+                                <strong>Estacionamiento</strong>
+                                Espacio disponible en la calle y estacionamiento cercano
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="location-item">
+                            <span class="icon">🏢</span>
+                            <div class="content">
+                                <strong>Sede 2</strong>
+                                9 de julio 3698, Capital, Santa Fe
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">📞</span>
+                            <div class="content">
+                                <strong>Teléfono</strong>
+                                +54 342 511 4448
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">🕐</span>
+                            <div class="content">
+                                <strong>Horarios de atención</strong>
+                                Lunes a Viernes 8:00 - 20:00 | Sábados 9:00 - 13:00
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">🚗</span>
+                            <div class="content">
+                                <strong>Estacionamiento</strong>
+                                Disponible en la zona, recomendamos llegar unos minutos antes
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div style="text-align: center; margin: 20px 0;">
+                        {% if clase.direccion == 'sede_principal' %}
+                        <a href="https://maps.google.com/?q=La+Rioja+3044+Santa+Fe" class="directions-button">🗺️ Ver en Google Maps</a>
+                        {% else %}
+                        <a href="https://maps.google.com/?q=9+de+julio+3698+Santa+Fe" class="directions-button">🗺️ Ver en Google Maps</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Acciones rápidas -->
+                <div class="quick-actions">
+                    <h3>⚡ Acciones Rápidas</h3>
+                    
+                    <div class="actions-grid">
+                        <a href="{{ domain_url }}{% url 'accounts:mis_reservas' %}" class="action-button">
+                            <span class="icon">📋</span>
+                            <div class="text">Ver mis<br>Reservas</div>
+                        </a>
+                        {% if numero_reserva %}
+                        <a href="{{ domain_url }}{% url 'gravity:detalle_reserva' numero_reserva %}" class="action-button">
+                            <span class="icon">🔍</span>
+                            <div class="text">Detalle de<br>esta Reserva</div>
+                        </a>
+                        {% endif %}
+                        <a href="{{ domain_url }}{% url 'gravity:clases_disponibles' %}" class="action-button">
+                            <span class="icon">📅</span>
+                            <div class="text">Ver otros<br>Horarios</div>
+                        </a>
+                        <a href="https://wa.me/543425114448" class="action-button">
+                            <span class="icon">💬</span>
+                            <div class="text">Contactar<br>WhatsApp</div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Advertencia de cancelación -->
+                <div class="cancellation-warning">
+                    <h4>⚠️ Política de Cancelación</h4>
+                    <p>Si necesitas cancelar o modificar tu reserva, hazlo con <strong>al menos 12 horas de anticipación</strong>.</p>
+                    <div class="deadline">
+                        Fecha límite para cancelar: {{ fecha_limite_cancelacion|date:"d/m/Y H:i" }}
+                    </div>
+                    <p style="font-size: 13px; opacity: 0.9;">
+                        Puedes gestionar tu reserva desde tu perfil o contactándonos por WhatsApp.
+                    </p>
+                </div>
+
+                <!-- Sección de contacto -->
+                <div class="contact-section">
+                    <h3>📞 ¿Necesitas Ayuda?</h3>
+                    <p>Si tienes alguna pregunta o necesitas modificar tu reserva:</p>
+                    
+                    <div class="contact-links">
+                        <a href="https://wa.me/543425114448" class="contact-link">💬 WhatsApp</a>
+                        <a href="mailto:pilatesgravity@gmail.com" class="contact-link">✉️ Email</a>
+                        <a href="{{ domain_url }}" class="contact-link">🌐 Sitio Web</a>
+                    </div>
+                    
+                    <p style="font-size: 12px; margin-top: 15px;">
+                        <strong>Horarios de atención:</strong><br>
+                        Lunes a Viernes 8:00 - 20:00 | Sábados 9:00 - 13:00
+                    </p>
+                </div>
+
+                <!-- Mensaje motivacional final -->
+                <div style="text-align: center; margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.9) 100%); border-radius: 12px; border: 2px solid #C8B39B;">
+                    <h3 style="color: #5D768B; margin-bottom: 20px;">💪 ¡Te Esperamos Mañana!</h3>
+                    <p style="color: #4A5F73; margin: 15px 0; font-size: 16px; line-height: 1.8;">
+                        <strong>Cada clase es una oportunidad para cuidarte y fortalecerte.</strong> Estamos emocionados de acompañarte en este hermoso viaje hacia el bienestar.
+                    </p>
+                    <p style="color: #5D768B; margin: 15px 0; font-size: 17px; font-weight: 600;">
+                        ¡Nos vemos en el estudio! <span class="time-emoji">🧘‍♀️</span>
+                    </p>
+                    <p style="color: #4A5F73; margin: 15px 0; font-style: italic;">
+                        "Tu cuerpo puede hacerlo. Solo convence a tu mente."
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-content">
+                    <h3>¡Hasta mañana!</h3>
+                    <p>💙 Con amor, todo el equipo de Pilates Gravity</p>
+                    <p>👩‍🏫 Nicolás, Camila y nuestros instructores</p>
+                    <p>🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe</p>
+                    <p>🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe</p>
+                    <p>📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448</p>
+                    <p style="font-size: 12px; margin-top: 15px; opacity: 0.8;">
+                        Este es un recordatorio automático. Si no deseas recibir estos emails,<br>
+                        puedes desactivar las notificaciones en tu perfil.
+                    </p>
+                </div>
+                
+                <div class="footer-logo">
+                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto;">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🕐 ¡Tu clase es MAÑANA! - Pilates Gravity</title>
+        {% load static %}
+        <style type="text/css">
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.8) 100%);
+                margin: 0;
+                padding: 0;
+            }
+            .email-container {
+                max-width: 650px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 15px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(93, 118, 139, 0.15);
+            }
+            
+            /* === HEADER === */
+            .header {
+                background: linear-gradient(135deg, #FFC107 0%, #e0a800 100%);
+                color: white;
+                padding: 40px 30px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .header::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.2)"/></svg>') repeat;
+                background-size: 20px 20px;
+                animation: urgentPulse 3s ease-in-out infinite;
+            }
+            @keyframes urgentPulse {
+                0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+                50% { transform: translateY(-10px) scale(1.1); opacity: 0.6; }
+            }
+            .header-content {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            .header .logo {
+                width: 70px;
+                height: 70px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: none;
+                background-color: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .header .logo img {
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                width: 100%;
+                height: auto;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 700;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                text-align: center;
+                animation: headingBounce 2s ease-in-out infinite;
+            }
+            @keyframes headingBounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-3px); }
+            }
+            .reminder-badge {
+                background: linear-gradient(135deg, #DC3545, #c82333);
+                color: white;
+                padding: 10px 25px;
+                border-radius: 25px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: bold;
+                font-size: 16px;
+                box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+                animation: badgePulse 1.5s ease-in-out infinite;
+            }
+            @keyframes badgePulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+            
+            /* === CONTENT === */
+            .content {
+                padding: 40px 30px;
+            }
+            
+            /* === URGENT REMINDER === */
+            .urgent-reminder {
+                background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.25) 100%);
+                border: 3px solid #FFC107;
+                border-radius: 15px;
+                padding: 30px;
+                margin-bottom: 30px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .urgent-reminder::before {
+                content: '⏰';
+                position: absolute;
+                top: -10px;
+                right: -10px;
+                font-size: 40px;
+                opacity: 0.1;
+                animation: clockTick 2s ease-in-out infinite;
+            }
+            @keyframes clockTick {
+                0%, 100% { transform: rotate(0deg); }
+                50% { transform: rotate(10deg); }
+            }
+            .urgent-reminder h2 {
+                color: #FFC107;
+                margin-bottom: 15px;
+                font-size: 26px;
+                font-weight: 700;
+            }
+            .urgent-reminder p {
+                margin: 15px 0;
+                color: #4A5F73;
+                font-size: 18px;
+                line-height: 1.6;
+            }
+            .class-time {
+                background: linear-gradient(135deg, #FFC107, #e0a800);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                display: inline-block;
+                margin: 20px 0;
+                font-weight: bold;
+                font-size: 20px;
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+                min-width: 280px;
+            }
+
+            /* === CLASS DETAILS === */
+            .class-details {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.6) 100%);
+                border: 2px solid #17A2B8;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .class-details h3 {
+                color: #17A2B8;
+                margin-top: 0;
+                margin-bottom: 20px;
+                font-size: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .detail-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .detail-card {
+                background: rgba(23, 162, 184, 0.1);
+                border-radius: 10px;
+                padding: 18px;
+                border-left: 4px solid #17A2B8;
+                text-align: center;
+            }
+            .detail-icon {
+                font-size: 24px;
+                color: #17A2B8;
+                margin-bottom: 8px;
+                display: block;
+            }
+            .detail-label {
+                font-size: 12px;
+                color: #5D768B;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 5px;
+            }
+            .detail-value {
+                font-size: 16px;
+                font-weight: bold;
+                color: #4A5F73;
+            }
+
+            /* === PREPARATION SECTION === */
+            .preparation-section {
+                background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.15) 100%);
+                border: 2px solid #28A745;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .preparation-section h3 {
+                color: #28A745;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .prep-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .prep-card {
+                background: rgba(40, 167, 69, 0.1);
+                border-radius: 12px;
+                padding: 20px;
+                border: 1px solid rgba(40, 167, 69, 0.3);
+            }
+            .prep-card h4 {
+                color: #28A745;
+                margin-bottom: 15px;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .prep-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            .prep-list li {
+                display: flex;
+                align-items: center;
+                margin: 8px 0;
+                color: #4A5F73;
+                font-size: 14px;
+            }
+            .prep-list li::before {
+                content: '✓';
+                color: #28A745;
+                font-weight: bold;
+                margin-right: 10px;
+                font-size: 16px;
+            }
+
+            /* === ARRIVAL INFO === */
+            .arrival-info {
+                background: linear-gradient(135deg, rgba(200, 179, 155, 0.1) 0%, rgba(200, 179, 155, 0.2) 100%);
+                border: 2px solid #C8B39B;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .arrival-info h3 {
+                color: #C8B39B;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .arrival-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .arrival-card {
+                background: rgba(200, 179, 155, 0.15);
+                border-radius: 10px;
+                padding: 15px;
+                border-left: 3px solid #C8B39B;
+            }
+            .arrival-card .icon {
+                font-size: 20px;
+                color: #C8B39B;
+                margin-bottom: 8px;
+                display: block;
+            }
+            .arrival-card .title {
+                font-weight: bold;
+                color: #5D768B;
+                margin-bottom: 5px;
+                font-size: 14px;
+            }
+            .arrival-card .content {
+                color: #4A5F73;
+                font-size: 13px;
+                line-height: 1.4;
+            }
+
+            /* === MOTIVATION SECTION === */
+            .motivation-section {
+                background: linear-gradient(135deg, rgba(93, 118, 139, 0.1) 0%, rgba(93, 118, 139, 0.15) 100%);
+                border: 2px solid #5D768B;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .motivation-section h3 {
+                color: #5D768B;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .motivation-text {
+                color: #4A5F73;
+                font-size: 16px;
+                line-height: 1.7;
+                margin: 15px 0;
+                font-style: italic;
+            }
+            .motivation-quote {
+                background: rgba(93, 118, 139, 0.1);
+                border-left: 4px solid #5D768B;
+                padding: 15px;
+                border-radius: 8px;
+                margin: 20px 0;
+                font-weight: 500;
+                color: #5D768B;
+            }
+
+            /* === QUICK ACTIONS === */
+            .quick-actions {
+                background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.15) 100%);
+                border: 2px solid #DC3545;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .quick-actions h3 {
+                color: #DC3545;
+                margin-top: 0;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .quick-actions p {
+                margin: 15px 0;
+                color: #4A5F73;
+                font-size: 15px;
+            }
+            .action-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin: 25px 0;
+                flex-wrap: wrap;
+            }
+            .warning-text {
+                background: rgba(220, 53, 69, 0.1);
+                border-radius: 8px;
+                padding: 12px;
+                margin: 15px 0;
+                border-left: 3px solid #DC3545;
+                font-size: 14px;
+                color: #4A5F73;
+            }
+
+            /* === BUTTONS === */
+            .btn {
+                display: inline-block;
+                padding: 12px 25px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                text-align: center;
+                transition: all 0.3s ease;
+                margin: 8px 5px;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+                min-width: 140px;
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+            }
+            .btn-success {
+                background: linear-gradient(135deg, #28A745, #20a94d);
+                color: white;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            .btn-warning {
+                background: linear-gradient(135deg, #FFC107, #e0a800);
+                color: white;
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+            }
+            .btn-danger {
+                background: linear-gradient(135deg, #DC3545, #c82333);
+                color: white;
+                box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            }
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(93, 118, 139, 0.4);
+            }
+
+            /* === CONTACT SECTION === */
+            .contact-section {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.8) 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+                border: 1px solid #C8B39B;
+            }
+            .contact-section h3 {
+                color: #5D768B;
+                margin-top: 0;
+                margin-bottom: 15px;
+            }
+            .contact-section p {
+                margin: 10px 0;
+                color: #4A5F73;
+                font-size: 14px;
+            }
+            .contact-links {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin: 20px 0;
+                flex-wrap: wrap;
+            }
+            .contact-link {
+                display: inline-block;
+                padding: 10px 18px;
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                text-decoration: none;
+                border-radius: 20px;
+                font-weight: 600;
+                font-size: 13px;
+                box-shadow: 0 3px 10px rgba(93, 118, 139, 0.3);
+                transition: all 0.3s ease;
+            }
+            .contact-link:hover {
+                box-shadow: 0 6px 20px rgba(93, 118, 139, 0.4);
+                transform: translateY(-1px);
+            }
+
+            /* === FOOTER === */
+            .footer {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .footer-content {
+                margin-bottom: 20px;
+            }
+            .footer-content h3 {
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+            .footer-content p {
+                margin: 5px 0;
+                opacity: 0.9;
+                font-size: 14px;
+            }
+            .footer-logo {
+                margin: 20px 0;
+                display: flex;
+                justify-content: center;
+            }
+            .footer-logo img {
+                width: 250px;
+                height: auto;
+            }
+
+            /* === RESPONSIVE === */
+            @media (max-width: 600px) {
+                .email-container {
+                    margin: 10px;
+                    border-radius: 10px;
+                }
+                .header, .content {
+                    padding: 25px 20px;
+                }
+                .urgent-reminder, .class-details, .preparation-section, .arrival-info, .motivation-section, .quick-actions, .contact-section {
+                    padding: 20px 15px;
+                }
+                .detail-grid, .prep-grid, .arrival-grid {
+                    grid-template-columns: 1fr;
+                    gap: 15px;
+                }
+                .action-buttons {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                .contact-links {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                    width: 100%;
+                    text-align: center;
+                }
+                .header h1 {
+                    font-size: 24px;
+                }
+                .urgent-reminder h2 {
+                    font-size: 22px;
+                }
+                .class-time {
+                    min-width: auto;
+                    width: 100%;
+                }
+            }
+
+            /* === FORCE STYLES === */
+            .header-content { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                text-align: center !important; 
+            }
+            .logo-container { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                margin-bottom: 20px !important;
+            }
+            .header .logo { 
+                background: none !important; 
+                background-color: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .header .logo img { 
+                background: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;">
+                    <!-- Logo primero (arriba) -->
+                    <div class="logo-container" style="display: flex !important; flex-direction: column !important; align-items: center !important; margin-bottom: 20px !important;">
+                        <div class="logo" style="background: none !important; background-color: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important;">
+                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100% !important; height: auto !important; background: transparent !important; border: none !important; box-shadow: none !important;">
+                        </div>
+                    </div>
+                    <!-- Texto debajo del logo -->
+                    <div style="text-align: center !important;">
+                        <h1 style="text-align: center !important; margin: 10px 0 !important;">¡Tu Clase es MAÑANA!</h1>
+                        <div class="reminder-badge" style="text-align: center !important; display: inline-block !important; margin: 15px auto !important;">⏰ ¡Prepárate para brillar!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Recordatorio urgente -->
+                <div class="urgent-reminder">
+                    <h2>🕐 ¡No olvides tu clase de mañana!</h2>
+                    <p>Hola <strong>{{ reserva.usuario.first_name|default:reserva.usuario.username }}</strong>,</p>
+                    <p>Este es un recordatorio amigable de que tienes una clase programada para <strong>mañana</strong>. ¡Estamos emocionados de verte!</p>
+                    
+                    <div class="class-time">
+                        {{ reserva.clase.dia }} • {{ reserva.clase.horario|time:"H:i" }} hs
+                    </div>
+                    
+                    <p style="margin-top: 20px; font-size: 16px; color: #FFC107; font-weight: 600;">
+                        ¡Faltan aproximadamente 24 horas para tu clase! ⏰
+                    </p>
+                </div>
+
+                <!-- Detalles de la clase -->
+                <div class="class-details">
+                    <h3>📋 Detalles de Tu Clase</h3>
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <span class="detail-icon">🎯</span>
+                            <div class="detail-label">Tipo de Clase</div>
+                            <div class="detail-value">{{ reserva.clase.get_nombre_display }}</div>
+                        </div>
+                        <div class="detail-card">
+                            <span class="detail-icon">📅</span>
+                            <div class="detail-label">Día</div>
+                            <div class="detail-value">{{ reserva.clase.dia }}</div>
+                        </div>
+                        <div class="detail-card">
+                            <span class="detail-icon">⏰</span>
+                            <div class="detail-label">Horario</div>
+                            <div class="detail-value">{{ reserva.clase.horario|time:"H:i" }} hs</div>
+                        </div>
+                        <div class="detail-card">
+                            <span class="detail-icon">🏢</span>
+                            <div class="detail-label">Sede</div>
+                            <div class="detail-value">{{ reserva.clase.get_direccion_corta }}</div>
+                        </div>
+                        <div class="detail-card">
+                            <span class="detail-icon">🎫</span>
+                            <div class="detail-label">Reserva N°</div>
+                            <div class="detail-value">{{ reserva.numero_reserva }}</div>
+                        </div>
+                        {% if reserva.clase.cupo_maximo %}
+                        <div class="detail-card">
+                            <span class="detail-icon">👥</span>
+                            <div class="detail-label">Grupo</div>
+                            <div class="detail-value">Máx {{ reserva.clase.cupo_maximo }} personas</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Preparación para la clase -->
+                <div class="preparation-section">
+                    <h3>🎒 Preparación para Tu Clase</h3>
+                    <div class="prep-grid">
+                        <div class="prep-card">
+                            <h4>🧳 Qué Traer</h4>
+                            <ul class="prep-list">
+                                <li>Botella de agua (muy importante)</li>
+                                <li>Toalla pequeña personal</li>
+                                <li>Ropa cómoda y flexible</li>
+                                <li>Medias antideslizantes (opcional)</li>
+                                <li>Cabello recogido si es largo</li>
+                            </ul>
+                        </div>
+                        <div class="prep-card">
+                            <h4>⏱️ Horarios Importantes</h4>
+                            <ul class="prep-list">
+                                <li>Llega 10 minutos antes</li>
+                                <li>Clase puntual a las {{ reserva.clase.horario|time:"H:i" }}</li>
+                                <li>Duración: 60 minutos</li>
+                                <li>Finaliza a las {{ reserva.clase.horario|addtime:"1:00"|time:"H:i" }}</li>
+                            </ul>
+                        </div>
+                        <div class="prep-card">
+                            <h4>🍽️ Recomendaciones</h4>
+                            <ul class="prep-list">
+                                <li>No comas 2 horas antes</li>
+                                <li>Mantente hidratado durante el día</li>
+                                <li>Descansa bien la noche anterior</li>
+                                <li>Llega con energía positiva</li>
+                            </ul>
+                        </div>
+                        <div class="prep-card">
+                            <h4>📱 Antes de Salir</h4>
+                            <ul class="prep-list">
+                                <li>Confirma que tienes este email</li>
+                                <li>Revisa el tráfico hacia la sede</li>
+                                <li>Ten a mano el número de la sede</li>
+                                <li>Silencia tu teléfono</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de llegada específica por sede -->
+                <div class="arrival-info">
+                    <h3>📍 Información de Llegada</h3>
+                    {% if reserva.clase.direccion == 'sede_principal' %}
+                    <div class="arrival-grid">
+                        <div class="arrival-card">
+                            <span class="icon">🏢</span>
+                            <div class="title">Sede Principal</div>
+                            <div class="content">La Rioja 3044<br>Capital, Santa Fe</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">📞</span>
+                            <div class="title">Teléfono</div>
+                            <div class="content">+54 342 511 4448</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">🚗</span>
+                            <div class="title">Estacionamiento</div>
+                            <div class="content">Disponible en la calle<br>Zona tranquila</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">🚌</span>
+                            <div class="title">Transporte</div>
+                            <div class="content">Varias líneas de colectivo<br>Zona céntrica</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">⏰</span>
+                            <div class="title">Atención</div>
+                            <div class="content">Lun-Vie: 8:00-20:00<br>Sáb: 9:00-13:00</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">🚪</span>
+                            <div class="title">Acceso</div>
+                            <div class="content">Entrada principal<br>Toca el timbre</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="arrival-grid">
+                        <div class="arrival-card">
+                            <span class="icon">🏢</span>
+                            <div class="title">Sede 2</div>
+                            <div class="content">9 de julio 3698<br>Capital, Santa Fe</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">📞</span>
+                            <div class="title">Teléfono</div>
+                            <div class="content">+54 342 511 4448</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">🚗</span>
+                            <div class="title">Estacionamiento</div>
+                            <div class="content">Disponible en la zona<br>Fácil acceso</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">🚌</span>
+                            <div class="title">Transporte</div>
+                            <div class="content">Acceso por 9 de julio<br>Buena conectividad</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">⏰</span>
+                            <div class="title">Atención</div>
+                            <div class="content">Lun-Vie: 8:00-20:00<br>Sáb: 9:00-13:00</div>
+                        </div>
+                        <div class="arrival-card">
+                            <span class="icon">🚪</span>
+                            <div class="title">Acceso</div>
+                            <div class="content">Entrada por 9 de julio<br>Edificio identificado</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Mensaje motivacional -->
+                <div class="motivation-section">
+                    <h3>💪 ¡Estamos Listos para Ti!</h3>
+                    <p class="motivation-text">
+                        Mañana será un día increíble para trabajar en tu bienestar. Cada clase es una oportunidad de 
+                        crecimiento, fortalecimiento y conexión contigo mismo.
+                    </p>
+                    <div class="motivation-quote">
+                        "El cuerpo alcanza lo que la mente cree. ¡Mañana seguimos construyendo la mejor versión de ti!"
+                    </div>
+                    <p style="color: #5D768B; font-weight: 600; margin: 20px 0;">
+                        🌟 ¡Nuestro equipo de instructores te está esperando con mucha energía!
+                    </p>
+                </div>
+
+                <!-- Acciones rápidas -->
+                <div class="quick-actions">
+                    <h3>⚡ ¿Necesitas Hacer Algo?</h3>
+                    <p>Si por algún motivo no puedes asistir mañana, por favor cancela tu reserva <strong>con al menos 12 horas de anticipación</strong> para que otros puedan aprovechar tu lugar.</p>
+                    
+                    <div class="action-buttons">
+                        <a href="{{ domain_url }}/reserva/{{ reserva.numero_reserva }}/" class="btn btn-primary">
+                            👁️ Ver Mi Reserva
+                        </a>
+                        <a href="{{ domain_url }}/reserva/{{ reserva.numero_reserva }}/modificar/" class="btn btn-warning">
+                            ✏️ Modificar Clase
+                        </a>
+                        <a href="{{ domain_url }}/reserva/{{ reserva.numero_reserva }}/cancelar/" class="btn btn-danger">
+                            ❌ Cancelar Reserva
+                        </a>
+                    </div>
+                    
+                    <div class="warning-text">
+                        <strong>⚠️ Importante:</strong> Las cancelaciones deben realizarse con 12 horas de anticipación. 
+                        Después de ese tiempo no se podrá cancelar online.
+                    </div>
+                </div>
+
+                <!-- Contacto final -->
+                <div class="contact-section">
+                    <h3>📞 ¿Alguna Consulta?</h3>
+                    <p>Si tienes alguna pregunta o necesitas asistencia de último momento:</p>
+                    
+                    <div class="contact-links">
+                        <a href="https://wa.me/543425114448?text=Hola! Tengo una consulta sobre mi clase de mañana (Reserva {{ reserva.numero_reserva }})" class="contact-link">💬 WhatsApp</a>
+                        <a href="mailto:pilatesgravity@gmail.com?subject=Consulta reserva {{ reserva.numero_reserva }}" class="contact-link">✉️ Email</a>
+                        <a href="{{ domain_url }}" class="contact-link">🌐 Sitio Web</a>
+                        <a href="tel:+543425114448" class="contact-link">📱 Llamar</a>
+                    </div>
+                    
+                    <p style="font-size: 12px; margin-top: 15px;">
+                        <strong>Horarios de atención:</strong><br>
+                        Lunes a Viernes 8:00 - 20:00 | Sábados 9:00 - 13:00
+                    </p>
+                </div>
+
+                <!-- Mensaje final energético -->
+                <div style="text-align: center; margin: 30px 0; padding: 25px; background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.15) 100%); border-radius: 12px; border: 2px solid #FFC107;">
+                    <h3 style="color: #FFC107; margin-bottom: 15px;">🚀 ¡Nos Vemos Mañana!</h3>
+                    <p style="color: #4A5F73; margin: 15px 0; font-size: 16px; line-height: 1.7;">
+                        Estamos emocionados de acompañarte en tu viaje de bienestar. <strong>Cada clase es un paso hacia una versión más fuerte y saludable de ti mismo.</strong>
+                    </p>
+                    <p style="color: #FFC107; margin: 15px 0; font-size: 18px; font-weight: 600;">
+                        ¡Prepárate para una clase increíble! 💫
+                    </p>
+                    <p style="color: #4A5F73; margin: 15px 0; font-style: italic;">
+                        "Mañana no es solo otro día, es otra oportunidad de ser extraordinario."
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-content">
+                    <h3>¡Te esperamos con mucha energía!</h3>
+                    <p>💙 Todo el equipo de Pilates Gravity</p>
+                    <p>👩‍🏫 Nicolás, Camila y nuestros increíbles instructores</p>
+                    <p>🏢 Sede Principal: La Rioja 3044 | Sede 2: 9 de julio 3698</p>
+                    <p>📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448</p>
+                    <p style="font-size: 12px; margin-top: 15px; opacity: 0.8;">
+                        ¡Que tengas una excelente clase mañana! 🌟<br>
+                        Este recordatorio se envía automáticamente 24h antes de tu clase.
+                    </p>
+                </div>
+                
+                <div class="footer-logo">
+                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto;">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reserva Confirmada - Pilates Gravity</title>
+        {% load static %}
+        <style type="text/css">
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #f0f2f5 0%, #e8ecf0 100%);
+                margin: 0;
+                padding: 0;
+            }
+            .email-container {
+                max-width: 650px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 15px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(93, 118, 139, 0.15);
+            }
+            
+            /* === HEADER === */
+            .header {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 40px 30px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .header::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+                background-size: 30px 30px;
+                animation: float 20s ease-in-out infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-10px) rotate(180deg); }
+            }
+            .header-content {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            .header .logo {
+                width: 80px;
+                height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: none;
+                background-color: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .header .logo img {
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                width: 100%;
+                height: auto;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 26px;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            }
+            .reservation-badge {
+                background: linear-gradient(135deg, #16a34a, #22c55e);
+                color: white;
+                padding: 8px 20px;
+                border-radius: 25px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: bold;
+                font-size: 14px;
+                box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+            }
+            
+            /* === CONTENT === */
+            .content {
+                padding: 40px 30px;
+            }
+            .greeting-message {
+                background: linear-gradient(135deg, #e8f5e8 0%, #f0fdf4 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin-bottom: 30px;
+                border-left: 5px solid #16a34a;
+            }
+            .greeting-message h2 {
+                color: #16a34a;
+                margin-bottom: 15px;
+                font-size: 22px;
+            }
+            .greeting-message p {
+                margin: 10px 0;
+                color: #166534;
+            }
+            .highlight {
+                background: linear-gradient(135deg, #C8B39B, #a79178);
+                color: white;
+                padding: 3px 8px;
+                border-radius: 5px;
+                font-weight: 600;
+            }
+            .reservation-number {
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                padding: 5px 12px;
+                border-radius: 8px;
+                font-weight: bold;
+                font-family: 'Courier New', monospace;
+                font-size: 16px;
+                display: inline-block;
+                margin: 5px 0;
+                box-shadow: 0 2px 8px rgba(93, 118, 139, 0.3);
+            }
+
+            /* === RESERVATION DETAILS === */
+            .reservation-details {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.6) 100%);
+                border: 2px solid #17A2B8;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .reservation-details h3 {
+                color: #17A2B8;
+                margin-top: 0;
+                margin-bottom: 20px;
+                font-size: 18px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 0;
+                border-bottom: 1px solid rgba(23, 162, 184, 0.2);
+                margin-bottom: 10px;
+            }
+            .detail-row:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+            .detail-label {
+                font-weight: 500;
+                color: #17A2B8;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .detail-value {
+                font-weight: bold;
+                color: #4A5F73;
+                text-align: right;
+            }
+            .class-highlight {
+                font-size: 18px;
+                color: #17A2B8;
+                font-weight: bold;
+            }
+
+            /* === NEXT CLASS INFO === */
+            .next-class-info {
+                background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.15) 100%);
+                border: 2px solid #FFC107;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .next-class-info h3 {
+                color: #FFC107;
+                margin-top: 0;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .next-class-date {
+                font-size: 20px;
+                font-weight: bold;
+                color: #FFC107;
+                margin: 10px 0;
+                padding: 10px;
+                background: rgba(255, 193, 7, 0.1);
+                border-radius: 8px;
+            }
+            .countdown {
+                background: linear-gradient(135deg, #FFC107, #e0a800);
+                color: white;
+                padding: 10px 15px;
+                border-radius: 25px;
+                display: inline-block;
+                margin: 10px 0;
+                font-weight: bold;
+                font-size: 14px;
+                box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+            }
+
+            /* === IMPORTANT INFO === */
+            .important-info {
+                background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.15) 100%);
+                border: 2px solid #DC3545;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .important-info h3 {
+                color: #DC3545;
+                margin-top: 0;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .important-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            .important-list li {
+                display: flex;
+                align-items: flex-start;
+                margin: 12px 0;
+                padding: 8px;
+                background: rgba(220, 53, 69, 0.1);
+                border-radius: 8px;
+                border-left: 3px solid #DC3545;
+            }
+            .important-list li .icon {
+                margin-right: 10px;
+                font-size: 16px;
+                color: #DC3545;
+            }
+            .important-list li .text {
+                color: #4A5F73;
+                font-size: 14px;
+            }
+
+            /* === BUTTONS === */
+            .btn {
+                display: inline-block;
+                padding: 12px 25px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                text-align: center;
+                transition: all 0.3s ease;
+                margin: 8px 5px;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+            }
+            .btn-primary:hover {
+                box-shadow: 0 8px 25px rgba(93, 118, 139, 0.4);
+                transform: translateY(-2px);
+            }
+            .btn-success {
+                background: linear-gradient(135deg, #28A745, #20a94d);
+                color: white;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            .btn-warning {
+                background: linear-gradient(135deg, #FFC107, #e0a800);
+                color: white;
+                box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+            }
+            .btn-danger {
+                background: linear-gradient(135deg, #DC3545, #c82333);
+                color: white;
+                box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            }
+
+            /* === RESERVATION ACTIONS === */
+            .reservation-actions {
+                text-align: center;
+                margin: 30px 0;
+                padding: 25px;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 12px;
+                border: 1px solid #dee2e6;
+            }
+            .reservation-actions h3 {
+                color: #5D768B;
+                margin-bottom: 20px;
+                font-size: 18px;
+            }
+            .action-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin: 20px 0;
+                flex-wrap: wrap;
+            }
+
+            /* === LOCATION DETAILS === */
+            .location-details {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.6) 100%);
+                border: 2px solid #17A2B8;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .location-details h3 {
+                color: #17A2B8;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .location-info {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            }
+            .location-item {
+                display: flex;
+                align-items: flex-start;
+                padding: 12px;
+                background: rgba(23, 162, 184, 0.1);
+                border-radius: 8px;
+                border-left: 3px solid #17A2B8;
+            }
+            .location-item .icon {
+                margin-right: 12px;
+                font-size: 16px;
+                color: #17A2B8;
+                min-width: 20px;
+            }
+            .location-item .content {
+                color: #4A5F73;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+            .location-item .content strong {
+                display: block;
+                margin-bottom: 2px;
+                font-size: 15px;
+                color: #5D768B;
+            }
+
+            /* === CONTACT SECTION === */
+            .contact-section {
+                background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.15) 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+                border: 1px solid #28A745;
+            }
+            .contact-section h3 {
+                color: #28A745;
+                margin-top: 0;
+                margin-bottom: 15px;
+            }
+            .contact-section p {
+                margin: 10px 0;
+                color: #4A5F73;
+            }
+            .contact-links {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin: 25px 0;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .contact-link {
+                display: inline-block;
+                padding: 10px 20px;
+                background: linear-gradient(135deg, #28A745, #20a94d);
+                color: white;
+                text-decoration: none;
+                border-radius: 25px;
+                font-weight: 600;
+                font-size: 14px;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                transition: all 0.3s ease;
+                margin: 5px 10px;
+            }
+            .contact-link:hover {
+                box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+                transform: translateY(-2px);
+            }
+
+            /* === FOOTER === */
+            .footer {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .footer-content {
+                margin-bottom: 20px;
+            }
+            .footer-content h3 {
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+            .footer-content p {
+                margin: 5px 0;
+                opacity: 0.9;
+                font-size: 14px;
+            }
+            .footer-logo {
+                margin: 20px 0;
+                display: flex;
+                justify-content: center;
+            }
+            .footer-logo img {
+                width: 250px;
+                height: auto;
+            }
+
+            /* === RESPONSIVE === */
+            @media (max-width: 600px) {
+                .email-container {
+                    margin: 10px;
+                    border-radius: 10px;
+                }
+                .header, .content {
+                    padding: 25px 20px;
+                }
+                .reservation-details, .next-class-info, .important-info, .location-details, .contact-section {
+                    padding: 20px 15px;
+                }
+                .detail-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 5px;
+                }
+                .detail-value {
+                    text-align: left;
+                    margin-top: 5px;
+                }
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                    width: 100%;
+                    text-align: center;
+                }
+                .action-buttons {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                .contact-links {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                .header h1 {
+                    font-size: 22px;
+                }
+                .greeting-message h2 {
+                    font-size: 20px;
+                }
+                .location-item {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+                .location-item .icon {
+                    margin-bottom: 5px;
+                }
+            }
+
+            /* === FORCE STYLES === */
+            .header-content { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                text-align: center !important; 
+            }
+            .logo-container { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                margin-bottom: 20px !important;
+            }
+            .header .logo { 
+                background: none !important; 
+                background-color: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .header .logo img { 
+                background: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;">
+                    <!-- Logo primero (arriba) -->
+                    <div class="logo-container" style="display: flex !important; flex-direction: column !important; align-items: center !important; margin-bottom: 20px !important;">
+                        <div class="logo" style="background: none !important; background-color: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important;">
+                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100% !important; height: auto !important; background: transparent !important; border: none !important; box-shadow: none !important;">
+                        </div>
+                    </div>
+                    <!-- Texto debajo del logo -->
+                    <div style="text-align: center !important;">
+                        <h1 style="text-align: center !important; margin: 10px 0 !important;">¡Reserva Confirmada!</h1>
+                        <div class="reservation-badge" style="text-align: center !important; display: inline-block !important; margin: 15px auto !important;">✅ Lista para disfrutar</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Mensaje de saludo -->
+                <div class="greeting-message">
+                    <h2>¡Hola {{ usuario.first_name|default:usuario.username }}! 👋</h2>
+                    <p>Tu reserva ha sido confirmada exitosamente. <span class="highlight">¡Nos vemos en Pilates Gravity!</span></p>
+                    <p style="font-size: 16px; color: #16a34a; margin: 15px 0;">
+                        <strong>🎯 Tu lugar está garantizado</strong>
+                    </p>
+                    <div class="reservation-number"># {{ reserva.numero_reserva }}</div>
+                </div>
+
+                <!-- Detalles de la reserva -->
+                <div class="reservation-details">
+                    <h3>📅 Detalles de tu Reserva</h3>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">🏃‍♀️ Tipo de Clase:</span>
+                        <span class="detail-value class-highlight">{{ reserva.clase.get_nombre_display }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">📍 Sede:</span>
+                        <span class="detail-value">{{ reserva.clase.get_direccion_display }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">📅 Día:</span>
+                        <span class="detail-value">{{ reserva.clase.dia }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">⏰ Horario:</span>
+                        <span class="detail-value">{{ reserva.clase.horario|time:"H:i" }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">📊 Estado:</span>
+                        <span class="detail-value" style="color: #16a34a;">Activa</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">📋 Tipo de Reserva:</span>
+                        <span class="detail-value">Recurrente (cada {{ reserva.clase.dia }})</span>
+                    </div>
+                </div>
+
+                <!-- Próxima clase -->
+                <div class="next-class-info">
+                    <h3>🗓️ Tu Próxima Clase</h3>
+                    <div class="next-class-date">{{ proxima_clase_info }}</div>
+                    {% if es_hoy %}
+                    <div class="countdown">🚨 ¡Es HOY! - No te la pierdas</div>
+                    {% elif es_manana %}
+                    <div class="countdown">⏳ ¡Es MAÑANA!</div>
+                    {% else %}
+                    <div class="countdown">⏳ {{ dias_restantes }} días restantes</div>
+                    {% endif %}
+                    <p style="margin: 15px 0; color: #92400e;">
+                        <strong>Recuerda:</strong> Esta es una reserva recurrente, asistirás cada {{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }} hasta que decidas cancelarla.
+                    </p>
+                </div>
+
+                <!-- Información importante -->
+                <div class="important-info">
+                    <h3>⚠️ Información Importante</h3>
+                    <ul class="important-list">
+                        <li>
+                            <span class="icon">⏰</span>
+                            <span class="text"><strong>Llega 10 minutos antes</strong> para prepararte y aprovechar al máximo tu clase</span>
+                        </li>
+                        <li>
+                            <span class="icon">👟</span>
+                            <span class="text"><strong>Usa ropa cómoda</strong> y trae una botella de agua para mantenerte hidratado</span>
+                        </li>
+                        <li>
+                            <span class="icon">🚫</span>
+                            <span class="text"><strong>Para cancelar:</strong> Debes hacerlo con al menos 12 horas de anticipación</span>
+                        </li>
+                        <li>
+                            <span class="icon">📱</span>
+                            <span class="text"><strong>¿Consultas?</strong> Contáctanos por WhatsApp al +54 342 511 4448</span>
+                        </li>
+                        {% if reserva.clase.cupo_maximo %}
+                        <li>
+                            <span class="icon">👥</span>
+                            <span class="text"><strong>Grupo pequeño:</strong> Máximo {{ reserva.clase.cupo_maximo }} personas para atención personalizada</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Acciones de reserva -->
+                <div class="reservation-actions">
+                    <h3>🎯 Gestionar tu Reserva</h3>
+                    <p>¿Necesitas hacer cambios en tu reserva?</p>
+                    <div class="action-buttons">
+                        <a href="{% url 'gravity:detalle_reserva' reserva.numero_reserva %}" class="btn btn-primary">👀 Ver Reserva</a>
+                        <a href="{% url 'gravity:modificar_reserva' reserva.numero_reserva %}" class="btn btn-warning">✏️ Modificar</a>
+                        <a href="{% url 'gravity:cancelar_reserva' reserva.numero_reserva %}" class="btn btn-danger">❌ Cancelar</a>
+                    </div>
+                    <p style="font-size: 13px; color: #6b7280; margin-top: 15px;">
+                        * Los cambios deben realizarse con 12 horas de anticipación mínimo
+                    </p>
+                </div>
+
+                <!-- Detalles de la ubicación -->
+                <div class="location-details">
+                    <h3>📍 {{ reserva.clase.get_direccion_display }}</h3>
+                    <div class="location-info">
+                        {% if reserva.clase.direccion == 'sede_principal' %}
+                        <div class="location-item">
+                            <span class="icon">📍</span>
+                            <div class="content">
+                                <strong>Dirección</strong>
+                                La Rioja 3044, Capital, Santa Fe
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="location-item">
+                            <span class="icon">📍</span>
+                            <div class="content">
+                                <strong>Dirección</strong>
+                                9 de julio 3698, Capital, Santa Fe
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="location-item">
+                            <span class="icon">📞</span>
+                            <div class="content">
+                                <strong>Teléfono directo</strong>
+                                +54 342 511 4448
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">🕘</span>
+                            <div class="content">
+                                <strong>Horario de atención</strong>
+                                Lunes a Viernes: 8:00 - 20:00<br>
+                                Sábados: 9:00 - 13:00
+                            </div>
+                        </div>
+                        <div class="location-item">
+                            <span class="icon">🚗</span>
+                            <div class="content">
+                                <strong>Estacionamiento</strong>
+                                Disponible en la zona (gratuito)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Otras acciones -->
+                <div style="text-align: center; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 12px;">
+                    <h3 style="color: #5D768B; margin-bottom: 20px;">🎯 Otras Acciones</h3>
+                    <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                        <a href="{% url 'gravity:reservar_clase' %}" class="btn btn-success">➕ Nueva Reserva</a>
+                        <a href="{% url 'gravity:clases_disponibles' %}" class="btn btn-primary">🔍 Ver Horarios</a>
+                        <a href="{% url 'accounts:mis_reservas' %}" class="btn btn-primary">📋 Mis Reservas</a>
+                    </div>
+                </div>
+
+                <!-- Sección de contacto -->
+                <div class="contact-section">
+                    <h3>💬 ¿Tienes alguna consulta?</h3>
+                    <p>Nuestro equipo está aquí para ayudarte:</p>
+                    
+                    <div class="contact-links">
+                        <a href="https://wa.me/543425114448" class="contact-link">💬 WhatsApp</a>
+                        <a href="mailto:pilatesgravity@gmail.com" class="contact-link">✉️ Email</a>
+                        <a href="{{ domain_url }}" class="contact-link">🌐 Sitio Web</a>
+                    </div>
+                    
+                    <p style="font-size: 14px; margin-top: 15px; opacity: 0.8;">
+                        <strong>Horarios de atención:</strong><br>
+                        Lunes a Viernes 8:00 - 20:00 | Sábados 9:00 - 13:00
+                    </p>
+                </div>
+
+                <!-- Mensaje final -->
+                <div style="text-align: center; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; border: 1px solid #fb923c;">
+                    <h3 style="color: #ea580c; margin-bottom: 15px;">🙏 ¡Te esperamos!</h3>
+                    <p style="color: #9a3412; margin: 0;">Estamos emocionados de verte en tu próxima clase. ¡Prepárate para una experiencia increíble!</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-content">
+                    <h3>Con cariño y bienestar,</h3>
+                    <p>💙 El equipo completo de Pilates Gravity</p>
+                    <p>🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe</p>
+                    <p>🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe</p>
+                    <p>📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448</p>
+                    <p style="font-size: 12px; margin-top: 15px; opacity: 0.8;">
+                        Este es un comprobante automático de tu reserva en Pilates Gravity.<br>
+                        Conserva este email como confirmación de tu clase.
+                    </p>
+                </div>
+                
+                <div class="footer-logo">
+                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto;">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

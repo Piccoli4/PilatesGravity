@@ -1,0 +1,1 @@
+¡Pago confirmado! ✅ Gracias {{ usuario.first_name|default:usuario.username }} - Pilates Gravity

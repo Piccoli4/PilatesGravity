@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>¡Hasta Pronto! - Pilates Gravity</title>
+        {% load static %}
+        <style type="text/css">
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #f0f2f5 0%, #e8ecf0 100%);
+                margin: 0;
+                padding: 0;
+            }
+            .email-container {
+                max-width: 650px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 15px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(93, 118, 139, 0.15);
+            }
+            
+            /* === HEADER === */
+            .header {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 40px 30px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .header::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+                background-size: 25px 25px;
+                animation: float 25s ease-in-out infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-15px) rotate(180deg); }
+            }
+            .header-content {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            .header .logo {
+                width: 80px;
+                height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: none;
+                background-color: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .header .logo img {
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                width: 100%;
+                height: auto;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 26px;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            }
+            .farewell-badge {
+                background: linear-gradient(135deg, #C8B39B, #a79178);
+                color: white;
+                padding: 8px 20px;
+                border-radius: 25px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: bold;
+                font-size: 14px;
+                box-shadow: 0 2px 8px rgba(200, 179, 155, 0.3);
+            }
+            
+            /* === CONTENT === */
+            .content {
+                padding: 40px 30px;
+            }
+            .farewell-message {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.8) 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin-bottom: 30px;
+                border-left: 5px solid #5D768B;
+                text-align: center;
+            }
+            .farewell-message h2 {
+                color: #5D768B;
+                margin-bottom: 15px;
+                font-size: 24px;
+            }
+            .farewell-message p {
+                margin: 15px 0;
+                color: #4A5F73;
+                font-size: 16px;
+                line-height: 1.7;
+            }
+            .highlight {
+                background: linear-gradient(135deg, #C8B39B, #a79178);
+                color: white;
+                padding: 3px 8px;
+                border-radius: 5px;
+                font-weight: 600;
+            }
+            .heart-emoji {
+                font-size: 24px;
+                color: #C8B39B;
+                margin: 0 5px;
+                display: inline-block;
+                animation: heartbeat 2s ease-in-out infinite;
+            }
+            @keyframes heartbeat {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+
+            /* === STATS SUMMARY === */
+            .stats-summary {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.6) 100%);
+                border: 2px solid #17A2B8;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .stats-summary h3 {
+                color: #17A2B8;
+                margin-top: 0;
+                margin-bottom: 20px;
+                font-size: 18px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 15px;
+                margin: 20px 0;
+            }
+            .stat-card {
+                background: rgba(23, 162, 184, 0.1);
+                border-radius: 10px;
+                padding: 15px;
+                text-align: center;
+                border: 1px solid rgba(23, 162, 184, 0.3);
+            }
+            .stat-number {
+                font-size: 24px;
+                font-weight: bold;
+                color: #17A2B8;
+                display: block;
+                margin-bottom: 5px;
+            }
+            .stat-label {
+                font-size: 12px;
+                color: #5D768B;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            /* === MEMORIES SECTION === */
+            .memories-section {
+                background: linear-gradient(135deg, rgba(200, 179, 155, 0.1) 0%, rgba(200, 179, 155, 0.2) 100%);
+                border: 2px solid #C8B39B;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .memories-section h3 {
+                color: #a79178;
+                margin-top: 0;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: center;
+            }
+            .memory-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            .memory-item {
+                display: flex;
+                align-items: flex-start;
+                margin: 15px 0;
+                padding: 12px;
+                background: rgba(200, 179, 155, 0.15);
+                border-radius: 8px;
+                border-left: 3px solid #C8B39B;
+            }
+            .memory-item .icon {
+                margin-right: 12px;
+                font-size: 18px;
+                color: #C8B39B;
+                min-width: 25px;
+            }
+            .memory-item .text {
+                color: #4A5F73;
+                font-size: 15px;
+                line-height: 1.5;
+            }
+            .memory-item .text strong {
+                color: #5D768B;
+                display: block;
+                margin-bottom: 3px;
+            }
+
+            /* === RETURN INVITATION === */
+            .return-invitation {
+                background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.15) 100%);
+                border: 2px solid #28A745;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .return-invitation h3 {
+                color: #28A745;
+                margin-top: 0;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .return-invitation p {
+                margin: 15px 0;
+                color: #4A5F73;
+                font-size: 16px;
+                line-height: 1.7;
+            }
+            .welcome-back-offer {
+                background: linear-gradient(135deg, #28A745, #20a94d);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                display: inline-block;
+                margin: 20px 0;
+                font-weight: bold;
+                font-size: 16px;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+                border: none;
+                text-decoration: none;
+            }
+            .offer-details {
+                background: rgba(40, 167, 69, 0.1);
+                border-radius: 8px;
+                padding: 12px;
+                margin: 15px 0;
+                border-left: 3px solid #28A745;
+            }
+            .offer-details p {
+                margin: 5px 0;
+                font-size: 14px;
+                color: #28A745;
+            }
+
+            /* === BUTTONS === */
+            .btn {
+                display: inline-block;
+                padding: 12px 25px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                text-align: center;
+                transition: all 0.3s ease;
+                margin: 8px 5px;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+            }
+            .btn-success {
+                background: linear-gradient(135deg, #28A745, #20a94d);
+                color: white;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            .btn-secondary {
+                background: linear-gradient(135deg, #C8B39B, #a79178);
+                color: white;
+                box-shadow: 0 4px 15px rgba(200, 179, 155, 0.3);
+            }
+
+            /* === FEEDBACK SECTION === */
+            .feedback-section {
+                background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.15) 100%);
+                border: 2px solid #FFC107;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .feedback-section h3 {
+                color: #FFC107;
+                margin-top: 0;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+            .feedback-section p {
+                margin: 15px 0;
+                color: #4A5F73;
+                font-size: 15px;
+            }
+            .feedback-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin: 20px 0;
+                flex-wrap: wrap;
+            }
+
+            /* === CONTACT SECTION === */
+            .contact-section {
+                background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.8) 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+                border: 1px solid #C8B39B;
+            }
+            .contact-section h3 {
+                color: #5D768B;
+                margin-top: 0;
+                margin-bottom: 15px;
+            }
+            .contact-section p {
+                margin: 10px 0;
+                color: #4A5F73;
+                font-size: 14px;
+            }
+            .contact-links {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin: 25px 0;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .contact-link {
+                display: inline-block;
+                padding: 10px 20px;
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                text-decoration: none;
+                border-radius: 25px;
+                font-weight: 600;
+                font-size: 14px;
+                box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+                transition: all 0.3s ease;
+                margin: 5px 10px;
+            }
+            .contact-link:hover {
+                box-shadow: 0 8px 25px rgba(93, 118, 139, 0.4);
+                transform: translateY(-2px);
+            }
+
+            /* === FOOTER === */
+            .footer {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .footer-content {
+                margin-bottom: 20px;
+            }
+            .footer-content h3 {
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+            .footer-content p {
+                margin: 5px 0;
+                opacity: 0.9;
+                font-size: 14px;
+            }
+            .footer-logo {
+                margin: 20px 0;
+                display: flex;
+                justify-content: center;
+            }
+            .footer-logo img {
+                width: 250px;
+                height: auto;
+            }
+
+            /* === RESPONSIVE === */
+            @media (max-width: 600px) {
+                .email-container {
+                    margin: 10px;
+                    border-radius: 10px;
+                }
+                .header, .content {
+                    padding: 25px 20px;
+                }
+                .stats-summary, .memories-section, .return-invitation, .feedback-section, .contact-section {
+                    padding: 20px 15px;
+                }
+                .stats-grid {
+                    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                    gap: 10px;
+                }
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                    width: 100%;
+                    text-align: center;
+                }
+                .feedback-buttons {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                .contact-links {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                .header h1 {
+                    font-size: 22px;
+                }
+                .farewell-message h2 {
+                    font-size: 20px;
+                }
+                .memory-item {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+                .memory-item .icon {
+                    margin-bottom: 5px;
+                }
+            }
+
+            /* === FORCE STYLES === */
+            .header-content { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                text-align: center !important; 
+            }
+            .logo-container { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                margin-bottom: 20px !important;
+            }
+            .header .logo { 
+                background: none !important; 
+                background-color: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .header .logo img { 
+                background: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;">
+                    <!-- Logo primero (arriba) -->
+                    <div class="logo-container" style="display: flex !important; flex-direction: column !important; align-items: center !important; margin-bottom: 20px !important;">
+                        <div class="logo" style="background: none !important; background-color: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important;">
+                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100% !important; height: auto !important; background: transparent !important; border: none !important; box-shadow: none !important;">
+                        </div>
+                    </div>
+                    <!-- Texto debajo del logo -->
+                    <div style="text-align: center !important;">
+                        <h1 style="text-align: center !important; margin: 10px 0 !important;">¡Hasta Pronto!</h1>
+                        <div class="farewell-badge" style="text-align: center !important; display: inline-block !important; margin: 15px auto !important;">👋 Te extrañaremos mucho</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Mensaje de despedida -->
+                <div class="farewell-message">
+                    <h2>¡Querido {{ usuario.first_name|default:usuario.username }}! <span class="heart-emoji">💜</span></h2>
+                    <p>Tu cuenta en <span class="highlight">Pilates Gravity</span> ha sido eliminada como solicitaste. Aunque estamos tristes de verte partir, <strong>respetamos completamente tu decisión</strong>.</p>
+                    <p style="font-size: 18px; margin: 20px 0;">
+                        <strong>Gracias por haber sido parte de nuestra familia de Pilates.</strong> <span class="heart-emoji">💙</span>
+                    </p>
+                    <p>Tu bienestar y felicidad son lo más importante para nosotros, y esperamos que hayas encontrado valor en cada momento que compartimos juntos.</p>
+                </div>
+
+                <!-- Resumen de estadísticas -->
+                <div class="stats-summary">
+                    <h3>📊 Tu Viaje con Nosotros</h3>
+                    <p style="text-align: center; color: #0c4a6e; margin-bottom: 20px;">Estos son los hermosos recuerdos que creamos juntos:</p>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-number">{{ tiempo_en_estudio|default:"--" }}</span>
+                            <span class="stat-label">Tiempo con nosotros</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">{{ total_reservas|default:"0" }}</span>
+                            <span class="stat-label">Clases reservadas</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">{{ reservas_activas|default:"0" }}</span>
+                            <span class="stat-label">Reservas activas</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">2</span>
+                            <span class="stat-label">Sedes visitadas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recuerdos especiales -->
+                <div class="memories-section">
+                    <h3>✨ Momentos Especiales</h3>
+                    <ul class="memory-list">
+                        <li class="memory-item">
+                            <span class="icon">🎯</span>
+                            <div class="text">
+                                <strong>Tu primera clase</strong>
+                                {% if fecha_primera_clase %}
+                                El {{ fecha_primera_clase|date:"d/m/Y" }} comenzaste tu viaje de bienestar con nosotros.
+                                {% else %}
+                                Comenzaste tu viaje de bienestar con nosotros con mucha energía.
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="memory-item">
+                            <span class="icon">💪</span>
+                            <div class="text">
+                                <strong>Tu dedicación</strong>
+                                {% if total_reservas > 10 %}
+                                Con {{ total_reservas }} clases reservadas, demostraste un compromiso increíble con tu salud.
+                                {% elif total_reservas > 5 %}
+                                Tu constancia en {{ total_reservas }} clases fue inspiradora para todo el equipo.
+                                {% else %}
+                                Cada clase que tomaste fue valiosa y apreciamos tu tiempo con nosotros.
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="memory-item">
+                            <span class="icon">🏢</span>
+                            <div class="text">
+                                <strong>Nuestras sedes</strong>
+                                Esperamos que hayas disfrutado la experiencia única en cada una de nuestras ubicaciones.
+                            </div>
+                        </li>
+                        <li class="memory-item">
+                            <span class="icon">👥</span>
+                            <div class="text">
+                                <strong>Nuestra comunidad</strong>
+                                Fuiste parte de una familia que siempre recordará tu energía positiva y dedicación.
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Invitación a regresar -->
+                <div class="return-invitation">
+                    <h3>🚪 Nuestra Puerta Siempre Está Abierta</h3>
+                    <p><strong>¡Sabemos que a veces la vida nos lleva por caminos diferentes!</strong> Si en algún momento decides que quieres volver a ser parte de la familia Pilates Gravity, estaremos aquí con los brazos abiertos.</p>
+                    
+                    <div class="welcome-back-offer">
+                        🎁 Oferta Especial de Regreso
+                    </div>
+                    
+                    <div class="offer-details">
+                        <p><strong>✨ 20% de descuento en tu primer mes</strong></p>
+                        <p><strong>🎯 Clase de prueba gratuita</strong></p>
+                        <p><strong>👥 Evaluación personalizada sin costo</strong></p>
+                        <p style="font-size: 12px; margin-top: 10px; opacity: 0.8;">* Válido por 12 meses desde la fecha de este email</p>
+                    </div>
+                    
+                    <p style="margin-top: 20px;">Solo menciona que eres un <span class="highlight">"amigo que regresa"</span> y aplicaremos automáticamente estos beneficios especiales.</p>
+                </div>
+
+                <!-- Sección de feedback -->
+                <div class="feedback-section">
+                    <h3>💭 Tu Opinión Nos Importa</h3>
+                    <p>Nos encantaría saber qué podríamos mejorar para futuros miembros de nuestra familia. Tu feedback es invaluable para nosotros.</p>
+                    
+                    <div class="feedback-buttons">
+                        <a href="https://wa.me/543425114448?text=Hola! Quería dar feedback sobre mi experiencia en Pilates Gravity" class="btn btn-primary">💬 WhatsApp Feedback</a>
+                        <a href="mailto:pilatesgravity@gmail.com?subject=Feedback de {{ usuario.first_name|default:usuario.username }}&body=Hola! Quería compartir mi experiencia..." class="btn btn-secondary">✉️ Email Feedback</a>
+                    </div>
+                    
+                    <p style="font-size: 13px; margin-top: 15px; opacity: 0.8;">
+                        Tu opinión nos ayuda a crecer y brindar una mejor experiencia a toda nuestra comunidad
+                    </p>
+                </div>
+
+                <!-- Datos eliminados -->
+                <div style="background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.15) 100%); border: 1px solid #DC3545; border-radius: 12px; padding: 20px; margin: 25px 0; text-align: center;">
+                    <h3 style="color: #DC3545; margin-top: 0; margin-bottom: 15px;">🔒 Información sobre tus Datos</h3>
+                    <p style="color: #4A5F73; font-size: 14px; margin: 10px 0;">
+                        <strong>Tu privacidad es nuestra prioridad:</strong> Todos tus datos personales, reservas e historial han sido eliminados permanentemente de nuestros sistemas según tu solicitud.
+                    </p>
+                    <p style="color: #4A5F73; font-size: 14px; margin: 10px 0;">
+                        Si tienes alguna consulta sobre el tratamiento de tus datos, no dudes en contactarnos.
+                    </p>
+                </div>
+
+                <!-- Sección de contacto final -->
+                <div class="contact-section">
+                    <h3>📞 ¿Alguna Consulta Final?</h3>
+                    <p>Si tienes alguna pregunta o necesitas asistencia con algo relacionado a tu cuenta eliminada:</p>
+                    
+                    <div class="contact-links">
+                        <a href="https://wa.me/543425114448" class="contact-link">💬 WhatsApp</a>
+                        <a href="mailto:pilatesgravity@gmail.com" class="contact-link">✉️ Email</a>
+                        <a href="{{ domain_url }}" class="contact-link">🌐 Sitio Web</a>
+                    </div>
+                    
+                    <p style="font-size: 12px; margin-top: 15px;">
+                        <strong>Horarios de atención:</strong><br>
+                        Lunes a Viernes 8:00 - 20:00 | Sábados 9:00 - 13:00
+                    </p>
+                </div>
+
+                <!-- Mensaje final emotivo -->
+                <div style="text-align: center; margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #F8EFE5 0%, rgba(248, 239, 229, 0.9) 100%); border-radius: 12px; border: 2px solid #C8B39B;">
+                    <h3 style="color: #5D768B; margin-bottom: 20px;">🙏 Un Último Mensaje del Corazón</h3>
+                    <p style="color: #4A5F73; margin: 15px 0; font-size: 16px; line-height: 1.8;">
+                        Aunque nos despedimos hoy, <strong>siempre serás parte de la historia de Pilates Gravity</strong>. Tu energía, tu sonrisa y tu dedicación han dejado una huella imborrable en nuestros corazones.
+                    </p>
+                    <p style="color: #5D768B; margin: 15px 0; font-size: 17px; font-weight: 600;">
+                        Te deseamos lo mejor en todos tus futuros proyectos y aventuras. <span class="heart-emoji">💙</span>
+                    </p>
+                    <p style="color: #4A5F73; margin: 15px 0; font-style: italic;">
+                        "El bienestar no es un destino, sino un viaje. Gracias por haber viajado con nosotros."
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-content">
+                    <h3>Con amor y gratitud infinita,</h3>
+                    <p>💙 Todo el equipo de Pilates Gravity</p>
+                    <p>👩‍🏫 Nicolás, Camila y todo nuestro equipo de instructores</p>
+                    <p>🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe</p>
+                    <p>🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe</p>
+                    <p>📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448</p>
+                    <p style="font-size: 12px; margin-top: 15px; opacity: 0.8;">
+                        "Namaste. La luz en nosotros honra la luz en ti." 🙏<br>
+                        Hasta que nos volvamos a encontrar...
+                    </p>
+                </div>
+                
+                <div class="footer-logo">
+                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto;">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,590 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>¡Bienvenid@ a Pilates Gravity!</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
+            .email-container {
+                background-color: white;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                text-align: center;
+                padding: 40px 20px;
+            }
+            .header-content {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column !important; /* Forzar columna siempre */
+                text-align: center;
+            }
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                object-fit: contain;
+                margin-bottom: 15px;
+                flex-direction: column !important; /* Forzar columna siempre */
+            }
+            .header .logo {
+                width: 100px;
+                height: 100px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: none !important; /* Forzar sin fondo */
+                background-color: transparent !important; /* Forzar transparente */
+                border-radius: 0 !important; /* Sin bordes redondeados */
+                padding: 0 !important; /* Sin padding que cause fondos */
+                box-shadow: none !important; /* Sin sombras */
+                margin: 0 !important; /* Sin márgenes que afecten layout */
+            }
+            .header .logo img {
+                background: transparent !important; /* Imagen transparente */
+                border-radius: 0 !important;
+                box-shadow: none !important;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            }
+            .header p {
+                margin: 5px 0 0 0;
+                opacity: 0.95;
+                font-size: 18px;
+            }
+            .welcome-badge {
+                background: linear-gradient(135deg, #C8B39B, #a79178);
+                color: #333;
+                padding: 10px 25px;
+                border-radius: 25px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: bold;
+                font-size: 16px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            }
+            /* Media queries para móvil - reforzar configuración */
+            @media (max-width: 600px) {
+                .logo-container {
+                    flex-direction: column !important;
+                }
+                .header .logo {
+                    margin-right: 0 !important;
+                    margin-bottom: 10px !important;
+                    background: transparent !important;
+                    background-color: transparent !important;
+                    border-radius: 0 !important;
+                    box-shadow: none !important;
+                }
+            }
+            /* Media queries para desktop - forzar mismo layout */
+            @media (min-width: 601px) {
+                .logo-container {
+                    flex-direction: column !important;
+                }
+                .header .logo {
+                    margin-right: 0 !important;
+                    margin-bottom: 15px !important;
+                    background: transparent !important;
+                    background-color: transparent !important;
+                    border-radius: 0 !important;
+                    box-shadow: none !important;
+                }
+                .header-content {
+                    flex-direction: column !important;
+                }
+            }
+            .content {
+                padding: 40px 30px;
+            }
+            .welcome-message {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+                border: 1px solid #dee2e6;
+            }
+            .welcome-message h2 {
+                color: #5D768B;
+                margin-top: 0;
+                font-size: 24px;
+            }
+            .info-card {
+                background-color: #f8f9fa;
+                border-radius: 10px;
+                padding: 25px;
+                margin: 25px 0;
+                border-left: 5px solid #5D768B;
+            }
+            .info-card h3 {
+                margin-top: 0;
+                color: #5D768B;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .credentials-box {
+                background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                border: 2px solid #28a745;
+                border-radius: 10px;
+                padding: 20px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .credentials-box h3 {
+                color: #155724;
+                margin-top: 0;
+                font-size: 18px;
+            }
+            .credential-item {
+                background-color: white;
+                border-radius: 8px;
+                padding: 12px;
+                margin: 10px 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .credential-label {
+                font-weight: bold;
+                color: #495057;
+            }
+            .credential-value {
+                font-family: 'Courier New', monospace;
+                background-color: #f8f9fa;
+                padding: 4px 8px;
+                border-radius: 4px;
+                color: #28a745;
+                font-weight: bold;
+            }
+            .steps-container {
+                background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+                border: 1px solid #ffeaa7;
+                border-radius: 10px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .steps-container h3 {
+                color: #856404;
+                margin-top: 0;
+            }
+            .step {
+                display: flex;
+                align-items: flex-start;
+                margin: 15px 0;
+                padding: 10px 0;
+            }
+            .step-number {
+                background-color: #5D768B;
+                color: white;
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                margin-right: 15px;
+                flex-shrink: 0;
+            }
+            .step-content {
+                flex: 1;
+            }
+            .step-title {
+                font-weight: bold;
+                color: #5D768B;
+                margin-bottom: 5px;
+            }
+            .btn {
+                display: inline-block;
+                padding: 15px 30px;
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                text-decoration: none;
+                border-radius: 8px;
+                margin: 10px 5px;
+                font-weight: bold;
+                text-align: center;
+                font-size: 16px;
+                box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+                transition: all 0.3s ease;
+            }
+            .btn:hover {
+                box-shadow: 0 8px 25px rgba(93, 118, 139, 0.4);
+                transform: translateY(-2px);
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            }
+            .btn-success {
+                background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            .locations-container {
+                display: flex;
+                gap: 20px;
+                margin: 25px 0;
+                flex-wrap: wrap;
+            }
+            .location-card {
+                flex: 1;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 10px;
+                padding: 20px;
+                border: 1px solid #dee2e6;
+                min-width: 250px;
+            }
+            .location-card h4 {
+                color: #5D768B;
+                margin-top: 0;
+                font-size: 16px;
+                border-bottom: 2px solid #C8B39B;
+                padding-bottom: 8px;
+            }
+            .location-detail {
+                margin: 8px 0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .contact-info {
+                background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+                border: 1px solid #bee5eb;
+                border-radius: 10px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+            }
+            .contact-info h3 {
+                color: #0c5460;
+                margin-top: 0;
+            }
+            .social-links {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin: 20px 0;
+                flex-wrap: wrap;
+            }
+            .social-link {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: white;
+                color: #5D768B;
+                text-decoration: none;
+                border-radius: 25px;
+                border: 2px solid #5D768B;
+                font-weight: 500;
+                transition: all 0.3s ease;
+            }
+            .social-link:hover {
+                background-color: #5D768B;
+                color: white;
+            }
+            .footer {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                text-align: center;
+                padding: 30px 20px;
+                font-size: 14px;
+            }
+            .footer a {
+                color: #C8B39B;
+                text-decoration: none;
+            }
+            .footer a:hover {
+                text-decoration: underline;
+            }
+            .highlight {
+                background: linear-gradient(120deg, #C8B39B 0%, #a79178 100%);
+                color: #333;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            @media (max-width: 600px) {
+                .content {
+                    padding: 25px 20px;
+                }
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                    width: 100%;
+                    text-align: center;
+                }
+                .locations-container {
+                    flex-direction: column;
+                }
+                .location-card {
+                    min-width: auto;
+                }
+                .social-links {
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .credentials-box {
+                    padding: 15px;
+                }
+                .credential-item {
+                    flex-direction: column;
+                    gap: 8px;
+                    text-align: center;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content">
+                    <div class="logo-container">
+                        <div class="logo">
+                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100%; height: auto;">
+                        </div>
+                    </div>
+                    <div>
+                        <h1>¡Bienvenid@ a Pilates Gravity!</h1>
+                        <div class="welcome-badge">✨ Tu viaje hacia el bienestar comienza aquí ✨</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <div class="welcome-message">
+                    <h2>¡Hola {{ usuario.first_name|default:usuario.username }}! 👋</h2>
+                    <p>Es un placer darte la bienvenida a la <span class="highlight">familia Pilates Gravity</span>. 
+                    Estamos emocionados de acompañarte en tu camino hacia una vida más saludable y equilibrada.</p>
+                    <p style="font-size: 18px; color: #5D768B; margin: 20px 0;">
+                        <strong>🎯 Tu bienestar es nuestra prioridad</strong>
+                    </p>
+                </div>
+
+                {% if is_admin_created %}
+                <!-- Credenciales si fue creado por admin -->
+                <div class="credentials-box">
+                    <h3>🔐 Tus credenciales de acceso</h3>
+                    <p>Nuestro equipo ha creado tu cuenta. Aquí tienes tus datos de acceso:</p>
+                    <div class="credential-item">
+                        <span class="credential-label">Usuario:</span>
+                        <span class="credential-value">{{ usuario.username }}</span>
+                    </div>
+                    <div class="credential-item">
+                        <span class="credential-label">Contraseña temporal:</span>
+                        <span class="credential-value">{{ password_temporal|default:"(establecida por el administrador)" }}</span>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 14px; color: #856404;">
+                        <strong>💡 Recomendación:</strong> Cambia tu contraseña después de iniciar sesión por primera vez.
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- Próximos pasos -->
+                <div class="steps-container">
+                    <h3>🚀 Tus próximos pasos</h3>
+                    {% if is_admin_created %}
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Inicia sesión en tu cuenta</div>
+                            <p>Usa tus credenciales para acceder a tu panel personal.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Completa tu perfil</div>
+                            <p>Añade información adicional como nivel de experiencia y preferencias.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Selecciona tu plan</div>
+                            <p>Elige el plan que mejor se adapte a tu rutina semanal.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <div class="step-title">¡Reserva tu primera clase!</div>
+                            <p>Explora nuestros horarios y reserva cuando te sea más conveniente.</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Completa tu perfil</div>
+                            <p>Añade información adicional para personalizar tu experiencia.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Selecciona tu plan</div>
+                            <p>Elige el plan que mejor se adapte a tu rutina semanal.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">¡Reserva tu primera clase!</div>
+                            <p>Explora nuestros horarios y reserva cuando te sea más conveniente.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Información sobre nuestras sedes -->
+                <div class="info-card">
+                    <h3>📍 Nuestras Sedes</h3>
+                    <div class="locations-container">
+                        <div class="location-card">
+                            <h4>🏢 Sede Principal</h4>
+                            <div class="location-detail">
+                                <span>📍</span>
+                                <span>La Rioja 3044, Capital, Santa Fe</span>
+                            </div>
+                            <div class="location-detail">
+                                <span>📞</span>
+                                <span>+54 342 511 4448</span>
+                            </div>
+                        </div>
+                        <div class="location-card">
+                            <h4>🏢 Sede 2</h4>
+                            <div class="location-detail">
+                                <span>📍</span>
+                                <span>9 de julio 3698, Capital, Santa Fe</span>
+                            </div>
+                            <div class="location-detail">
+                                <span>📞</span>
+                                <span>+54 342 511 4448</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="text-align: center; margin-top: 20px; color: #666;">
+                        <strong>🕐 Horarios:</strong> Lunes a Viernes 8:00 - 20:00 | Sábados 9:00 - 13:00
+                    </p>
+                </div>
+
+                <!-- Botones de acción -->
+                <div style="text-align: center; margin: 40px 0;">
+                    <a href="{{ domain_url }}{% url 'accounts:login' %}" class="btn">
+                        🔑 Iniciar Sesión
+                    </a>
+                    <a href="{{ domain_url }}{% url 'gravity:clases_disponibles' %}" class="btn btn-primary">
+                        📅 Ver Clases Disponibles
+                    </a>
+                    <a href="{{ domain_url }}{% url 'gravity:reservar_clase' %}" class="btn btn-success">
+                        🎯 Reservar Mi Clase
+                    </a>
+                </div>
+
+                <!-- Información de beneficios -->
+                <div class="info-card">
+                    <h3>💎 ¿Qué te espera en Pilates Gravity?</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+                        <div style="text-align: center; padding: 15px;">
+                            <div style="font-size: 30px; margin-bottom: 10px;">🧘‍♀️</div>
+                            <strong>Clases personalizadas</strong>
+                            <p style="margin: 5px 0; font-size: 14px;">Reformer y Cadillac adaptados a tu nivel</p>
+                        </div>
+                        <div style="text-align: center; padding: 15px;">
+                            <div style="font-size: 30px; margin-bottom: 10px;">👨‍🏫</div>
+                            <strong>Instructores expertos</strong>
+                            <p style="margin: 5px 0; font-size: 14px;">Profesionales certificados y apasionados</p>
+                        </div>
+                        <div style="text-align: center; padding: 15px;">
+                            <div style="font-size: 30px; margin-bottom: 10px;">🏢</div>
+                            <strong>2 sedes modernas</strong>
+                            <p style="margin: 5px 0; font-size: 14px;">Equipamiento de primera calidad</p>
+                        </div>
+                        <div style="text-align: center; padding: 15px;">
+                            <div style="font-size: 30px; margin-bottom: 10px;">⏰</div>
+                            <strong>Horarios flexibles</strong>
+                            <p style="margin: 5px 0; font-size: 14px;">Mañana, tarde y especiales</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de contacto -->
+                <div class="contact-info">
+                    <h3>📞 ¿Tienes alguna pregunta?</h3>
+                    <p>Nuestro equipo está aquí para ayudarte en cada paso del camino:</p>
+                    <p>
+                        <strong>WhatsApp:</strong> +54 342 511 4448<br>
+                        <strong>Email:</strong> pilatesgravity@gmail.com<br>
+                        <strong>Horarios de atención:</strong> Lunes a Viernes 8:00 - 20:00
+                    </p>
+
+                    <div class="social-links">
+                        <a href="https://wa.me/543425114448" class="social-link">💬 WhatsApp</a>
+                        <a href="mailto:pilatesgravity@gmail.com" class="social-link">✉️ Email</a>
+                        <a href="{{ domain_url }}" class="social-link">🌐 Sitio Web</a>
+                    </div>
+                </div>
+
+                <div style="text-align: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; padding: 25px; margin: 30px 0;">
+                    <p style="font-size: 18px; color: #5D768B; margin: 0;">
+                        <strong>🌟 ¡Estamos emocionados de tenerte con nosotros!</strong>
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #666;">
+                        Tu transformación hacia una vida más saludable comienza hoy.
+                    </p>
+                </div>
+                
+                <p style="text-align: center;">
+                    Con cariño y bienestar,<br>
+                    <strong>💙 El equipo completo de Pilates Gravity</strong>
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>
+                    <strong>Pilates Gravity</strong><br>
+                    🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe<br>
+                    🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe<br>
+                    📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
+                </p>
+                <p style="margin: 20px 0;">
+                    <a href="{{ domain_url }}">Visitar nuestro sitio web</a> | 
+                    <a href="{{ domain_url }}{% url 'accounts:profile' %}">Mi cuenta</a> |
+                    <a href="{{ domain_url }}{% url 'gravity:clases_disponibles' %}">Clases disponibles</a>
+                </p>
+                <p style="font-size: 12px; opacity: 0.8;">
+                    Has recibido este email porque te has registrado en Pilates Gravity.<br>
+                    Si tienes alguna consulta, no dudes en contactarnos.
+                </p>
+                <div style="margin-top: 20px;">
+                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto;">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

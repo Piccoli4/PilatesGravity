@@ -16,7 +16,12 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import transaction
 import logging
-from .email_service import enviar_email_cancelacion_reserva
+from .email_service import (
+    enviar_email_cancelacion_reserva,
+    enviar_email_confirmacion_reserva_detallado,
+    enviar_email_recordatorio_clase_completo,
+    enviar_email_confirmacion_pago_completo
+)
 from .models import PlanPago, EstadoPagoCliente, RegistroPago
 from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
 from django.db.models import Sum, Count, Q
@@ -75,6 +80,14 @@ def reservar_clase(request):
                     usuario=request.user,
                     clase=clase
                 )
+
+                # 📧 ENVIAR EMAIL DE CONFIRMACIÓN DE RESERVA
+                try:
+                    email_enviado = enviar_email_confirmacion_reserva_detallado(reserva)
+                    if email_enviado:
+                        logger.info(f"Email de confirmación enviado para reserva {reserva.numero_reserva}")
+                except Exception as e:
+                    logger.error(f"Error enviando email de confirmación: {str(e)}")
                 
                 # Recalcular reservas después de crear
                 nuevas_reservas = Reserva.contar_reservas_usuario_semana(request.user)
@@ -1742,6 +1755,14 @@ def admin_pagos_registrar_pago(request, cliente_id):
             pago.cliente = cliente
             pago.registrado_por = request.user
             pago.save()
+
+            # 📧 ENVIAR EMAIL DE CONFIRMACIÓN DE PAGO
+            try:
+                email_enviado = enviar_email_confirmacion_pago_completo(pago)
+                if email_enviado:
+                    logger.info(f"Email de pago enviado para pago ID {pago.id}")
+            except Exception as e:
+                logger.error(f"Error enviando email de pago: {str(e)}")
             
             # NO recalcular desde cero, sino actualizar acumulativamente
             estado_pago.actualizar_saldo_automatico()

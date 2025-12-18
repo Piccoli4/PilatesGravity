@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Confirmación de Pago - Pilates Gravity</title>
+        {% load static %}
+        <style type="text/css">
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #f0f2f5 0%, #e8ecf0 100%);
+                margin: 0;
+                padding: 0;
+            }
+            .email-container {
+                max-width: 650px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 15px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(93, 118, 139, 0.15);
+            }
+            
+            /* === HEADER === */
+            .header {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 40px 30px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .header::before {
+                content: '';
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+                background-size: 30px 30px;
+                animation: float 20s ease-in-out infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                50% { transform: translateY(-10px) rotate(180deg); }
+            }
+            .header-content {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            .header .logo {
+                width: 80px;
+                height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: none;
+                background-color: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .header .logo img {
+                background: transparent;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                width: 100%;
+                height: auto;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 26px;
+                font-weight: 600;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                text-align: center;
+            }
+            .payment-badge {
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 8px 20px;
+                border-radius: 25px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: bold;
+                font-size: 14px;
+                box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+            }
+            
+            /* === CONTENT === */
+            .content {
+                padding: 40px 30px;
+            }
+            .greeting-message {
+                background: linear-gradient(135deg, #e8f5e8 0%, #f0fdf4 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin-bottom: 30px;
+                border-left: 5px solid #28a745;
+            }
+            .greeting-message h2 {
+                color: #28a745;
+                margin-bottom: 15px;
+                font-size: 22px;
+            }
+            .greeting-message p {
+                margin: 10px 0;
+                color: #2d5016;
+            }
+            .highlight {
+                background: linear-gradient(135deg, #C8B39B, #a79178);
+                color: white;
+                padding: 3px 8px;
+                border-radius: 5px;
+                font-weight: 600;
+            }
+
+            /* === PAYMENT DETAILS === */
+            .payment-details {
+                background: linear-gradient(135deg, #fff9c4 0%, #fef3c7 100%);
+                border: 2px solid #f59e0b;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .payment-details h3 {
+                color: #92400e;
+                margin-top: 0;
+                margin-bottom: 20px;
+                font-size: 18px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .payment-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 0;
+                border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+                margin-bottom: 10px;
+            }
+            .payment-row:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+                font-weight: bold;
+                background: rgba(245, 158, 11, 0.1);
+                padding: 15px 12px;
+                border-radius: 8px;
+                margin-top: 15px;
+            }
+            .payment-label {
+                font-weight: 500;
+                color: #92400e;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .payment-value {
+                font-weight: bold;
+                color: #451a03;
+            }
+            .amount-highlight {
+                font-size: 20px;
+                color: #16a34a;
+            }
+
+            /* === ACCOUNT STATUS === */
+            .account-status {
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+                border: 1px solid #3b82f6;
+                border-radius: 12px;
+                padding: 25px;
+                margin: 25px 0;
+            }
+            .account-status h3 {
+                color: #1e40af;
+                margin-top: 0;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .balance-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 0;
+                border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+                margin-bottom: 10px;
+            }
+            .balance-row:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+            .balance-positive {
+                color: #16a34a;
+                font-weight: bold;
+            }
+            .balance-zero {
+                color: #6b7280;
+                font-weight: bold;
+            }
+            .balance-negative {
+                color: #dc2626;
+                font-weight: bold;
+            }
+
+            /* === INVOICE INFO === */
+            .invoice-info {
+                background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+                border-radius: 10px;
+                padding: 20px;
+                margin: 25px 0;
+                border-left: 4px solid #5D768B;
+            }
+            .invoice-info h3 {
+                color: #5D768B;
+                margin-top: 0;
+                margin-bottom: 15px;
+                font-size: 16px;
+            }
+            .invoice-row {
+                display: flex;
+                justify-content: space-between;
+                margin: 8px 0;
+                font-size: 14px;
+            }
+            .invoice-number {
+                font-weight: bold;
+                color: #374151;
+                font-family: 'Courier New', monospace;
+                background: rgba(93, 118, 139, 0.1);
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            /* === BUTTONS === */
+            .btn {
+                display: inline-block;
+                padding: 12px 25px;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                text-align: center;
+                transition: all 0.3s ease;
+                margin: 8px 5px;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            .btn-primary {
+                background: linear-gradient(135deg, #5D768B, #4A5F73);
+                color: white;
+                box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
+            }
+            .btn-primary:hover {
+                box-shadow: 0 8px 25px rgba(93, 118, 139, 0.4);
+                transform: translateY(-2px);
+            }
+            .btn-success {
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            }
+            .btn-info {
+                background: linear-gradient(135deg, #17a2b8, #138496);
+                color: white;
+                box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+            }
+
+            /* === ACTION BUTTONS === */
+            .action-buttons {
+                text-align: center;
+                margin: 30px 0;
+                padding: 20px;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 12px;
+            }
+            .action-buttons h3 {
+                color: #5D768B;
+                margin-bottom: 20px;
+                font-size: 18px;
+            }
+
+            /* === LOCATIONS === */
+            .locations-section {
+                margin: 30px 0;
+                padding: 25px;
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border-radius: 12px;
+                border: 1px solid #0ea5e9;
+            }
+            .locations-section h3 {
+                color: #0c4a6e;
+                margin-top: 0;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+            .locations-container {
+                display: flex;
+                gap: 30px;
+                margin: 25px 0;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .location-card {
+                flex: 1;
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                border-radius: 10px;
+                padding: 20px;
+                border: 1px solid #cbd5e1;
+                min-width: 250px;
+                max-width: 300px;
+            }
+            .location-card h4 {
+                color: #0c4a6e;
+                margin-top: 0;
+                font-size: 16px;
+                border-bottom: 2px solid #0ea5e9;
+                padding-bottom: 8px;
+                margin-bottom: 15px;
+            }
+            .location-detail {
+                display: flex;
+                align-items: flex-start;
+                margin: 8px 0;
+                font-size: 14px;
+                color: #475569;
+            }
+            .location-detail span:first-child {
+                margin-right: 8px;
+                font-weight: bold;
+            }
+
+            /* === CONTACT SECTION === */
+            .contact-section {
+                background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+                border-radius: 12px;
+                padding: 25px;
+                margin: 30px 0;
+                text-align: center;
+                border: 1px solid #22c55e;
+            }
+            .contact-section h3 {
+                color: #15803d;
+                margin-top: 0;
+                margin-bottom: 15px;
+            }
+            .contact-section p {
+                margin: 10px 0;
+                color: #166534;
+            }
+            .social-links {
+                display: flex;
+                justify-content: center;
+                gap: 25px;
+                margin: 25px 0;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .social-link {
+                display: inline-block;
+                padding: 10px 20px;
+                background: linear-gradient(135deg, #22c55e, #16a34a);
+                color: white;
+                text-decoration: none;
+                border-radius: 25px;
+                font-weight: 600;
+                font-size: 14px;
+                box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+                transition: all 0.3s ease;
+                margin: 5px 10px;
+            }
+            .social-link:hover {
+                box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+                transform: translateY(-2px);
+            }
+
+            /* === FOOTER === */
+            .footer {
+                background: linear-gradient(135deg, #5D768B 0%, #4A5F73 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .footer-content {
+                margin-bottom: 20px;
+            }
+            .footer-content h3 {
+                margin-bottom: 15px;
+                font-size: 18px;
+            }
+            .footer-content p {
+                margin: 5px 0;
+                opacity: 0.9;
+                font-size: 14px;
+            }
+            .footer-logo {
+                margin: 20px 0;
+                display: flex;
+                justify-content: center;
+            }
+            .footer-logo img {
+                width: 250px;
+                height: auto;
+            }
+
+            /* === RESPONSIVE === */
+            @media (max-width: 600px) {
+                .email-container {
+                    margin: 10px;
+                    border-radius: 10px;
+                }
+                .header, .content {
+                    padding: 25px 20px;
+                }
+                .payment-details, .account-status, .locations-section, .contact-section {
+                    padding: 20px 15px;
+                }
+                .payment-row, .balance-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 5px;
+                }
+                .btn {
+                    display: block;
+                    margin: 10px 0;
+                    width: 100%;
+                    text-align: center;
+                }
+                .locations-container {
+                    flex-direction: column;
+                    gap: 20px;
+                }
+                .location-card {
+                    min-width: auto;
+                    max-width: none;
+                }
+                .social-links {
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                .action-buttons {
+                    padding: 15px;
+                }
+                .header h1 {
+                    font-size: 22px;
+                }
+                .greeting-message h2 {
+                    font-size: 20px;
+                }
+            }
+
+            /* === FORCE STYLES === */
+            .header-content { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                text-align: center !important; 
+            }
+            .logo-container { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                align-items: center !important; 
+                margin-bottom: 20px !important;
+            }
+            .header .logo { 
+                background: none !important; 
+                background-color: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .header .logo img { 
+                background: transparent !important; 
+                border: none !important;
+                border-radius: 0 !important; 
+                box-shadow: none !important;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;">
+                    <!-- Logo primero (arriba) -->
+                    <div class="logo-container" style="display: flex !important; flex-direction: column !important; align-items: center !important; margin-bottom: 20px !important;">
+                        <div class="logo" style="background: none !important; background-color: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important;">
+                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100% !important; height: auto !important; background: transparent !important; border: none !important; box-shadow: none !important;">
+                        </div>
+                    </div>
+                    <!-- Texto debajo del logo -->
+                    <div style="text-align: center !important;">
+                        <h1 style="text-align: center !important; margin: 10px 0 !important;">¡Pago Confirmado!</h1>
+                        <div class="payment-badge" style="text-align: center !important; display: inline-block !important; margin: 15px auto !important;">✅ Transacción exitosa</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Mensaje de saludo -->
+                <div class="greeting-message">
+                    <h2>¡Hola {{ usuario.first_name|default:usuario.username }}! 👋</h2>
+                    <p>Hemos recibido tu pago exitosamente. <span class="highlight">¡Gracias por confiar en Pilates Gravity!</span></p>
+                    <p style="font-size: 16px; color: #28a745; margin: 15px 0;">
+                        <strong>💚 Tu pago ha sido procesado y confirmado</strong>
+                    </p>
+                </div>
+
+                <!-- Detalles del pago -->
+                <div class="payment-details">
+                    <h3>💰 Detalles del Pago</h3>
+                    
+                    <div class="payment-row">
+                        <span class="payment-label">📅 Fecha:</span>
+                        <span class="payment-value">{{ pago.fecha_pago|date:"d/m/Y" }}</span>
+                    </div>
+                    
+                    <div class="payment-row">
+                        <span class="payment-label">💳 Método:</span>
+                        <span class="payment-value">{{ pago.get_tipo_pago_display }}</span>
+                    </div>
+                    
+                    <div class="payment-row">
+                        <span class="payment-label">📝 Concepto:</span>
+                        <span class="payment-value">{{ pago.concepto }}</span>
+                    </div>
+                    
+                    {% if pago.comprobante %}
+                    <div class="payment-row">
+                        <span class="payment-label">🧾 Comprobante:</span>
+                        <span class="payment-value">{{ pago.comprobante }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="payment-row">
+                        <span class="payment-label">💵 Monto Total:</span>
+                        <span class="payment-value amount-highlight">${{ pago.monto }}</span>
+                    </div>
+                </div>
+
+                <!-- Estado de cuenta -->
+                <div class="account-status">
+                    <h3>📊 Tu Estado de Cuenta</h3>
+                    
+                    <div class="balance-row">
+                        <span>Saldo anterior:</span>
+                        <span>${{ saldo_anterior }}</span>
+                    </div>
+                    
+                    <div class="balance-row">
+                        <span>Pago recibido:</span>
+                        <span class="balance-positive">+${{ pago.monto }}</span>
+                    </div>
+                    
+                    <div class="balance-row">
+                        <span><strong>Saldo actual:</strong></span>
+                        <span class="{% if saldo_actual > 0 %}balance-positive{% elif saldo_actual == 0 %}balance-zero{% else %}balance-negative{% endif %}">
+                            ${{ saldo_actual }}
+                            {% if saldo_actual > 0 %}
+                                (Crédito a favor)
+                            {% elif saldo_actual == 0 %}
+                                (Al día)
+                            {% else %}
+                                (Pendiente)
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if plan_actual %}
+                    <div class="balance-row">
+                        <span>Plan actual:</span>
+                        <span>{{ plan_actual.nombre }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Información de factura -->
+                <div class="invoice-info">
+                    <h3>🧾 Información de Recibo</h3>
+                    <div class="invoice-row">
+                        <span>Número de recibo:</span>
+                        <span class="invoice-number">#{{ pago.id|stringformat:"06d" }}</span>
+                    </div>
+                    <div class="invoice-row">
+                        <span>Fecha de emisión:</span>
+                        <span>{{ pago.fecha_registro|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="invoice-row">
+                        <span>Estado:</span>
+                        <span style="color: #16a34a; font-weight: bold;">{{ pago.get_estado_display }}</span>
+                    </div>
+                    {% if pago.registrado_por %}
+                    <div class="invoice-row">
+                        <span>Registrado por:</span>
+                        <span>{{ pago.registrado_por.get_full_name|default:pago.registrado_por.username }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="action-buttons">
+                    <h3>🎯 ¿Qué puedes hacer ahora?</h3>
+                    <a href="{% url 'accounts:profile' %}" class="btn btn-primary">👤 Ver Mi Perfil</a>
+                    <a href="{% url 'gravity:reservar_clase' %}" class="btn btn-success">📅 Reservar Clase</a>
+                    <a href="{% url 'gravity:clases_disponibles' %}" class="btn btn-info">🔍 Ver Horarios</a>
+                </div>
+
+                <!-- Secciones de sedes -->
+                <div class="locations-section">
+                    <h3>📍 Visítanos en Nuestras Sedes</h3>
+                    <div class="locations-container">
+                        <div class="location-card">
+                            <h4>🏢 Sede Principal</h4>
+                            <div class="location-detail">
+                                <span>📍</span>
+                                <span>La Rioja 3044, Capital, Santa Fe</span>
+                            </div>
+                            <div class="location-detail">
+                                <span>📞</span>
+                                <span>+54 342 511 4448</span>
+                            </div>
+                            <div class="location-detail">
+                                <span>🕘</span>
+                                <span>Lunes a Viernes 8:00 - 20:00</span>
+                            </div>
+                        </div>
+                        <div class="location-card">
+                            <h4>🏢 Sede 2</h4>
+                            <div class="location-detail">
+                                <span>📍</span>
+                                <span>9 de julio 3698, Capital, Santa Fe</span>
+                            </div>
+                            <div class="location-detail">
+                                <span>📞</span>
+                                <span>+54 342 511 4448</span>
+                            </div>
+                            <div class="location-detail">
+                                <span>🕘</span>
+                                <span>Lunes a Viernes 8:00 - 20:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de contacto -->
+                <div class="contact-section">
+                    <h3>💬 ¿Tienes alguna consulta sobre tu pago?</h3>
+                    <p>Nuestro equipo está aquí para ayudarte con cualquier pregunta:</p>
+                    <p>
+                        <strong>WhatsApp:</strong> +54 342 511 4448<br>
+                        <strong>Email:</strong> pilatesgravity@gmail.com<br>
+                        <strong>Horarios de atención:</strong> Lunes a Viernes 8:00 - 20:00
+                    </p>
+
+                    <div class="social-links">
+                        <a href="https://wa.me/543425114448" class="social-link">💬 WhatsApp</a>
+                        <a href="mailto:pilatesgravity@gmail.com" class="social-link">✉️ Email</a>
+                        <a href="{{ domain_url }}" class="social-link">🌐 Sitio Web</a>
+                    </div>
+                </div>
+
+                <!-- Mensaje final -->
+                <div style="text-align: center; margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%); border-radius: 12px; border: 1px solid #fb923c;">
+                    <h3 style="color: #ea580c; margin-bottom: 15px;">🙏 ¡Gracias por elegirnos!</h3>
+                    <p style="color: #9a3412; margin: 0;">Tu confianza y compromiso con tu bienestar nos motiva a seguir brindándote el mejor servicio.</p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div class="footer-content">
+                    <h3>Con cariño y bienestar,</h3>
+                    <p>💙 El equipo completo de Pilates Gravity</p>
+                    <p>🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe</p>
+                    <p>🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe</p>
+                    <p>📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448</p>
+                    <p style="font-size: 12px; margin-top: 15px; opacity: 0.8;">
+                        Este es un comprobante automático generado por el sistema de Pilates Gravity.<br>
+                        Conserva este email como comprobante de tu pago.
+                    </p>
+                </div>
+                
+                <div class="footer-logo">
+                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto;">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

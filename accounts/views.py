@@ -2,13 +2,17 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import (
-    LoginView, PasswordResetView, PasswordResetDoneView, 
+    LoginView, PasswordResetView, PasswordResetDoneView,
     PasswordResetConfirmView, PasswordResetCompleteView
 )
 from django.contrib import messages
 from django.urls import reverse_lazy
 from .forms import SignUpForm, ProfileUpdateForm, UserProfileForm, CambiarPasswordForm, CustomPasswordResetForm, CustomSetPasswordForm
 from .models import UserProfile
+from gravity.email_service import enviar_email_bienvenida_completo, enviar_email_despedida_completo
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CustomLoginView(LoginView):
     """Vista personalizada para el login"""
@@ -44,14 +48,22 @@ def signup(request):
             user = form.save()
             username = form.cleaned_data.get('username')
             messages.success(
-                request, 
+                request,
                 f'¡Cuenta creada exitosamente para {username}! '
                 'Ya puedes empezar a reservar tus clases de Pilates.'
             )
             
             # Iniciar sesión automáticamente después del registro
             login(request, user)
-            return redirect('accounts:profile_complete')  # Redirigir a completar perfil
+
+            # 📧 ENVIAR EMAIL DE BIENVENIDA
+            try:
+                enviar_email_bienvenida_completo(user)
+                logger.info(f"Email de bienvenida enviado a {user.username}")
+            except Exception as e:
+                logger.error(f"Error enviando email de bienvenida: {str(e)}")
+            
+            return redirect('accounts:profile_complete') # Redirigir a completar perfil
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario')
     else:
@@ -152,7 +164,7 @@ def mis_reservas(request):
     return render(request, 'accounts/mis_reservas.html', context)
 
 @login_required
-def eliminar_cuenta(request): 
+def eliminar_cuenta(request):
     """Vista para que el usuario pueda eliminar su propia cuenta"""
     if request.method == 'POST':
         # Confirmar eliminación
@@ -163,12 +175,19 @@ def eliminar_cuenta(request):
             # Obtener estadísticas antes de eliminar
             total_reservas = request.user.reservas_pilates.count()
             reservas_activas = request.user.reservas_pilates.filter(activa=True).count()
+
+            # 📧 ENVIAR EMAIL DE DESPEDIDA
+            try:
+                enviar_email_despedida_completo(request.user)
+                logger.info(f"Email de despedida enviado a {request.user.username}")
+            except Exception as e:
+                logger.error(f"Error enviando email de despedida: {str(e)}")
             
             # Eliminar usuario (esto eliminará automáticamente todas las reservas por CASCADE)
             request.user.delete()
             
             messages.success(
-                request, 
+                request,
                 f'La cuenta de {username} ha sido eliminada exitosamente junto con {total_reservas} reservas. '
                 '¡Esperamos verte de nuevo pronto!'
             )
