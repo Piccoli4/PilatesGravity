@@ -8,7 +8,7 @@ from .views import (
     sedes_disponibles,
     # IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_clases_lista, admin_clase_crear, admin_clase_editar,
-    admin_clase_eliminar, admin_clase_detalle,
+    admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
     admin_reservas_lista, admin_reserva_cancelar, admin_usuarios_lista, admin_usuario_detalle,
     admin_usuario_toggle_status, admin_usuario_add_note, admin_agregar_usuario,
     admin_reportes,
@@ -59,6 +59,7 @@ urlpatterns = [
     path('admin-panel/clases/<int:clase_id>/editar/', admin_clase_editar, name='admin_clase_editar'),
     path('admin-panel/clases/<int:clase_id>/eliminar/', admin_clase_eliminar, name='admin_clase_eliminar'),
     path('admin-panel/clases/<int:clase_id>/detalle/', admin_clase_detalle, name='admin_clase_detalle'),
+    path('admin-panel/clases/<int:clase_id>/toggle-status/', admin_clase_toggle_status, name='admin_clase_toggle_status'),
     
     # Gestión de reservas
     path('admin-panel/reservas/', admin_reservas_lista, name='admin_reservas_lista'),

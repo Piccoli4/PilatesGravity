@@ -40,7 +40,7 @@ class Clase(models.Model):
     # Opciones de direcciones/sedes
     DIRECCIONES = [
         ('sede_principal', 'Sede Principal - La Rioja 3044'),
-        ('sede_2', 'Sede 2 - 9 de julio 3698'),
+        ('sede_2', 'Sede 2 - 9 de julio 3696'),
     ]
 
     tipo = models.CharField(
@@ -136,7 +136,7 @@ class Clase(models.Model):
         """Devuelve una versión corta de la dirección para mostrar"""
         direcciones_cortas = {
             'sede_principal': 'La Rioja 3044',
-            'sede_2': '9 de julio 3698'
+            'sede_2': '9 de julio 3696'
         }
         return direcciones_cortas.get(self.direccion, self.get_direccion_display())
 

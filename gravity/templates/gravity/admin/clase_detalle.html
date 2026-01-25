@@ -603,7 +603,44 @@
             const className = '{{ clase.get_tipo_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
             
             if (confirm('¿Estás seguro de que quieres ' + action + ' la clase "' + className + '"?')) {
-                window.location.href = '{% url "gravity:admin_clase_editar" clase.id %}';
+                
+                // Obtener CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+                const url = '{% url "gravity:admin_clase_toggle_status" clase.id %}';
+                
+                // Realizar petición AJAX
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            if (data.success) {
+                                alert(data.message);
+                                location.reload();
+                            } else {
+                                alert('Error: ' + data.error);
+                            }
+                        } catch (e) {
+                            alert('Error al procesar la respuesta del servidor.');
+                        }
+                    } else {
+                        alert('Error HTTP: ' + xhr.status);
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    alert('Error de conexión.');
+                };
+                
+                const data = JSON.stringify({
+                    activate: newStatus
+                });
+                
+                xhr.send(data);
             }
         }
 

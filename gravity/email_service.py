@@ -352,7 +352,7 @@ def crear_email_bienvenida_texto_plano(context):
 
         NUESTRAS SEDES:
         • Sede Principal: La Rioja 3044, Capital, Santa Fe
-        • Sede 2: 9 de julio 3698, Capital, Santa Fe
+        • Sede 2: 9 de julio 3696, Capital, Santa Fe
 
         CONTACTO:
         📞 +54 342 511 4448
@@ -510,7 +510,7 @@ def crear_email_pago_texto_plano(context):
         🕘 Lunes a Viernes 8:00 - 20:00
 
         🏢 Sede 2
-        📍 9 de julio 3698, Capital, Santa Fe
+        📍 9 de julio 3696, Capital, Santa Fe
         📞 +54 342 511 4448
         🕘 Lunes a Viernes 8:00 - 20:00
 
@@ -528,7 +528,7 @@ def crear_email_pago_texto_plano(context):
         💙 El equipo completo de Pilates Gravity
 
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe
+        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
         📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
 
         Este es un comprobante automático. Conserva este email como
@@ -742,7 +742,7 @@ def crear_email_reserva_texto_plano(context):
         👩‍🏫 Nicolás, Camila y nuestros instructores
 
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe
+        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
         📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
     """
     
@@ -1036,7 +1036,7 @@ def crear_email_recordatorio_texto_plano(context):
     else:
         texto_plano += f"""
             🏢 Sede 2
-            📍 9 de julio 3698, Capital, Santa Fe
+            📍 9 de julio 3696, Capital, Santa Fe
             📞 +54 342 511 4448
             🚗 Estacionamiento disponible en la zona
             🚌 Acceso por 9 de julio - Buena conectividad
@@ -1088,7 +1088,7 @@ def crear_email_recordatorio_texto_plano(context):
         💙 Todo el equipo de Pilates Gravity
         👩‍🏫 Nicolás, Camila y nuestros increíbles instructores
 
-        🏢 Sede Principal: La Rioja 3044 | Sede 2: 9 de julio 3698
+        🏢 Sede Principal: La Rioja 3044 | Sede 2: 9 de julio 3696
         📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
 
         Este recordatorio se envía automáticamente 24h antes de tu clase.
@@ -1192,7 +1192,7 @@ def crear_email_despedida_texto_plano(context):
 
         NUESTRAS PUERTAS SIEMPRE ESTARÁN ABIERTAS:
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe
+        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
         📱 WhatsApp: +54 342 511 4448
 
         MENSAJE DEL EQUIPO:
@@ -1502,11 +1502,11 @@ def crear_email_recordatorio_completo_texto_plano(context):
         """
     else:
         texto_plano += """
-            🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe
+            🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
             📞 Teléfono: +54 342 511 4448
             🕐 Horarios: Lun-Vie 8:00-20:00 | Sáb 9:00-13:00
             🚗 Estacionamiento disponible en la zona
-            🗺️ Google Maps: https://maps.google.com/?q=9+de+julio+3698+Santa+Fe
+            🗺️ Google Maps: https://maps.google.com/?q=9+de+julio+3696+Santa+Fe
         """
 
     fecha_limite = context.get('fecha_limite_cancelacion')
@@ -1549,7 +1549,7 @@ def crear_email_recordatorio_completo_texto_plano(context):
         📧 pilatesgravity@gmail.com
         📱 +54 342 511 4448
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3698, Capital, Santa Fe
+        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
 
         Este es un recordatorio automático. Si no deseas recibir estos emails,
         puedes desactivar las notificaciones en tu perfil.
@@ -1966,7 +1966,7 @@ def enviar_email_bienvenida(usuario, is_admin_created=False, password_temporal=N
 
             Nuestras sedes:
             • Sede Principal: La Rioja 3044, Capital, Santa Fe
-            • Sede 2: 9 de julio 3698, Capital, Santa Fe
+            • Sede 2: 9 de julio 3696, Capital, Santa Fe
             • Teléfono: +54 342 511 4448
             • Email: pilatesgravity@gmail.com
 

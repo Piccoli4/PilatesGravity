@@ -42,7 +42,7 @@ class UserProfile(models.Model):
     SEDES_PREFERENCIA = [
         ('cualquiera', 'Cualquier sede'),
         ('sede_principal', 'Sede Principal - La Rioja 3044'),
-        ('sede_2', 'Sede 2 - 9 de julio 3698'),
+        ('sede_2', 'Sede 2 - 9 de julio 3696'),
     ]
     
     sede_preferida = models.CharField(
@@ -113,7 +113,7 @@ class UserProfile(models.Model):
     notificar_clases_sede_2 = models.BooleanField(
         default=True,
         verbose_name="Notificar sobre clases en Sede 2",
-        help_text="Recibir notificaciones sobre nuevas clases en 9 de julio 3698"
+        help_text="Recibir notificaciones sobre nuevas clases en 9 de julio 3696"
     )
     
     # Información del estudio
@@ -129,7 +129,7 @@ class UserProfile(models.Model):
         max_length=20,
         choices=[
             ('sede_principal', 'Sede Principal - La Rioja 3044'),
-            ('sede_2', 'Sede 2 - 9 de julio 3698'),
+            ('sede_2', 'Sede 2 - 9 de julio 3696'),
         ],
         blank=True,
         null=True,
@@ -414,7 +414,7 @@ class ConfiguracionEstudio(models.Model):
         blank=True,
         default="+54 342 511 4448",
         verbose_name="Teléfono Sede 2",
-        help_text="Teléfono específico de 9 de julio 3698"
+        help_text="Teléfono específico de 9 de julio 3696"
     )
     
     sede_2_email = models.EmailField(
@@ -540,7 +540,7 @@ class ConfiguracionEstudio(models.Model):
         if self.sede_principal_activa:
             sedes.append(('sede_principal', 'Sede Principal - La Rioja 3044'))
         if self.sede_2_activa:
-            sedes.append(('sede_2', 'Sede 2 - 9 de julio 3698'))
+            sedes.append(('sede_2', 'Sede 2 - 9 de julio 3696'))
         return sedes
 
     def get_telefono_sede(self, sede):
@@ -606,8 +606,8 @@ class ConfiguracionEstudio(models.Model):
             }
         elif sede == 'sede_2':
             return {
-                'nombre': 'Sede 2 - 9 de julio 3698',
-                'direccion': '9 de julio 3698',
+                'nombre': 'Sede 2 - 9 de julio 3696',
+                'direccion': '9 de julio 3696',
                 'telefono': self.get_telefono_sede('sede_2'),
                 'email': self.get_email_sede('sede_2'),
                 'horarios': self.get_horarios_sede('sede_2'),

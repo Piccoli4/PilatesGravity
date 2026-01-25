@@ -1035,6 +1035,38 @@ def admin_clase_detalle(request, clase_id):
     
     return render(request, 'gravity/admin/clase_detalle.html', context)
 
+@admin_required
+def admin_clase_toggle_status(request, clase_id):
+    """
+    Activa o desactiva una clase (AJAX)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    
+    clase = get_object_or_404(Clase, id=clase_id)
+    
+    try:
+        import json
+        data = json.loads(request.body)
+        activate = data.get('activate', False)
+        
+        # Cambiar el estado de la clase
+        clase.activa = activate
+        clase.save()
+        
+        action = 'activada' if activate else 'desactivada'
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Clase {clase.get_nombre_display()} - {clase.dia} {clase.horario.strftime("%H:%M")} {action} exitosamente.',
+            'new_status': clase.activa
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 # ==============================================================================
 # GESTIÓN DE RESERVAS
 # ==============================================================================

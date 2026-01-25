@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('tipo', models.CharField(choices=[('Reformer', 'Pilates Reformer'), ('Cadillac', 'Pilates Cadillac'), ('Especial', 'Clase Especial')], max_length=20, verbose_name='Tipo de clase')),
                 ('nombre_personalizado', models.CharField(blank=True, help_text="Solo para clases especiales. Ejemplo: 'Pilates Prenatal', 'Clase de Rehabilitación', etc.", max_length=100, null=True, verbose_name='Nombre personalizado')),
-                ('direccion', models.CharField(choices=[('sede_principal', 'Sede Principal - La Rioja 3044'), ('sede_2', 'Sede 2 - 9 de julio 3698')], default='sede_principal', help_text='Ubicación donde se dicta la clase', max_length=20, verbose_name='Sede')),
+                ('direccion', models.CharField(choices=[('sede_principal', 'Sede Principal - La Rioja 3044'), ('sede_2', 'Sede 2 - 9 de julio 3696')], default='sede_principal', help_text='Ubicación donde se dicta la clase', max_length=20, verbose_name='Sede')),
                 ('dia', models.CharField(choices=[('Lunes', 'Lunes'), ('Martes', 'Martes'), ('Miércoles', 'Miércoles'), ('Jueves', 'Jueves'), ('Viernes', 'Viernes'), ('Sábado', 'Sábado')], max_length=10, verbose_name='Día de la semana')),
                 ('horario', models.TimeField(verbose_name='Horario')),
                 ('cupo_maximo', models.PositiveIntegerField(default=10, verbose_name='Cupo máximo')),
