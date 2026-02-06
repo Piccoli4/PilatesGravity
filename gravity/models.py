@@ -483,6 +483,26 @@ class PlanPago(models.Model):
         verbose_name="Última modificación"
     )
 
+    tipo_plan = models.CharField(
+        max_length=20,
+        choices=[
+            ('mensual', 'Plan Mensual Recurrente'),
+            ('por_clase', 'Pago por Clase Individual'),
+        ],
+        default='mensual',
+        verbose_name="Tipo de plan",
+        help_text="Mensual: plan recurrente con pago mensual adelantado. Por clase: pago individual por clase."
+    )
+
+    precio_por_clase = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Precio por clase individual",
+        help_text="Solo para planes tipo 'por_clase'. Precio que se cobra por cada clase individual."
+    )
+
     def clean(self):
         """Validaciones personalizadas del modelo"""
         super().clean()
@@ -504,10 +524,34 @@ class PlanPago(models.Model):
                 raise ValidationError({
                     'clases_por_semana': f'Ya existe un plan activo para {self.clases_por_semana} clases por semana.'
                 })
+        # Validaciones para planes por clase
+        if self.tipo_plan == 'por_clase':
+            if not self.precio_por_clase or self.precio_por_clase <= 0:
+                raise ValidationError({
+                    'precio_por_clase': 'Los planes por clase deben tener un precio por clase válido.'
+                })
+            # Para planes por clase, las clases_por_semana debe ser 0 o None
+            if self.clases_por_semana != 0:
+                raise ValidationError({
+                    'clases_por_semana': 'Los planes por clase no deben tener límite de clases por semana.'
+                })
+        
+        # Validaciones para planes mensuales
+        if self.tipo_plan == 'mensual':
+            if self.precio_por_clase is not None:
+                raise ValidationError({
+                    'precio_por_clase': 'Los planes mensuales no deben tener precio por clase.'
+                })
+            if self.clases_por_semana <= 0:
+                raise ValidationError({
+                    'clases_por_semana': 'Los planes mensuales deben tener al menos 1 clase por semana.'
+                })
 
     def __str__(self):
         estado = "Activo" if self.activo else "Inactivo"
-        return f"{self.nombre} - ${self.precio_mensual} ({estado})"
+        if self.tipo_plan == 'por_clase':
+            return f"{self.nombre} - ${self.precio_por_clase}/clase ({estado})"
+        return f"{self.nombre} - ${self.precio_mensual}/mes ({estado})"
 
     class Meta:
         verbose_name = "Plan de Pago"
@@ -577,6 +621,34 @@ class EstadoPagoCliente(models.Model):
     fecha_actualizacion = models.DateTimeField(
         auto_now=True,
         verbose_name="Última actualización"
+    )
+
+    ultimo_mes_cobrado = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Último mes cobrado",
+        help_text="Mes/año del último cobro mensual generado (formato: primer día del mes)"
+    )
+
+    puede_reservar = models.BooleanField(
+        default=True,
+        verbose_name="Puede reservar clases",
+        help_text="Si el cliente puede reservar/modificar clases (False si tiene deuda vencida)"
+    )
+
+    fecha_limite_pago = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha límite de pago",
+        help_text="Fecha límite para pagar sin restricciones (día 10 de cada mes)"
+    )
+
+    monto_deuda_mensual = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Deuda mensual actual",
+        help_text="Monto adeudado del mes actual"
     )
 
     def clean(self):
@@ -695,6 +767,66 @@ class EstadoPagoCliente(models.Model):
             self.save()
         
         return nuevo_saldo
+    
+    def generar_deuda_mes_actual(self):
+        """
+        Genera la deuda del mes actual cuando se asigna un plan nuevo.
+        Calcula si debe cobrar mes completo o medio mes según la fecha.
+        """
+        if not self.plan_actual:
+            return None
+        
+        from datetime import date
+        hoy = timezone.now().date()
+        primer_dia_mes = date(hoy.year, hoy.month, 1)
+        
+        # Calcular fecha de vencimiento (día 10 del mes actual)
+        fecha_vencimiento = date(hoy.year, hoy.month, 10)
+        
+        # Determinar si cobrar mes completo o medio mes
+        es_medio_mes = False
+        monto_a_cobrar = self.plan_actual.precio_mensual
+        
+        # Si se registra después del día 15, cobrar medio mes
+        if hoy.day > 15:
+            es_medio_mes = True
+            monto_a_cobrar = self.plan_actual.precio_mensual / 2
+        
+        # Verificar si ya existe una deuda para este mes
+        deuda_existente = DeudaMensual.objects.filter(
+            usuario=self.usuario,
+            mes_año=primer_dia_mes
+        ).first()
+        
+        if deuda_existente:
+            # Ya existe una deuda para este mes, no crear duplicado
+            return deuda_existente
+        
+        # Crear la deuda mensual
+        nueva_deuda = DeudaMensual.objects.create(
+            usuario=self.usuario,
+            mes_año=primer_dia_mes,
+            plan_aplicado=self.plan_actual,
+            monto_original=monto_a_cobrar,
+            monto_pendiente=monto_a_cobrar,
+            es_medio_mes=es_medio_mes,
+            estado='pendiente',
+            fecha_vencimiento=fecha_vencimiento,
+            observaciones=f"Deuda generada automáticamente al {'registrarse' if es_medio_mes else 'seleccionar plan'}"
+        )
+        
+        # Actualizar el saldo actual (deuda = saldo negativo)
+        self.saldo_actual -= monto_a_cobrar
+        self.monto_deuda_mensual = monto_a_cobrar
+        self.fecha_limite_pago = fecha_vencimiento
+        
+        # Si ya pasó la fecha límite, no puede reservar
+        if hoy > fecha_vencimiento:
+            self.puede_reservar = False
+        
+        self.save()
+        
+        return nueva_deuda
 
     def _obtener_saldo_mes_anterior(self):
         """
@@ -703,8 +835,6 @@ class EstadoPagoCliente(models.Model):
         # Por simplicidad, usaremos el saldo_actual actual como base
         # En un sistema más complejo tendríamos un historial mensual
         return self.saldo_actual
-        
-        return nuevo_saldo
 
     def esta_al_dia(self):
         """
@@ -891,8 +1021,47 @@ class RegistroPago(models.Model):
             estado_cliente.ultimo_pago = self.fecha_pago
             estado_cliente.monto_ultimo_pago = self.monto
             
-            # Actualizar saldo (sumar el pago al saldo actual)
-            estado_cliente.saldo_actual += self.monto
+            # 💰 PASO 1: Aplicar el pago a las deudas pendientes (más antiguas primero)
+            monto_restante = Decimal(str(self.monto))
+            
+            deudas_pendientes = DeudaMensual.objects.filter(
+                usuario=self.cliente,
+                estado__in=['pendiente', 'vencido', 'parcial']
+            ).order_by('mes_año')
+            
+            for deuda in deudas_pendientes:
+                if monto_restante <= 0:
+                    break
+                
+                # Aplicar pago a esta deuda
+                monto_aplicado = deuda.aplicar_pago_parcial(monto_restante)
+                monto_restante -= Decimal(str(monto_aplicado))
+            
+            # 📊 PASO 2: Recalcular el saldo DESDE CERO
+            # Saldo = Total de pagos confirmados - Total de deudas pendientes
+            
+            # Total pagado por el cliente (todos los pagos confirmados)
+            total_pagado = RegistroPago.objects.filter(
+                cliente=self.cliente,
+                estado='confirmado'
+            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+            
+            # Total que aún debe (deudas pendientes)
+            total_debe = DeudaMensual.objects.filter(
+                usuario=self.cliente,
+                estado__in=['pendiente', 'vencido', 'parcial']
+            ).aggregate(total=Sum('monto_pendiente'))['total'] or Decimal('0')
+            
+            # Total que debió haber pagado (todas las deudas generadas)
+            total_deudas_generadas = DeudaMensual.objects.filter(
+                usuario=self.cliente
+            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+            
+            # Saldo = Lo que pagó - Lo que se generó de deuda
+            # Positivo = Crédito a favor
+            # Cero = Al día
+            # Negativo = Debe
+            estado_cliente.saldo_actual = total_pagado - total_deudas_generadas
             
             # Actualizar plan según reservas actuales
             estado_cliente.actualizar_plan_automatico()
@@ -928,6 +1097,7 @@ class RegistroPago(models.Model):
 def actualizar_estado_pago_por_reserva(sender, instance, created, **kwargs):
     """
     Actualiza el estado de pago cuando se crea o modifica una reserva.
+    Genera deuda automática al asignar un plan nuevo.
     """
     try:
         estado_cliente, created_estado = EstadoPagoCliente.objects.get_or_create(
@@ -935,14 +1105,32 @@ def actualizar_estado_pago_por_reserva(sender, instance, created, **kwargs):
             defaults={'activo': True}
         )
         
+        # Guardar el plan anterior para detectar cambios
+        plan_anterior = estado_cliente.plan_actual
+        
         # Actualizar plan según reservas actuales
-        estado_cliente.actualizar_plan_automatico()
+        nuevo_plan = estado_cliente.actualizar_plan_automatico()
+        
+        # Si es una nueva reserva Y se asignó un plan nuevo (o es la primera vez)
+        if created and nuevo_plan and (not plan_anterior or plan_anterior != nuevo_plan):
+            # Generar deuda del mes actual automáticamente
+            deuda_generada = estado_cliente.generar_deuda_mes_actual()
+            
+            if deuda_generada:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(
+                    f"Deuda generada automáticamente para {instance.usuario.username}: "
+                    f"${deuda_generada.monto_original} - Plan: {nuevo_plan.nombre}"
+                )
         
     except Exception as e:
         # Log del error pero no fallar la operación
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f"Error actualizando estado de pago por reserva {instance.id}: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
 
 # función para crear estados de pago para usuarios existentes
 def crear_estados_pago_usuarios_existentes():
@@ -1153,4 +1341,123 @@ class PlanUsuario(models.Model):
         
         total_clases = sum(plan.plan.clases_por_semana for plan in planes_vigentes)
         return total_clases, planes_vigentes
+
+class DeudaMensual(models.Model):
+    """
+    Registro de deudas mensuales generadas automáticamente.
+    Se genera una deuda el día 1 de cada mes para cada usuario con plan activo.
+    """
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Usuario",
+        related_name='deudas_mensuales'
+    )
     
+    mes_año = models.DateField(
+        verbose_name="Mes/Año",
+        help_text="Primer día del mes al que corresponde esta deuda"
+    )
+    
+    plan_aplicado = models.ForeignKey(
+        PlanPago,
+        on_delete=models.CASCADE,
+        verbose_name="Plan aplicado",
+        help_text="Plan que se usó para calcular esta deuda"
+    )
+    
+    monto_original = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto original",
+        help_text="Monto calculado según el plan (completo o medio mes)"
+    )
+    
+    monto_pendiente = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto pendiente",
+        help_text="Monto que aún se debe (se reduce con pagos parciales)"
+    )
+    
+    es_medio_mes = models.BooleanField(
+        default=False,
+        verbose_name="Es medio mes",
+        help_text="Si se cobró medio mes por registrarse en segunda quincena"
+    )
+    
+    estado = models.CharField(
+        max_length=20,
+        choices=[
+            ('pendiente', 'Pendiente de pago'),
+            ('pagado', 'Pagado completamente'),
+            ('vencido', 'Vencido (después del día 10)'),
+            ('parcial', 'Pagado parcialmente'),
+        ],
+        default='pendiente',
+        verbose_name="Estado de la deuda"
+    )
+    
+    fecha_vencimiento = models.DateField(
+        verbose_name="Fecha de vencimiento",
+        help_text="Día 10 del mes correspondiente"
+    )
+    
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de creación"
+    )
+    
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones"
+    )
+
+    def clean(self):
+        """Validaciones personalizadas del modelo"""
+        super().clean()
+        
+        # Validar que el monto pendiente no sea mayor al original
+        if self.monto_pendiente > self.monto_original:
+            raise ValidationError({
+                'monto_pendiente': 'El monto pendiente no puede ser mayor al monto original.'
+            })
+        
+        # Validar que la fecha de vencimiento sea día 10
+        if self.fecha_vencimiento.day != 10:
+            raise ValidationError({
+                'fecha_vencimiento': 'La fecha de vencimiento debe ser el día 10 del mes.'
+            })
+
+    def esta_vencida(self):
+        """Verifica si la deuda está vencida"""
+        return timezone.now().date() > self.fecha_vencimiento and self.estado != 'pagado'
+    
+    def marcar_como_pagado(self):
+        """Marca la deuda como pagada completamente"""
+        self.monto_pendiente = 0
+        self.estado = 'pagado'
+        self.save()
+    
+    def aplicar_pago_parcial(self, monto_pago):
+        """Aplica un pago parcial a la deuda"""
+        if monto_pago >= self.monto_pendiente:
+            # Pago completo
+            self.marcar_como_pagado()
+            return self.monto_pendiente  # Devuelve el monto que se pudo aplicar
+        else:
+            # Pago parcial
+            self.monto_pendiente -= monto_pago
+            self.estado = 'parcial'
+            self.save()
+            return monto_pago
+
+    def __str__(self):
+        mes_año_str = self.mes_año.strftime('%B %Y')
+        return f"Deuda {mes_año_str} - {self.usuario.username} - ${self.monto_pendiente}"
+
+    class Meta:
+        verbose_name = "Deuda Mensual"
+        verbose_name_plural = "Deudas Mensuales"
+        unique_together = ['usuario', 'mes_año']
+        ordering = ['-mes_año']

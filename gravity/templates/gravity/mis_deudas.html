@@ -1,0 +1,24 @@
+<div class="deudas-container">
+    <h2>Mis Deudas</h2>
+    
+    {% if deudas_pendientes %}
+        {% for deuda in deudas_pendientes %}
+        <div class="deuda-item {% if deuda.esta_vencida %}vencida{% endif %}">
+            <h3>{{ deuda.mes_año|date:"F Y" }}</h3>
+            <p>Monto: ${{ deuda.monto_pendiente }}</p>
+            <p>Vencimiento: {{ deuda.fecha_vencimiento|date:"d/m/Y" }}</p>
+            <p>Estado: {{ deuda.get_estado_display }}</p>
+            
+            {% if deuda.esta_vencida %}
+                <span class="badge badge-danger">¡VENCIDA!</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <div class="total-deuda">
+            <h3>Total Adeudado: ${{ total_deuda }}</h3>
+        </div>
+    {% else %}
+        <p class="text-success">✅ No tienes deudas pendientes</p>
+    {% endif %}
+</div>

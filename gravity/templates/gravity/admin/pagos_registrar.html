@@ -95,14 +95,14 @@
                         <label for="{{ form.monto.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
                             {{ form.monto.label }}
                         </label>
-                        <input type="number" 
-                               name="{{ form.monto.name }}" 
-                               id="{{ form.monto.id_for_label }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.monto.errors %}border-error{% endif %}"
-                               value="{{ form.monto.value|default:'' }}"
-                               step="0.01"
-                               min="0"
-                               placeholder="0,00">
+                        <input type="number"
+                            name="{{ form.monto.name }}"
+                            id="{{ form.monto.id_for_label }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.monto.errors %}border-error{% endif %}"
+                            value="{{ form.monto.value|default:'' }}"
+                            step="0.01"
+                            min="0"
+                            placeholder="0,00">
                         {% if form.monto.errors %}
                             <p class="mt-1 text-sm text-error">{{ form.monto.errors.0 }}</p>
                         {% endif %}
@@ -112,11 +112,11 @@
                         <label for="{{ form.fecha_pago.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
                             {{ form.fecha_pago.label }}
                         </label>
-                        <input type="date" 
-                               name="{{ form.fecha_pago.name }}" 
-                               id="{{ form.fecha_pago.id_for_label }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.fecha_pago.errors %}border-error{% endif %}"
-                               value="{{ form.fecha_pago.value|default:'' }}">
+                        <input type="date"
+                            name="{{ form.fecha_pago.name }}"
+                            id="{{ form.fecha_pago.id_for_label }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.fecha_pago.errors %}border-error{% endif %}"
+                            value="{{ form.fecha_pago.value|default:'' }}">
                         {% if form.fecha_pago.errors %}
                             <p class="mt-1 text-sm text-error">{{ form.fecha_pago.errors.0 }}</p>
                         {% endif %}
@@ -128,7 +128,7 @@
                         <label for="{{ form.tipo_pago.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
                             {{ form.tipo_pago.label }}
                         </label>
-                        <select name="{{ form.tipo_pago.name }}" 
+                        <select name="{{ form.tipo_pago.name }}"
                                 id="{{ form.tipo_pago.id_for_label }}"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.tipo_pago.errors %}border-error{% endif %}">
                             <option value="">Selecciona método de pago</option>
@@ -145,12 +145,12 @@
                         <label for="{{ form.comprobante.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
                             {{ form.comprobante.label }}
                         </label>
-                        <input type="text" 
-                               name="{{ form.comprobante.name }}" 
-                               id="{{ form.comprobante.id_for_label }}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.comprobante.errors %}border-error{% endif %}"
-                               value="{{ form.comprobante.value|default:'' }}"
-                               placeholder="Número de recibo, transferencia, etc.">
+                        <input type="text"
+                            name="{{ form.comprobante.name }}"
+                            id="{{ form.comprobante.id_for_label }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.comprobante.errors %}border-error{% endif %}"
+                            value="{{ form.comprobante.value|default:'' }}"
+                            placeholder="Número de recibo, transferencia, etc.">
                         {% if form.comprobante.errors %}
                             <p class="mt-1 text-sm text-error">{{ form.comprobante.errors.0 }}</p>
                         {% endif %}
@@ -161,8 +161,8 @@
                     <label for="{{ form.concepto.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
                         {{ form.concepto.label }}
                     </label>
-                    <input type="text" 
-                        name="{{ form.concepto.name }}" 
+                    <input type="text"
+                        name="{{ form.concepto.name }}"
                         id="{{ form.concepto.id_for_label }}"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.concepto.errors %}border-error{% endif %}"
                         placeholder="Ej: Pago mensual Enero 2025">
@@ -175,28 +175,34 @@
                     <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
                         {{ form.observaciones.label }}
                     </label>
-                    <textarea name="{{ form.observaciones.name }}" 
-                              id="{{ form.observaciones.id_for_label }}"
-                              rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.observaciones.errors %}border-error{% endif %}"
-                              placeholder="Información adicional sobre el pago (opcional)">{{ form.observaciones.value|default:'' }}</textarea>
+                    <textarea name="{{ form.observaciones.name }}"
+                            id="{{ form.observaciones.id_for_label }}"
+                            rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.observaciones.errors %}border-error{% endif %}"
+                            placeholder="Información adicional sobre el pago (opcional)">{{ form.observaciones.value|default:'' }}</textarea>
                     {% if form.observaciones.errors %}
                         <p class="mt-1 text-sm text-error">{{ form.observaciones.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div class="flex flex-col sm:flex-row justify-center gap-3 pt-4">
-                    <a href="{% url 'gravity:admin_pagos_vista_principal' %}" 
-                       class="inline-flex justify-center items-center px-4 py-3 bg-fondo border border-principal rounded-lg text-md text-principal hover:bg-principal hover:text-fondo transition-colors duration-200">
+                    <a href="{% url 'gravity:admin_pagos_vista_principal' %}"
+                    class="inline-flex justify-center items-center px-4 py-3 bg-fondo border border-principal rounded-lg text-md text-principal hover:bg-principal hover:text-fondo transition-colors duration-200">
                         Cancelar
                     </a>
                     <button type="submit" 
-                            class="inline-flex items-center px-6 py-3 bg-principal hover:bg-secundario text-fondo hover:text-principal rounded-lg text-md transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        Registrar Pago
-                    </button>
+                        id="btnRegistrarPago"
+                        class="inline-flex items-center px-6 py-3 bg-principal hover:bg-secundario text-fondo hover:text-principal rounded-lg text-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg id="iconoCheck" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <!-- Spinner de carga (oculto por defecto) -->
+                    <svg id="spinnerCarga" class="hidden animate-spin w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="textoBoton">Registrar Pago</span>
+                </button>
                 </div>
             </form>
         </div>
@@ -205,6 +211,37 @@
 
 {% block extra_js %}
     <script>
+        // Protección contra múltiples clics en el botón de registrar pago
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const btnRegistrarPago = document.getElementById('btnRegistrarPago');
+            const iconoCheck = document.getElementById('iconoCheck');
+            const spinnerCarga = document.getElementById('spinnerCarga');
+            const textoBoton = document.getElementById('textoBoton');
+            
+            if (form && btnRegistrarPago) {
+                form.addEventListener('submit', function(e) {
+                    // Deshabilitar el botón inmediatamente
+                    btnRegistrarPago.disabled = true;
+                    
+                    // Cambiar el contenido visual del botón
+                    iconoCheck.classList.add('hidden');
+                    spinnerCarga.classList.remove('hidden');
+                    textoBoton.textContent = 'Registrando pago...';
+                    
+                    // Si hay errores de validación del navegador, rehabilitar el botón
+                    if (!form.checkValidity()) {
+                        setTimeout(function() {
+                            btnRegistrarPago.disabled = false;
+                            iconoCheck.classList.remove('hidden');
+                            spinnerCarga.classList.add('hidden');
+                            textoBoton.textContent = 'Registrar Pago';
+                        }, 100);
+                    }
+                });
+            }
+        });
+
         // Función para formatear números como moneda
         function formatMoney(num) {
             return new Intl.NumberFormat('es-AR', {

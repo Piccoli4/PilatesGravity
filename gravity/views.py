@@ -42,6 +42,27 @@ def reservar_clase(request):
     Permite a un usuario autenticado crear una nueva reserva.
     Utiliza ReservaForm que ya tiene todas las validaciones necesarias.
     """
+
+    try:
+        estado_pago = request.user.estado_pago
+        if not estado_pago.puede_reservar:
+            # Calcular días de atraso
+            dias_atraso = 0
+            if estado_pago.fecha_limite_pago:
+                dias_atraso = (timezone.now().date() - estado_pago.fecha_limite_pago).days
+            
+            messages.error(
+                request,
+                f'❌ No puedes reservar clases porque tienes una deuda vencida de ${estado_pago.monto_deuda_mensual:,.0f}. '
+                f'La fecha límite de pago era el {estado_pago.fecha_limite_pago.strftime("%d/%m/%Y")} '
+                f'({dias_atraso} {"día" if dias_atraso == 1 else "días"} de atraso). '
+                f'Por favor, realiza el pago o contacta a la administración para regularizar tu situación.'
+            )
+            return redirect('accounts:profile')
+    except EstadoPagoCliente.DoesNotExist:
+        # Usuario sin estado de pago, permitir reservar
+        pass
+
     # Obtener o crear el perfil del usuario
     try:
         user_profile = request.user.profile
@@ -142,6 +163,27 @@ def modificar_reserva(request, numero_reserva):
     Permite a un usuario modificar su propia reserva.
     Utiliza ModificarReservaForm con todas las validaciones.
     """
+
+    try:
+        estado_pago = request.user.estado_pago
+        if not estado_pago.puede_reservar:
+            # Calcular días de atraso
+            dias_atraso = 0
+            if estado_pago.fecha_limite_pago:
+                dias_atraso = (timezone.now().date() - estado_pago.fecha_limite_pago).days
+            
+            messages.error(
+                request,
+                f'❌ No puedes modificar reservas porque tienes una deuda vencida de ${estado_pago.monto_deuda_mensual:,.0f}. '
+                f'La fecha límite de pago era el {estado_pago.fecha_limite_pago.strftime("%d/%m/%Y")} '
+                f'({dias_atraso} {"día" if dias_atraso == 1 else "días"} de atraso). '
+                f'Por favor, realiza el pago o contacta a la administración para regularizar tu situación.'
+            )
+            return redirect('accounts:profile')
+    except EstadoPagoCliente.DoesNotExist:
+        # Usuario sin estado de pago, permitir modificar
+        pass
+
     # Obtener la reserva y verificar que pertenece al usuario
     reserva = get_object_or_404(
         Reserva,
@@ -206,9 +248,9 @@ def cancelar_reserva(request, numero_reserva):
     """
     # Obtener la reserva y verificar que pertenece al usuario
     reserva = get_object_or_404(
-        Reserva, 
-        numero_reserva=numero_reserva, 
-        usuario=request.user, 
+        Reserva,
+        numero_reserva=numero_reserva,
+        usuario=request.user,
         activa=True
     )
     
@@ -1796,11 +1838,11 @@ def admin_pagos_registrar_pago(request, cliente_id):
             except Exception as e:
                 logger.error(f"Error enviando email de pago: {str(e)}")
             
-            # NO recalcular desde cero, sino actualizar acumulativamente
-            estado_pago.actualizar_saldo_automatico()
+            # El saldo ya fue actualizado correctamente por el método save() de RegistroPago
+            # Solo actualizar los campos de último pago
             estado_pago.ultimo_pago = pago.fecha_pago
             estado_pago.monto_ultimo_pago = pago.monto
-            estado_pago.save()
+            estado_pago.save(update_fields=['ultimo_pago', 'monto_ultimo_pago'])
             
             messages.success(
                 request,
@@ -2095,4 +2137,3 @@ def cancelar_plan(request, plan_id):
     }
     
     return render(request, 'gravity/cancelar_plan.html', context)
-
