@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from .models import Reserva, Clase, PlanUsuario, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
+from .models import Reserva, Clase, PlanUsuario, AusenciaTemporal, NotificacionCancelacion, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
 from .forms import ReservaForm, ModificarReservaForm, BuscarReservaForm
 import json
 from accounts.models import UserProfile
@@ -243,55 +243,104 @@ def modificar_reserva(request, numero_reserva):
 @login_required
 def cancelar_reserva(request, numero_reserva):
     """
-    Permite a un usuario cancelar su propia reserva.
-    Maneja tanto GET (para mostrar confirmación) como POST (para cancelar).
+    Permite a un usuario cancelar su reserva, de forma permanente o
+    temporal (solo para la próxima ocurrencia de la clase).
     """
-    # Obtener la reserva y verificar que pertenece al usuario
+    # Verificar deudas vencidas (mantener lógica existente si la tenés)
     reserva = get_object_or_404(
         Reserva,
         numero_reserva=numero_reserva,
         usuario=request.user,
         activa=True
     )
-    
-    # Verificar si la reserva puede modificarse (12 horas de anticipación)
+
     puede_cancelar, mensaje = reserva.puede_modificarse()
-    
+
     if not puede_cancelar:
         messages.error(request, f'No puedes cancelar esta reserva: {mensaje}')
         return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
 
     if request.method == 'POST':
-        # Verificar confirmación
         confirmar = request.POST.get('confirmar_cancelacion')
-        
-        if confirmar == 'confirmar':
-            try:
-                # Cancelar la reserva
+        tipo = request.POST.get('tipo_cancelacion', 'permanente')
+
+        if confirmar != 'confirmar':
+            messages.error(request, 'Debes confirmar la cancelación.')
+            return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+        try:
+            if tipo == 'temporal':
+                proxima_fecha = reserva.get_proxima_fecha()
+
+                if not proxima_fecha:
+                    messages.error(request, 'No se pudo determinar la próxima fecha de clase.')
+                    return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+                # Verificar que no exista ya una ausencia para esa fecha
+                ausencia, creada = AusenciaTemporal.objects.get_or_create(
+                    reserva=reserva,
+                    fecha=proxima_fecha
+                )
+
+                if not creada:
+                    messages.warning(
+                        request,
+                        f'Ya tenías registrada una ausencia para el '
+                        f'{proxima_fecha.strftime("%d/%m/%Y")}.'
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f'Ausencia registrada para el {proxima_fecha.strftime("%d/%m/%Y")}. '
+                        f'Tu reserva sigue activa para las semanas siguientes.'
+                    )
+                    # Notificar admins
+                    notificar_admins_cancelacion(reserva, tipo='temporal', fecha=proxima_fecha)
+
+            else:  # permanente
                 reserva.activa = False
                 reserva.save()
-                
+
                 messages.success(
                     request,
-                    f'Tu reserva para la clase de {reserva.clase.get_nombre_display()} '
+                    f'Tu reserva para {reserva.clase.get_nombre_display()} '
                     f'los {reserva.clase.dia} a las {reserva.clase.horario.strftime("%H:%M")} '
-                    f'en {reserva.clase.get_direccion_corta()} ha sido cancelada exitosamente.'
+                    f'en {reserva.clase.get_direccion_corta()} fue cancelada.'
                 )
-                
+                # Notificar admins
+                notificar_admins_cancelacion(reserva, tipo='permanente')
                 return redirect('accounts:mis_reservas')
-                
-            except Exception as e:
-                messages.error(
-                    request,
-                    'Ocurrió un error al cancelar tu reserva. Por favor intenta nuevamente.'
-                )
-                return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
-        else:
-            messages.error(request, 'Debes confirmar la cancelación de tu reserva.')
-            return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
-    
-    # Si es GET, redirigir al detalle (ya que ahora usamos modal)
+
+        except Exception as e:
+            messages.error(request, 'Ocurrió un error al procesar la cancelación. Intentá nuevamente.')
+
+        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+    # GET: redirigir al detalle (el modal está ahí)
     return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+def notificar_admins_cancelacion(reserva, tipo, fecha=None):
+    """
+    Notifica a los administradores cuando un cliente cancela una clase.
+    Guarda en base de datos y envía email.
+    """
+    from .email_service import enviar_notificacion_cancelacion_a_admins
+
+    # Guardar en base de datos para el panel
+    try:
+        NotificacionCancelacion.objects.create(
+            reserva=reserva,
+            tipo=tipo,
+            fecha_ausencia=fecha if tipo == 'temporal' else None,
+        )
+    except Exception as e:
+        logger.error(f"Error guardando notificación de cancelación: {e}")
+
+    # Enviar email
+    try:
+        enviar_notificacion_cancelacion_a_admins(reserva, tipo=tipo, fecha=fecha)
+    except Exception as e:
+        logger.error(f"Error notificando admins por cancelación de {reserva.numero_reserva}: {e}")
 
 # Vista para buscar reservas de usuario (pública)
 def buscar_reservas_usuario(request):
@@ -730,6 +779,17 @@ def admin_dashboard(request):
     
     # Configuración del estudio
     configuracion = ConfiguracionEstudio.get_configuracion()
+
+    # Notificaciones de cancelaciones (últimos 7 días, no leídas por este admin)
+    desde_7_dias = timezone.now() - timedelta(days=7)
+    try:
+        notificaciones_cancelacion = NotificacionCancelacion.objects.filter(
+            fecha_creacion__gte=desde_7_dias
+        ).exclude(
+            leida_por=request.user
+        ).select_related('reserva', 'reserva__clase', 'reserva__usuario').order_by('-fecha_creacion')
+    except Exception:
+        notificaciones_cancelacion = NotificacionCancelacion.objects.none()
     
     context = {
         'total_clases': total_clases,
@@ -741,9 +801,31 @@ def admin_dashboard(request):
         'reservas_recientes': reservas_recientes,
         'clases_casi_llenas': clases_casi_llenas,
         'configuracion': configuracion,
+        'notificaciones_cancelacion': notificaciones_cancelacion,
+        'hay_notificaciones': notificaciones_cancelacion.exists(),
     }
-    
+
     return render(request, 'gravity/admin/dashboard.html', context)
+
+@admin_required
+def admin_marcar_notificaciones_leidas(request):
+    """
+    Marca todas las notificaciones de cancelación como leídas para el admin actual.
+    Se llama por AJAX al cerrar el pop-up.
+    """
+    if request.method == 'POST':
+        from .models import NotificacionCancelacion
+        desde = timezone.now() - timedelta(days=7)
+        notificaciones = NotificacionCancelacion.objects.filter(
+            fecha_creacion__gte=desde
+        ).exclude(leida_por=request.user)
+
+        for n in notificaciones:
+            n.leida_por.add(request.user)
+
+        return JsonResponse({'ok': True, 'marcadas': notificaciones.count()})
+
+    return JsonResponse({'ok': False}, status=400)
 
 # ==============================================================================
 # GESTIÓN DE CLASES
@@ -1067,14 +1149,36 @@ def admin_clase_detalle(request, clase_id):
         'usuario', 'usuario__profile'
     ).order_by('usuario__first_name', 'usuario__last_name')
     
+    # Calcular próxima fecha de esta clase
+    hoy = timezone.now()
+    dias_semana = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
+    dia_num = dias_semana.get(clase.dia, 0)
+    dias_hasta = (dia_num - hoy.weekday()) % 7
+    if dias_hasta == 0:
+        proxima_hoy = hoy.replace(hour=clase.horario.hour, minute=clase.horario.minute, second=0, microsecond=0)
+        if proxima_hoy <= hoy:
+            dias_hasta = 7
+    proxima_fecha_clase = (hoy + timedelta(days=dias_hasta)).date()
+
+    # IDs de reservas que tienen ausencia temporal para la próxima clase
+    reservas_con_ausencia = set(
+        AusenciaTemporal.objects.filter(
+            reserva__clase=clase,
+            reserva__activa=True,
+            fecha=proxima_fecha_clase
+        ).values_list('reserva_id', flat=True)
+    )
+
     context = {
         'clase': clase,
         'reservas': reservas,
         'total_reservas': reservas.count(),
         'cupos_disponibles': clase.cupos_disponibles(),
-        'porcentaje_ocupacion': clase.get_porcentaje_ocupacion()
+        'porcentaje_ocupacion': clase.get_porcentaje_ocupacion(),
+        'proxima_fecha_clase': proxima_fecha_clase,
+        'reservas_con_ausencia': reservas_con_ausencia,
     }
-    
+        
     return render(request, 'gravity/admin/clase_detalle.html', context)
 
 @admin_required

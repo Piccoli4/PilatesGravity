@@ -2012,3 +2012,76 @@ def enviar_email_bienvenida(usuario, is_admin_created=False, password_temporal=N
     except Exception as e:
         logger.error(f"Error enviando email de bienvenida para usuario {usuario.username}: {str(e)}")
         return False
+
+# ==============================================================================
+# EMAIL DE NOTIFICACIÓN DE CANCELACIÓN A ADMINISTRADORES
+# ==============================================================================
+
+def enviar_notificacion_cancelacion_a_admins(reserva, tipo, fecha=None):
+    """
+    Notifica a los administradores del sistema cuando un cliente cancela una clase.
+
+    Args:
+        reserva: Objeto Reserva cancelada
+        tipo: 'permanente' o 'temporal'
+        fecha: date object (solo para cancelaciones temporales)
+    """
+    try:
+        from django.contrib.auth.models import User
+
+        admins = User.objects.filter(is_staff=True, email__isnull=False).exclude(email='')
+        emails_admins = list(admins.values_list('email', flat=True))
+
+        if not emails_admins:
+            logger.warning("No hay administradores con email configurado para notificar.")
+            return False
+
+        cliente = reserva.get_nombre_completo_usuario()
+        clase = reserva.clase.get_nombre_display()
+        dia = reserva.clase.dia
+        horario = reserva.clase.horario.strftime('%H:%M')
+        sede = reserva.clase.get_direccion_corta()
+
+        if tipo == 'temporal':
+            fecha_str = fecha.strftime('%d/%m/%Y') if fecha else 'fecha desconocida'
+            subject = f"[Pilates Gravity] Ausencia temporal — {cliente}"
+            body = (
+                f"El cliente {cliente} registró una ausencia temporal.\n\n"
+                f"Clase: {clase}\n"
+                f"Día habitual: {dia} a las {horario}\n"
+                f"Sede: {sede}\n"
+                f"Fecha de ausencia: {fecha_str}\n\n"
+                f"El cupo queda libre solo para ese día. "
+                f"La reserva sigue activa para las semanas siguientes.\n\n"
+                f"— Sistema Pilates Gravity"
+            )
+        else:
+            subject = f"[Pilates Gravity] Cancelación permanente — {cliente}"
+            body = (
+                f"El cliente {cliente} canceló su reserva de forma permanente.\n\n"
+                f"Clase: {clase}\n"
+                f"Día: {dia} a las {horario}\n"
+                f"Sede: {sede}\n"
+                f"Número de reserva: {reserva.numero_reserva}\n\n"
+                f"El cupo quedó libre definitivamente.\n\n"
+                f"— Sistema Pilates Gravity"
+            )
+
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=emails_admins,
+            fail_silently=False,
+        )
+
+        logger.info(
+            f"Notificación de cancelación ({tipo}) enviada a admins "
+            f"por reserva {reserva.numero_reserva}"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(f"Error enviando notificación a admins: {str(e)}")
+        return False
+

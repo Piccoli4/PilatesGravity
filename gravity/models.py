@@ -140,12 +140,20 @@ class Clase(models.Model):
         }
         return direcciones_cortas.get(self.direccion, self.get_direccion_display())
 
-    def cupos_disponibles(self):
-        """Devuelve la cantidad de cupos disponibles en esta clase"""
+    def cupos_disponibles(self, fecha=None):
+        """Devuelve la cantidad de cupos disponibles en esta clase.
+        Si se pasa una fecha, descuenta las ausencias temporales de ese día."""
         if not self.activa:
             return 0
-        reservas_actuales = self.reserva_set.filter(activa=True).count()
-        return max(0, self.cupo_maximo - reservas_actuales)
+        reservas_activas = self.reserva_set.filter(activa=True).count()
+        ausencias_del_dia = 0
+        if fecha:
+            ausencias_del_dia = AusenciaTemporal.objects.filter(
+                reserva__clase=self,
+                reserva__activa=True,
+                fecha=fecha
+            ).count()
+        return max(0, self.cupo_maximo - reservas_activas + ausencias_del_dia)
 
     def esta_completa(self):
         """Verifica si la clase está completa"""
@@ -352,6 +360,37 @@ class Reserva(models.Model):
         else:
             return f"En {dias_hasta_clase} días ({self.clase.dia} a las {self.clase.horario.strftime('%H:%M')} en {self.clase.get_direccion_corta()})"
 
+    def get_proxima_fecha(self):
+        """Devuelve la fecha (date) de la próxima ocurrencia de esta clase."""
+        hoy = timezone.now()
+        dias_semana = {
+            'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+            'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+        }
+        dia_clase = dias_semana.get(self.clase.dia)
+        if dia_clase is None:
+            return None
+
+        dias_hasta_clase = (dia_clase - hoy.weekday()) % 7
+        if dias_hasta_clase == 0:
+            proxima_clase_hoy = hoy.replace(
+                hour=self.clase.horario.hour,
+                minute=self.clase.horario.minute,
+                second=0, microsecond=0
+            )
+            if proxima_clase_hoy <= hoy:
+                dias_hasta_clase = 7
+
+        proxima_fecha = (hoy + timedelta(days=dias_hasta_clase)).date()
+        return proxima_fecha
+
+    def tiene_ausencia_proxima(self):
+        """Verifica si ya existe una ausencia temporal registrada para la próxima clase."""
+        proxima = self.get_proxima_fecha()
+        if not proxima:
+            return False
+        return self.ausencias_temporales.filter(fecha=proxima).exists()
+
     def get_nombre_completo_usuario(self):
         """Devuelve el nombre completo del usuario"""
         if self.usuario.first_name and self.usuario.last_name:
@@ -433,6 +472,88 @@ class Reserva(models.Model):
                 ('can_view_all_reservas', 'Puede ver todas las reservas'),
             ]
 
+class AusenciaTemporal(models.Model):
+    """
+    Registra una ausencia puntual de un cliente a su clase recurrente.
+    La reserva sigue activa, pero ese día en particular el cupo queda libre.
+    """
+    reserva = models.ForeignKey(
+        Reserva,
+        on_delete=models.CASCADE,
+        related_name='ausencias_temporales',
+        verbose_name="Reserva"
+    )
+    fecha = models.DateField(
+        verbose_name="Fecha de ausencia",
+        help_text="Fecha específica en que el cliente no asistirá"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Registrado el"
+    )
+
+    class Meta:
+        verbose_name = "Ausencia Temporal"
+        verbose_name_plural = "Ausencias Temporales"
+        unique_together = ['reserva', 'fecha']
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return (
+            f"Ausencia de {self.reserva.get_nombre_completo_usuario()} "
+            f"— {self.reserva.clase.get_nombre_display()} "
+            f"el {self.fecha.strftime('%d/%m/%Y')}"
+        )
+
+class NotificacionCancelacion(models.Model):
+    """
+    Registra cada cancelación (permanente o temporal) para mostrar
+    a los administradores en el panel de control.
+    """
+    TIPOS = [
+        ('permanente', 'Cancelación permanente'),
+        ('temporal', 'Ausencia temporal'),
+    ]
+
+    reserva = models.ForeignKey(
+        Reserva,
+        on_delete=models.CASCADE,
+        related_name='notificaciones_cancelacion',
+        verbose_name="Reserva"
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPOS,
+        verbose_name="Tipo de cancelación"
+    )
+    fecha_ausencia = models.DateField(
+        null=True, blank=True,
+        verbose_name="Fecha de ausencia",
+        help_text="Solo para cancelaciones temporales"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de notificación"
+    )
+    leida_por = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='notificaciones_leidas',
+        verbose_name="Vista por"
+    )
+
+    class Meta:
+        verbose_name = "Notificación de Cancelación"
+        verbose_name_plural = "Notificaciones de Cancelaciones"
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return (
+            f"[{self.get_tipo_display()}] "
+            f"{self.reserva.get_nombre_completo_usuario()} — "
+            f"{self.reserva.clase.get_nombre_display()} "
+            f"{self.reserva.clase.dia} {self.reserva.clase.horario.strftime('%H:%M')}"
+        )
 
 # ==============================================================================
 # MODELOS REGISTROS DE PAGOS

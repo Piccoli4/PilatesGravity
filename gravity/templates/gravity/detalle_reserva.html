@@ -4,497 +4,543 @@
 {% block title %}Detalle de Reserva {{ reserva.numero_reserva }} - Pilates Gravity{% endblock %}
 
 {% block extra_css %}
-    <style>
-        .reservation-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
+<style>
+    .reservation-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .status-active {
+        background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
+    }
+
+    .info-item {
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .info-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(93, 118, 139, 0.1);
+    }
+
+    .action-button {
+        transition: all 0.3s ease;
+    }
+
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(93, 118, 139, 0.2);
+    }
+
+    .sede-badge {
+        background: linear-gradient(135deg, #5D768B 0%, #C8B39B 100%);
+    }
+
+    .location-icon {
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
         }
-        
-        .status-active {
-            background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
+
+        50% {
+            opacity: 0.7;
         }
-        
-        .info-item {
-            background: white;
-            transition: all 0.3s ease;
-        }
-        
-        .info-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.1);
-        }
-        
-        .action-button {
-            transition: all 0.3s ease;
-        }
-        
-        .action-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(93, 118, 139, 0.2);
-        }
-        
-        .sede-badge {
-            background: linear-gradient(135deg, #5D768B 0%, #C8B39B 100%);
-        }
-        
-        .location-icon {
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-    </style>
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-    <section class="min-h-screen bg-fondo pt-10 pb-12">
-        <div class="container mx-auto px-4">
-            <div class="max-w-4xl mx-auto">
+<section class="min-h-screen bg-fondo pt-10 pb-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto">
 
-                <!-- Header de la página -->
-                <div class="text-center mb-6 animate-fadeInUp" style="animation-delay: 0.2s;">
-                    <h1 class="text-4xl md:text-5xl font-cinzel font-bold text-principal mb-4">
-                        Detalle de Reserva
-                    </h1>
-                    <div class="w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-6"></div>
-                    <div class="status-active inline-flex items-center px-6 rounded-full text-principal font-semibold">
-                        <span class="flex items-center justify-center mr-1 text-principal">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                                <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
+            <!-- Header de la página -->
+            <div class="text-center mb-6 animate-fadeInUp" style="animation-delay: 0.2s;">
+                <h1 class="text-4xl md:text-5xl font-cinzel font-bold text-principal mb-4">
+                    Detalle de Reserva
+                </h1>
+                <div class="w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-6"></div>
+                <div class="status-active inline-flex items-center px-6 rounded-full text-principal font-semibold">
+                    <span class="flex items-center justify-center mr-1 text-principal">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                            <path fill-rule="evenodd"
+                                d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    Reserva Activa
+                </div>
+            </div>
+
+            <!-- Información principal de la reserva -->
+            <div class="reservation-card rounded-2xl shadow-wizard p-8 mb-8 animate-fadeInUp"
+                style="animation-delay: 0.4s;">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-principal mb-2">
+                        {{ reserva.clase.get_nombre_display }}
+                    </h2>
+                    <p class="text-lg text-gris-oscuro">
+                        Código de Reserva: <span class="font-bold text-principal">{{ reserva.numero_reserva }}</span>
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Día -->
+                    <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                        <div class="text-4xl mb-3">
+                            <span class="mb-1 text-principal flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="size-8">
+                                    <path fill-rule="evenodd"
+                                        d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-principal mb-2">Día</h3>
+                        <p class="text-gris-oscuro font-medium">{{ reserva.clase.dia }}</p>
+                    </div>
+
+                    <!-- Horario -->
+                    <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                        <div class="text-4xl mb-3">
+                            <span class="mb-1 text-principal flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="size-8">
+                                    <path fill-rule="evenodd"
+                                        d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-principal mb-2">Horario</h3>
+                        <p class="text-gris-oscuro font-medium">{{ reserva.clase.horario|time:"H:i" }}</p>
+                    </div>
+
+                    <!-- Sede -->
+                    <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                        <div class="text-4xl mb-3 location-icon">
+                            <span class="mb-1 text-principal flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="size-8">
+                                    <path fill-rule="evenodd"
+                                        d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-principal mb-2">Sede</h3>
+                        <p class="text-gris-oscuro font-medium text-sm">{{ reserva.clase.get_direccion_corta }}</p>
+                    </div>
+
+                    <!-- Cupos -->
+                    <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
+                        <div class="text-4xl mb-3">
+                            <span class="icon text-principal flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                    class="size-8">
+                                    <path
+                                        d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
+                                </svg>
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-principal mb-2">Cupos</h3>
+                        <p class="text-gris-oscuro font-medium">
+                            {{ reserva.clase.cupos_disponibles }}/{{ reserva.clase.cupo_maximo }}
+                        </p>
+                        <p class="text-xs text-gris-medio mt-1">disponibles</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <!-- Próxima clase -->
+                <div class="reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp"
+                    style="animation-delay: 0.6s;">
+                    <h3 class="text-xl font-bold text-principal mb-4 flex items-center gap-2">
+                        <span class="text-2xl text-principal flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-7">
+                                <path fill-rule="evenodd"
+                                    d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z"
+                                    clip-rule="evenodd" />
                             </svg>
                         </span>
-                        Reserva Activa
-                    </div>
-                </div>
-
-                <!-- Información principal de la reserva -->
-                <div class="reservation-card rounded-2xl shadow-wizard p-8 mb-8 animate-fadeInUp" style="animation-delay: 0.4s;">
-                    <div class="text-center mb-8">
-                        <h2 class="text-3xl font-bold text-principal mb-2">
-                            {{ reserva.clase.get_nombre_display }}
-                        </h2>
-                        <p class="text-lg text-gris-oscuro">
-                            Código de Reserva: <span class="font-bold text-principal">{{ reserva.numero_reserva }}</span>
+                        Próxima Clase
+                    </h3>
+                    <div class="space-y-3">
+                        <p class="text-lg font-medium text-gris-oscuro">
+                            {{ proxima_clase_info }}
                         </p>
-                    </div>
-
-                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <!-- Día -->
-                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
-                            <div class="text-4xl mb-3">
-                                <span class="mb-1 text-principal flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
-                                        <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
-                                    </svg>
-                                </span> 
-                            </div>
-                            <h3 class="text-lg font-semibold text-principal mb-2">Día</h3>
-                            <p class="text-gris-oscuro font-medium">{{ reserva.clase.dia }}</p>
-                        </div>
-
-                        <!-- Horario -->
-                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
-                            <div class="text-4xl mb-3">
-                                <span class="mb-1 text-principal flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
-                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
-                                    </svg>
-                                </span>
-                            </div>
-                            <h3 class="text-lg font-semibold text-principal mb-2">Horario</h3>
-                            <p class="text-gris-oscuro font-medium">{{ reserva.clase.horario|time:"H:i" }}</p>
-                        </div>
-
-                        <!-- Sede -->
-                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
-                            <div class="text-4xl mb-3 location-icon">
-                                <span class="mb-1 text-principal flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
-                                        <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" />
-                                    </svg>
-                                </span>
-                            </div>
-                            <h3 class="text-lg font-semibold text-principal mb-2">Sede</h3>
-                            <p class="text-gris-oscuro font-medium text-sm">{{ reserva.clase.get_direccion_corta }}</p>
-                        </div>
-
-                        <!-- Cupos -->
-                        <div class="info-item rounded-xl p-6 text-center border border-gris-medio/20">
-                            <div class="text-4xl mb-3">
-                                <span class="icon text-principal flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
-                                        <path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z" />
-                                    </svg>
-                                </span>
-                            </div>
-                            <h3 class="text-lg font-semibold text-principal mb-2">Cupos</h3>
-                            <p class="text-gris-oscuro font-medium">{{ reserva.clase.cupos_disponibles }}/{{ reserva.clase.cupo_maximo }}</p>
-                            <p class="text-xs text-gris-medio mt-1">disponibles</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Información adicional -->
-                <div class="grid md:grid-cols-2 gap-8 mb-8">
-                    <!-- Próxima clase -->
-                    <div class="reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp" style="animation-delay: 0.6s;">
-                        <h3 class="text-xl font-bold text-principal mb-4 flex items-center gap-2">
-                            <span class="text-2xl text-principal flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-7">
-                                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
-                                </svg>
-                            </span>
-                            Próxima Clase
-                        </h3>
-                        <div class="space-y-3">
-                            <p class="text-lg font-medium text-gris-oscuro">
-                                {{ proxima_clase_info }}
+                        {% if puede_modificar %}
+                        <div class="bg-exito/10 border border-exito/30 rounded-lg p-3 flex items-start gap-2">
+                            <span class="text-exito text-lg">✅</span>
+                            <p class="text-exito text-sm font-medium">
+                                Puedes cancelar tu reserva hasta 12 horas antes de la clase.
                             </p>
-                            {% if puede_modificar %}
-                                <div class="bg-exito/10 border border-exito/30 rounded-lg p-3 flex items-start gap-2">
-                                    <span class="text-exito text-lg">✅</span>
-                                    <p class="text-exito text-sm font-medium">
-                                        Puedes cancelar tu reserva hasta 12 horas antes de la clase.
-                                    </p>
-                                </div>
-                            {% else %}
-                                <div class="bg-error/10 border border-error/30 rounded-lg p-3 flex items-start gap-2">
-                                    <span class="text-error text-lg">⚠️</span>
-                                    <p class="text-error text-sm font-medium">
-                                        {{ mensaje_modificacion }}
-                                    </p>
-                                </div>
-                            {% endif %}
                         </div>
-                    </div>
-
-                    <!-- Información del usuario -->
-                    <div class="reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp" style="animation-delay: 0.8s;">
-                        <h3 class="text-xl font-bold text-principal mb-4 flex items-center gap-2">
-                            <span class="text-2xl mb-1 text-principal flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-7">
-                                    <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
-                                </svg>
-                            </span>
-                            Información Personal
-                        </h3>
-                        <div class="space-y-3">
-                            <div>
-                                <p class="text-sm text-gris-medio">Nombre completo</p>
-                                <p class="font-medium text-gris-oscuro">{{ reserva.get_nombre_completo_usuario }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gris-medio">Usuario</p>
-                                <p class="font-medium text-gris-oscuro">{{ reserva.usuario.username }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gris-medio">Fecha de reserva</p>
-                                <p class="font-medium text-gris-oscuro">{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}</p>
-                            </div>
+                        {% else %}
+                        <div class="bg-error/10 border border-error/30 rounded-lg p-3 flex items-start gap-2">
+                            <span class="text-error text-lg">⚠️</span>
+                            <p class="text-error text-sm font-medium">
+                                {{ mensaje_modificacion }}
+                            </p>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Botones de acción -->
-                <div class="text-center space-y-4 animate-fadeInUp" style="animation-delay: 1s;">
-                    {% if puede_modificar %}
-                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button 
-                                id="cancelButton"
-                                class="action-button bg-error hover:bg-error/90 text-white flex items-center px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1"
-                            >
-                                <span class="mr-2 mb-0.5 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd" />
-                                    </svg>
-                                </span> 
-                                Cancelar Reserva
-                            </button>
-                        </div>
-                    {% endif %}
-                    
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-                        {% if user.is_authenticated %}
-                            <a href="{% url 'accounts:mis_reservas' %}" 
-                               class="action-button bg-secundario hover:bg-secundario/90 text-gris-oscuro flex items-center px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
-                                <span class="mr-2 mb-1 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                                        <path fill-rule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" clip-rule="evenodd" />
-                                        <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
-                                    </svg>
-                                </span>
-                                Ver Todas Mis Reservas
-                            </a>
                         {% endif %}
-                        <a href="{% url 'gravity:clases_disponibles' %}" 
-                           class="action-button flex items-center border-2 border-principal text-principal hover:bg-principal hover:text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
-                            <span class="mr-2 mb-1 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                                    <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
-                                    <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
-                                </svg>
-                            </span>
-                            Ver Clases Disponibles
-                        </a>
-                        <a href="{% url 'gravity:home' %}" 
-                           class="action-button bg-gris-claro hover:bg-gris-medio flex items-center text-gris-oscuro px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
-                            <span class="mr-2 mb-1 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                                    <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
-                                    <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
-                                </svg>
-                            </span>
-                            Volver al Inicio
-                        </a>
                     </div>
                 </div>
 
-                <!-- Información adicional sobre la reserva recurrente -->
-                <div class="mt-12 reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp" style="animation-delay: 1.2s;">
-                    <div class="text-center">
-                        <h3 class="text-2xl font-bold text-principal mb-4 flex items-center justify-center gap-2">
-                            <span class="text-2xl mb-1 text-principal flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
-                                    <path fill-rule="evenodd" d="M12 5.25c1.213 0 2.415.046 3.605.135a3.256 3.256 0 0 1 3.01 3.01c.044.583.077 1.17.1 1.759L17.03 8.47a.75.75 0 1 0-1.06 1.06l3 3a.75.75 0 0 0 1.06 0l3-3a.75.75 0 0 0-1.06-1.06l-1.752 1.751c-.023-.65-.06-1.296-.108-1.939a4.756 4.756 0 0 0-4.392-4.392 49.422 49.422 0 0 0-7.436 0A4.756 4.756 0 0 0 3.89 8.282c-.017.224-.033.447-.046.672a.75.75 0 1 0 1.497.092c.013-.217.028-.434.044-.651a3.256 3.256 0 0 1 3.01-3.01c1.19-.09 2.392-.135 3.605-.135Zm-6.97 6.22a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.752-1.751c.023.65.06 1.296.108 1.939a4.756 4.756 0 0 0 4.392 4.392 49.413 49.413 0 0 0 7.436 0 4.756 4.756 0 0 0 4.392-4.392c.017-.223.032-.447.046-.672a.75.75 0 0 0-1.497-.092c-.013.217-.028.434-.044.651a3.256 3.256 0 0 1-3.01 3.01 47.953 47.953 0 0 1-7.21 0 3.256 3.256 0 0 1-3.01-3.01 47.759 47.759 0 0 1-.1-1.759L6.97 15.53a.75.75 0 0 0 1.06-1.06l-3-3Z" clip-rule="evenodd" />
-                                </svg>
-                            </span>
-                            Reserva Recurrente
-                        </h3>
-                        <p class="text-lg text-gris-oscuro mb-6 leading-relaxed">
-                            Esta reserva es <strong>recurrente</strong>, lo que significa que tienes tu lugar asegurado 
-                            todos los <strong>{{ reserva.clase.dia }}</strong> a las <strong>{{ reserva.clase.horario|time:"H:i" }}</strong> 
-                            en <strong>{{ reserva.clase.get_direccion_corta }}</strong> hasta que decidas cancelarla.
-                        </p>
-                        
-                        <div class="grid md:grid-cols-3 gap-4 text-sm">
-                            <div class="bg-exito/10 border border-exito/30 rounded-lg p-4">
-                                <div class="text-exito text-2xl mb-2">✅</div>
-                                <p class="font-medium text-exito">Lugar Asegurado</p>
-                                <p class="text-exito/80">Tu lugar está garantizado cada semana</p>
-                            </div>
-                            
-                            <div class="bg-info/10 border border-info/30 rounded-lg p-4">
-                                <div class="text-info text-2xl mb-2">🔄</div>
-                                <p class="font-medium text-info">Automática</p>
-                                <p class="text-info/80">No necesitas reservar cada semana</p>
-                            </div>
-                            
-                            <div class="bg-advertencia/10 border border-advertencia/30 rounded-lg p-4">
-                                <div class="text-advertencia text-2xl mb-2">⏰</div>
-                                <p class="font-medium text-advertencia">Flexible</p>
-                                <p class="text-advertencia/80">Puedes modificar o cancelar cuando quieras.<br>
+                <!-- Información del usuario -->
+                <div class="reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp"
+                    style="animation-delay: 0.8s;">
+                    <h3 class="text-xl font-bold text-principal mb-4 flex items-center gap-2">
+                        <span class="text-2xl mb-1 text-principal flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-7">
+                                <path fill-rule="evenodd"
+                                    d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Información Personal
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="text-sm text-gris-medio">Nombre completo</p>
+                            <p class="font-medium text-gris-oscuro">{{ reserva.get_nombre_completo_usuario }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gris-medio">Usuario</p>
+                            <p class="font-medium text-gris-oscuro">{{ reserva.usuario.username }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gris-medio">Fecha de reserva</p>
+                            <p class="font-medium text-gris-oscuro">{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="text-center space-y-4 animate-fadeInUp" style="animation-delay: 1s;">
+                {% if puede_modificar %}
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button id="cancelButton"
+                        class="action-button bg-error hover:bg-error/90 text-white flex items-center px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                        <span class="mr-2 mb-0.5 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-6">
+                                <path fill-rule="evenodd"
+                                    d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Cancelar Reserva
+                    </button>
+                </div>
+                {% endif %}
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:mis_reservas' %}"
+                        class="action-button bg-secundario hover:bg-secundario/90 text-gris-oscuro flex items-center px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                        <span class="mr-2 mb-1 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-6">
+                                <path fill-rule="evenodd"
+                                    d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z"
+                                    clip-rule="evenodd" />
+                                <path
+                                    d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                            </svg>
+                        </span>
+                        Ver Todas Mis Reservas
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'gravity:clases_disponibles' %}"
+                        class="action-button flex items-center border-2 border-principal text-principal hover:bg-principal hover:text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                        <span class="mr-2 mb-1 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-6">
+                                <path
+                                    d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+                                <path fill-rule="evenodd"
+                                    d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Ver Clases Disponibles
+                    </a>
+                    <a href="{% url 'gravity:home' %}"
+                        class="action-button bg-gris-claro hover:bg-gris-medio flex items-center text-gris-oscuro px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-btn-primary-hover transform hover:-translate-y-1">
+                        <span class="mr-2 mb-1 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-6">
+                                <path
+                                    d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+                                <path
+                                    d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+                            </svg>
+                        </span>
+                        Volver al Inicio
+                    </a>
+                </div>
+            </div>
+
+            <!-- Información adicional sobre la reserva recurrente -->
+            <div class="mt-12 reservation-card rounded-2xl shadow-wizard p-6 animate-fadeInUp"
+                style="animation-delay: 1.2s;">
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold text-principal mb-4 flex items-center justify-center gap-2">
+                        <span class="text-2xl mb-1 text-principal flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-8">
+                                <path fill-rule="evenodd"
+                                    d="M12 5.25c1.213 0 2.415.046 3.605.135a3.256 3.256 0 0 1 3.01 3.01c.044.583.077 1.17.1 1.759L17.03 8.47a.75.75 0 1 0-1.06 1.06l3 3a.75.75 0 0 0 1.06 0l3-3a.75.75 0 0 0-1.06-1.06l-1.752 1.751c-.023-.65-.06-1.296-.108-1.939a4.756 4.756 0 0 0-4.392-4.392 49.422 49.422 0 0 0-7.436 0A4.756 4.756 0 0 0 3.89 8.282c-.017.224-.033.447-.046.672a.75.75 0 1 0 1.497.092c.013-.217.028-.434.044-.651a3.256 3.256 0 0 1 3.01-3.01c1.19-.09 2.392-.135 3.605-.135Zm-6.97 6.22a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.752-1.751c.023.65.06 1.296.108 1.939a4.756 4.756 0 0 0 4.392 4.392 49.413 49.413 0 0 0 7.436 0 4.756 4.756 0 0 0 4.392-4.392c.017-.223.032-.447.046-.672a.75.75 0 0 0-1.497-.092c-.013.217-.028.434-.044.651a3.256 3.256 0 0 1-3.01 3.01 47.953 47.953 0 0 1-7.21 0 3.256 3.256 0 0 1-3.01-3.01 47.759 47.759 0 0 1-.1-1.759L6.97 15.53a.75.75 0 0 0 1.06-1.06l-3-3Z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Reserva Recurrente
+                    </h3>
+                    <p class="text-lg text-gris-oscuro mb-6 leading-relaxed">
+                        Esta reserva es <strong>recurrente</strong>, lo que significa que tienes tu lugar asegurado
+                        todos los <strong>{{ reserva.clase.dia }}</strong> a las <strong>{{
+                            reserva.clase.horario|time:"H:i" }}</strong>
+                        en <strong>{{ reserva.clase.get_direccion_corta }}</strong> hasta que decidas cancelarla.
+                    </p>
+
+                    <div class="grid md:grid-cols-3 gap-4 text-sm">
+                        <div class="bg-exito/10 border border-exito/30 rounded-lg p-4">
+                            <div class="text-exito text-2xl mb-2">✅</div>
+                            <p class="font-medium text-exito">Lugar Asegurado</p>
+                            <p class="text-exito/80">Tu lugar está garantizado cada semana</p>
+                        </div>
+
+                        <div class="bg-info/10 border border-info/30 rounded-lg p-4">
+                            <div class="text-info text-2xl mb-2">🔄</div>
+                            <p class="font-medium text-info">Automática</p>
+                            <p class="text-info/80">No necesitas reservar cada semana</p>
+                        </div>
+
+                        <div class="bg-advertencia/10 border border-advertencia/30 rounded-lg p-4">
+                            <div class="text-advertencia text-2xl mb-2">⏰</div>
+                            <p class="font-medium text-advertencia">Flexible</p>
+                            <p class="text-advertencia/80">Puedes modificar o cancelar cuando quieras.<br>
                                 (Hasta 12 horas antes de un turno)</p>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Modal de Cancelación -->
-        <div id="cancelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform scale-95 opacity-0 transition-all duration-300" id="modalContent">
-                <div class="p-6">
-                    <div class="text-center mb-6">
-                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-error/10 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 text-error">
-                                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-principal mb-2">Cancelar Reserva</h3>
-                        <p class="text-gris-oscuro">¿Estás seguro de que quieres cancelar esta reserva?</p>
-                    </div>
-                    
-                    <div class="bg-gris-claro/50 rounded-lg p-4 mb-6">
-                        <div class="text-sm space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-gris-medio">Clase:</span>
-                                <span class="font-medium">{{ reserva.clase.get_nombre_display }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gris-medio">Día:</span>
-                                <span class="font-medium">{{ reserva.clase.dia }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gris-medio">Horario:</span>
-                                <span class="font-medium">{{ reserva.clase.horario|time:"H:i" }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gris-medio">Sede:</span>
-                                <span class="font-medium">{{ reserva.clase.get_direccion_corta }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-advertencia/10 border border-advertencia/30 rounded-lg p-3 mb-6">
-                        <div class="flex items-start gap-2">
-                            <span class="text-advertencia text-lg">⚠️</span>
-                            <p class="text-advertencia text-sm font-medium">
-                                Esta acción cancelará tu reserva recurrente. No podrás asistir a ninguna clase de esta reserva hasta que hagas una nueva.
-                            </p>
-                        </div>
-                    </div>
+    <!-- Modal Cancelar Reserva -->
+    <div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+        <div id="modalContent"
+            class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 transform scale-95 opacity-0 transition-all duration-300">
 
-                    <form id="cancelForm" method="post" action="{% url 'gravity:cancelar_reserva' reserva.numero_reserva %}">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">¿Cómo querés cancelar?</h3>
+            <p class="text-sm text-gray-500 mb-6">
+                Clase: <strong>{{ reserva.clase.get_nombre_display }}</strong> —
+                {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }} hs —
+                {{ reserva.clase.get_direccion_corta }}
+            </p>
+
+            <div class="flex flex-col gap-4">
+
+                <!-- OPCIÓN 1: Solo el próximo día -->
+                {% if not reserva.tiene_ausencia_proxima %}
+                <div class="border border-[#C8B39B] rounded-xl p-4 bg-[#F8EFE5]">
+                    <p class="font-medium text-[#5D768B] mb-1">📅 Solo el próximo día</p>
+                    <p class="text-sm text-gray-600 mb-3">
+                        No asistirás el <strong>{{ reserva.get_proxima_fecha }}</strong>.
+                        Ese cupo queda libre para otra persona.
+                        Tu reserva sigue activa para las semanas siguientes.
+                    </p>
+                    <form method="POST" action="{% url 'gravity:cancelar_reserva' reserva.numero_reserva %}">
                         {% csrf_token %}
-                        <div class="mb-4">
-                            <label class="flex items-start gap-3 cursor-pointer">
-                                <input type="checkbox" name="confirmar_cancelacion" value="confirmar" required 
-                                    class="mt-1 h-4 w-4 text-error border-gris-medio rounded focus:ring-error">
-                                <span class="text-sm text-gris-oscuro">
-                                    Confirmo que deseo cancelar mi reserva para la clase de 
-                                    <strong>{{ reserva.clase.get_nombre_display }}</strong> los 
-                                    <strong>{{ reserva.clase.dia }}</strong> a las 
-                                    <strong>{{ reserva.clase.horario|time:"H:i" }}</strong> en 
-                                    <strong>{{ reserva.clase.get_direccion_corta }}</strong>
-                                </span>
-                            </label>
-                        </div>
-
-                        <div class="flex gap-3">
-                            <button type="button" id="closeModalButton"
-                                    class="flex-1 px-4 py-2 border border-gris-medio text-gris-oscuro rounded-lg hover:bg-gris-claro transition-colors duration-200">
-                                Mantener Reserva
-                            </button>
-                            <button type="submit" 
-                                    class="flex-1 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors duration-200 font-medium">
-                                Sí, Cancelar
-                            </button>
-                        </div>
+                        <input type="hidden" name="confirmar_cancelacion" value="confirmar">
+                        <input type="hidden" name="tipo_cancelacion" value="temporal">
+                        <button type="submit"
+                            class="w-full bg-[#5D768B] hover:bg-[#4a6070] text-white text-sm font-medium py-2 px-4 rounded-lg transition">
+                            Cancelar solo el {{ reserva.get_proxima_fecha }}
+                        </button>
                     </form>
                 </div>
+                {% else %}
+                <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                    <p class="font-medium text-gray-400 mb-1">📅 Solo el próximo día</p>
+                    <p class="text-sm text-gray-400">
+                        Ya tenés registrada una ausencia para el <strong>{{ reserva.get_proxima_fecha }}</strong>.
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- OPCIÓN 2: Cancelación permanente -->
+                <div class="border border-red-200 rounded-xl p-4 bg-red-50">
+                    <p class="font-medium text-red-700 mb-1">❌ Cancelar definitivamente</p>
+                    <p class="text-sm text-gray-600 mb-3">
+                        Dejás de ir a esta clase para siempre. El cupo queda libre y
+                        <strong>no podrás asistir sin hacer una nueva reserva</strong>.
+                    </p>
+                    <form method="POST" action="{% url 'gravity:cancelar_reserva' reserva.numero_reserva %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="confirmar_cancelacion" value="confirmar">
+                        <input type="hidden" name="tipo_cancelacion" value="permanente">
+                        <button type="submit"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition">
+                            Cancelar definitivamente
+                        </button>
+                    </form>
+                </div>
+
             </div>
+
+            <!-- Botón cerrar -->
+            <button id="closeModalButton" onclick="closeCancelModal()"
+                class="mt-4 w-full text-center text-sm text-gray-400 hover:text-gray-600 transition">
+                Volver
+            </button>
+
         </div>
-    </section>
+    </div>
+</section>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Funciones del modal
-            function openCancelModal() {
-                const modal = document.getElementById('cancelModal');
-                const modalContent = document.getElementById('modalContent');
-                
-                if (!modal || !modalContent) return;
-                
-                modal.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    modalContent.classList.remove('scale-95', 'opacity-0');
-                    modalContent.classList.add('scale-100', 'opacity-100');
-                }, 50);
-                
-                document.body.style.overflow = 'hidden';
-            }
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Funciones del modal
+        function openCancelModal() {
+            const modal = document.getElementById('cancelModal');
+            const modalContent = document.getElementById('modalContent');
 
-            function closeCancelModal() {
-                const modal = document.getElementById('cancelModal');
-                const modalContent = document.getElementById('modalContent');
-                
-                if (!modal || !modalContent) return;
-                
-                modalContent.classList.remove('scale-100', 'opacity-100');
-                modalContent.classList.add('scale-95', 'opacity-0');
-                
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    document.body.style.overflow = 'auto';
-                }, 300);
-            }
+            if (!modal || !modalContent) return;
 
-            // Event listener para el botón de cancelar
-            const cancelButton = document.getElementById('cancelButton');
-            if (cancelButton) {
-                cancelButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    openCancelModal();
-                });
-            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
 
-            // Event listeners para cerrar el modal
-            const cancelModal = document.getElementById('cancelModal');
-            if (cancelModal) {
-                // Cerrar al hacer clic fuera
-                cancelModal.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        closeCancelModal();
-                    }
-                });
-            }
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 50);
 
-            // Cerrar con Escape
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCancelModal() {
+            const modal = document.getElementById('cancelModal');
+            const modalContent = document.getElementById('modalContent');
+
+            if (!modal || !modalContent) return;
+
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        // Event listener para el botón de cancelar
+        const cancelButton = document.getElementById('cancelButton');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                openCancelModal();
+            });
+        }
+
+        // Event listeners para cerrar el modal
+        const cancelModal = document.getElementById('cancelModal');
+        if (cancelModal) {
+            // Cerrar al hacer clic fuera
+            cancelModal.addEventListener('click', function (e) {
+                if (e.target === this) {
                     closeCancelModal();
                 }
             });
+        }
 
-            // Botón de cerrar modal
-            const closeButton = document.getElementById('closeModalButton');
-            if (closeButton) {
-                closeButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    closeCancelModal();
-                });
-            }
-
-            // Animaciones de entrada
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, observerOptions);
-
-            document.querySelectorAll('.info-item, .reservation-card').forEach(item => {
-                item.style.opacity = '0';
-                item.style.transform = 'translateY(20px)';
-                item.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                observer.observe(item);
-            });
-
-            // Efectos de hover
-            document.querySelectorAll('.action-button').forEach(button => {
-                button.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-3px) scale(1.02)';
-                });
-                
-                button.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0) scale(1)';
-                });
-            });
-
-            // Copiar número de reserva
-            const numeroReserva = document.querySelector('span.font-bold.text-principal');
-            if (numeroReserva) {
-                numeroReserva.style.cursor = 'pointer';
-                numeroReserva.title = 'Haz clic para copiar el número de reserva';
-                
-                numeroReserva.addEventListener('click', function() {
-                    navigator.clipboard.writeText(this.textContent).then(function() {
-                        const originalText = numeroReserva.textContent;
-                        numeroReserva.textContent = '¡Copiado!';
-                        numeroReserva.classList.add('text-exito');
-                        
-                        setTimeout(() => {
-                            numeroReserva.textContent = originalText;
-                            numeroReserva.classList.remove('text-exito');
-                            numeroReserva.classList.add('text-principal');
-                        }, 2000);
-                    });
-                });
+        // Cerrar con Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeCancelModal();
             }
         });
-    </script>
+
+        // Botón de cerrar modal
+        const closeButton = document.getElementById('closeModalButton');
+        if (closeButton) {
+            closeButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                closeCancelModal();
+            });
+        }
+
+        // Animaciones de entrada
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.info-item, .reservation-card').forEach(item => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(20px)';
+            item.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(item);
+        });
+
+        // Efectos de hover
+        document.querySelectorAll('.action-button').forEach(button => {
+            button.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-3px) scale(1.02)';
+            });
+
+            button.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Copiar número de reserva
+        const numeroReserva = document.querySelector('span.font-bold.text-principal');
+        if (numeroReserva) {
+            numeroReserva.style.cursor = 'pointer';
+            numeroReserva.title = 'Haz clic para copiar el número de reserva';
+
+            numeroReserva.addEventListener('click', function () {
+                navigator.clipboard.writeText(this.textContent).then(function () {
+                    const originalText = numeroReserva.textContent;
+                    numeroReserva.textContent = '¡Copiado!';
+                    numeroReserva.classList.add('text-exito');
+
+                    setTimeout(() => {
+                        numeroReserva.textContent = originalText;
+                        numeroReserva.classList.remove('text-exito');
+                        numeroReserva.classList.add('text-principal');
+                    }, 2000);
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}
