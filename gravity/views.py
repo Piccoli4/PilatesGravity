@@ -716,6 +716,32 @@ def admin_required(view_func):
     
     return wrapper
 
+def superadmin_required(view_func):
+    """
+    Decorador que requiere que el usuario sea superusuario (Nico o Cami).
+    Solo ellos pueden gestionar administradores con permisos restringidos.
+    """
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.error(request, 'Debes iniciar sesión como administrador.')
+            return redirect('accounts:login')
+        if not request.user.is_superuser:
+            messages.error(request, 'No tenés permisos para acceder a esta sección.')
+            return redirect('gravity:admin_dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def get_puede_ver_pagos(user):
+    """
+    Retorna True si el usuario tiene permiso para ver información financiera.
+    Por defecto True (acceso completo). Solo False si se configuró explícitamente.
+    """
+    try:
+        return user.profile.puede_ver_pagos
+    except Exception:
+        return True
+
 # ==============================================================================
 # DASHBOARD PRINCIPAL DEL ADMINISTRADOR
 # ==============================================================================
@@ -803,6 +829,7 @@ def admin_dashboard(request):
         'configuracion': configuracion,
         'notificaciones_cancelacion': notificaciones_cancelacion,
         'hay_notificaciones': notificaciones_cancelacion.exists(),
+        'puede_ver_pagos': get_puede_ver_pagos(request.user),
     }
 
     return render(request, 'gravity/admin/dashboard.html', context)
@@ -1896,7 +1923,8 @@ def admin_pagos_vista_principal(request):
     paginator = Paginator(clientes_procesados, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+    puede_ver = get_puede_ver_pagos(request.user)
+
     context = {
         'page_obj': page_obj,
         'planes_activos': planes_activos,
@@ -1907,9 +1935,10 @@ def admin_pagos_vista_principal(request):
         'clientes_al_dia': clientes_al_dia,
         'clientes_con_deuda': clientes_con_deuda,
         'clientes_sin_plan': clientes_sin_plan,
-        'ingresos_mes': ingresos_mes,
-        'total_deuda': total_deuda,
+        'ingresos_mes': ingresos_mes if puede_ver else None,
+        'total_deuda': total_deuda if puede_ver else None,
         'mes_actual': mes_actual,
+        'puede_ver_pagos': puede_ver,
     }
     
     return render(request, 'gravity/admin/pagos_principal.html', context)
@@ -1989,12 +2018,14 @@ def admin_pagos_historial_cliente(request, cliente_id):
     
     total_pagos = pagos.filter(estado='confirmado').count()
     
+    puede_ver = get_puede_ver_pagos(request.user)
     context = {
         'cliente': cliente,
         'estado_pago': estado_pago,
-        'pagos': pagos,
-        'total_pagado': total_pagado,
-        'total_pagos': total_pagos,
+        'pagos': pagos if puede_ver else [],
+        'total_pagado': total_pagado if puede_ver else None,
+        'total_pagos': total_pagos if puede_ver else None,
+        'puede_ver_pagos': puede_ver,
     }
     
     return render(request, 'gravity/admin/pagos_historial.html', context)
@@ -2051,6 +2082,11 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
     Modal/página simple para editar manualmente el estado de pago de un cliente.
     """
     cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
+
+    if not get_puede_ver_pagos(request.user):
+        messages.error(request, 'No tenés permisos para editar información de pagos.')
+        return redirect('gravity:admin_pagos_vista_principal')
+
     estado_pago, created = EstadoPagoCliente.objects.get_or_create(
         usuario=cliente,
         defaults={'activo': True}
@@ -2076,6 +2112,103 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
     }
     
     return render(request, 'gravity/admin/pagos_editar_estado.html', context)
+
+# ==============================================================================
+# GESTIÓN DE ADMINISTRADORES CON PERMISOS RESTRINGIDOS (solo superadmins)
+# ==============================================================================
+
+@superadmin_required
+def admin_gestionar_admins(request):
+    """
+    Lista y gestión de usuarios administradores sin acceso a pagos.
+    Solo accesible por superusuarios.
+    """
+    admins_restringidos = User.objects.filter(
+        is_staff=True,
+        is_superuser=False,
+        is_active=True
+    ).select_related('profile').order_by('first_name', 'last_name')
+
+    context = {
+        'admins_restringidos': admins_restringidos,
+    }
+    return render(request, 'gravity/admin/gestionar_admins.html', context)
+
+
+@superadmin_required
+def admin_crear_admin_restringido(request):
+    """
+    Crear un nuevo usuario administrador sin acceso a información de pagos.
+    Solo accesible por superusuarios.
+    """
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        apellido = request.POST.get('apellido', '').strip()
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        if not nombre or not apellido or not password:
+            messages.error(request, 'Nombre, apellido y contraseña son obligatorios.')
+            return redirect('gravity:admin_gestionar_admins')
+
+        base_username = f"{nombre.lower()}{apellido.lower()}"
+        username = base_username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        try:
+            with transaction.atomic():
+                nuevo_admin = User.objects.create_user(
+                    username=username,
+                    email=email if email else '',
+                    first_name=nombre,
+                    last_name=apellido,
+                    password=password,
+                    is_staff=True,
+                    is_superuser=False,
+                )
+                profile, _ = UserProfile.objects.get_or_create(user=nuevo_admin)
+                profile.puede_ver_pagos = False
+                profile.save()
+
+                messages.success(
+                    request,
+                    f'Administrador {nombre} {apellido} creado exitosamente. '
+                    f'Usuario: {username}. No podrá ver información de pagos.'
+                )
+        except Exception as e:
+            messages.error(request, f'Error al crear administrador: {str(e)}')
+
+        return redirect('gravity:admin_gestionar_admins')
+
+    return redirect('gravity:admin_gestionar_admins')
+
+
+@superadmin_required
+def admin_eliminar_admin_restringido(request, admin_id):
+    """
+    Eliminar (desactivar) un administrador restringido.
+    Solo accesible por superusuarios.
+    """
+    if request.method != 'POST':
+        return redirect('gravity:admin_gestionar_admins')
+
+    admin_a_eliminar = get_object_or_404(
+        User,
+        id=admin_id,
+        is_staff=True,
+        is_superuser=False
+    )
+
+    nombre_completo = admin_a_eliminar.get_full_name() or admin_a_eliminar.username
+    admin_a_eliminar.is_active = False
+    admin_a_eliminar.is_staff = False
+    admin_a_eliminar.save()
+
+    messages.success(request, f'Administrador {nombre_completo} eliminado del sistema.')
+    return redirect('gravity:admin_gestionar_admins')
 
 # ==============================================================================
 # VISTAS DE PLANES DE PAGO

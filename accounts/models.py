@@ -144,6 +144,12 @@ class UserProfile(models.Model):
         help_text="Notas internas del estudio (solo visible para administradores)",
         max_length=1000
     )
+
+    puede_ver_pagos = models.BooleanField(
+        default=True,
+        verbose_name="Puede ver información de pagos",
+        help_text="Si False, este administrador no podrá ver montos, saldos ni ingresos en el sistema de pagos"
+    )
     
     # Avatar/foto de perfil (opcional)
     avatar = models.ImageField(
