@@ -192,7 +192,7 @@ def modificar_reserva(request, numero_reserva):
         activa=True
     )
     
-    # Verificar si la reserva puede modificarse (12 horas de anticipación)
+    # Verificar si la reserva puede modificarse (3 horas de anticipación)
     puede_modificar, mensaje = reserva.puede_modificarse()
     
     if not puede_modificar:

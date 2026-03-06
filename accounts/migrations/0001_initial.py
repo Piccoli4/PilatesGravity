@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 ('sede_2_email', models.EmailField(blank=True, help_text='Email específico de la sede 2', max_length=254, verbose_name='Email Sede 2')),
                 ('sede_2_horarios', models.TextField(blank=True, help_text='Horarios de atención de la Sede 2', verbose_name='Horarios Sede 2')),
                 ('sede_2_capacidad_maxima', models.PositiveIntegerField(default=8, help_text='Número máximo de personas por clase en la sede 2', verbose_name='Capacidad máxima por clase - Sede 2')),
-                ('horas_anticipacion_cancelacion', models.PositiveIntegerField(default=12, help_text='Número de horas de anticipación requeridas para cancelar una reserva', verbose_name='Horas de anticipación para cancelar')),
+                ('horas_anticipacion_cancelacion', models.PositiveIntegerField(default=3, help_text='Número de horas de anticipación requeridas para cancelar una reserva', verbose_name='Horas de anticipación para cancelar')),
                 ('max_reservas_por_usuario', models.PositiveIntegerField(default=3, help_text='Número máximo de reservas activas que puede tener un usuario', verbose_name='Máximo de reservas activas por usuario')),
                 ('enviar_recordatorios', models.BooleanField(default=True, help_text='Enviar recordatorios por email antes de las clases', verbose_name='Enviar recordatorios de clase')),
                 ('horas_antes_recordatorio', models.PositiveIntegerField(default=24, help_text='Cuántas horas antes de la clase enviar el recordatorio', verbose_name='Horas antes para enviar recordatorio')),

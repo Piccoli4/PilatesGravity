@@ -438,7 +438,7 @@ class ConfiguracionEstudio(models.Model):
     # === CONFIGURACIONES GENERALES DE RESERVAS ===
     
     horas_anticipacion_cancelacion = models.PositiveIntegerField(
-        default=12,
+        default=3,
         verbose_name="Horas de anticipación para cancelar",
         help_text="Número de horas de anticipación requeridas para cancelar una reserva"
     )
@@ -518,7 +518,7 @@ class ConfiguracionEstudio(models.Model):
         config, created = cls.objects.get_or_create(
             defaults={
                 'nombre_estudio': 'Pilates Gravity',
-                'horas_anticipacion_cancelacion': 12,
+                'horas_anticipacion_cancelacion':3,
                 'max_reservas_por_usuario': 3,
                 'enviar_recordatorios': True,
                 'horas_antes_recordatorio': 24,

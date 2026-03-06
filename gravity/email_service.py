@@ -231,7 +231,7 @@ def enviar_recordatorio_clase(reserva, horas_antes=24):
             • Trae una botella de agua
             • Usa ropa cómoda para ejercitarte
 
-            Si necesitas cancelar, recuerda que debes hacerlo con al menos 12 horas de anticipación.
+            Si necesitas cancelar, recuerda que debes hacerlo con al menos 3 horas de anticipación.
 
             ¡Te esperamos en Pilates Gravity!
 
@@ -730,7 +730,7 @@ def crear_email_reserva_texto_plano(context):
         ⚠️ IMPORTANTE: Esta es una reserva recurrente. Asistirás todos los 
         {reserva.clase.dia} a esta clase hasta que decidas cancelarla.
 
-        Si necesitas cancelar o modificar, hazlo con al menos 12 horas de 
+        Si necesitas cancelar o modificar, hazlo con al menos 3 horas de 
         anticipación desde tu perfil web.
 
         💪 ¡Te esperamos en el estudio!
@@ -1058,13 +1058,13 @@ def crear_email_recordatorio_texto_plano(context):
 
         ⚡ ¿NECESITAS HACER ALGO?
         Si por algún motivo no puedes asistir mañana, por favor cancela
-        tu reserva con al menos 12 horas de anticipación.
+        tu reserva con al menos 3 horas de anticipación.
 
         Ver tu reserva: {context['domain_url']}/reserva/{reserva.numero_reserva}/
         Modificar clase: {context['domain_url']}/reserva/{reserva.numero_reserva}/modificar/
         Cancelar reserva: {context['domain_url']}/reserva/{reserva.numero_reserva}/cancelar/
 
-        ⚠️ IMPORTANTE: Las cancelaciones deben realizarse con 12 horas
+        ⚠️ IMPORTANTE: Las cancelaciones deben realizarse con 3 horas
         de anticipación. Después de ese tiempo no se podrá cancelar online.
 
         📞 ¿ALGUNA CONSULTA?
@@ -1255,7 +1255,7 @@ def enviar_email_recordatorio_clase_completo(reserva, horas_antes=24):
         # Calcular tiempo exacto hasta la clase
         tiempo_info = calcular_tiempo_hasta_clase_completo(reserva.clase)
         
-        # Calcular fecha límite para cancelación (12 horas antes)
+        # Calcular fecha límite para cancelación (3 horas antes)
         fecha_limite_cancelacion = calcular_fecha_limite_cancelacion_completa(reserva.clase)
         
         # Preparar el contexto para el template
@@ -1388,7 +1388,7 @@ def calcular_tiempo_hasta_clase_completo(clase):
 
 def calcular_fecha_limite_cancelacion_completa(clase):
     """
-    Calcula la fecha límite para cancelar una reserva (12 horas antes).
+    Calcula la fecha límite para cancelar una reserva (3 horas antes).
     
     Args:
         clase: Objeto Clase
@@ -1439,8 +1439,8 @@ def calcular_fecha_limite_cancelacion_completa(clase):
             microsecond=0
         )
     
-    # Restar 12 horas para la fecha límite
-    fecha_limite = proxima_fecha_clase - timedelta(hours=12)
+    # Restar 3 horas para la fecha límite
+    fecha_limite = proxima_fecha_clase - timedelta(hours=3)
     
     return fecha_limite
 
@@ -1515,7 +1515,7 @@ def crear_email_recordatorio_completo_texto_plano(context):
 
             POLÍTICA DE CANCELACIÓN:
             -----------------------
-            ⚠️ Si necesitas cancelar o modificar tu reserva, hazlo con al menos 12 horas de anticipación.
+            ⚠️ Si necesitas cancelar o modificar tu reserva, hazlo con al menos 3 horas de anticipación.
             📅 Fecha límite para cancelar: {fecha_limite.strftime('%d/%m/%Y %H:%M')}
 
             Puedes gestionar tu reserva desde tu perfil o contactándonos por WhatsApp.
@@ -1874,7 +1874,7 @@ def enviar_recordatorio_clase(reserva, horas_antes=24):
             â€¢ Trae una botella de agua
             â€¢ Usa ropa cÃ³moda para ejercitarte
 
-            Si necesitas cancelar, recuerda que debes hacerlo con al menos 12 horas de anticipaciÃ³n.
+            Si necesitas cancelar, recuerda que debes hacerlo con al menos 3 horas de anticipaciÃ³n.
 
             Â¡Te esperamos en Pilates Gravity!
 
