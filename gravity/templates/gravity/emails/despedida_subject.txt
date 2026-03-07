@@ -1,1 +1,1 @@
-¡Hasta pronto {{ usuario.first_name|default:usuario.username }}! 💜 Gracias por ser parte de Pilates Gravity
+¡Hasta pronto {{ usuario.first_name|default:usuario.username }}!

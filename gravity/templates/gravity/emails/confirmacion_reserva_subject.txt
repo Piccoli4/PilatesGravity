@@ -1,1 +1,1 @@
-¡Reserva confirmada! 🎯 {{ reserva.clase.get_nombre_display }} - {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }} - Pilates Gravity
+¡Reserva confirmada!

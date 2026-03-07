@@ -3,7 +3,9 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.urls import reverse
 from .models import Clase, Reserva
+from email.mime.image import MIMEImage
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ def enviar_email_cancelacion_reserva(reserva, motivo=None, motivo_detalle=None,
             )
         
         # Preparar el contexto para el template
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
         
         context = {
             'reserva': reserva,
@@ -139,7 +141,7 @@ def enviar_email_confirmacion_reserva(reserva):
             return False
         
         # Preparar el contexto
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
         
         context = {
             'reserva': reserva,
@@ -277,7 +279,7 @@ def enviar_email_bienvenida_completo(usuario):
             return False
         
         # Preparar el contexto para el template
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
         
         context = {
             'usuario': usuario,
@@ -370,32 +372,27 @@ def crear_email_bienvenida_texto_plano(context):
 def enviar_email_confirmacion_pago_completo(pago):
     """
     Envía un email de confirmación de pago completo con template HTML.
-    
+
     Args:
         pago: Objeto RegistroPago
-    
+
     Returns:
         Boolean: True si el email se envió exitosamente, False en caso contrario
     """
-    
     try:
         if not pago.cliente or not pago.cliente.email:
             logger.warning(f"Pago {pago.id} sin cliente o email configurado")
             return False
-        
-        # Obtener estado de pago del cliente
+
         from .models import EstadoPagoCliente
         estado_pago, created = EstadoPagoCliente.objects.get_or_create(
             usuario=pago.cliente,
             defaults={'activo': True}
         )
-        
-        # Calcular saldo anterior (antes de este pago)
+
         saldo_anterior = estado_pago.saldo_actual - pago.monto
-        
-        # Preparar el contexto para el template
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-        
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
+
         context = {
             'usuario': pago.cliente,
             'pago': pago,
@@ -404,44 +401,82 @@ def enviar_email_confirmacion_pago_completo(pago):
             'saldo_actual': estado_pago.saldo_actual,
             'plan_actual': estado_pago.plan_actual,
             'domain_url': domain_url,
-            'studio_name': 'Pilates Gravity',
-            'studio_phone': '+54 342 511 4448',
-            'studio_email': 'pilatesgravity@gmail.com',
         }
-        
-        # Renderizar los templates
+
         subject = render_to_string(
             'gravity/emails/confirmacion_pago_subject.txt',
             context
         ).strip()
-        
+
+        # Leer imágenes y convertir a base64 para embeber en el HTML sin adjuntos
+        import base64
+        logo_base64 = ''
+        banner_base64 = ''
+
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
+        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
+
+        try:
+            with open(logo_path, 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Logo no encontrado en {logo_path}.")
+
+        try:
+            with open(banner_path, 'rb') as f:
+                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Banner no encontrado en {banner_path}.")
+
+        context['logo_base64'] = logo_base64
+        context['banner_base64'] = banner_base64
+
         html_message = render_to_string(
             'gravity/emails/confirmacion_pago_email.html',
             context
         )
-        
-        # Crear versión de texto plano
-        plain_message = crear_email_pago_texto_plano(context)
-        
-        # Crear el email
+
+        nombre = pago.cliente.first_name or pago.cliente.username
+        if estado_pago.saldo_actual > 0:
+            estado_saldo = f"${estado_pago.saldo_actual} (a favor)"
+        elif estado_pago.saldo_actual == 0:
+            estado_saldo = f"${estado_pago.saldo_actual} (al día)"
+        else:
+            estado_saldo = f"${estado_pago.saldo_actual} (pendiente)"
+
+        text_message = (
+            f"¡Pago confirmado! ✅\n\n"
+            f"Hola {nombre},\n\n"
+            f"Recibimos tu pago exitosamente.\n\n"
+            f"Detalles del pago:\n"
+            f"  Fecha:     {pago.fecha_pago.strftime('%d/%m/%Y')}\n"
+            f"  Método:    {pago.get_tipo_pago_display()}\n"
+            f"  Concepto:  {pago.concepto}\n"
+            f"  Monto:     ${pago.monto}\n"
+            f"  N° recibo: #{pago.id:06d}\n\n"
+            f"Estado de cuenta:\n"
+            f"  Saldo anterior: ${saldo_anterior}\n"
+            f"  Pago recibido:  +${pago.monto}\n"
+            f"  Saldo actual:   {estado_saldo}\n\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"pilatesgravity@gmail.com · +54 342 511 4448"
+        )
+
         email = EmailMultiAlternatives(
             subject=subject,
-            body=plain_message,
+            body=text_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[pago.cliente.email],
         )
-        
-        # Adjuntar la versión HTML
-        email.attach_alternative(html_message, "text/html")
-        
-        # Enviar el email
+        email.attach_alternative(html_message, 'text/html')
         email.send(fail_silently=False)
-        
-        logger.info(f"Email de confirmación de pago enviado exitosamente a {pago.cliente.email} "
-                f"para pago ID {pago.id} - Monto: ${pago.monto}")
-        
+
+        logger.info(
+            f"Email de confirmación de pago enviado a {pago.cliente.email} "
+            f"— pago ID {pago.id}, monto ${pago.monto}"
+        )
         return True
-        
+
     except Exception as e:
         logger.error(f"Error enviando email de confirmación de pago ID {pago.id}: {str(e)}")
         return False
@@ -559,7 +594,7 @@ def enviar_email_confirmacion_reserva_detallado(reserva):
             return False
         
         # Preparar el contexto
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
         proxima_clase_info = reserva.get_proxima_clase_info()
         
         # Determinar si es hoy, mañana o días restantes
@@ -755,68 +790,87 @@ def crear_email_reserva_texto_plano(context):
 def enviar_email_despedida_completo(usuario):
     """
     Envía un email de despedida completo con template HTML.
-    
+
     Args:
         usuario: Objeto User que eliminó su cuenta
-    
+
     Returns:
         Boolean: True si el email se envió exitosamente, False en caso contrario
     """
-    
     try:
         if not usuario.email:
             logger.warning(f"Usuario {usuario.username} no tiene email configurado")
             return False
-        
-        # Calcular estadísticas del usuario antes de que se elimine
+
         estadisticas = calcular_estadisticas_usuario_despedida(usuario)
-        
-        # Preparar el contexto para el template
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-        
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
+
         context = {
             'usuario': usuario,
             'estadisticas': estadisticas,
             'domain_url': domain_url,
-            'studio_name': 'Pilates Gravity',
-            'studio_phone': '+54 342 511 4448',
-            'studio_email': 'pilatesgravity@gmail.com',
         }
-        
-        # Renderizar los templates
+
         subject = render_to_string(
             'gravity/emails/despedida_subject.txt',
             context
         ).strip()
-        
+
+        import base64
+        logo_base64 = ''
+        banner_base64 = ''
+
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
+        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
+
+        try:
+            with open(logo_path, 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Logo no encontrado en {logo_path}.")
+
+        try:
+            with open(banner_path, 'rb') as f:
+                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Banner no encontrado en {banner_path}.")
+
+        context['logo_base64'] = logo_base64
+        context['banner_base64'] = banner_base64
+
         html_message = render_to_string(
             'gravity/emails/despedida_email.html',
             context
         )
-        
-        # Crear versión de texto plano
-        plain_message = crear_email_despedida_texto_plano(context)
-        
-        # Crear el email
+
+        nombre = usuario.first_name or usuario.username
+        text_message = (
+            f"¡Hasta pronto, {nombre}!\n\n"
+            f"Gracias por haber sido parte de Pilates Gravity. "
+            f"Esperamos haber sido un espacio de bienestar, energía y conexión para vos.\n\n"
+            f"Tu recorrido con nosotros:\n"
+            f"  Clases reservadas: {estadisticas.get('total_reservas', 0)}\n"
+            f"  Tiempo con nosotros: {estadisticas.get('tiempo_texto', '-')}\n"
+            f"  Clase favorita: {estadisticas.get('clase_favorita', 'Pilates')}\n\n"
+            f"Cuando quieras volver, acá vamos a estar: {domain_url}\n\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"pilatesgravity@gmail.com · +54 342 511 4448"
+        )
+
         email = EmailMultiAlternatives(
             subject=subject,
-            body=plain_message,
+            body=text_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[usuario.email],
         )
-        
-        # Adjuntar la versión HTML
-        email.attach_alternative(html_message, "text/html")
-        
-        # Enviar el email
+        email.attach_alternative(html_message, 'text/html')
         email.send(fail_silently=False)
-        
-        logger.info(f"Email de despedida enviado exitosamente a {usuario.email}")
-        
+
+        logger.info(f"Email de despedida enviado a {usuario.email}")
         return True
-        
+
     except Exception as e:
-        logger.error(f"Error enviando email de despedida para usuario {usuario.username}: {str(e)}")
+        logger.error(f"Error enviando email de despedida para {usuario.username}: {str(e)}")
         return False
 
 def calcular_estadisticas_usuario_despedida(usuario):
@@ -1259,7 +1313,7 @@ def enviar_email_recordatorio_clase_completo(reserva, horas_antes=24):
         fecha_limite_cancelacion = calcular_fecha_limite_cancelacion_completa(reserva.clase)
         
         # Preparar el contexto para el template
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
         
         context = {
             'usuario': reserva.usuario,
@@ -1459,7 +1513,7 @@ def crear_email_recordatorio_completo_texto_plano(context):
     clase = context['clase']
     numero_reserva = context.get('numero_reserva', 'Confirmada')
     tiempo_exacto = context.get('tiempo_exacto', 'mañana')
-    domain_url = context.get('domain_url', 'http://localhost:8000')
+    domain_url = context.get('domain_url', 'https://pilatesgravity.com.ar')
     
     texto_plano = f"""
         ¡TU CLASE ES MAÑANA! - PILATES GRAVITY
@@ -1651,38 +1705,36 @@ def enviar_recordatorios_clases_manana_completo():
     return stats
 
 def enviar_email_cancelacion_reserva(reserva, motivo=None, motivo_detalle=None,
-    ofrecer_reemplazo=False, ofrecer_otras_sedes=False):
+        ofrecer_reemplazo=False, ofrecer_otras_sedes=False):
     """
-    EnvÃ­a un email al usuario notificando la cancelaciÃ³n de su reserva.
-    
+    Envía un email al usuario notificando la cancelación de su reserva.
+
     Args:
         reserva: Objeto Reserva que fue cancelada
-        motivo: Motivo de la cancelaciÃ³n
+        motivo: Motivo de la cancelación
         motivo_detalle: Detalle adicional del motivo
         ofrecer_reemplazo: Boolean si se deben sugerir clases alternativas
         ofrecer_otras_sedes: Boolean si se incluyen otras sedes en las sugerencias
-    
+
     Returns:
-        Boolean: True si el email se enviÃ³ exitosamente, False en caso contrario
+        Boolean: True si el email se envió exitosamente, False en caso contrario
     """
-    
     try:
-        # Verificar que el usuario tenga email
         if not reserva.usuario.email:
             logger.warning(f"Usuario {reserva.usuario.username} no tiene email configurado")
             return False
-        
-        # Obtener clases alternativas si se solicita
+
+        import base64
+
         clases_alternativas = []
         if ofrecer_reemplazo:
             clases_alternativas = obtener_clases_alternativas(
                 reserva.clase,
                 incluir_otras_sedes=ofrecer_otras_sedes
             )
-        
-        # Preparar el contexto para el template
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-        
+
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
+
         context = {
             'reserva': reserva,
             'motivo': motivo,
@@ -1690,46 +1742,72 @@ def enviar_email_cancelacion_reserva(reserva, motivo=None, motivo_detalle=None,
             'ofrecer_reemplazo': ofrecer_reemplazo,
             'clases_alternativas': clases_alternativas,
             'domain_url': domain_url,
-            'studio_name': 'Pilates Gravity',
-            'studio_phone': '+54 342 511 4448',
-            'studio_email': 'pilatesgravity@gmail.com',
         }
-        
-        # Renderizar los templates
+
+        # Imágenes embebidas en base64
+        logo_base64 = ''
+        banner_base64 = ''
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
+        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
+
+        try:
+            with open(logo_path, 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Logo no encontrado en {logo_path}.")
+
+        try:
+            with open(banner_path, 'rb') as f:
+                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Banner no encontrado en {banner_path}.")
+
+        context['logo_base64'] = logo_base64
+        context['banner_base64'] = banner_base64
+
         subject = render_to_string(
             'gravity/emails/reserva_cancelada_subject.txt',
             context
         ).strip()
-        
+
         html_message = render_to_string(
             'gravity/emails/reserva_cancelada_email.html',
             context
         )
-        
-        # Crear el email
+
+        text_message = (
+            f"Hola {reserva.usuario.first_name or reserva.usuario.username},\n\n"
+            f"Tu reserva ha sido cancelada.\n\n"
+            f"Detalles:\n"
+            f"  Número:  {reserva.numero_reserva}\n"
+            f"  Clase:   {reserva.clase.get_nombre_display()}\n"
+            f"  Día:     {reserva.clase.dia} a las {reserva.clase.horario.strftime('%H:%M')} hs\n"
+            f"  Sede:    {reserva.clase.get_direccion_display()}\n"
+            + (f"\nMotivo: {motivo}\n" if motivo else "")
+            + (f"{motivo_detalle}\n" if motivo_detalle else "")
+            + f"\nPodés reservar una nueva clase en: {domain_url}\n"
+            f"Consultas por WhatsApp: +54 342 511 4448\n\n"
+            f"El equipo de Pilates Gravity"
+        )
+
         email = EmailMultiAlternatives(
             subject=subject,
-            body=f"Tu reserva {reserva.numero_reserva} ha sido cancelada. "
-                f"Por favor revisa el email en formato HTML para mÃ¡s detalles.",
+            body=text_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[reserva.usuario.email],
         )
-        
-        # Adjuntar la versiÃ³n HTML
-        email.attach_alternative(html_message, "text/html")
-        
-        # Enviar el email
+        email.attach_alternative(html_message, 'text/html')
         email.send(fail_silently=False)
-        
-        logger.info(f"Email de cancelaciÃ³n enviado exitosamente a {reserva.usuario.email} "
-                f"para reserva {reserva.numero_reserva}")
-        
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error enviando email de cancelaciÃ³n para reserva {reserva.numero_reserva}: {str(e)}")
-        return False
 
+        logger.info(
+            f"Email de cancelación enviado a {reserva.usuario.email} "
+            f"para reserva {reserva.numero_reserva}"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(f"Error enviando email de cancelación para reserva {reserva.numero_reserva}: {str(e)}")
+        return False
 def obtener_clases_alternativas(clase_cancelada, incluir_otras_sedes=False, limite=5):
     """
     Obtiene clases alternativas para sugerir al usuario.
@@ -1766,135 +1844,185 @@ def obtener_clases_alternativas(clase_cancelada, incluir_otras_sedes=False, limi
 
 def enviar_email_confirmacion_reserva(reserva):
     """
-    EnvÃ­a un email de confirmaciÃ³n cuando se crea una nueva reserva.
-    
+    Envía un email de confirmación cuando se crea una nueva reserva.
+
     Args:
         reserva: Objeto Reserva que fue creada
-    
+
     Returns:
-        Boolean: True si el email se enviÃ³ exitosamente, False en caso contrario
+        Boolean: True si el email se envió exitosamente, False en caso contrario
     """
-    
     try:
-        # Verificar que el usuario tenga email
         if not reserva.usuario.email:
             logger.warning(f"Usuario {reserva.usuario.username} no tiene email configurado")
             return False
-        
-        # Preparar el contexto
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-        
+
+        import base64
+
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
+
         context = {
             'reserva': reserva,
             'domain_url': domain_url,
             'proxima_clase_info': reserva.get_proxima_clase_info(),
         }
-        
-        # Subject simple para confirmaciÃ³n
-        subject = f"[Pilates Gravity] ConfirmaciÃ³n de reserva {reserva.numero_reserva}"
-        
-        # Mensaje simple para confirmaciones
-        message = f"""
-            Hola {reserva.usuario.first_name or reserva.usuario.username},
 
-            Â¡Tu reserva ha sido confirmada exitosamente!
+        # Imágenes embebidas en base64
+        logo_base64 = ''
+        banner_base64 = ''
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
+        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
 
-            Detalles de tu reserva:
-            â€¢ NÃºmero de reserva: {reserva.numero_reserva}
-            â€¢ Clase: {reserva.clase.get_nombre_display()}
-            â€¢ DÃ­a y horario: {reserva.clase.dia} a las {reserva.clase.horario.strftime('%H:%M')}
-            â€¢ Sede: {reserva.clase.get_direccion_display()}
+        try:
+            with open(logo_path, 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Logo no encontrado en {logo_path}.")
 
-            Esta es una reserva recurrente, por lo que asistirÃ¡s cada {reserva.clase.dia} a esta clase hasta que decidas cancelarla.
+        try:
+            with open(banner_path, 'rb') as f:
+                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Banner no encontrado en {banner_path}.")
 
-            Puedes gestionar tus reservas en: {domain_url}{reverse('accounts:mis_reservas')}
+        context['logo_base64'] = logo_base64
+        context['banner_base64'] = banner_base64
 
-            Â¡Te esperamos en Pilates Gravity!
+        subject = render_to_string(
+            'gravity/emails/confirmacion_reserva_subject.txt',
+            context
+        ).strip()
 
-            Saludos,
-            El equipo de Pilates Gravity
-        """
-        
-        # Enviar email simple
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[reserva.usuario.email],
-            fail_silently=False,
+        html_message = render_to_string(
+            'gravity/emails/confirmacion_reserva_email.html',
+            context
         )
-        
-        logger.info(f"Email de confirmaciÃ³n enviado exitosamente a {reserva.usuario.email} "
-                f"para reserva {reserva.numero_reserva}")
-        
+
+        text_message = (
+            f"¡Hola {reserva.usuario.first_name or reserva.usuario.username}!\n\n"
+            f"Tu reserva ha sido confirmada exitosamente.\n\n"
+            f"Detalles:\n"
+            f"  Número:  {reserva.numero_reserva}\n"
+            f"  Clase:   {reserva.clase.get_nombre_display()}\n"
+            f"  Día:     {reserva.clase.dia} a las {reserva.clase.horario.strftime('%H:%M')} hs\n"
+            f"  Sede:    {reserva.clase.get_direccion_display()}\n\n"
+            f"Esta es una reserva recurrente: asistirás cada {reserva.clase.dia} "
+            f"hasta que decidas cancelarla.\n\n"
+            f"Gestioná tu reserva en: {domain_url}\n"
+            f"Recordá cancelar con al menos 3 horas de anticipación.\n\n"
+            f"¡Te esperamos!\n"
+            f"El equipo de Pilates Gravity"
+        )
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[reserva.usuario.email],
+        )
+        email.attach_alternative(html_message, 'text/html')
+        email.send(fail_silently=False)
+
+        logger.info(
+            f"Email de confirmación enviado a {reserva.usuario.email} "
+            f"para reserva {reserva.numero_reserva}"
+        )
         return True
-        
+
     except Exception as e:
-        logger.error(f"Error enviando email de confirmaciÃ³n para reserva {reserva.numero_reserva}: {str(e)}")
+        logger.error(f"Error enviando email de confirmación para reserva {reserva.numero_reserva}: {str(e)}")
         return False
 
 def enviar_recordatorio_clase(reserva, horas_antes=24):
     """
-    EnvÃ­a un recordatorio de clase al usuario.
-    Esta funciÃ³n se puede usar con una tarea programada (celery, cron, etc.)
-    
+    Envía un recordatorio de clase al usuario.
+    Esta función se usa con el cron job de recordatorios.
+
     Args:
         reserva: Objeto Reserva para recordar
-        horas_antes: NÃºmero de horas antes de la clase para enviar el recordatorio
-    
+        horas_antes: Número de horas antes de la clase para enviar el recordatorio
+
     Returns:
-        Boolean: True si el email se enviÃ³ exitosamente, False en caso contrario
+        Boolean: True si el email se envió exitosamente, False en caso contrario
     """
-    
     try:
         if not reserva.usuario.email or not reserva.activa:
             return False
-        
-        # Verificar si el usuario acepta recordatorios
+
         try:
             if hasattr(reserva.usuario, 'profile') and not reserva.usuario.profile.acepta_recordatorios:
                 return False
-        except:
-            pass  # Si no hay perfil, asumir que acepta recordatorios
-        
-        subject = f"[Pilates Gravity] Recordatorio: Tu clase de maÃ±ana"
-        
-        message = f"""
-            Hola {reserva.usuario.first_name or reserva.usuario.username},
+        except Exception:
+            pass
 
-            Â¡Te recordamos tu clase de Pilates de maÃ±ana!
+        import base64
 
-            Detalles:
-            â€¢ Clase: {reserva.clase.get_nombre_display()}
-            â€¢ DÃ­a y horario: {reserva.clase.dia} a las {reserva.clase.horario.strftime('%H:%M')}
-            â€¢ Sede: {reserva.clase.get_direccion_display()}
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
 
-            Consejos para tu clase:
-            â€¢ Llega 10 minutos antes
-            â€¢ Trae una botella de agua
-            â€¢ Usa ropa cÃ³moda para ejercitarte
+        context = {
+            'reserva': reserva,
+            'domain_url': domain_url,
+        }
 
-            Si necesitas cancelar, recuerda que debes hacerlo con al menos 3 horas de anticipaciÃ³n.
+        # Imágenes embebidas en base64
+        logo_base64 = ''
+        banner_base64 = ''
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
+        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
 
-            Â¡Te esperamos en Pilates Gravity!
+        try:
+            with open(logo_path, 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Logo no encontrado en {logo_path}.")
 
-            Saludos,
-            El equipo de Pilates Gravity
-        """
-        
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[reserva.usuario.email],
-            fail_silently=False,
+        try:
+            with open(banner_path, 'rb') as f:
+                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Banner no encontrado en {banner_path}.")
+
+        context['logo_base64'] = logo_base64
+        context['banner_base64'] = banner_base64
+
+        subject = render_to_string(
+            'gravity/emails/recordatorio_clase_subject.txt',
+            context
+        ).strip()
+
+        html_message = render_to_string(
+            'gravity/emails/recordatorio_clase_email.html',
+            context
         )
-        
-        logger.info(f"Recordatorio enviado exitosamente a {reserva.usuario.email} "
-                f"para reserva {reserva.numero_reserva}")
-        
+
+        text_message = (
+            f"¡Hola {reserva.usuario.first_name or reserva.usuario.username}!\n\n"
+            f"Te recordamos que mañana tenés clase.\n\n"
+            f"Detalles:\n"
+            f"  Clase:   {reserva.clase.get_nombre_display()}\n"
+            f"  Día:     {reserva.clase.dia} a las {reserva.clase.horario.strftime('%H:%M')} hs\n"
+            f"  Sede:    {reserva.clase.get_direccion_display()}\n\n"
+            f"Si no podés asistir, cancelá con al menos 3 horas de anticipación.\n"
+            f"Gestioná tu reserva en: {domain_url}\n\n"
+            f"¡Te esperamos!\n"
+            f"El equipo de Pilates Gravity"
+        )
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[reserva.usuario.email],
+        )
+        email.attach_alternative(html_message, 'text/html')
+        email.send(fail_silently=False)
+
+        logger.info(
+            f"Recordatorio enviado a {reserva.usuario.email} "
+            f"para reserva {reserva.numero_reserva}"
+        )
         return True
-        
+
     except Exception as e:
         logger.error(f"Error enviando recordatorio para reserva {reserva.numero_reserva}: {str(e)}")
         return False
@@ -1902,115 +2030,102 @@ def enviar_recordatorio_clase(reserva, horas_antes=24):
 def enviar_email_bienvenida(usuario, is_admin_created=False, password_temporal=None):
     """
     Envía un email de bienvenida a un nuevo usuario.
-    
+
     Args:
         usuario: Objeto User que se registró
         is_admin_created: Boolean si fue creado por un administrador
         password_temporal: Contraseña temporal si fue creado por admin
-    
+
     Returns:
         Boolean: True si el email se envió exitosamente, False en caso contrario
     """
-    
     try:
-        # Verificar que el usuario tenga email
         if not usuario.email:
             logger.warning(f"Usuario {usuario.username} no tiene email configurado")
             return False
-        
-        # Preparar el contexto para el template
-        domain_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
-        
+
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
+
         context = {
             'usuario': usuario,
             'is_admin_created': is_admin_created,
             'password_temporal': password_temporal,
             'domain_url': domain_url,
-            'studio_name': 'Pilates Gravity',
-            'studio_phone': '+54 342 511 4448',
-            'studio_email': 'pilatesgravity@gmail.com',
         }
-        
-        # Renderizar los templates
+
         subject = render_to_string(
-            'gravity/emails/email_bienvenida_subject.txt',
+            'gravity/emails/bienvenida_subject.txt',
             context
         ).strip()
-        
+
         html_message = render_to_string(
-            'gravity/emails/email_bienvenida.html',
+            'gravity/emails/bienvenida_email.html',
             context
         )
-        
-        # Crear mensaje de texto plano como respaldo
-        text_message = f"""
-            ¡Hola {usuario.first_name or usuario.username}!
 
-            ¡Bienvenid@ a Pilates Gravity!
+        text_message = (
+            f"¡Hola {usuario.first_name or usuario.username}!\n\n"
+            f"Bienvenid@ a Pilates Gravity. Nos alegra que formes parte de nuestra comunidad.\n\n"
+            + (
+                f"Tus datos de acceso:\n"
+                f"  Usuario:    {usuario.username}\n"
+                f"  Contraseña: {password_temporal or '(enviada por separado)'}\n\n"
+                f"Recomendamos cambiar tu contraseña al ingresar por primera vez.\n\n"
+                if is_admin_created else ""
+            )
+            + f"Visitá nuestro sitio: {domain_url}\n"
+            f"WhatsApp: +54 342 511 4448 | pilatesgravity@gmail.com\n\n"
+            f"¡Te esperamos!\n"
+            f"El equipo de Pilates Gravity"
+        )
 
-            Es un placer darte la bienvenida a nuestra familia. Estamos emocionados de acompañarte en tu camino hacia una vida más saludable y equilibrada.
+        # Leer imágenes y convertir a base64 para embeber en el HTML sin adjuntos
+        import base64
+        logo_base64 = ''
+        banner_base64 = ''
 
-            {"" if not is_admin_created else f'''
-                Tus credenciales de acceso:
-                • Usuario: {usuario.username}
-                • Contraseña temporal: {password_temporal or "(establecida por el administrador)"}
+        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
+        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
 
-                Recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.
-            '''}
+        try:
+            with open(logo_path, 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Logo no encontrado en {logo_path}.")
 
-            Próximos pasos:
-            {"1. Inicia sesión en tu cuenta" if is_admin_created else "1. Completa tu perfil"}
-            {"2. Completa tu perfil" if is_admin_created else "2. Selecciona tu plan"}
-            {"3. Selecciona tu plan" if is_admin_created else "3. ¡Reserva tu primera clase!"}
-            {"4. ¡Reserva tu primera clase!" if is_admin_created else ""}
+        try:
+            with open(banner_path, 'rb') as f:
+                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
+        except FileNotFoundError:
+            logger.warning(f"Banner no encontrado en {banner_path}.")
 
-            Nuestras sedes:
-            • Sede Principal: La Rioja 3044, Capital, Santa Fe
-            • Sede 2: 9 de julio 3696, Capital, Santa Fe
-            • Teléfono: +54 342 511 4448
-            • Email: pilatesgravity@gmail.com
+        context['logo_base64'] = logo_base64
+        context['banner_base64'] = banner_base64
 
-            ¿Qué te espera en Pilates Gravity?
-            • Clases personalizadas (Reformer y Cadillac)
-            • Instructores expertos y certificados
-            • 2 sedes modernas con equipamiento de primera
-            • Horarios flexibles
+        html_message = render_to_string(
+            'gravity/emails/bienvenida_email.html',
+            context
+        )
 
-            ¡Visita nuestro sitio web para comenzar!
-            {domain_url}
-
-            ¿Tienes preguntas? ¡Contáctanos!
-            WhatsApp: +54 342 511 4448
-            Email: pilatesgravity@gmail.com
-            Horarios: Lunes a Viernes 8:00 - 20:00
-
-            ¡Estamos emocionados de tenerte con nosotros!
-
-            Con cariño y bienestar,
-            El equipo completo de Pilates Gravity
-        """
-        
-        # Crear el email
         email = EmailMultiAlternatives(
             subject=subject,
-            body=text_message.strip(),
+            body=text_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[usuario.email],
         )
-        
-        # Adjuntar la versión HTML
-        email.attach_alternative(html_message, "text/html")
-        
-        # Enviar el email
+        email.attach_alternative(html_message, 'text/html')
         email.send(fail_silently=False)
-        
-        logger.info(f"Email de bienvenida enviado exitosamente a {usuario.email} "
-                f"para usuario {usuario.username} (admin_created: {is_admin_created})")
-        
+
+        email.send(fail_silently=False)
+
+        logger.info(
+            f"Email de bienvenida enviado a {usuario.email} "
+            f"(admin_created: {is_admin_created})"
+        )
         return True
-        
+
     except Exception as e:
-        logger.error(f"Error enviando email de bienvenida para usuario {usuario.username}: {str(e)}")
+        logger.error(f"Error enviando email de bienvenida para {usuario.username}: {str(e)}")
         return False
 
 # ==============================================================================
@@ -2084,4 +2199,3 @@ def enviar_notificacion_cancelacion_a_admins(reserva, tipo, fecha=None):
     except Exception as e:
         logger.error(f"Error enviando notificación a admins: {str(e)}")
         return False
-

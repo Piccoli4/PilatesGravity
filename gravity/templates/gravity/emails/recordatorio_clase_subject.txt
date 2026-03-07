@@ -1,1 +1,1 @@
-⏰ ¡Tu clase es mañana! {{ clase.get_nombre_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }} - Pilates Gravity
+¡Tu clase es mañana!

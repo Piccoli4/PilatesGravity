@@ -165,7 +165,7 @@ EMAIL_SUBJECT_PREFIX = '[Pilates Gravity] '
 PASSWORD_RESET_TIMEOUT = 900  # 15 minutos en segundos
 
 # URL del sitio para emails (cambiar según tu dominio)
-SITE_URL = config('SITE_URL', default='http://localhost:8000')
+SITE_URL = config('SITE_URL', default='https://pilatesgravity.com.ar')
 
 # Configuración de logging
 LOGGING = {

@@ -1,317 +1,296 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reserva Cancelada - Pilates Gravity</title>
-        <style>
-            body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                line-height: 1.6;
-                color: #333;
-                max-width: 600px;
-                margin: 0 auto;
-                padding: 20px;
-                background-color: #f8f9fa;
-            }
-            .email-container {
-                background-color: white;
-                border-radius: 10px;
-                overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                background-color: #5D768B;
-                color: white;
-                text-align: center;
-                padding: 30px 20px;
-            }
-            .header-content {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-            }
-            .logo-container {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                object-fit: contain;
-            }
-            .header .logo {
-                width: 120px;
-                height: 120px;
-                border-radius: 50%;
-                background-color: rgba(255, 255, 255, 0.1);
-                padding: 8px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .header h1 {
-                margin: 0;
-                font-size: 32px;
-                font-weight: 600;
-            }
-            .header p {
-                margin: 5px 0 0 0;
-                opacity: 0.9;
-                font-size: 18px;
-            }
-            @media (max-width: 600px) {
-                .logo-container {
-                    flex-direction: column;
-                }
-                .header .logo {
-                    margin-right: 0;
-                    margin-bottom: 10px;
-                }
-            }
-            .content {
-                padding: 30px;
-            }
-            .alert {
-                background-color: #fff3cd;
-                border: 1px solid #ffeaa7;
-                border-radius: 8px;
-                padding: 15px;
-                margin: 20px 0;
-            }
-            .alert-info {
-                background-color: #d1ecf1;
-                border-color: #bee5eb;
-            }
-            .class-info {
-                background-color: #f8f9fa;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 20px 0;
-                border-left: 4px solid #5D768B;
-            }
-            .class-info h3 {
-                margin-top: 0;
-                color: #5D768B;
-            }
-            .detail-row {
-                display: flex;
-                justify-content: space-between;
-                padding: 8px 0;
-                border-bottom: 1px solid #eee;
-            }
-            .detail-row:last-child {
-                border-bottom: none;
-            }
-            .detail-label {
-                font-weight: bold;
-                color: #666;
-            }
-            .alternatives {
-                background-color: #d4edda;
-                border: 1px solid #c3e6cb;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 20px 0;
-            }
-            .alternatives h3 {
-                color: #155724;
-                margin-top: 0;
-            }
-            .class-option {
-                background-color: white;
-                border-radius: 6px;
-                padding: 15px;
-                margin: 10px 0;
-                border-left: 3px solid #28a745;
-            }
-            .btn {
-                display: inline-block;
-                padding: 12px 24px;
-                background-color: #5D768B;
-                color: white;
-                text-decoration: none;
-                border-radius: 6px;
-                margin: 10px 5px;
-                font-weight: bold;
-                text-align: center;
-            }
-            .btn-primary {
-                background-color: #007bff;
-            }
-            .btn-success {
-                background-color: #28a745;
-            }
-            .contact-info {
-                background-color: #f8f9fa;
-                border-radius: 8px;
-                padding: 20px;
-                margin: 20px 0;
-                text-align: center;
-            }
-            .footer {
-                background-color: #343a40;
-                color: white;
-                text-align: center;
-                padding: 20px;
-                font-size: 14px;
-            }
-            .footer a {
-                color: #C8B39B;
-            }
-            @media (max-width: 600px) {
-                .content {
-                    padding: 20px;
-                }
-                .btn {
-                    display: block;
-                    margin: 10px 0;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="email-container">
-            <!-- Header -->
-            <div class="header">
-                <div class="header-content">
-                    <div class="logo-container">
-                        <div class="logo">
-                            <img src="{{ domain_url }}/static/img/solo_logo_blanco.webp" alt="Logo Pilates Gravity" style="width: 100%; height: auto;">
-                        </div>
-                    </div>
-                    <div>
-                        <h1>Pilates Gravity</h1>
-                        <p>Tu reserva ha sido cancelada</p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Content -->
-            <div class="content">
-                <p>Hola <strong>{{ reserva.usuario.first_name|default:reserva.usuario.username }}</strong>,</p>
-                
-                <p>Te escribimos para informarte que tu reserva ha sido cancelada por nuestro equipo administrativo.</p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserva cancelada · Pilates Gravity</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-                <!-- Alert sobre la cancelación -->
-                <div class="alert">
-                    <strong>⚠️ Reserva Cancelada</strong><br>
-                    Tu reserva <strong>{{ reserva.numero_reserva }}</strong> ha sido cancelada.
-                    {% if motivo %}
-                    <br><strong>Motivo:</strong> {{ motivo }}
-                    {% endif %}
-                </div>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #F8EFE5;
+            color: #3A4D5C;
+            line-height: 1.6;
+        }
 
-                <!-- Información de la clase cancelada -->
-                <div class="class-info">
-                    <h3>📅 Detalles de la Clase Cancelada</h3>
-                    <div class="detail-row">
-                        <span class="detail-label">Tipo de Clase:</span>
-                        <span>{{ reserva.clase.get_nombre_display }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Día y Horario:</span>
-                        <span>{{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Sede:</span>
-                        <span>{{ reserva.clase.get_direccion_display }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Número de Reserva:</span>
-                        <span>{{ reserva.numero_reserva }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Fecha de Reserva:</span>
-                        <span>{{ reserva.fecha_reserva|date:"d/m/Y" }}</span>
-                    </div>
-                </div>
+        .wrapper {
+            max-width: 600px;
+            margin: 32px auto;
+            background-color: #FDFDFD;
+            border-radius: 10px;
+            overflow: hidden;
+        }
 
-                {% if motivo_detalle %}
-                <div class="alert alert-info">
-                    <strong>📝 Información Adicional:</strong><br>
-                    {{ motivo_detalle }}
-                </div>
-                {% endif %}
+        /* HEADER */
+        .header {
+            background-color: #5D768B;
+            text-align: center;
+            padding: 36px 30px 28px;
+        }
 
-                <!-- Alternativas si están habilitadas -->
-                {% if ofrecer_reemplazo and clases_alternativas %}
-                <div class="alternatives">
-                    <h3>🔄 Te sugerimos estas alternativas</h3>
-                    <p>Para que no te quedes sin tu clase de Pilates, te recomendamos estas opciones disponibles:</p>
-                    
-                    {% for clase in clases_alternativas %}
-                    <div class="class-option">
-                        <strong>{{ clase.get_nombre_display }}</strong><br>
-                        📅 {{ clase.dia }} a las {{ clase.horario|time:"H:i" }}<br>
-                        📍 {{ clase.get_direccion_display }}<br>
-                        👥 {{ clase.cupos_disponibles }} cupos disponibles
-                    </div>
-                    {% endfor %}
-                    
-                    <div style="margin-top: 15px; text-align: center;">
-                        <a href="{{ domain_url }}{% url 'gravity:reservar_clase' %}" class="btn btn-success">
-                            Reservar Nueva Clase
-                        </a>
-                    </div>
-                </div>
-                {% endif %}
+        .header img {
+            width: 72px;
+            height: auto;
+        }
 
-                <!-- Botones de acción -->
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{{ domain_url }}{% url 'accounts:mis_reservas' %}" class="btn">
-                        Ver Mis Reservas
-                    </a>
-                    <a href="{{ domain_url }}{% url 'gravity:clases_disponibles' %}" class="btn btn-primary">
-                        Ver Clases Disponibles
-                    </a>
-                </div>
+        /* CARD */
+        .card {
+            padding: 36px 40px;
+        }
 
-                <!-- Información de disculpas -->
-                <div class="alert">
-                    <strong>💙 Nuestras disculpas</strong><br>
-                    Lamentamos cualquier inconveniente que esta cancelación pueda haberte causado. 
-                    En Pilates Gravity trabajamos constantemente para brindarte el mejor servicio posible.
-                    {% if not motivo %}
-                    Si tienes alguna pregunta sobre esta cancelación, no dudes en contactarnos.
-                    {% endif %}
-                </div>
+        .greeting {
+            font-size: 22px;
+            font-weight: 600;
+            color: #5D768B;
+            margin-bottom: 10px;
+        }
 
-                <!-- Información de contacto -->
-                <div class="contact-info">
-                    <h3>📞 ¿Necesitas ayuda?</h3>
-                    <p>Nuestro equipo está aquí para ayudarte:</p>
-                    <p>
-                        <strong>WhatsApp:</strong> +54 342 511 4448<br>
-                        <strong>Email:</strong> pilatesgravity@gmail.com<br>
-                        <strong>Horarios:</strong> Lunes a Viernes 8:00 - 20:00
-                    </p>
-                </div>
+        .intro {
+            font-size: 15px;
+            color: #5a5a5a;
+            margin-bottom: 28px;
+        }
 
-                <p>¡Te esperamos pronto en nuestro estudio!</p>
-                
-                <p>Saludos cordiales,<br>
-                <strong>El equipo de Pilates Gravity</strong></p>
-            </div>
+        /* DETAILS BLOCK */
+        .details-block {
+            background-color: #F8EFE5;
+            border-left: 4px solid #C8B39B;
+            border-radius: 6px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+        }
 
-            <!-- Footer -->
-            <div class="footer" style="background-color: #5D768B;">
-                <p>
-                    <strong>Pilates Gravity</strong><br>
-                    📍 Sede Principal: La Rioja 3044, Capital, Santa Fe<br>
-                    📍 Sede 2: 9 de julio 3696, Capital, Santa Fe<br>
-                    📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
-                </p>
-                <p>
-                    <a href="{{ domain_url }}">Visitar nuestro sitio web</a> | 
-                    <a href="{{ domain_url }}{% url 'accounts:profile' %}">Gestionar mi cuenta</a>
-                </p>
-                <p style="font-size: 12px; opacity: 0.7;">
-                    Este email se envió porque tu reserva fue cancelada por nuestro equipo administrativo.
-                </p>
-                <div>
-                    <img src="{{ domain_url }}/static/img/logo_gravity.webp" alt="Banner Gravity" style="width: 250px; height: auto; margin-top: 10px;">
-                </div>
-            </div>
+        .details-block .block-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #C8B39B;
+            margin-bottom: 16px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(93, 118, 139, 0.1);
+            font-size: 14px;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #7a8e99;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #3A4D5C;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .reserva-num {
+            font-family: 'Courier New', monospace;
+            background-color: #5D768B;
+            color: #FDFDFD;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+        }
+
+        /* MOTIVO BLOCK */
+        .motivo-block {
+            background-color: #F8EFE5;
+            border-left: 4px solid #5D768B;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 28px;
+            font-size: 14px;
+            color: #3A4D5C;
+        }
+
+        .motivo-block .motivo-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #5D768B;
+            margin-bottom: 6px;
+        }
+
+        /* ALTERNATIVAS */
+        .alternativas-block {
+            margin-bottom: 28px;
+        }
+
+        .alternativas-block .block-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #C8B39B;
+            margin-bottom: 14px;
+        }
+
+        .clase-opcion {
+            border: 1px solid #ede5da;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #3A4D5C;
+        }
+
+        .clase-opcion strong {
+            display: block;
+            margin-bottom: 4px;
+            color: #5D768B;
+        }
+
+        .clase-opcion span {
+            color: #7a8e99;
+            font-size: 13px;
+        }
+
+        /* NOTA */
+        .nota {
+            font-size: 13px;
+            color: #7a8e99;
+            border-top: 1px solid #ede5da;
+            padding-top: 20px;
+            line-height: 1.7;
+        }
+
+        .nota a {
+            color: #5D768B;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* FOOTER */
+        .footer {
+            background-color: #3A4D5C;
+            text-align: center;
+            padding: 28px 30px 24px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.65);
+            line-height: 1.8;
+        }
+
+        .footer img {
+            width: 200px;
+            height: auto;
+            margin-top: 12px;
+            opacity: 0.85;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+        }
+
+        .footer strong {
+            color: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+
+        <!-- HEADER -->
+        <div class="header">
+            {% if logo_base64 %}
+            <img src="data:image/webp;base64,{{ logo_base64 }}" alt="Pilates Gravity">
+            {% endif %}
         </div>
-    </body>
+
+        <!-- CARD -->
+        <div class="card">
+            <p class="greeting">Hola, {{ reserva.usuario.first_name|default:reserva.usuario.username }}.</p>
+            <p class="intro">Tu reserva ha sido cancelada. A continuación encontrás los detalles.</p>
+
+            <!-- Detalles de la reserva cancelada -->
+            <div class="details-block">
+                <p class="block-title">Reserva cancelada</p>
+
+                <div class="detail-row">
+                    <span class="detail-label">Número</span>
+                    <span class="detail-value"><span class="reserva-num">{{ reserva.numero_reserva }}</span></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Clase</span>
+                    <span class="detail-value">{{ reserva.clase.get_nombre_display }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Día</span>
+                    <span class="detail-value">{{ reserva.clase.dia }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Horario</span>
+                    <span class="detail-value">{{ reserva.clase.horario|time:"H:i" }} hs</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Sede</span>
+                    <span class="detail-value">{{ reserva.clase.get_direccion_display }}</span>
+                </div>
+            </div>
+
+            <!-- Motivo (si existe) -->
+            {% if motivo %}
+            <div class="motivo-block">
+                <p class="motivo-label">Motivo</p>
+                <p>{{ motivo }}</p>
+                {% if motivo_detalle %}
+                <p style="margin-top: 8px; color: #7a8e99;">{{ motivo_detalle }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Clases alternativas (si se ofrecen) -->
+            {% if ofrecer_reemplazo and clases_alternativas %}
+            <div class="alternativas-block">
+                <p class="block-title">Clases disponibles que te pueden interesar</p>
+                {% for clase in clases_alternativas %}
+                <div class="clase-opcion">
+                    <strong>{{ clase.get_nombre_display }}</strong>
+                    <span>{{ clase.dia }} · {{ clase.horario|time:"H:i" }} hs · {{ clase.get_direccion_display }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Nota final -->
+            <p class="nota">
+                Podés reservar una nueva clase o consultar los horarios disponibles desde tu cuenta en
+                <a href="{{ domain_url }}">{{ domain_url }}</a>.<br><br>
+                Si tenés alguna consulta, contactanos por WhatsApp al <strong>+54 342 511 4448</strong>.
+            </p>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            {% if banner_base64 %}
+            <img src="data:image/webp;base64,{{ banner_base64 }}" alt="Pilates Gravity">
+            {% endif %}
+            <p>
+                La Rioja 3044 y 9 de Julio 3698, Santa Fe<br>
+                <a href="{{ domain_url }}">{{ domain_url }}</a>
+            </p>
+        </div>
+
+    </div>
+</body>
+
 </html>
