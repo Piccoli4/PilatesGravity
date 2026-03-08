@@ -187,8 +187,17 @@
         <div class="card">
 
             <!-- Header -->
-            <div class="header">
-                <img src="data:image/webp;base64,{{ logo_base64 }}" alt="Pilates Gravity">
+            <div class="header" style="background-color:#5D768B;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                    <tr>
+                        <td align="center" bgcolor="#5D768B"
+                            style="background-color:#5D768B; padding:4px 0 8px 0; line-height:0;">
+                            <img src="{{ domain_url }}/static/img/logo_email.png" alt="Pilates Gravity" width="52"
+                                height="52" border="0"
+                                style="display:block; width:52px; max-width:52px; height:52px; background-color:#5D768B;">
+                        </td>
+                    </tr>
+                </table>
                 <h1>¡Bienvenid@ a Pilates Gravity!</h1>
                 <p>Tu viaje hacia el bienestar comienza aquí</p>
             </div>
@@ -237,18 +246,26 @@
                 <p class="contact">
                     ¿Preguntas? Escribinos al
                     <a href="https://wa.me/543425114448">+54 342 511 4448</a>
-                    o a <a href="mailto:pilatesgravity@gmail.com">pilatesgravity@gmail.com</a><br>
+                    o a <a href="/cdn-cgi/l/email-protection#f7879e9b96839284908596819e838eb7909a969e9bd994989a"><span
+                            class="__cf_email__"
+                            data-cfemail="92e2fbfef3e6f7e1f5e0f3e4fbe6ebd2f5fff3fbfebcf1fdff">[email&#160;protected]</span></a><br>
                     Lunes a viernes 8:00–20:00 · Sábados 9:00–13:00
                 </p>
 
             </div>
 
             <!-- Footer -->
-            <div class="footer">
-                {% if banner_base64 %}
-                <img src="data:image/webp;base64,{{ banner_base64 }}" alt="Pilates Gravity"
-                    style="width:200px;height:auto;margin-top:12px;opacity:0.85;">
-                {% endif %}
+            <div class="footer" style="background-color:#3A4D5C;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                    <tr>
+                        <td align="center" bgcolor="#3A4D5C"
+                            style="background-color:#3A4D5C; padding-bottom:16px; line-height:0;">
+                            <img src="{{ domain_url }}/static/img/banner_email.png" alt="Pilates Gravity" width="180"
+                                border="0"
+                                style="display:block; width:180px; max-width:180px; height:auto; background-color:#3A4D5C;">
+                        </td>
+                    </tr>
+                </table>
                 <p>
                     La Rioja 3044 y 9 de Julio 3698, Santa Fe<br>
                     <a href="{{ domain_url }}">{{ domain_url }}</a>

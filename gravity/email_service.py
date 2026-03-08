@@ -3,11 +3,14 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.urls import reverse
 from .models import Clase, Reserva
-from email.mime.image import MIMEImage
 import logging
 import os
 
 logger = logging.getLogger(__name__)
+
+# ==============================================================================
+# CANCELACIÓN DE RESERVA
+# ==============================================================================
 
 def enviar_email_cancelacion_reserva(reserva, motivo=None, motivo_detalle=None,
     ofrecer_reemplazo=False, ofrecer_otras_sedes=False):
@@ -89,6 +92,10 @@ def enviar_email_cancelacion_reserva(reserva, motivo=None, motivo_detalle=None,
         logger.error(f"Error enviando email de cancelación para reserva {reserva.numero_reserva}: {str(e)}")
         return False
 
+# ==============================================================================
+# CONFIRMACIÓN DE CLASES ALTERNATIVAS
+# ==============================================================================
+
 def obtener_clases_alternativas(clase_cancelada, incluir_otras_sedes=False, limite=5):
     """
     Obtiene clases alternativas para sugerir al usuario.
@@ -122,6 +129,10 @@ def obtener_clases_alternativas(clase_cancelada, incluir_otras_sedes=False, limi
                 break
     
     return clases_con_cupos
+
+# ==============================================================================
+# CONFIRMACIÓN DE RESERVA
+# ==============================================================================
 
 def enviar_email_confirmacion_reserva(reserva):
     """
@@ -191,6 +202,10 @@ def enviar_email_confirmacion_reserva(reserva):
     except Exception as e:
         logger.error(f"Error enviando email de confirmación para reserva {reserva.numero_reserva}: {str(e)}")
         return False
+
+# ==============================================================================
+# RECORDATORIO DE CLASE
+# ==============================================================================
 
 def enviar_recordatorio_clase(reserva, horas_antes=24):
     """
@@ -407,29 +422,6 @@ def enviar_email_confirmacion_pago_completo(pago):
             'gravity/emails/confirmacion_pago_subject.txt',
             context
         ).strip()
-
-        # Leer imágenes y convertir a base64 para embeber en el HTML sin adjuntos
-        import base64
-        logo_base64 = ''
-        banner_base64 = ''
-
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
-        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
-
-        try:
-            with open(logo_path, 'rb') as f:
-                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Logo no encontrado en {logo_path}.")
-
-        try:
-            with open(banner_path, 'rb') as f:
-                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Banner no encontrado en {banner_path}.")
-
-        context['logo_base64'] = logo_base64
-        context['banner_base64'] = banner_base64
 
         html_message = render_to_string(
             'gravity/emails/confirmacion_pago_email.html',
@@ -864,6 +856,7 @@ def enviar_email_despedida_completo(usuario):
             to=[usuario.email],
         )
         email.attach_alternative(html_message, 'text/html')
+        _adjuntar_imagenes_inline(email)
         email.send(fail_silently=False)
 
         logger.info(f"Email de despedida enviado a {usuario.email}")
@@ -1744,27 +1737,6 @@ def enviar_email_cancelacion_reserva(reserva, motivo=None, motivo_detalle=None,
             'domain_url': domain_url,
         }
 
-        # Imágenes embebidas en base64
-        logo_base64 = ''
-        banner_base64 = ''
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
-        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
-
-        try:
-            with open(logo_path, 'rb') as f:
-                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Logo no encontrado en {logo_path}.")
-
-        try:
-            with open(banner_path, 'rb') as f:
-                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Banner no encontrado en {banner_path}.")
-
-        context['logo_base64'] = logo_base64
-        context['banner_base64'] = banner_base64
-
         subject = render_to_string(
             'gravity/emails/reserva_cancelada_subject.txt',
             context
@@ -1808,6 +1780,7 @@ def enviar_email_cancelacion_reserva(reserva, motivo=None, motivo_detalle=None,
     except Exception as e:
         logger.error(f"Error enviando email de cancelación para reserva {reserva.numero_reserva}: {str(e)}")
         return False
+
 def obtener_clases_alternativas(clase_cancelada, incluir_otras_sedes=False, limite=5):
     """
     Obtiene clases alternativas para sugerir al usuario.
@@ -1866,27 +1839,6 @@ def enviar_email_confirmacion_reserva(reserva):
             'domain_url': domain_url,
             'proxima_clase_info': reserva.get_proxima_clase_info(),
         }
-
-        # Imágenes embebidas en base64
-        logo_base64 = ''
-        banner_base64 = ''
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
-        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
-
-        try:
-            with open(logo_path, 'rb') as f:
-                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Logo no encontrado en {logo_path}.")
-
-        try:
-            with open(banner_path, 'rb') as f:
-                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Banner no encontrado en {banner_path}.")
-
-        context['logo_base64'] = logo_base64
-        context['banner_base64'] = banner_base64
 
         subject = render_to_string(
             'gravity/emails/confirmacion_reserva_subject.txt',
@@ -1955,35 +1907,12 @@ def enviar_recordatorio_clase(reserva, horas_antes=24):
         except Exception:
             pass
 
-        import base64
-
         domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
 
         context = {
             'reserva': reserva,
             'domain_url': domain_url,
         }
-
-        # Imágenes embebidas en base64
-        logo_base64 = ''
-        banner_base64 = ''
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
-        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
-
-        try:
-            with open(logo_path, 'rb') as f:
-                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Logo no encontrado en {logo_path}.")
-
-        try:
-            with open(banner_path, 'rb') as f:
-                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Banner no encontrado en {banner_path}.")
-
-        context['logo_base64'] = logo_base64
-        context['banner_base64'] = banner_base64
 
         subject = render_to_string(
             'gravity/emails/recordatorio_clase_subject.txt',
@@ -2058,11 +1987,6 @@ def enviar_email_bienvenida(usuario, is_admin_created=False, password_temporal=N
             context
         ).strip()
 
-        html_message = render_to_string(
-            'gravity/emails/bienvenida_email.html',
-            context
-        )
-
         text_message = (
             f"¡Hola {usuario.first_name or usuario.username}!\n\n"
             f"Bienvenid@ a Pilates Gravity. Nos alegra que formes parte de nuestra comunidad.\n\n"
@@ -2079,29 +2003,6 @@ def enviar_email_bienvenida(usuario, is_admin_created=False, password_temporal=N
             f"El equipo de Pilates Gravity"
         )
 
-        # Leer imágenes y convertir a base64 para embeber en el HTML sin adjuntos
-        import base64
-        logo_base64 = ''
-        banner_base64 = ''
-
-        logo_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'solo_logo_blanco.webp')
-        banner_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo_gravity.webp')
-
-        try:
-            with open(logo_path, 'rb') as f:
-                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Logo no encontrado en {logo_path}.")
-
-        try:
-            with open(banner_path, 'rb') as f:
-                banner_base64 = base64.b64encode(f.read()).decode('utf-8')
-        except FileNotFoundError:
-            logger.warning(f"Banner no encontrado en {banner_path}.")
-
-        context['logo_base64'] = logo_base64
-        context['banner_base64'] = banner_base64
-
         html_message = render_to_string(
             'gravity/emails/bienvenida_email.html',
             context
@@ -2114,8 +2015,6 @@ def enviar_email_bienvenida(usuario, is_admin_created=False, password_temporal=N
             to=[usuario.email],
         )
         email.attach_alternative(html_message, 'text/html')
-        email.send(fail_silently=False)
-
         email.send(fail_silently=False)
 
         logger.info(
@@ -2199,3 +2098,72 @@ def enviar_notificacion_cancelacion_a_admins(reserva, tipo, fecha=None):
     except Exception as e:
         logger.error(f"Error enviando notificación a admins: {str(e)}")
         return False
+
+# ==============================================================================
+# EMAIL DE CUMPLEAÑOS
+# ==============================================================================
+
+def enviar_email_cumpleanios(usuario):
+    """
+    Envía un email de cumpleaños al usuario.
+
+    Args:
+        usuario: Objeto User cuya fecha de nacimiento coincide con hoy
+
+    Returns:
+        Boolean: True si el email se envió exitosamente, False en caso contrario
+    """
+    try:
+        if not usuario.email:
+            logger.warning(f"Usuario {usuario.username} no tiene email configurado")
+            return False
+
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
+
+        context = {
+            'usuario': usuario,
+            'domain_url': domain_url,
+        }
+
+        subject = render_to_string(
+            'gravity/emails/cumpleanios_subject.txt',
+            context
+        ).strip()
+
+        html_message = render_to_string(
+            'gravity/emails/cumpleanios_email.html',
+            context
+        )
+
+        nombre = usuario.first_name or usuario.username
+        text_message = (
+            f"Hola {nombre},\n\n"
+            f"Hoy es un día especial y desde Pilates Gravity queremos acompañarte en él.\n\n"
+            f"Gracias por ser parte de nuestra comunidad. Tu presencia y compromiso hacen\n"
+            f"que cada clase sea más valiosa. Hoy celebramos contigo.\n\n"
+            f"Te esperamos en el estudio cuando quieras.\n\n"
+            f"Con afecto,\n"
+            f"El equipo de Pilates Gravity\n\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"{domain_url}"
+        )
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[usuario.email],
+        )
+        email.attach_alternative(html_message, 'text/html')
+        email.send(fail_silently=False)
+
+        logger.info(
+            f"Email de cumpleaños enviado a {usuario.email} "
+            f"(usuario: {usuario.username})"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(f"Error enviando email de cumpleaños para {usuario.username}: {str(e)}")
+        return False
+

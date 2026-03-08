@@ -241,10 +241,17 @@
     <div class="email-wrapper">
 
         <!-- Header -->
-        <div class="header">
-            {% if logo_base64 %}
-            <img class="logo" src="data:image/webp;base64,{{ logo_base64 }}" alt="Pilates Gravity">
-            {% endif %}
+        <div class="header" style="background-color:#5D768B;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                    <td align="center" bgcolor="#5D768B"
+                        style="background-color:#5D768B; padding:4px 0 8px 0; line-height:0;">
+                        <img src="{{ domain_url }}/static/img/logo_email.png" alt="Pilates Gravity" width="52"
+                            height="52" border="0"
+                            style="display:block; width:52px; max-width:52px; height:52px; background-color:#5D768B;">
+                    </td>
+                </tr>
+            </table>
             <h1>¡Pago confirmado!</h1>
             <p class="subtitle">Gracias por confiar en Gravity!</p>
         </div>
@@ -330,11 +337,17 @@
         </div><!-- /body -->
 
         <!-- Footer -->
-        <div class="footer">
-            {% if banner_base64 %}
-            <img src="data:image/webp;base64,{{ banner_base64 }}" alt="Pilates Gravity"
-                style="width:200px;height:auto;margin-top:12px;opacity:0.85;">
-            {% endif %}
+        <div class="footer" style="background-color:#3A4D5C;">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                    <td align="center" bgcolor="#3A4D5C"
+                        style="background-color:#3A4D5C; padding-bottom:16px; line-height:0;">
+                        <img src="{{ domain_url }}/static/img/banner_email.png" alt="Pilates Gravity" width="180"
+                            border="0"
+                            style="display:block; width:180px; max-width:180px; height:auto; background-color:#3A4D5C;">
+                    </td>
+                </tr>
+            </table>
             <p>
                 La Rioja 3044 y 9 de Julio 3698, Santa Fe<br>
                 <a href="{{ domain_url }}">{{ domain_url }}</a>
