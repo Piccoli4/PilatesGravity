@@ -11,7 +11,7 @@ from accounts.models import UserProfile
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from datetime import datetime, timedelta, date
-from accounts.models import UserProfile, ConfiguracionEstudio
+from accounts.models import UserProfile, ConfiguracionEstudio, Testimonio
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -474,7 +474,8 @@ def clases_disponibles(request):
 # Vista para el botón de "Conoce más" (pública)
 def conoce_mas(request):
     """Vista informativa sobre el estudio"""
-    return render(request, 'gravity/conoce_mas.html')
+    testimonios = Testimonio.objects.filter(aprobado=True).select_related('usuario').order_by('-fecha_actualizacion')
+    return render(request, 'gravity/conoce_mas.html', {'testimonios': testimonios})
 
 # API Endpoints para funcionalidad AJAX
 @require_http_methods(["POST"])
@@ -2381,3 +2382,78 @@ def cancelar_plan(request, plan_id):
     }
     
     return render(request, 'gravity/cancelar_plan.html', context)
+
+# ==============================================================================
+# VISTAS ADMIN — TESTIMONIOS
+# ==============================================================================
+
+@staff_member_required
+def admin_testimonios_lista(request):
+    """Lista todos los testimonios con filtros y permite aprobar/rechazar"""
+    testimonios = Testimonio.objects.select_related('usuario').all()
+
+    # Filtro por estado
+    estado_filtro = request.GET.get('estado', '')
+    if estado_filtro == 'pendientes':
+        testimonios = testimonios.filter(aprobado=False)
+    elif estado_filtro == 'aprobados':
+        testimonios = testimonios.filter(aprobado=True)
+
+    # Filtro por búsqueda de alumno
+    busqueda_filtro = request.GET.get('busqueda', '')
+    if busqueda_filtro:
+        testimonios = testimonios.filter(
+            Q(usuario__first_name__icontains=busqueda_filtro) |
+            Q(usuario__last_name__icontains=busqueda_filtro) |
+            Q(usuario__email__icontains=busqueda_filtro)
+        )
+
+    context = {
+        'testimonios': testimonios,
+        'total_pendientes': Testimonio.objects.filter(aprobado=False).count(),
+        'total_aprobados': Testimonio.objects.filter(aprobado=True).count(),
+        'estado_filtro': estado_filtro,
+        'busqueda_filtro': busqueda_filtro,
+    }
+    return render(request, 'gravity/admin/testimonios_lista.html', context)
+
+
+@staff_member_required
+def admin_testimonio_aprobar(request, testimonio_id):
+    """Aprueba un testimonio para que sea visible públicamente"""
+    if request.method != 'POST':
+        return redirect('gravity:admin_testimonios_lista')
+
+    testimonio = get_object_or_404(Testimonio, id=testimonio_id)
+    testimonio.aprobado = True
+    testimonio.save()
+    messages.success(request, f'Testimonio de {testimonio.usuario.get_full_name() or testimonio.usuario.username} aprobado correctamente.')
+    return redirect('gravity:admin_testimonios_lista')
+
+
+@staff_member_required
+def admin_testimonio_rechazar(request, testimonio_id):
+    """Vuelve un testimonio a estado pendiente"""
+    if request.method != 'POST':
+        return redirect('gravity:admin_testimonios_lista')
+
+    testimonio = get_object_or_404(Testimonio, id=testimonio_id)
+    testimonio.aprobado = False
+    # Guardamos directamente sin pasar por el save() del modelo
+    # para no activar la lógica de "texto cambiado"
+    Testimonio.objects.filter(pk=testimonio.pk).update(aprobado=False)
+    messages.success(request, f'Testimonio de {testimonio.usuario.get_full_name() or testimonio.usuario.username} vuelto a pendiente.')
+    return redirect('gravity:admin_testimonios_lista')
+
+
+@staff_member_required
+def admin_testimonio_eliminar(request, testimonio_id):
+    """Elimina un testimonio definitivamente"""
+    if request.method != 'POST':
+        return redirect('gravity:admin_testimonios_lista')
+
+    testimonio = get_object_or_404(Testimonio, id=testimonio_id)
+    nombre = testimonio.usuario.get_full_name() or testimonio.usuario.username
+    testimonio.delete()
+    messages.success(request, f'Testimonio de {nombre} eliminado correctamente.')
+    return redirect('gravity:admin_testimonios_lista')

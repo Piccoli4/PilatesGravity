@@ -13,6 +13,9 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('profile/complete/', views.profile_complete, name='profile_complete'),
     path('profile/password/', views.cambiar_password, name='cambiar_password'),
+
+    # Testimonio
+    path('profile/testimonio/', views.guardar_testimonio, name='guardar_testimonio'),
     
     # Reservas del usuario
     path('mis-reservas/', views.mis_reservas, name='mis_reservas'),

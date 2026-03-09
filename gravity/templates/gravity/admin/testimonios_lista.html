@@ -1,0 +1,260 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Gestión de Testimonios - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-1">
+    <span class="text-gray-400">/</span>
+    <span class="text-gray-500">Testimonios</span>
+</li>
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Header -->
+<div class="flex flex-col lg:flex-row gap-4 mb-6">
+    <div class="w-full">
+        <div class="card">
+            <div class="card-body">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-3">
+                    <div class="flex-1">
+                        <h2 class="text-3xl text-principal mb-2 flex items-center gap-2">
+                            <svg class="size-8" fill="currentColor" viewBox="0 0 20 20"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd"
+                                    d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            Gestión de Testimonios
+                        </h2>
+                        <p class="text-gris-medio mb-0">Aprobá o rechazá los comentarios de los alumnos</p>
+                    </div>
+                    <!-- Contadores rápidos -->
+                    <div class="flex gap-4">
+                        <div class="text-center px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="text-xl font-bold text-yellow-700">{{ total_pendientes }}</div>
+                            <small class="text-yellow-600">Pendientes</small>
+                        </div>
+                        <div class="text-center px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="text-xl font-bold text-green-700">{{ total_aprobados }}</div>
+                            <small class="text-green-600">Aprobados</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtro -->
+<div class="flex flex-col gap-4 mb-6">
+    <div class="w-full">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="text-lg font-medium flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    Filtros
+                </h5>
+            </div>
+            <div class="card-body p-3">
+                <form method="get" id="filterForm">
+                    <div class="flex flex-col md:flex-row items-center gap-4">
+                        <div class="flex flex-col">
+                            <label for="estado" class="text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select name="estado" id="estado"
+                                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                                <option value="">Todos</option>
+                                <option value="pendientes" {% if estado_filtro == 'pendientes' %}selected{% endif %}>
+                                    Pendientes</option>
+                                <option value="aprobados" {% if estado_filtro == 'aprobados' %}selected{% endif %}>
+                                    Aprobados</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="busqueda" class="text-sm font-medium text-gray-700 mb-1">Buscar alumno</label>
+                            <input type="text" name="busqueda" id="busqueda"
+                                class="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent"
+                                placeholder="Nombre o email..." value="{{ busqueda_filtro }}">
+                        </div>
+                        <div class="flex items-end gap-2 mt-4 md:mt-0">
+                            <button type="submit"
+                                class="flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-900 font-medium py-2 px-4 rounded transition-colors duration-200">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                Buscar
+                            </button>
+                            <a href="{% url 'gravity:admin_testimonios_lista' %}"
+                                class="flex items-center gap-1 border border-gray-400 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded transition-colors duration-200">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla -->
+<div class="flex flex-col">
+    <div class="w-full">
+        <div class="card">
+            <div class="card-body p-4">
+                {% if testimonios %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left" id="testimoniosTable">
+                        <thead class="text-xs uppercase bg-fondo text-gris-oscuro">
+                            <tr>
+                                <th class="px-3 py-3">Alumno</th>
+                                <th class="px-3 py-3">Comentario</th>
+                                <th class="px-3 py-3">Estado</th>
+                                <th class="px-3 py-3">Fecha</th>
+                                <th class="px-3 py-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for testimonio in testimonios %}
+                            <tr
+                                class="hover:bg-gray-50 transition-colors duration-150 {% if not testimonio.aprobado %}bg-yellow-50/40{% endif %}">
+                                <!-- Alumno -->
+                                <td class="px-3 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                                            style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                                            {{ testimonio.usuario.first_name.0|upper }}
+                                            {{ testimonio.usuario.last_name.0|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900">
+                                                {{ testimonio.usuario.get_full_name|default:testimonio.usuario.username }}
+                                            </div>
+                                            <small class="text-gray-500">{{ testimonio.usuario.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <!-- Comentario -->
+                                <td class="px-3 py-3 max-w-xs">
+                                    <p class="text-gray-700 italic leading-relaxed line-clamp-3">
+                                        "{{ testimonio.texto }}"
+                                    </p>
+                                    <small class="text-gray-400">{{ testimonio.texto|length }}/500 caracteres</small>
+                                </td>
+                                <!-- Estado -->
+                                <td class="px-3 py-3">
+                                    {% if testimonio.aprobado %}
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-exito text-white rounded-md">
+                                        <svg class="size-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                clip-rule="evenodd"></path>
+                                        </svg>
+                                        Aprobado
+                                    </span>
+                                    {% else %}
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-400 text-white rounded-md">
+                                        <svg class="size-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                                clip-rule="evenodd"></path>
+                                        </svg>
+                                        Pendiente
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <!-- Fecha -->
+                                <td class="px-3 py-3">
+                                    <div class="font-medium text-gray-900">
+                                        {{ testimonio.fecha_actualizacion|date:"d/m/Y" }}
+                                    </div>
+                                    <small class="text-gray-500">
+                                        {{ testimonio.fecha_actualizacion|date:"H:i" }}
+                                    </small>
+                                </td>
+                                <!-- Acciones -->
+                                <td class="px-3 py-3 text-center">
+                                    <div class="flex gap-1 justify-center">
+                                        {% if not testimonio.aprobado %}
+                                        <form method="post"
+                                            action="{% url 'gravity:admin_testimonio_aprobar' testimonio.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-white text-green-600 border border-green-500 rounded hover:bg-green-500 hover:text-white transition-colors duration-200"
+                                                title="Aprobar testimonio">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                                Aprobar
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <form method="post"
+                                            action="{% url 'gravity:admin_testimonio_rechazar' testimonio.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-white text-yellow-600 border border-yellow-500 rounded hover:bg-yellow-500 hover:text-white transition-colors duration-200"
+                                                title="Quitar aprobación">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                                Pendiente
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <form method="post"
+                                            action="{% url 'gravity:admin_testimonio_eliminar' testimonio.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                onclick="return confirm('¿Eliminar este testimonio definitivamente?')"
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-white text-error border border-error rounded hover:bg-error hover:text-white transition-colors duration-200"
+                                                title="Eliminar testimonio">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12 text-gris-medio">
+                    <svg class="w-12 h-12 mx-auto mb-4 opacity-40" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="text-lg font-medium">No hay testimonios para mostrar</p>
+                    <small>Los comentarios de los alumnos aparecerán aquí una vez que los envíen desde su
+                        perfil.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

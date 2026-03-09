@@ -284,7 +284,7 @@
             </h3>
         </div>
         <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <a href="{% url 'gravity:admin_clase_crear' %}"
                     class="btn-pilates-primary w-full text-blanco rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none">
                     <img src="{% static 'icons/plus.png' %}" alt="Icono Nueva Clase" class="size-8">
@@ -340,6 +340,19 @@
                         <circle cx="10" cy="7" r="4" />
                     </svg>
                     <span class="font-medium">Gestionar Admins</span>
+                </a>
+                <a href="{% url 'gravity:admin_testimonios_lista' %}"
+                    class="w-full btn-pilates-secondary text-blanco rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="size-10">
+                        <path
+                            d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />
+                        <path d="M8 12h.01" />
+                        <path d="M12 12h.01" />
+                        <path d="M16 12h.01" />
+                    </svg>
+                    <span class="font-medium">Testimonios</span>
                 </a>
                 {% endif %}
             </div>

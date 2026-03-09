@@ -629,3 +629,60 @@ class ConfiguracionEstudio(models.Model):
     class Meta:
         verbose_name = "Configuración del Estudio"
         verbose_name_plural = "Configuración del Estudio"
+
+class Testimonio(models.Model):
+    """
+    Testimonio de un alumno para mostrar en la página 'Conocé más'.
+    Requiere aprobación del administrador antes de ser público.
+    Si el alumno edita un testimonio ya aprobado, vuelve a pendiente.
+    """
+
+    usuario = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='testimonio',
+        verbose_name="Usuario"
+    )
+
+    texto = models.TextField(
+        max_length=500,
+        verbose_name="Comentario",
+        help_text="Contá brevemente tu experiencia en Pilates Gravity (máximo 300 caracteres)"
+    )
+
+    aprobado = models.BooleanField(
+        default=False,
+        verbose_name="Aprobado",
+        help_text="Solo los testimonios aprobados aparecen en la página pública"
+    )
+
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de creación"
+    )
+
+    fecha_actualizacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última actualización"
+    )
+
+    def save(self, *args, **kwargs):
+        # Si ya existe y el texto cambió, volver a pendiente
+        if self.pk:
+            try:
+                anterior = Testimonio.objects.get(pk=self.pk)
+                if anterior.texto != self.texto:
+                    self.aprobado = False
+            except Testimonio.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        estado = "✓ Aprobado" if self.aprobado else "⏳ Pendiente"
+        return f"{self.usuario.get_full_name() or self.usuario.username} — {estado}"
+
+    class Meta:
+        verbose_name = "Testimonio"
+        verbose_name_plural = "Testimonios"
+        ordering = ['-fecha_actualizacion']
+

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from .models import UserProfile
+from .models import UserProfile, Testimonio
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.models import User
 
@@ -496,3 +496,33 @@ class CustomSetPasswordForm(SetPasswordForm):
                 raise ValidationError('Las contraseñas no coinciden.')
         
         return password2
+
+class TestimonioForm(forms.ModelForm):
+    """
+    Formulario para que los alumnos escriban o editen su testimonio.
+    """
+
+    class Meta:
+        model = Testimonio
+        fields = ['texto']
+        widgets = {
+            'texto': forms.Textarea(attrs={
+                'class': 'w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-principal resize-none',
+                'rows': 4,
+                'placeholder': 'Contanos brevemente tu experiencia en Pilates Gravity...',
+                'maxlength': '500',
+                'id': 'id_texto_testimonio'
+            })
+        }
+        error_messages = {
+            'texto': {
+                'required': 'Por favor escribí tu comentario antes de enviar.',
+                'max_length': 'El comentario no puede superar los 500 caracteres.'
+            }
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['texto'].label = "Tu comentario"
+        self.fields['texto'].help_text = "Máximo 500 caracteres"
+

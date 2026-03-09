@@ -7,8 +7,8 @@ from django.contrib.auth.views import (
 )
 from django.contrib import messages
 from django.urls import reverse_lazy
-from .forms import SignUpForm, ProfileUpdateForm, UserProfileForm, CambiarPasswordForm, CustomPasswordResetForm, CustomSetPasswordForm
-from .models import UserProfile
+from .forms import SignUpForm, ProfileUpdateForm, UserProfileForm, CambiarPasswordForm, CustomPasswordResetForm, CustomSetPasswordForm, TestimonioForm
+from .models import UserProfile, Testimonio
 from gravity.email_service import enviar_email_bienvenida_completo, enviar_email_despedida_completo
 import logging
 
@@ -75,12 +75,17 @@ def signup(request):
 def profile(request):
     """Vista para ver/editar información básica del perfil"""
     
-    # Asegura que el usuario tenga un perfil 
     try:
         user_profile = request.user.profile
     except UserProfile.DoesNotExist:
         user_profile = UserProfile.objects.create(user=request.user)
-    
+
+    # Obtener o preparar el testimonio del usuario
+    try:
+        testimonio = request.user.testimonio
+    except Testimonio.DoesNotExist:
+        testimonio = None
+
     if request.method == 'POST':
         form = ProfileUpdateForm(request.user, request.POST)
         if form.is_valid():
@@ -91,10 +96,14 @@ def profile(request):
             messages.error(request, 'Por favor corrige los errores en el formulario')
     else:
         form = ProfileUpdateForm(request.user)
-    
+
+    testimonio_form = TestimonioForm(instance=testimonio)
+
     context = {
         'form': form,
-        'user_profile': user_profile
+        'user_profile': user_profile,
+        'testimonio': testimonio,
+        'testimonio_form': testimonio_form,
     }
     return render(request, 'accounts/profile.html', context)
 
@@ -162,6 +171,28 @@ def mis_reservas(request):
         'total_reservas': request.user.reservas_pilates.count()
     }
     return render(request, 'accounts/mis_reservas.html', context)
+
+@login_required
+def guardar_testimonio(request):
+    """Vista para crear o actualizar el testimonio del usuario"""
+    if request.method != 'POST':
+        return redirect('accounts:profile')
+
+    try:
+        testimonio = request.user.testimonio
+    except Testimonio.DoesNotExist:
+        testimonio = None
+
+    form = TestimonioForm(request.POST, instance=testimonio)
+    if form.is_valid():
+        nuevo = form.save(commit=False)
+        nuevo.usuario = request.user
+        nuevo.save()
+        messages.success(request, 'Tu comentario fue guardado y está pendiente de aprobación.')
+    else:
+        messages.error(request, 'Por favor corrige los errores en el formulario.')
+
+    return redirect('accounts:profile')
 
 @login_required
 def eliminar_cuenta(request):

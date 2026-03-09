@@ -16,7 +16,9 @@ from .views import (
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente,
     # IMPORTACIONES PARA PLANES DE PAGO
-    mis_planes, seleccionar_plan, cancelar_plan
+    mis_planes, seleccionar_plan, cancelar_plan,
+    # IMPORTACIONES PARA TESTIMONIOS
+    admin_testimonios_lista, admin_testimonio_aprobar, admin_testimonio_rechazar, admin_testimonio_eliminar
 )
 from django.views.generic import TemplateView
 
@@ -82,6 +84,12 @@ urlpatterns = [
     
     # Reportes y estadísticas
     path('admin-panel/reportes/', admin_reportes, name='admin_reportes'),
+
+    # Gestión de testimonios
+    path('admin-panel/testimonios/', admin_testimonios_lista, name='admin_testimonios_lista'),
+    path('admin-panel/testimonios/<int:testimonio_id>/aprobar/', admin_testimonio_aprobar, name='admin_testimonio_aprobar'),
+    path('admin-panel/testimonios/<int:testimonio_id>/rechazar/', admin_testimonio_rechazar, name='admin_testimonio_rechazar'),
+    path('admin-panel/testimonios/<int:testimonio_id>/eliminar/', admin_testimonio_eliminar, name='admin_testimonio_eliminar'),
 
     # ==============================================================================
     # URLS DEL SISTEMA DE PAGOS
