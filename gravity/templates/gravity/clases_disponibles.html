@@ -30,20 +30,6 @@
             background: linear-gradient(135deg, #DC3545 0%, #E74C3C 100%);
         }
         
-        .icon-reformer {
-            background-image: url('{% static "icons/reformer.png" %}');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-        
-        .icon-cadillac {
-            background-image: url('{% static "icons/cadillac.png" %}');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-        
         .pulse-ring {
             animation: pulse-ring 2s ease-in-out infinite;
         }
@@ -225,11 +211,11 @@
                                             <!-- Icono del equipo -->
                                             <div class="w-12 h-12 rounded-full bg-gradient-to-br from-principal to-secundario flex items-center justify-center">
                                                 {% if clase_info.clase.tipo == 'Reformer' %}
-                                                    <div class="w-8 h-8 icon-reformer"></div>
+                                                    <img src="{% static 'icons/reformer.png' %}" class="w-8 h-8 object-contain" alt="Reformer">
                                                 {% elif clase_info.clase.tipo == 'Cadillac' %}
-                                                    <div class="w-8 h-8 icon-cadillac"></div>
+                                                    <img src="{% static 'icons/cadillac.png' %}" class="w-8 h-8 object-contain" alt="Cadillac">
                                                 {% else %}
-                                                    <div class="text-white font-bold">✨</div>
+                                                    <img src="{% static 'icons/especial.png' %}" class="w-8 h-8 object-contain" alt="Especial">
                                                 {% endif %}
                                             </div>
                                             <div>

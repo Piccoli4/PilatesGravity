@@ -1989,11 +1989,18 @@ def admin_pagos_registrar_pago(request, cliente_id):
             'concepto': f'Pago mensual {timezone.now().strftime("%B %Y")}',
             'monto': estado_pago.plan_actual.precio_mensual if estado_pago.plan_actual else None
         })
-    
+
+    # Calcular precio sugerido en efectivo para mostrarlo en el formulario
+    precio_efectivo_sugerido = None
+    if estado_pago.plan_actual:
+        precio_efectivo_sugerido = estado_pago.plan_actual.calcular_precio_efectivo()
+
     context = {
         'form': form,
         'cliente': cliente,
         'estado_pago': estado_pago,
+        'precio_efectivo_sugerido': precio_efectivo_sugerido,
+        'precio_completo': estado_pago.plan_actual.precio_mensual if estado_pago.plan_actual else None,
     }
     
     return render(request, 'gravity/admin/pagos_registrar.html', context)

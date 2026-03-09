@@ -668,6 +668,20 @@ class PlanPago(models.Model):
                     'clases_por_semana': 'Los planes mensuales deben tener al menos 1 clase por semana.'
                 })
 
+    def calcular_precio_efectivo(self):
+        """
+        Calcula el precio con descuento del 10% por pago en efectivo,
+        redondeado al millar más cercano (< 500 hacia abajo, >= 500 hacia arriba).
+        Ejemplo: $53.000 × 0.9 = $47.700 → $48.000
+                $53.333 × 0.9 = $47.999.7 → $48.000
+        """
+        from decimal import ROUND_HALF_UP
+        precio_con_descuento = self.precio_mensual * Decimal('0.90')
+        precio_redondeado = (
+            precio_con_descuento / Decimal('1000')
+        ).quantize(Decimal('1'), rounding=ROUND_HALF_UP) * Decimal('1000')
+        return precio_redondeado
+
     def __str__(self):
         estado = "Activo" if self.activo else "Inactivo"
         if self.tipo_plan == 'por_clase':
@@ -784,24 +798,36 @@ class EstadoPagoCliente(models.Model):
 
     def calcular_plan_segun_reservas(self):
         """
-        Calcula qué plan debería tener según sus reservas activas.
+        Calcula qué plan de pago debería tener según los PlanUsuario activos
+        que el cliente seleccionó, independientemente de cuántas reservas haya hecho.
+        Si tiene múltiples planes activos, suma las clases para buscar el PlanPago.
         Retorna el PlanPago correspondiente o None.
         """
         try:
-            # Contar reservas activas del usuario
-            reservas_activas = self.usuario.reservas_pilates.filter(activa=True).count()
-            
-            if reservas_activas == 0:
+            hoy = timezone.now().date()
+
+            # Obtener los PlanUsuario activos y vigentes del cliente
+            planes_usuario = PlanUsuario.objects.filter(
+                usuario=self.usuario,
+                activo=True,
+                fecha_inicio__lte=hoy,
+                fecha_fin__gte=hoy
+            ).select_related('plan')
+
+            if not planes_usuario.exists():
                 return None
-            
-            # Buscar el plan que corresponde a esa cantidad de clases
+
+            # Sumar las clases por semana de todos los planes activos
+            total_clases = sum(pu.plan.clases_por_semana for pu in planes_usuario)
+
+            # Buscar el PlanPago que corresponde a ese total de clases
             plan = PlanPago.objects.filter(
-                clases_por_semana=reservas_activas,
+                clases_por_semana=total_clases,
                 activo=True
             ).first()
-            
+
             return plan
-            
+
         except Exception:
             return None
 
@@ -1144,16 +1170,35 @@ class RegistroPago(models.Model):
             
             # 💰 PASO 1: Aplicar el pago a las deudas pendientes (más antiguas primero)
             monto_restante = Decimal(str(self.monto))
-            
+            es_pago_efectivo = self.tipo_pago == 'efectivo'
+
             deudas_pendientes = DeudaMensual.objects.filter(
                 usuario=self.cliente,
                 estado__in=['pendiente', 'vencido', 'parcial']
             ).order_by('mes_año')
-            
+
             for deuda in deudas_pendientes:
                 if monto_restante <= 0:
                     break
-                
+
+                # Si el pago es en efectivo y la deuda no fue pagada parcialmente,
+                # ajustar el monto original al precio con descuento del plan
+                if es_pago_efectivo and deuda.estado != 'parcial':
+                    try:
+                        precio_efectivo = deuda.plan_aplicado.calcular_precio_efectivo()
+                        # Solo ajustar si el precio efectivo es menor al original
+                        # (evitar sobreescribir deudas ya ajustadas o de medio mes)
+                        if precio_efectivo < deuda.monto_original:
+                            diferencia = deuda.monto_original - precio_efectivo
+                            deuda.monto_original = precio_efectivo
+                            deuda.monto_pendiente = max(
+                                Decimal('0'),
+                                deuda.monto_pendiente - diferencia
+                            )
+                            deuda.save(update_fields=['monto_original', 'monto_pendiente'])
+                    except Exception:
+                        pass  # Si falla el ajuste, continuar con el monto original
+
                 # Aplicar pago a esta deuda
                 monto_aplicado = deuda.aplicar_pago_parcial(monto_restante)
                 monto_restante -= Decimal(str(monto_aplicado))

@@ -329,14 +329,14 @@
                                     <span
                                         class="w-full h-full bg-gradient-to-r from-principal to-secundario flex items-center justify-center text-blanco font-bold text-sm">
                                         {% if cliente_estado.usuario.first_name and cliente_estado.usuario.last_name %}
-                                        {{ cliente_estado.usuario.first_name|first|upper }}{{
-                                        cliente_estado.usuario.last_name|first|upper }}
-                                        {% elif cliente_estado.usuario.first_name %}
-                                        {{ cliente_estado.usuario.first_name|first|upper }}{{
-                                        cliente_estado.usuario.first_name|slice:"1:2"|upper }}
+                                            {{ cliente_estado.usuario.first_name|first|upper }}
+                                            {{ cliente_estado.usuario.last_name|first|upper }}
+                                            {% elif cliente_estado.usuario.first_name %}
+                                            {{ cliente_estado.usuario.first_name|first|upper }}
+                                            {{ cliente_estado.usuario.first_name|slice:"1:2"|upper }}
                                         {% else %}
-                                        {{ cliente_estado.usuario.username|first|upper }}{{
-                                        cliente_estado.usuario.username|slice:"1:2"|upper }}
+                                            {{ cliente_estado.usuario.username|first|upper }}
+                                            {{ cliente_estado.usuario.username|slice:"1:2"|upper }}
                                         {% endif %}
                                     </span>
                                     {% endif %}
@@ -349,8 +349,9 @@
                                         {{ cliente_estado.usuario.username }}
                                         {% endif %}
                                     </div>
-                                    <div class="text-sm text-gray-500">{{ cliente_estado.usuario.email|default:"Sin
-                                        email" }}</div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ cliente_estado.usuario.email|default:"Sin email" }}
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -371,8 +372,9 @@
 
                         <td class="py-4 px-1">
                             {% if cliente_estado.plan_actual %}
-                            <span class="font-semibold text-gray-900 money">${{
-                                cliente_estado.plan_actual.precio_mensual|floatformat:0 }}</span>
+                            <span class="font-semibold text-gray-900 money">
+                                ${{ cliente_estado.plan_actual.precio_mensual|floatformat:0 }}
+                            </span>
                             {% else %}
                             <span class="text-gray-400">-</span>
                             {% endif %}
