@@ -210,8 +210,9 @@
                             {% endif %}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h6 class="text-lg font-semibold text-gris-oscuro truncate">{{
-                                item.usuario.get_full_name|default:item.usuario.username }}</h6>
+                            <h6 class="text-lg font-semibold text-gris-oscuro truncate">
+                                {{ item.usuario.get_full_name|default:item.usuario.username }}
+                            </h6>
                             <p class="text-sm text-gris-medio">@{{ item.usuario.username }}</p>
                             {% if not item.usuario.is_active %}
                             <span
