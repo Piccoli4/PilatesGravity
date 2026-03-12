@@ -20,7 +20,8 @@ from .email_service import (
     enviar_email_cancelacion_reserva,
     enviar_email_confirmacion_reserva_detallado,
     enviar_email_recordatorio_clase_completo,
-    enviar_email_confirmacion_pago_completo
+    enviar_email_confirmacion_pago_completo,
+    enviar_email_bienvenida_completo
 )
 from .models import PlanPago, EstadoPagoCliente, RegistroPago
 from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
@@ -1623,7 +1624,8 @@ def admin_usuario_add_note(request, usuario_id):
 @admin_required
 def admin_agregar_usuario(request):
     """
-    Agregar un usuario directamente al sistema y reservarlo en una clase
+    Agregar un usuario directamente al sistema.
+    La reserva en una clase es opcional.
     """
     if request.method == 'POST':
         # Obtener datos del formulario
@@ -1632,22 +1634,22 @@ def admin_agregar_usuario(request):
         email = request.POST.get('email', '').strip()
         telefono = request.POST.get('telefono', '').strip()
         password = request.POST.get('password', '').strip()
-        clase_id = request.POST.get('clase_id')
-        
-        # Validaciones básicas
-        if not nombre or not apellido or not password or not telefono or not clase_id:
-            messages.error(request, 'Nombre, apellido, contraseña, teléfono y clase son obligatorios.')
+        clase_id = request.POST.get('clase_id', '').strip()
+
+        # Validaciones básicas (clase ya no es obligatoria)
+        if not nombre or not apellido or not password or not telefono:
+            messages.error(request, 'Nombre, apellido, contraseña y teléfono son obligatorios.')
             return render(request, 'gravity/admin/agregar_cliente_form.html', {
                 'clases_disponibles': Clase.objects.filter(activa=True).order_by(
                     'direccion', 'tipo', 'dia', 'horario'
                 ),
                 'form_data': request.POST
             })
-        
-        try:
+
+        # Si se seleccionó clase, verificar que existe y tiene cupos
+        clase = None
+        if clase_id:
             clase = get_object_or_404(Clase, id=clase_id, activa=True)
-            
-            # Verificar que la clase tenga cupos disponibles
             if clase.cupos_disponibles() <= 0:
                 messages.error(request, 'La clase seleccionada no tiene cupos disponibles.')
                 return render(request, 'gravity/admin/agregar_cliente_form.html', {
@@ -1656,7 +1658,8 @@ def admin_agregar_usuario(request):
                     ),
                     'form_data': request.POST
                 })
-            
+
+        try:
             # Generar username único
             base_username = f"{nombre.lower()}{apellido.lower()}"
             username = base_username
@@ -1664,10 +1667,9 @@ def admin_agregar_usuario(request):
             while User.objects.filter(username=username).exists():
                 username = f"{base_username}{counter}"
                 counter += 1
-            
-            # Usar transacción para asegurar consistencia
+
             with transaction.atomic():
-                # Crear usuario (esto automáticamente crea el UserProfile via señal)
+                # Crear usuario
                 user = User.objects.create_user(
                     username=username,
                     email=email if email else '',
@@ -1675,9 +1677,8 @@ def admin_agregar_usuario(request):
                     last_name=apellido,
                     password=password,
                 )
-                
-                # Obtener el perfil que se creó automáticamente y actualizarlo
-                # Usar get_or_create para mayor seguridad
+
+                # Obtener o actualizar el perfil
                 profile, created = UserProfile.objects.get_or_create(
                     user=user,
                     defaults={
@@ -1685,49 +1686,70 @@ def admin_agregar_usuario(request):
                         'sede_preferida': 'cualquiera'
                     }
                 )
-                
-                # Si el perfil ya existía, actualizar solo el teléfono
                 if not created:
                     profile.telefono = telefono
                     profile.sede_preferida = 'cualquiera'
                     profile.save()
-                
-                # Crear la reserva
-                reserva = Reserva.objects.create(
-                    usuario=user,
-                    clase=clase
-                )
-                
-                messages.success(
-                    request,
-                    f'Usuario {nombre} {apellido} creado exitosamente y reservado en '
-                    f'{clase.get_nombre_display()} del {clase.dia} a las {clase.horario.strftime("%H:%M")} '
-                    f'en {clase.get_direccion_corta()}. '
-                    f'Credenciales: usuario={username}, contraseña={password}. '
-                    f'Reserva: {reserva.numero_reserva}'
-                )
-                
+
+                # Enviar email de bienvenida (siempre, si tiene email)
+                if email:
+                    try:
+                        enviar_email_bienvenida_completo(user)
+                        logger.info(f"Email de bienvenida enviado a {user.email}")
+                    except Exception as e:
+                        logger.error(f"Error enviando email de bienvenida: {str(e)}")
+
+                # Si se seleccionó clase, crear la reserva
+                if clase:
+                    reserva = Reserva.objects.create(
+                        usuario=user,
+                        clase=clase
+                    )
+
+                    # Enviar email de confirmación de reserva si se marcó la opción
+                    if request.POST.get('enviar_confirmacion') and email:
+                        try:
+                            enviar_email_confirmacion_reserva_detallado(reserva)
+                            logger.info(f"Email de confirmación de reserva enviado para {reserva.numero_reserva}")
+                        except Exception as e:
+                            logger.error(f"Error enviando email de confirmación de reserva: {str(e)}")
+
+                    messages.success(
+                        request,
+                        f'Usuario {nombre} {apellido} creado y reservado en '
+                        f'{clase.get_nombre_display()} del {clase.dia} a las {clase.horario.strftime("%H:%M")} '
+                        f'en {clase.get_direccion_corta()}. '
+                        f'Credenciales: usuario={username}, contraseña={password}. '
+                        f'Reserva: {reserva.numero_reserva}'
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f'Usuario {nombre} {apellido} creado exitosamente. '
+                        f'Credenciales: usuario={username}, contraseña={password}.'
+                    )
+
                 return redirect('gravity:admin_usuarios_lista')
-                
+
         except IntegrityError as e:
             messages.error(request, f'Error de integridad en la base de datos: {str(e)}')
         except Exception as e:
             messages.error(request, f'Error al crear usuario: {str(e)}')
-    
+
     # Obtener clases disponibles con cupos, organizadas por sede
     clases_disponibles = []
     for clase in Clase.objects.filter(activa=True).order_by('direccion', 'tipo', 'dia', 'horario'):
         cupos = clase.cupos_disponibles()
-        if cupos > 0:  # Solo mostrar clases con cupos
+        if cupos > 0:
             clases_disponibles.append({
                 'clase': clase,
                 'cupos_disponibles': cupos
             })
-    
+
     context = {
         'clases_disponibles': clases_disponibles
     }
-    
+
     return render(request, 'gravity/admin/agregar_cliente_form.html', context)
 
 # ==============================================================================

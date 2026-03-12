@@ -2,6 +2,9 @@
    ESTILOS BASE - HEADER, FOOTER, GENERALES
    ======================================== */
 
+/* Importar Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
+
 /* Configuraciones globales */
 html {
     scroll-behavior: smooth;

@@ -30,7 +30,7 @@
                             Agregar Usuario al Sistema
                         </h2>
                         <p class="text-gris-medio">
-                            Crea un nuevo usuario en el sistema con contraseña temporal y réservalo directamente en una clase
+                            Crea un nuevo usuario en el sistema con contraseña temporal. La reserva en una clase es opcional.
                         </p>
                     </div>
                     <div class="flex items-center">
@@ -201,104 +201,111 @@
                             </div>
                         </div>
 
-                        <!-- Selección de Sede y Clase -->
+                        <!-- Selección de Sede y Clase (Opcional, colapsable) -->
                         <div class="mb-6">
-                            <div class="mb-4">
-                                <h6 class="text-lg font-semibold text-principal flex items-center gap-1.5">
-                                    <svg class="size-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Botón toggle -->
+                            <button type="button"
+                                    id="toggleClaseBtn"
+                                    onclick="toggleClaseSection()"
+                                    class="w-full flex items-center justify-between px-4 py-3 border-2 border-dashed border-principal/40 rounded-lg hover:border-principal hover:bg-principal/5 transition-colors duration-200 group">
+                                <span class="flex items-center gap-2 text-principal font-semibold">
+                                    <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                                     </svg>
-                                    Selección de Sede y Clase
-                                </h6>
-                            </div>
-                            
-                            <!-- Selección de Sede -->
-                            <div class="mb-4">
-                                <label for="sede" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
-                                    <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
-                                    Sede *
-                                </label>
-                                <select name="sede" 
-                                        id="sede" 
-                                        class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white" 
-                                        required>
-                                    <option value="">Selecciona una sede</option>
-                                    <option value="sede_principal">Sede Principal - La Rioja 3044</option>
-                                    <option value="sede_2">Sede 2 - 9 de julio 3696</option>
-                                </select>
-                                <div class="mt-1">
-                                    <small class="text-gris-medio">Selecciona la sede donde se realizará la clase</small>
-                                </div>
-                            </div>
-                            
-                            <!-- Selección de Clase Dividida -->
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <!-- Tipo de Clase -->
-                                <div>
-                                    <label for="tipo_clase" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
+                                    Reservar en una clase
+                                    <span class="text-xs font-normal text-gris-medio bg-gris-claro px-2 py-0.5 rounded-full">Opcional</span>
+                                </span>
+                                <svg id="toggleClaseIcon" class="size-5 text-principal transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </button>
+
+                            <!-- Contenido colapsable -->
+                            <div id="claseSection" style="display: none;" class="mt-4">
+                                <!-- Selección de Sede -->
+                                <div class="mb-4">
+                                    <label for="sede" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
                                         <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                         </svg>
-                                        Tipo de Clase *
+                                        Sede
                                     </label>
-                                    <select name="tipo_clase" 
-                                            id="tipo_clase" 
-                                            class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white" 
-                                            required 
-                                            disabled>
-                                        <option value="">Selecciona sede primero</option>
+                                    <select name="sede"
+                                            id="sede"
+                                            class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white">
+                                        <option value="">Selecciona una sede</option>
+                                        <option value="sede_principal">Sede Principal - La Rioja 3044</option>
+                                        <option value="sede_2">Sede 2 - 9 de julio 3696</option>
                                     </select>
                                     <div class="mt-1">
-                                        <small class="text-gris-medio">Tipo de clase de pilates</small>
+                                        <small class="text-gris-medio">Selecciona la sede donde se realizará la clase</small>
                                     </div>
                                 </div>
-                                
-                                <!-- Día -->
-                                <div>
-                                    <label for="dia_clase" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
-                                        <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
-                                        Día *
-                                    </label>
-                                    <select name="dia_clase" 
-                                            id="dia_clase" 
-                                            class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white" 
-                                            required 
-                                            disabled>
-                                        <option value="">Selecciona tipo primero</option>
-                                    </select>
-                                    <div class="mt-1">
-                                        <small class="text-gris-medio">Día de la semana</small>
+
+                                <!-- Selección de Clase Dividida -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <!-- Tipo de Clase -->
+                                    <div>
+                                        <label for="tipo_clase" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
+                                            <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                            </svg>
+                                            Tipo de Clase
+                                        </label>
+                                        <select name="tipo_clase"
+                                                id="tipo_clase"
+                                                class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white"
+                                                disabled>
+                                            <option value="">Selecciona sede primero</option>
+                                        </select>
+                                        <div class="mt-1">
+                                            <small class="text-gris-medio">Tipo de clase de pilates</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Día -->
+                                    <div>
+                                        <label for="dia_clase" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
+                                            <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            Día
+                                        </label>
+                                        <select name="dia_clase"
+                                                id="dia_clase"
+                                                class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white"
+                                                disabled>
+                                            <option value="">Selecciona tipo primero</option>
+                                        </select>
+                                        <div class="mt-1">
+                                            <small class="text-gris-medio">Día de la semana</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Horario -->
+                                    <div>
+                                        <label for="horario_clase" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
+                                            <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Horario
+                                        </label>
+                                        <select name="horario_clase"
+                                                id="horario_clase"
+                                                class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white"
+                                                disabled>
+                                            <option value="">Selecciona día primero</option>
+                                        </select>
+                                        <div class="mt-1">
+                                            <small class="text-gris-medio">Hora de inicio</small>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <!-- Horario -->
-                                <div>
-                                    <label for="horario_clase" class="flex items-center gap-1 text-sm font-medium text-gris-oscuro mb-2">
-                                        <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                        Horario *
-                                    </label>
-                                    <select name="horario_clase" 
-                                            id="horario_clase" 
-                                            class="w-full px-4 py-3 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal transition-colors duration-200 bg-white" 
-                                            required 
-                                            disabled>
-                                        <option value="">Selecciona día primero</option>
-                                    </select>
-                                    <div class="mt-1">
-                                        <small class="text-gris-medio">Hora de inicio</small>
-                                    </div>
-                                </div>
+
+                                <!-- Campo oculto para el ID de la clase final -->
+                                <input type="hidden" name="clase_id" id="clase_id_final" value="">
                             </div>
-                            
-                            <!-- Campo oculto para el ID de la clase final -->
-                            <input type="hidden" name="clase_id" id="clase_id_final" value="">
                         </div>
 
                         <!-- Vista Previa de la Clase -->
@@ -363,45 +370,49 @@
                             </div>
                             
                             <div class="space-y-3">
+                                <!-- Esta opción siempre visible -->
                                 <div class="flex items-start">
-                                    <input type="checkbox" 
-                                        name="enviar_confirmacion" 
-                                        id="enviar_confirmacion" 
-                                        class="mt-1 h-4 w-4 text-principal border-gris-medio rounded focus:ring-principal/20"
-                                        checked>
-                                    <label class="ml-3 text-sm text-gris-oscuro flex items-center" for="enviar_confirmacion">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                        </svg>
-                                        Enviar confirmación por email (si se proporcionó email)
-                                    </label>
-                                </div>
-                                
-                                <div class="flex items-start">
-                                    <input type="checkbox" 
-                                        name="crear_como_recurrente" 
-                                        id="crear_como_recurrente" 
-                                        class="mt-1 h-4 w-4 text-principal border-gris-medio rounded focus:ring-principal/20"
-                                        checked>
-                                    <label class="ml-3 text-sm text-gris-oscuro flex items-center" for="crear_como_recurrente">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                        </svg>
-                                        Crear como reserva recurrente (cada semana en el mismo horario)
-                                    </label>
-                                </div>
-                                
-                                <div class="flex items-start">
-                                    <input type="checkbox" 
-                                        name="sugerir_registro" 
+                                    <input type="checkbox"
+                                        name="sugerir_registro"
                                         id="sugerir_registro"
                                         class="mt-1 h-4 w-4 text-principal border-gris-medio rounded focus:ring-principal/20">
                                     <label class="ml-3 text-sm text-gris-oscuro flex items-center" for="sugerir_registro">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                                         </svg>
-                                        Incluir datos de acceso en email de confirmación
+                                        Incluir datos de acceso en email de bienvenida
                                     </label>
+                                </div>
+
+                                <!-- Estas opciones solo cuando hay clase seleccionada -->
+                                <div id="opcionesClase" style="display: none;" class="space-y-3">
+                                    <div class="flex items-start">
+                                        <input type="checkbox"
+                                            name="enviar_confirmacion"
+                                            id="enviar_confirmacion"
+                                            class="mt-1 h-4 w-4 text-principal border-gris-medio rounded focus:ring-principal/20"
+                                            checked>
+                                        <label class="ml-3 text-sm text-gris-oscuro flex items-center" for="enviar_confirmacion">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                            </svg>
+                                            Enviar confirmación de reserva por email
+                                        </label>
+                                    </div>
+
+                                    <div class="flex items-start">
+                                        <input type="checkbox"
+                                            name="crear_como_recurrente"
+                                            id="crear_como_recurrente"
+                                            class="mt-1 h-4 w-4 text-principal border-gris-medio rounded focus:ring-principal/20"
+                                            checked>
+                                        <label class="ml-3 text-sm text-gris-oscuro flex items-center" for="crear_como_recurrente">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            Crear como reserva recurrente (cada semana en el mismo horario)
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -442,7 +453,7 @@
                                 <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                                 </svg>
-                                <span id="submitText">Agregar Usuario y Reservar</span>
+                                <span id="submitText">Agregar Usuario</span>
                             </button>
                         </div>
                     </form>
@@ -927,6 +938,7 @@
                     </div>
                 `;
                 
+                updateOpcionesClase();
                 previewCard.style.display = 'block';
                 updateEmailOptions();
             }
@@ -935,6 +947,7 @@
             // Oculta la vista previa de la clase
             function hideClassPreview() {
                 previewCard.style.display = 'none';
+                updateOpcionesClase();
             }
             
             
@@ -962,11 +975,64 @@
                 return emailRegex.test(email);
             }
             
-            // Event listeners
+            // --- Funciones de UI ---
+            function toggleClaseSection() {
+                const section = document.getElementById('claseSection');
+                const icon = document.getElementById('toggleClaseIcon');
+                const isVisible = section.style.display !== 'none';
+
+                if (isVisible) {
+                    section.style.display = 'none';
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>';
+                    // Limpiar selección de clase al cerrar
+                    sedeSelect.value = '';
+                    diaClaseSelect.innerHTML = '<option value="">Selecciona tipo primero</option>';
+                    diaClaseSelect.disabled = true;
+                    horarioClaseSelect.innerHTML = '<option value="">Selecciona día primero</option>';
+                    horarioClaseSelect.disabled = true;
+                    claseIdFinal.value = '';
+                    claseSeleccionada = null;
+                    hideClassPreview();
+                    updateOpcionesClase();
+                } else {
+                    section.style.display = 'block';
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>';
+                }
+            }
+
+            function updateOpcionesClase() {
+                const opcionesClase = document.getElementById('opcionesClase');
+                const submitText = document.getElementById('submitText');
+                const hayClase = claseIdFinal.value !== '';
+
+                opcionesClase.style.display = hayClase ? 'block' : 'none';
+                submitText.textContent = hayClase ? 'Agregar Usuario y Reservar' : 'Agregar Usuario';
+            }
+
+            function updateEmailOptions() {
+                const hasEmail = emailInput.value.trim() !== '';
+                enviarConfirmacion.disabled = !hasEmail;
+
+                const label = document.querySelector('label[for="enviar_confirmacion"]');
+                if (hasEmail) {
+                    label.classList.remove('text-gris-medio');
+                    label.classList.add('text-gris-oscuro');
+                    enviarConfirmacion.checked = true;
+                } else {
+                    label.classList.add('text-gris-medio');
+                    label.classList.remove('text-gris-oscuro');
+                    enviarConfirmacion.checked = false;
+                }
+            }
+
+            function isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            // --- Event listeners ---
+
             sedeSelect.addEventListener('change', function() {
-                console.log('=== Cambio en sede detectado ===');
-                
-                // PRIMERO resetear solo los selects posteriores
                 diaClaseSelect.innerHTML = '<option value="">Selecciona tipo primero</option>';
                 diaClaseSelect.disabled = true;
                 horarioClaseSelect.innerHTML = '<option value="">Selecciona día primero</option>';
@@ -974,34 +1040,38 @@
                 claseIdFinal.value = '';
                 claseSeleccionada = null;
                 hideClassPreview();
-                
-                // LUEGO cargar los tipos (esto llenará el select)
                 loadTiposPorSede();
+                updateOpcionesClase();
             });
-            
+
             tipoClaseSelect.addEventListener('change', function() {
                 loadDiasPorTipo();
                 resetCascada('tipo');
+                updateOpcionesClase();
             });
-            
+
             diaClaseSelect.addEventListener('change', function() {
                 loadHorariosPorDia();
                 resetCascada('dia');
+                updateOpcionesClase();
             });
-            
+
             horarioClaseSelect.addEventListener('change', function() {
                 selectClaseFinal();
+                // updateOpcionesClase se llama desde selectClaseFinal → updateClassPreview
             });
-            
+
             emailInput.addEventListener('input', updateEmailOptions);
-            
-            // Envío del formulario
+
+            // --- Envío del formulario ---
+
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
-                const requiredFields = ['nombre', 'apellido', 'password', 'telefono', 'sede', 'tipo_clase', 'dia_clase', 'horario_clase'];
+
+                // Solo nombre, apellido, contraseña y teléfono son obligatorios
+                const requiredFields = ['nombre', 'apellido', 'password', 'telefono'];
                 let isValid = true;
-                
+
                 requiredFields.forEach(function(fieldId) {
                     const field = document.getElementById(fieldId);
                     if (!field.value.trim()) {
@@ -1013,12 +1083,7 @@
                         field.classList.add('border-gris-medio/30');
                     }
                 });
-                
-                if (!claseIdFinal.value) {
-                    alert('Por favor, completa la selección de la clase (sede → tipo → día → horario).');
-                    isValid = false;
-                }
-                
+
                 const email = emailInput.value.trim();
                 if (email && !isValidEmail(email)) {
                     emailInput.classList.add('border-error');
@@ -1028,8 +1093,7 @@
                     emailInput.classList.remove('border-error');
                     emailInput.classList.add('border-gris-medio/30');
                 }
-                
-                // Validar contraseña
+
                 const passwordInput = document.getElementById('password');
                 const password = passwordInput.value;
                 if (password.length < 6) {
@@ -1041,26 +1105,28 @@
                     passwordInput.classList.remove('border-error');
                     passwordInput.classList.add('border-gris-medio/30');
                 }
-                
+
                 if (!isValid) {
                     alert('Por favor, completa todos los campos obligatorios correctamente.');
                     return;
                 }
-                
-                submitText.textContent = 'Procesando...';
+
+                const submitBtn = document.getElementById('submitBtn');
+                const submitText = document.getElementById('submitText');
+                const textoOriginal = submitText.textContent;
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>' + submitText.textContent;
-                
+                submitBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Procesando...';
+
                 setTimeout(function() {
                     form.submit();
                 }, 1000);
             });
-            
-            // Inicialización
+
+            // --- Inicialización ---
             loadAllClasses();
             updateEmailOptions();
-            
-            // Auto-focus el primer campo
+            updateOpcionesClase();
+
             const nombreField = document.getElementById('nombre');
             if (nombreField) {
                 nombreField.focus();

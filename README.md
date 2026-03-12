@@ -24,10 +24,11 @@
 ### Para administradores
 
 - **Dashboard ejecutivo** — métricas de ocupación, nuevos registros, y panel de notificaciones de cancelaciones pendientes de lectura
-- **Gestión de clases** — alta, edición y baja de clases con validaciones de horario, tipo y sede. Las clases inactivas se conservan sin perder historial
-- **Gestión de clientes** — activar/desactivar cuentas, notas administrativas con timestamps, historial completo de reservas y pagos
-- **Gestión financiera** — registro de pagos, estados de cuenta automáticos y seguimiento de deudas por cliente
-- **Notificaciones de cancelación** — cada cancelación permanente o temporal genera una notificación visible en el panel hasta que un administrador la marque como leída
+- **Gestión de clases** — alta, edición y baja de clases con validaciones de horario, tipo y sede. Las clases inactivas se conservan sin perder historial. Activación/desactivación vía AJAX
+- **Gestión de clientes** — activar/desactivar cuentas, notas administrativas con timestamps, historial completo de reservas y pagos. Los administradores pueden crear usuarios directamente desde el panel, con asignación de clase opcional
+- **Gestión financiera** — registro de pagos con descuento por pago en efectivo (10%, redondeado al millar más cercano), estados de cuenta automáticos y seguimiento de deudas por cliente
+- **Roles de administrador** — los admins con el flag `puede_ver_pagos` desactivado ven guiones en lugar de datos financieros, permitiendo delegar tareas operativas sin exponer información sensible
+- **Notificaciones de cancelación** — cada cancelación permanente o temporal genera una notificación visible en el panel hasta que un administrador la marque como leída (estado de lectura por admin vía ManyToMany)
 
 ---
 
@@ -40,22 +41,26 @@ El modelo financiero funciona con deudas mensuales automáticas:
 - Las deudas soportan estados: `pendiente`, `parcial`, `pagado`, `vencido`
 - El balance del cliente se calcula como `total_pagado - total_deudas_generadas`
 - Los clientes con deudas vencidas quedan con acceso restringido al sistema
+- Al registrar un pago en efectivo se aplica automáticamente un **descuento del 10%**, redondeado al millar más cercano
 - Dos comandos de gestión (`generar_deudas_mensuales` y `verificar_deudas_vencidas`) se ejecutan automáticamente vía cron
 
 ---
 
 ## Sistema de Emails
 
-Se envían 6 tipos de emails transaccionales vía **Gmail SMTP**:
+Se envían 7 tipos de emails transaccionales vía **Gmail SMTP**:
 
 | Email | Cuándo se envía |
 |---|---|
-| Bienvenida | Al registrarse un nuevo cliente |
+| Bienvenida | Al registrarse un nuevo cliente, o cuando un administrador crea el usuario desde el panel |
 | Confirmación de reserva | Al confirmar una reserva exitosamente |
 | Cancelación de reserva | Al cancelar una reserva (permanente o por el admin) |
 | Confirmación de pago | Al registrar un pago desde el panel admin |
 | Recordatorio de clase | Automático vía cron job antes de cada clase |
+| Cumpleaños | Automático vía cron job el día del cumpleaños del cliente |
 | Despedida | Al desactivar la cuenta de un cliente |
+
+> Los emails utilizan estilos inline y atributos `bgcolor` en las celdas para garantizar compatibilidad con Gmail y Hotmail. Las imágenes se embeben en base64 para evitar problemas de adjuntos.
 
 ---
 
@@ -119,7 +124,7 @@ Se envían 6 tipos de emails transaccionales vía **Gmail SMTP**:
 - Nginx como proxy reverso
 - Certbot / Let's Encrypt para HTTPS
 - python-decouple para variables de entorno
-- Cron jobs para automatización mensual
+- Cron jobs para automatización diaria y mensual
 
 ---
 
@@ -214,11 +219,14 @@ Las variables sensibles se gestionan con `python-decouple` a través de un archi
 ### Cron jobs necesarios
 
 ```bash
-# Generar deudas el 1° de cada mes a las 00:05
-5 0 1 * * /ruta/al/entorno/python manage.py generar_deudas_mensuales
+# Generar deudas el 1° de cada mes a las 3:00 AM
+0 3 1 * * /ruta/al/entorno/python /ruta/al/proyecto/manage.py generar_deudas_mensuales
 
-# Verificar deudas vencidas diariamente a las 08:00
-0 8 * * * /ruta/al/entorno/python manage.py verificar_deudas_vencidas
+# Verificar deudas vencidas diariamente a las 3:00 AM
+0 3 * * * /ruta/al/entorno/python /ruta/al/proyecto/manage.py verificar_deudas_vencidas
+
+# Enviar emails de cumpleaños diariamente a las 3:00 AM
+0 3 * * * /ruta/al/entorno/python /ruta/al/proyecto/manage.py enviar_emails_cumpleanos
 ```
 
 ---
@@ -240,7 +248,8 @@ Las variables sensibles se gestionan con `python-decouple` a través de un archi
 - GitHub: [github.com/Piccoli4](https://github.com/Piccoli4)
 - LinkedIn: [linkedin.com/in/piccoli-augusto](https://www.linkedin.com/in/piccoli-augusto/)
 - Email: piccoli_44@hotmail.com
-- Porfolio: [piccoliaugusto.com.ar](https://piccoliaugusto.com.ar/)
+- Portfolio: [piccoliaugusto.com.ar](https://piccoliaugusto.com.ar/)
+
 ---
 
 *Stack: Python 3.13 · Django 5.2 · PostgreSQL · Tailwind CSS*

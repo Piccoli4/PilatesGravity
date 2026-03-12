@@ -69,3 +69,9 @@
 .animate-shimmer {
     animation: shimmer-bg 2s ease-in-out infinite;
 }
+
+/* Forzar fuente serif en inputs de login */
+#id_username,
+#id_password {
+    font-family: serif !important;
+}
