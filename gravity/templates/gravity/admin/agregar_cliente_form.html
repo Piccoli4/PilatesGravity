@@ -974,31 +974,6 @@
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 return emailRegex.test(email);
             }
-            
-            // --- Funciones de UI ---
-            function toggleClaseSection() {
-                const section = document.getElementById('claseSection');
-                const icon = document.getElementById('toggleClaseIcon');
-                const isVisible = section.style.display !== 'none';
-
-                if (isVisible) {
-                    section.style.display = 'none';
-                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>';
-                    // Limpiar selección de clase al cerrar
-                    sedeSelect.value = '';
-                    diaClaseSelect.innerHTML = '<option value="">Selecciona tipo primero</option>';
-                    diaClaseSelect.disabled = true;
-                    horarioClaseSelect.innerHTML = '<option value="">Selecciona día primero</option>';
-                    horarioClaseSelect.disabled = true;
-                    claseIdFinal.value = '';
-                    claseSeleccionada = null;
-                    hideClassPreview();
-                    updateOpcionesClase();
-                } else {
-                    section.style.display = 'block';
-                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>';
-                }
-            }
 
             function updateOpcionesClase() {
                 const opcionesClase = document.getElementById('opcionesClase');
@@ -1132,5 +1107,33 @@
                 nombreField.focus();
             }
         });
+
+        // Función global para el botón toggle (debe estar fuera del DOMContentLoaded)
+        function toggleClaseSection() {
+            const section = document.getElementById('claseSection');
+            const icon = document.getElementById('toggleClaseIcon');
+            const isVisible = section.style.display !== 'none';
+
+            if (isVisible) {
+                section.style.display = 'none';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>';
+                const sedeSelect = document.getElementById('sede');
+                const diaClaseSelect = document.getElementById('dia_clase');
+                const horarioClaseSelect = document.getElementById('horario_clase');
+                const claseIdFinal = document.getElementById('clase_id_final');
+                if (sedeSelect) sedeSelect.value = '';
+                if (diaClaseSelect) { diaClaseSelect.innerHTML = '<option value="">Selecciona tipo primero</option>'; diaClaseSelect.disabled = true; }
+                if (horarioClaseSelect) { horarioClaseSelect.innerHTML = '<option value="">Selecciona día primero</option>'; horarioClaseSelect.disabled = true; }
+                if (claseIdFinal) claseIdFinal.value = '';
+                document.getElementById('clasePreview').style.display = 'none';
+                const opcionesClase = document.getElementById('opcionesClase');
+                const submitText = document.getElementById('submitText');
+                if (opcionesClase) opcionesClase.style.display = 'none';
+                if (submitText) submitText.textContent = 'Agregar Usuario';
+            } else {
+                section.style.display = 'block';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>';
+            }
+        }
     </script>
 {% endblock %}
