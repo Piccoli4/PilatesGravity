@@ -21,7 +21,8 @@ from .email_service import (
     enviar_email_confirmacion_reserva_detallado,
     enviar_email_recordatorio_clase_completo,
     enviar_email_confirmacion_pago_completo,
-    enviar_email_bienvenida_completo
+    enviar_email_bienvenida_completo,
+    enviar_email_bienvenida
 )
 from .models import PlanPago, EstadoPagoCliente, RegistroPago
 from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
@@ -1629,12 +1630,13 @@ def admin_agregar_usuario(request):
     """
     if request.method == 'POST':
         # Obtener datos del formulario
-        nombre = request.POST.get('nombre', '').strip()
-        apellido = request.POST.get('apellido', '').strip()
+        nombre = request.POST.get('nombre', '').strip().title()
+        apellido = request.POST.get('apellido', '').strip().title()
         email = request.POST.get('email', '').strip()
         telefono = request.POST.get('telefono', '').strip()
         password = request.POST.get('password', '').strip()
         clase_id = request.POST.get('clase_id', '').strip()
+        incluir_credenciales = request.POST.get('incluir_credenciales') == 'on'
 
         # Validaciones básicas (clase ya no es obligatoria)
         if not nombre or not apellido or not password or not telefono:
@@ -1694,7 +1696,11 @@ def admin_agregar_usuario(request):
                 # Enviar email de bienvenida (siempre, si tiene email)
                 if email:
                     try:
-                        enviar_email_bienvenida_completo(user)
+                        enviar_email_bienvenida(
+                            usuario=user,
+                            is_admin_created=incluir_credenciales,
+                            password_temporal=password if incluir_credenciales else None,
+                        )
                         logger.info(f"Email de bienvenida enviado a {user.email}")
                     except Exception as e:
                         logger.error(f"Error enviando email de bienvenida: {str(e)}")
@@ -2172,8 +2178,8 @@ def admin_crear_admin_restringido(request):
     Solo accesible por superusuarios.
     """
     if request.method == 'POST':
-        nombre = request.POST.get('nombre', '').strip()
-        apellido = request.POST.get('apellido', '').strip()
+        nombre = request.POST.get('nombre', '').strip().title()
+        apellido = request.POST.get('apellido', '').strip().title()
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '').strip()
 

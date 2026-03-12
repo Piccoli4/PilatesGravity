@@ -92,6 +92,12 @@ class SignUpForm(UserCreationForm):
                 
         return telefono
 
+    def clean_first_name(self):
+        return self.cleaned_data.get('first_name', '').strip().title()
+
+    def clean_last_name(self):
+        return self.cleaned_data.get('last_name', '').strip().title()
+
     def save(self, commit=True):
         """Guardar usuario y crear perfil con información adicional"""
         user = super().save(commit=False)
@@ -200,6 +206,12 @@ class ProfileUpdateForm(forms.Form):
                 raise ValidationError('El teléfono debe tener al menos 9 dígitos.')
                 
         return telefono
+
+    def clean_first_name(self):
+        return self.cleaned_data.get('first_name', '').strip().title()
+
+    def clean_last_name(self):
+        return self.cleaned_data.get('last_name', '').strip().title()
 
     def save(self):
         """Guardar usuario y actualizar perfil"""
