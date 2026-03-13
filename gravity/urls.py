@@ -18,7 +18,7 @@ from .views import (
     # IMPORTACIONES PARA PLANES DE PAGO
     mis_planes, seleccionar_plan, cancelar_plan,
     # IMPORTACIONES PARA TESTIMONIOS
-    admin_testimonios_lista, admin_testimonio_aprobar, admin_testimonio_rechazar, admin_testimonio_eliminar
+    admin_testimonios_lista, admin_testimonio_aprobar, admin_testimonio_rechazar, admin_testimonio_eliminar,
 )
 from django.views.generic import TemplateView
 

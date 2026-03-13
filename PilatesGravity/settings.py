@@ -14,7 +14,7 @@ PilatesGravity - Sistema de Gestión de Reservas
 Desarrollado por: Piccoli Guido Augusto
 Email: piccoli_44@hotmail.com
 Versión: 1.0.0
-Año: 2025
+Año: 2026
 
 """
 

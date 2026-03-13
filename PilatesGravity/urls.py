@@ -18,11 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from gravity.views import manifest_json, service_worker_js
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('gravity.urls')),
     path('accounts/', include('accounts.urls')),
+    # ==============================================================================
+    # URLS DE PWA
+    # ==============================================================================
+    path('manifest.json', manifest_json, name='manifest'),
+    path('sw.js', service_worker_js, name='service_worker'),
 ]
 
 if settings.DEBUG:

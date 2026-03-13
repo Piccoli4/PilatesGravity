@@ -673,8 +673,9 @@
                 {% if page_obj.number == num %}
                 <li>
                     <span
-                        class="inline-flex items-center justify-center w-8 h-8 text-sm bg-principal text-white rounded-lg">{{
-                        num }}</span>
+                        class="inline-flex items-center justify-center w-8 h-8 text-sm bg-principal text-white rounded-lg">
+                        {{ num }}
+                    </span>
                 </li>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li>
                     <a class="inline-flex items-center justify-center w-8 h-8 text-sm border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-200 transition-colors duration-200"

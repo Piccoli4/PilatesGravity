@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from .models import Reserva, Clase, PlanUsuario, AusenciaTemporal, NotificacionCancelacion, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
 from .forms import ReservaForm, ModificarReservaForm, BuscarReservaForm
@@ -2485,3 +2485,82 @@ def admin_testimonio_eliminar(request, testimonio_id):
     testimonio.delete()
     messages.success(request, f'Testimonio de {nombre} eliminado correctamente.')
     return redirect('gravity:admin_testimonios_lista')
+
+# ==============================================================================
+# PWA - MANIFEST Y SERVICE WORKER
+# ==============================================================================
+
+def manifest_json(request):
+    manifest = {
+        "name": "Pilates Gravity",
+        "short_name": "Gravity",
+        "description": "Reservá tus clases de Pilates en Gravity",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#F8EFE5",
+        "theme_color": "#5D768B",
+        "orientation": "portrait",
+        "lang": "es",
+        "id": "/",
+        "start_url": "/",
+        "icons": [
+            {
+                "src": "/static/icons/icon-192x192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any"
+            },
+            {
+                "src": "/static/icons/icon-512x512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any"
+            }
+        ]
+    }
+    return JsonResponse(manifest)
+
+def service_worker_js(request):
+    sw_content = """
+        const CACHE_NAME = 'pilates-gravity-v1';
+        const STATIC_ASSETS = [
+            '/',
+            '/static/css/tailwind-output.css',
+            '/static/js/base_scripts.js',
+            '/static/icons/icon-192x192.png',
+        ];
+
+        self.addEventListener('install', (event) => {
+            event.waitUntil(
+                caches.open(CACHE_NAME).then((cache) => {
+                    return cache.addAll(STATIC_ASSETS);
+                })
+            );
+            self.skipWaiting();
+        });
+
+        self.addEventListener('activate', (event) => {
+            event.waitUntil(
+                caches.keys().then((cacheNames) => {
+                    return Promise.all(
+                        cacheNames
+                            .filter((name) => name !== CACHE_NAME)
+                            .map((name) => caches.delete(name))
+                    );
+                })
+            );
+            self.clients.claim();
+        });
+
+        self.addEventListener('fetch', (event) => {
+            // Solo cachear GET requests
+            if (event.request.method !== 'GET') return;
+
+            event.respondWith(
+                caches.match(event.request).then((cached) => {
+                    return cached || fetch(event.request);
+                })
+            );
+        });
+    """
+    return HttpResponse(sw_content, content_type='application/javascript')
