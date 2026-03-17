@@ -314,6 +314,22 @@ class UserProfileForm(forms.ModelForm):
             })
         
         return cleaned_data
+    
+    def clean_avatar(self):
+        """Validar tamaño y formato de la foto de perfil"""
+        avatar = self.cleaned_data.get('avatar')
+        
+        if avatar:
+            # Validar tamaño: máximo 5MB
+            if avatar.size > 5 * 1024 * 1024:
+                raise ValidationError('La imagen no puede superar los 5MB.')
+            
+            # Validar formato
+            tipos_permitidos = ['image/jpeg', 'image/png', 'image/webp']
+            if avatar.content_type not in tipos_permitidos:
+                raise ValidationError('Solo se permiten imágenes en formato JPG, PNG o WebP.')
+        
+        return avatar
 
 class CustomUserChangeForm(UserChangeForm):
     """
