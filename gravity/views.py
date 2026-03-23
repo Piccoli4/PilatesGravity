@@ -22,7 +22,8 @@ from .email_service import (
     enviar_email_recordatorio_clase_completo,
     enviar_email_confirmacion_pago_completo,
     enviar_email_bienvenida_completo,
-    enviar_email_bienvenida
+    enviar_email_bienvenida,
+    enviar_email_modificacion_reserva
 )
 from .models import PlanPago, EstadoPagoCliente, RegistroPago
 from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
@@ -1397,6 +1398,76 @@ def admin_reserva_cancelar(request, reserva_id):
     }
     
     return render(request, 'gravity/admin/reserva_cancelar.html', context)
+
+@admin_required
+def admin_reserva_modificar(request, reserva_id):
+    """
+    Modificar una reserva como administrador (sin restricciones de tiempo).
+    """
+    reserva = get_object_or_404(Reserva, id=reserva_id, activa=True)
+
+    if request.method == 'POST':
+        notificar_usuario = request.POST.get('notificar_usuario') == 'on'
+
+        form = ModificarReservaForm(
+            request.POST,
+            reserva_actual=reserva,
+            user=reserva.usuario
+        )
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    nueva_clase = form.cleaned_data['nueva_clase']
+                    clase_anterior = reserva.clase
+
+                    reserva.clase = nueva_clase
+                    reserva.save()
+
+                    # Enviar email de notificación si se solicitó
+                    email_enviado = False
+                    if notificar_usuario and reserva.usuario.email:
+                        try:
+                            email_enviado = enviar_email_modificacion_reserva(
+                                reserva=reserva,
+                                clase_anterior=clase_anterior,
+                            )
+                        except Exception as e:
+                            logger.error(f"Error enviando email de modificación: {str(e)}")
+
+                    mensaje_exito = (
+                        f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
+                        f'modificada: {clase_anterior.get_nombre_display()} ({clase_anterior.dia} '
+                        f'{clase_anterior.horario.strftime("%H:%M")}) → '
+                        f'{nueva_clase.get_nombre_display()} ({nueva_clase.dia} '
+                        f'{nueva_clase.horario.strftime("%H:%M")}).'
+                    )
+
+                    if notificar_usuario:
+                        if email_enviado:
+                            mensaje_exito += f' Notificación enviada a {reserva.usuario.email}.'
+                        elif reserva.usuario.email:
+                            mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
+                        else:
+                            mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
+
+                    messages.success(request, mensaje_exito)
+                    return redirect('gravity:admin_reservas_lista')
+
+            except IntegrityError:
+                messages.error(request, 'Error: el alumno ya tiene una reserva en esa clase.')
+            except Exception as e:
+                messages.error(request, f'Error al modificar la reserva: {str(e)}')
+    else:
+        form = ModificarReservaForm(
+            reserva_actual=reserva,
+            user=reserva.usuario
+        )
+
+    return render(request, 'gravity/admin/reserva_modificar.html', {
+        'form': form,
+        'reserva': reserva,
+    })
 
 def registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, admin_user):
     """

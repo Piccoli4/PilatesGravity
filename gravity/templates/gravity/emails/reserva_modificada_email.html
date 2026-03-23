@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu reserva fue modificada · Pilates Gravity</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #F8EFE5;
+            color: #3A4D5C;
+            line-height: 1.6;
+        }
+
+        .wrapper {
+            max-width: 600px;
+            margin: 32px auto;
+            background-color: #FDFDFD;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .header {
+            background-color: #5D768B;
+            text-align: center;
+            padding: 36px 30px 28px;
+        }
+
+        /* CARD */
+        .card {
+            padding: 36px 40px;
+        }
+
+        .greeting {
+            font-size: 22px;
+            font-weight: 600;
+            color: #5D768B;
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            font-size: 15px;
+            color: #5a5a5a;
+            margin-bottom: 28px;
+        }
+
+        /* BLOQUE CLASE ANTERIOR */
+        .clase-anterior-block {
+            background-color: #FFF3F3;
+            border-left: 4px solid #C97B7B;
+            border-radius: 6px;
+            padding: 20px 24px;
+            margin-bottom: 8px;
+        }
+
+        .clase-anterior-block .block-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #C97B7B;
+            margin-bottom: 16px;
+        }
+
+        /* BLOQUE CLASE NUEVA */
+        .clase-nueva-block {
+            background-color: #F8EFE5;
+            border-left: 4px solid #5D768B;
+            border-radius: 6px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+        }
+
+        .clase-nueva-block .block-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #5D768B;
+            margin-bottom: 16px;
+        }
+
+        /* FLECHA */
+        .arrow {
+            text-align: center;
+            font-size: 20px;
+            color: #C8B39B;
+            padding: 4px 0 8px;
+        }
+
+        /* FILAS DE DETALLE */
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(93, 118, 139, 0.1);
+            font-size: 14px;
+        }
+
+        .clase-anterior-block .detail-row {
+            border-bottom-color: rgba(201, 123, 123, 0.12);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #7a8e99;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #3A4D5C;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .reserva-num {
+            font-family: 'Courier New', monospace;
+            background-color: #5D768B;
+            color: #FDFDFD;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+        }
+
+        /* NOTA */
+        .nota {
+            font-size: 13px;
+            color: #7a8e99;
+            border-top: 1px solid #ede5da;
+            padding-top: 20px;
+            line-height: 1.7;
+        }
+
+        .nota a {
+            color: #5D768B;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* FOOTER */
+        .footer {
+            background-color: #3A4D5C;
+            text-align: center;
+            padding: 28px 30px 24px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.65);
+            line-height: 1.8;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+
+        <!-- HEADER -->
+        <div class="header">
+            <img src="{{ domain_url }}/static/img/logo_email.png" alt="Pilates Gravity"
+                style="width:82px; height:auto; display:block; margin:0 auto;">
+        </div>
+
+        <!-- CARD -->
+        <div class="card">
+            <p class="greeting">Hola, {{ usuario.first_name|default:usuario.username }}.</p>
+            <p class="intro">
+                Un administrador realizó un cambio en tu reserva
+                <span class="reserva-num">{{ reserva.numero_reserva }}</span>.
+                A continuación encontrás los detalles.
+            </p>
+
+            <!-- Clase anterior -->
+            <div class="clase-anterior-block">
+                <p class="block-title">Clase anterior</p>
+                <div class="detail-row">
+                    <span class="detail-label">Clase</span>
+                    <span class="detail-value">{{ clase_anterior.get_nombre_display }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Día</span>
+                    <span class="detail-value">{{ clase_anterior.dia }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Horario</span>
+                    <span class="detail-value">{{ clase_anterior.horario|time:"H:i" }} hs</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Sede</span>
+                    <span class="detail-value">{{ clase_anterior.get_direccion_display }}</span>
+                </div>
+            </div>
+
+            <!-- Flecha -->
+            <p class="arrow">↓</p>
+
+            <!-- Nueva clase -->
+            <div class="clase-nueva-block">
+                <p class="block-title">Nueva clase ✓</p>
+                <div class="detail-row">
+                    <span class="detail-label">Clase</span>
+                    <span class="detail-value">{{ clase_nueva.get_nombre_display }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Día</span>
+                    <span class="detail-value">{{ clase_nueva.dia }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Horario</span>
+                    <span class="detail-value">{{ clase_nueva.horario|time:"H:i" }} hs</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Sede</span>
+                    <span class="detail-value">{{ clase_nueva.get_direccion_display }}</span>
+                </div>
+            </div>
+
+            <!-- Nota final -->
+            <p class="nota">
+                Podés ver el detalle de tu reserva desde tu cuenta en
+                <a href="{{ domain_url }}">{{ domain_url }}</a>.<br><br>
+                Si tenés alguna consulta sobre este cambio, contactanos por WhatsApp al
+                <strong>+54 342 511 4448</strong>.
+            </p>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <img src="{{ domain_url }}/static/img/banner_email.png" alt="Pilates Gravity"
+                style="width: 200px; height:auto; display:block; margin:0 auto 16px auto;">
+            <p>
+                La Rioja 3044 y 9 de Julio 3698, Santa Fe<br>
+                <a href="{{ domain_url }}">{{ domain_url }}</a>
+            </p>
+        </div>
+
+    </div>
+</body>
+
+</html>

@@ -635,6 +635,13 @@
                                     </div>
                                     <div class="md:col-span-2 flex justify-end">
                                         <div class="flex space-x-1">
+                                            <a href="{% url 'gravity:admin_reserva_modificar' reserva.id %}" 
+                                            class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blanco text-principal border border-principal rounded hover:bg-principal/10" 
+                                            title="Modificar reserva">
+                                                <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                                                </svg>
+                                            </a>
                                             <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
                                                class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                                                title="Cancelar reserva">

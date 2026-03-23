@@ -2167,3 +2167,76 @@ def enviar_email_cumpleanios(usuario):
         logger.error(f"Error enviando email de cumpleaños para {usuario.username}: {str(e)}")
         return False
 
+# ==============================================================================
+# EMAIL DE MODIFICACIÓN DE RESERVA (por administrador)
+# ==============================================================================
+
+def enviar_email_modificacion_reserva(reserva, clase_anterior):
+    """
+    Envía un email al usuario notificando que un administrador modificó su reserva.
+
+    Args:
+        reserva: Objeto Reserva ya actualizado (con la nueva clase)
+        clase_anterior: Objeto Clase con la clase original (antes del cambio)
+
+    Returns:
+        Boolean: True si el email se envió exitosamente, False en caso contrario
+    """
+    try:
+        if not reserva.usuario.email:
+            logger.warning(f"Usuario {reserva.usuario.username} no tiene email configurado")
+            return False
+
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
+
+        context = {
+            'reserva': reserva,
+            'clase_anterior': clase_anterior,
+            'clase_nueva': reserva.clase,
+            'usuario': reserva.usuario,
+            'domain_url': domain_url,
+        }
+
+        subject = render_to_string(
+            'gravity/emails/reserva_modificada_subject.txt',
+            context
+        ).strip()
+
+        html_message = render_to_string(
+            'gravity/emails/reserva_modificada_email.html',
+            context
+        )
+
+        nombre = reserva.usuario.first_name or reserva.usuario.username
+        text_message = (
+            f"Tu reserva fue modificada por el estudio\n\n"
+            f"Hola {nombre},\n\n"
+            f"Un administrador realizó un cambio en tu reserva {reserva.numero_reserva}.\n\n"
+            f"CLASE ANTERIOR:\n"
+            f"  {clase_anterior.get_nombre_display()} — {clase_anterior.dia} "
+            f"a las {clase_anterior.horario.strftime('%H:%M')} en {clase_anterior.get_direccion_corta()}\n\n"
+            f"NUEVA CLASE:\n"
+            f"  {reserva.clase.get_nombre_display()} — {reserva.clase.dia} "
+            f"a las {reserva.clase.horario.strftime('%H:%M')} en {reserva.clase.get_direccion_corta()}\n\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"pilatesgravity@gmail.com · +54 342 511 4448"
+        )
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[reserva.usuario.email],
+        )
+        email.attach_alternative(html_message, 'text/html')
+        email.send(fail_silently=False)
+
+        logger.info(
+            f"Email de modificación de reserva enviado a {reserva.usuario.email} "
+            f"— reserva {reserva.numero_reserva}"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(f"Error enviando email de modificación para reserva {reserva.numero_reserva}: {str(e)}")
+        return False

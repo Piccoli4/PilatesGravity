@@ -1,0 +1,392 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Modificar Reserva - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+    <li class="flex items-center">
+        <span class="text-gray-400">/</span>
+        <a href="{% url 'gravity:admin_reservas_lista' %}" class="ml-1 text-principal hover:text-principal/80 transition-colors duration-200">
+            Reservas
+        </a>
+    </li>
+    <li class="flex items-center">
+        <span class="text-gray-400">/</span>
+        <span class="ml-1 text-gray-500">Modificar</span>
+    </li>
+{% endblock %}
+
+{% block content %}
+    {% load static %}
+    <!-- Header Section -->
+    <div class="flex flex-col mb-6">
+        <div class="w-full">
+            <div class="card border-l-4 border-principal p-3">
+                <div class="card-body">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="mb-4 md:mb-0">
+                            <h2 class="flex items-center gap-2 text-2xl font-bold text-principal mb-2">
+                                <svg class="size-8" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                                </svg>
+                                Modificar Reserva
+                            </h2>
+                            <p class="text-gris-medio mb-0">
+                                Cambiá la clase asignada a la reserva del usuario.<br>
+                                Esta acción no tiene límite de tiempo y puede notificar al cliente por email.
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <a 
+                                href="{% url 'gravity:admin_reservas_lista' %}" 
+                                class="flex items-center gap-1 border border-principal text-principal hover:bg-principal hover:text-fondo font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50"
+                            >
+                                <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                                </svg>
+                                Volver a Reservas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex flex-col lg:flex-row gap-6">
+        <div class="w-full lg:w-2/3">
+
+            <!-- Información de la reserva -->
+            <div class="card mb-6">
+                <div class="card-header text-blanco">
+                    <h5 class="flex items-center gap-1 text-lg">
+                        <svg class="size-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+                        </svg>
+                        Información de la Reserva
+                    </h5>
+                </div>
+                <div class="card-body p-6 bg-fondo">
+                    <div class="flex flex-col md:flex-row gap-6">
+
+                        <!-- Datos del usuario -->
+                        <div class="w-full md:w-1/2">
+                            <div class="text-center mb-6">
+                                <div class="user-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                                    {% if reserva.usuario.profile.avatar %}
+                                        <img src="{{ reserva.usuario.profile.avatar.url }}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                    {% else %}
+                                        {{ reserva.usuario.first_name.0|default:reserva.usuario.username.0|upper }}{{ reserva.usuario.last_name.0|upper|default:'' }}
+                                    {% endif %}
+                                </div>
+                                <h4 class="text-xl font-semibold mb-1">{{ reserva.get_nombre_completo_usuario }}</h4>
+                                <p class="text-gris-medio mb-2">@{{ reserva.usuario.username }}</p>
+                                <span class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md">Usuario Activo</span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6 class="text-base font-semibold mb-3">Información de Contacto:</h6>
+                                <ul class="space-y-2">
+                                    <li class="flex items-center gap-1">
+                                        <svg class="size-5 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                                        </svg>
+                                        <strong>Email:</strong>
+                                        <a href="mailto:{{ reserva.usuario.email }}" class="hover:text-principal">{{ reserva.usuario.email }}</a>
+                                    </li>
+                                    {% if reserva.usuario.profile.telefono %}
+                                        <li class="flex items-center gap-1">
+                                            <svg class="size-5 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+                                            </svg>
+                                            <strong>Teléfono:</strong>
+                                            <a href="tel:{{ reserva.usuario.profile.telefono }}">{{ reserva.usuario.profile.telefono }}</a>
+                                        </li>
+                                    {% endif %}
+                                    <li class="flex items-center gap-1">
+                                        <svg class="size-5 text-principal mb-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <strong>Miembro desde:</strong> {{ reserva.usuario.date_joined|date:"d/m/Y" }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Clase actual -->
+                        <div class="w-full md:w-1/2">
+                            <div class="flex flex-col items-center justify-center gap-2 mb-2">
+                                {% if reserva.clase.tipo == 'Reformer' %}
+                                    <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="size-16">
+                                {% elif reserva.clase.tipo == 'Cadillac' %}
+                                    <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="size-16">
+                                {% else %}
+                                    <img src="{% static 'icons/especial.png' %}" alt="Icono de Clase Especial" class="size-16">
+                                {% endif %}
+                                <h4 class="text-xl font-semibold mb-1">{{ reserva.clase.get_nombre_display }}</h4>
+                                <p class="text-gris-medio mb-1">
+                                    {{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }}
+                                </p>
+                                <p class="text-principal flex items-center gap-1">
+                                    <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <strong>{{ reserva.clase.get_direccion_corta }}</strong>
+                                </p>
+                                {% if reserva.clase.activa %}
+                                    <span class="px-3 py-1.5 text-sm font-medium text-blanco bg-green-600 rounded-md">Clase Activa</span>
+                                {% else %}
+                                    <span class="px-3 py-1.5 text-sm font-medium text-blanco bg-red-600 rounded-md">Clase Inactiva</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-2">
+                                <h6 class="text-base font-semibold mb-3">Detalles de la Clase Actual:</h6>
+                                <ul class="space-y-3">
+                                    <li class="flex items-center gap-1">
+                                        <svg class="size-4 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <strong>Sede:</strong> {{ reserva.clase.get_direccion_display }}
+                                    </li>
+                                    <li class="flex items-center gap-1">
+                                        <svg class="size-4 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <strong>Día:</strong> {{ reserva.clase.dia }}
+                                    </li>
+                                    <li class="flex items-center gap-1">
+                                        <svg class="size-4 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <strong>Horario:</strong> {{ reserva.clase.horario|time:"H:i" }}
+                                    </li>
+                                    <li class="flex items-center gap-1">
+                                        <svg class="size-4 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                                        </svg>
+                                        <strong>Cupo:</strong> {{ reserva.clase.cupo_maximo }} personas
+                                    </li>
+                                    <li class="flex items-center gap-1">
+                                        <svg class="size-4 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/>
+                                            <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/>
+                                        </svg>
+                                        <strong>Ocupación:</strong> {{ reserva.clase.get_porcentaje_ocupacion }}%
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalles de la Reserva -->
+                    <hr class="my-2 border-gris-claro">
+                    <div class="w-full">
+                        <h6 class="text-base font-semibold mb-4">Detalles de la Reserva:</h6>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="flex flex-col items-center gap-2">
+                                <svg class="size-8 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                                </svg>
+                                <h6 class="font-semibold">{{ reserva.numero_reserva }}</h6>
+                                <small class="text-gris-medio">Número de Reserva</small>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <svg class="size-8 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                                </svg>
+                                <h6 class="font-semibold">{{ reserva.fecha_reserva|date:"d/m/Y" }}</h6>
+                                <small class="text-gris-medio">Fecha de Reserva</small>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <svg class="size-8 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                </svg>
+                                <h6 class="font-semibold">{{ reserva.fecha_reserva|date:"H:i" }}</h6>
+                                <small class="text-gris-medio">Hora de Reserva</small>
+                            </div>
+                            <div class="flex flex-col items-center gap-2">
+                                <svg class="size-8 text-principal" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                </svg>
+                                <h6 class="font-semibold">{{ reserva.clase.get_direccion_corta }}</h6>
+                                <small class="text-gris-medio">Sede de la Clase</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de modificación -->
+            <div class="card">
+                <div class="card-header text-blanco">
+                    <h5 class="flex items-center gap-1 text-lg">
+                        <svg class="size-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                        </svg>
+                        Nueva Clase
+                    </h5>
+                </div>
+                <div class="card-body p-6">
+                    <form method="post" id="modificarForm">
+                        {% csrf_token %}
+
+                        <!-- Selector de nueva clase -->
+                        <div class="mb-6">
+                            <label for="{{ form.nueva_clase.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Seleccioná la nueva clase
+                            </label>
+                            {{ form.nueva_clase }}
+                            {% if form.nueva_clase.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ form.nueva_clase.errors.0 }}</p>
+                            {% endif %}
+                            {% if not form.nueva_clase.field.queryset.exists %}
+                                <p class="text-amber-600 text-sm mt-2">
+                                    ⚠️ No hay clases disponibles para asignar. El alumno puede tener conflictos de horario o todas las clases están completas.
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Opción de notificación -->
+                        <div class="bg-fondo border border-gris-claro rounded p-4 mb-6">
+                            <h6 class="text-sm font-semibold mb-3">Opciones adicionales</h6>
+                            <div class="flex items-center">
+                                <input class="w-4 h-4 text-principal bg-gray-100 border-gray-300 rounded focus:ring-principal focus:ring-2"
+                                    type="checkbox"
+                                    name="notificar_usuario"
+                                    id="notificar_usuario"
+                                    checked>
+                                <label class="ml-2 text-sm text-gray-700" for="notificar_usuario">
+                                    <svg class="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                                    </svg>
+                                    Notificar al usuario por email sobre el cambio
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Warning -->
+                        <div class="bg-blue-50 border-l-4 border-principal text-blue-800 p-4 mb-6 rounded">
+                            <div class="flex items-center gap-1">
+                                <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                </svg>
+                                <strong>Recordá que al modificar esta reserva:</strong>
+                            </div>
+                            <ul class="mt-2 ml-6 list-disc space-y-1 text-sm">
+                                <li>El alumno quedará asignado a la nueva clase seleccionada</li>
+                                <li>Se liberará el cupo en la clase actual</li>
+                                <li>El número de reserva <strong>{{ reserva.numero_reserva }}</strong> se mantiene</li>
+                                <li>Esta acción no tiene límite de tiempo</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                            <a href="{% url 'gravity:admin_reservas_lista' %}"
+                            class="flex items-center gap-1 border border-gray-400 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                                <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                Me Arrepentí
+                            </a>
+
+                            <button type="submit"
+                                    id="confirmarModificarBtn"
+                                    class="flex items-center gap-1 bg-principal text-white hover:bg-principal/80 font-medium py-2 px-4 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-principal focus:ring-opacity-50">
+                                <svg class="size-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                                </svg>
+                                <span id="modificarText">Confirmar Cambio</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="w-full lg:w-1/3">
+            <!-- Estadísticas del usuario -->
+            <div class="card mb-6">
+                <div class="card-header bg-principal text-blanco">
+                    <h6 class="flex items-center gap-2 mb-0">
+                        <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+                        </svg>
+                        Estadísticas del Usuario
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="grid grid-cols-2 gap-2 text-center">
+                        <div>
+                            <div class="text-2xl font-bold text-principal">{{ reserva.usuario.reservas_pilates.count|default:0 }}</div>
+                            <small class="text-gris-medio">Total Reservas</small>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-green-600">{{ reserva.usuario.reservas_pilates.filter.activa|default:0 }}</div>
+                            <small class="text-gris-medio">Reservas Activas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Otras reservas activas del usuario -->
+            <div class="card">
+                <div class="card-header bg-principal text-blanco">
+                    <h6 class="flex items-center gap-2 mb-0">
+                        <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+                        </svg>
+                        Otras Reservas Activas
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    {% with otras_reservas=reserva.usuario.reservas_pilates.all %}
+                        {% for r in otras_reservas %}
+                            {% if r.activa and r.id != reserva.id %}
+                                <div class="flex items-center justify-between py-2 border-b border-gris-claro last:border-0">
+                                    <div>
+                                        <p class="text-sm font-medium">{{ r.clase.get_nombre_display }}</p>
+                                        <p class="text-xs text-gris-medio">{{ r.clase.dia }} {{ r.clase.horario|time:"H:i" }} · {{ r.clase.get_direccion_corta }}</p>
+                                    </div>
+                                    <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">Activa</span>
+                                </div>
+                            {% endif %}
+                        {% empty %}
+                            <p class="text-sm text-gris-medio text-center py-2">Sin otras reservas activas</p>
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('modificarForm');
+            const btn = document.getElementById('confirmarModificarBtn');
+            const btnText = document.getElementById('modificarText');
+
+            form.addEventListener('submit', function(e) {
+                const select = document.getElementById('{{ form.nueva_clase.id_for_label }}');
+                if (!select.value) {
+                    e.preventDefault();
+                    select.classList.add('border-red-500');
+                    setTimeout(() => select.classList.remove('border-red-500'), 3000);
+                    return;
+                }
+
+                btnText.textContent = 'Guardando...';
+                btn.disabled = true;
+                btn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>' + btnText.textContent;
+            });
+        });
+    </script>
+{% endblock %}

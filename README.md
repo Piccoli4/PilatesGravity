@@ -26,6 +26,7 @@
 - **Dashboard ejecutivo** — métricas de ocupación, nuevos registros, y panel de notificaciones de cancelaciones pendientes de lectura
 - **Gestión de clases** — alta, edición y baja de clases con validaciones de horario, tipo y sede. Las clases inactivas se conservan sin perder historial. Activación/desactivación vía AJAX
 - **Gestión de clientes** — activar/desactivar cuentas, notas administrativas con timestamps, historial completo de reservas y pagos. Los administradores pueden crear usuarios directamente desde el panel, con asignación de clase opcional
+- **Gestión de reservas** — los administradores pueden cancelar y modificar reservas de cualquier cliente sin restricción de tiempo, a diferencia de los clientes que tienen una ventana de 3 horas. Ambas acciones incluyen notificación opcional al usuario por email
 - **Gestión financiera** — registro de pagos con descuento por pago en efectivo (10%, redondeado al millar más cercano), estados de cuenta automáticos y seguimiento de deudas por cliente
 - **Roles de administrador** — los admins con el flag `puede_ver_pagos` desactivado ven guiones en lugar de datos financieros, permitiendo delegar tareas operativas sin exponer información sensible
 - **Notificaciones de cancelación** — cada cancelación permanente o temporal genera una notificación visible en el panel hasta que un administrador la marque como leída (estado de lectura por admin vía ManyToMany)
@@ -48,19 +49,20 @@ El modelo financiero funciona con deudas mensuales automáticas:
 
 ## Sistema de Emails
 
-Se envían 7 tipos de emails transaccionales vía **Gmail SMTP**:
+Se envían 8 tipos de emails transaccionales vía **Gmail SMTP**:
 
 | Email | Cuándo se envía |
 |---|---|
 | Bienvenida | Al registrarse un nuevo cliente, o cuando un administrador crea el usuario desde el panel |
 | Confirmación de reserva | Al confirmar una reserva exitosamente |
 | Cancelación de reserva | Al cancelar una reserva (permanente o por el admin) |
+| Modificación de reserva | Cuando un administrador modifica la clase asignada a la reserva de un cliente |
 | Confirmación de pago | Al registrar un pago desde el panel admin |
 | Recordatorio de clase | Automático vía cron job antes de cada clase |
 | Cumpleaños | Automático vía cron job el día del cumpleaños del cliente |
 | Despedida | Al desactivar la cuenta de un cliente |
 
-> Los emails utilizan estilos inline y atributos `bgcolor` en las celdas para garantizar compatibilidad con Gmail y Hotmail. Las imágenes se embeben en base64 para evitar problemas de adjuntos.
+> Los emails utilizan CSS en `<style>` con clases reutilizables para compatibilidad con los principales clientes de correo. Las imágenes se referencian vía URL estática del servidor.
 
 ---
 
@@ -76,7 +78,8 @@ Se envían 7 tipos de emails transaccionales vía **Gmail SMTP**:
 
 **`Reserva`** — reserva recurrente de un usuario a una clase
 - Número de reserva único autogenerado
-- Ventana de modificación/cancelación: mínimo 3 horas antes de la clase
+- Ventana de modificación/cancelación para clientes: mínimo 3 horas antes de la clase
+- Los administradores pueden cancelar y modificar sin restricción de tiempo
 - Registro de auditoría completo
 
 **`AusenciaTemporal`** — ausencia puntual sin cancelar la reserva recurrente
@@ -144,6 +147,7 @@ PilatesGravity/
 │   ├── urls.py
 │   └── templates/gravity/
 │       ├── admin/           # Panel administrativo
+│       ├── emails/          # Templates de emails transaccionales
 │       └── ...              # Templates de clientes
 │
 ├── accounts/                # Autenticación y perfiles

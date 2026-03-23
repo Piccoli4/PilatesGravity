@@ -9,8 +9,8 @@ from .views import (
     # IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_marcar_notificaciones_leidas, admin_clases_lista, admin_clase_crear, 
     admin_clase_editar, admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
-    admin_reservas_lista, admin_reserva_cancelar, admin_usuarios_lista, admin_usuario_detalle,
-    admin_usuario_toggle_status, admin_usuario_add_note, admin_agregar_usuario,
+    admin_reservas_lista, admin_reserva_cancelar, admin_reserva_modificar, admin_usuarios_lista, 
+    admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note, admin_agregar_usuario,
     admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido, admin_eliminar_admin_restringido,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
@@ -67,6 +67,7 @@ urlpatterns = [
     # Gestión de reservas
     path('admin-panel/reservas/', admin_reservas_lista, name='admin_reservas_lista'),
     path('admin-panel/reservas/<int:reserva_id>/cancelar/', admin_reserva_cancelar, name='admin_reserva_cancelar'),
+    path('admin-panel/reservas/<int:reserva_id>/modificar/', admin_reserva_modificar, name='admin_reserva_modificar'),
     
     # Gestión de usuarios
     path('admin-panel/usuarios/', admin_usuarios_lista, name='admin_usuarios_lista'),
