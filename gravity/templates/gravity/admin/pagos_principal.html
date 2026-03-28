@@ -526,14 +526,14 @@
                             {% else %}
                             <span class="text-2xl font-semibold text-blanco">
                                 {% if cliente_estado.usuario.first_name and cliente_estado.usuario.last_name %}
-                                {{ cliente_estado.usuario.first_name|first|upper }}{{
-                                cliente_estado.usuario.last_name|first|upper }}
+                                {{ cliente_estado.usuario.first_name|first|upper }}
+                                {{ cliente_estado.usuario.last_name|first|upper }}
                                 {% elif cliente_estado.usuario.first_name %}
-                                {{ cliente_estado.usuario.first_name|first|upper }}{{
-                                cliente_estado.usuario.first_name|slice:"1:2"|upper }}
+                                {{ cliente_estado.usuario.first_name|first|upper }}
+                                {{ cliente_estado.usuario.first_name|slice:"1:2"|upper }}
                                 {% else %}
-                                {{ cliente_estado.usuario.username|first|upper }}{{
-                                cliente_estado.usuario.username|slice:"1:2"|upper }}
+                                {{ cliente_estado.usuario.username|first|upper }}
+                                {{ cliente_estado.usuario.username|slice:"1:2"|upper }}
                                 {% endif %}
                             </span>
                             {% endif %}

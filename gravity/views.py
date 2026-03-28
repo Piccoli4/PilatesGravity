@@ -2175,6 +2175,16 @@ def admin_pagos_configurar_planes(request):
                 messages.success(request, f'Plan "{plan_nombre}" eliminado exitosamente.')
             
             return redirect('gravity:admin_pagos_configurar_planes')
+        elif 'toggle_activo_plan' in request.POST:
+            plan_id = request.POST.get('toggle_activo_plan')
+            plan = get_object_or_404(PlanPago, id=plan_id)
+            plan.activo = not plan.activo
+            plan.save()
+            estado = "activado" if plan.activo else "desactivado"
+            
+            messages.success(request, f'Plan "{plan.nombre}" {estado} exitosamente.')
+            
+            return redirect('gravity:admin_pagos_configurar_planes')
     
     context = {
         'planes': planes,
