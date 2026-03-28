@@ -54,15 +54,15 @@
             <!-- Columna izquierda: Planes Activos -->
             <div class="lg:col-span-2">
                 <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                         <h2 class="text-xl font-bold text-principal font-cinzel flex items-center">
-                            <svg class="w-6 h-6 text-exito mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-6 h-6 text-exito mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             Planes Activos
                         </h2>
-                        <a href="{% url 'gravity:seleccionar_plan' %}" class="bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-semibold hover:bg-principal-dark transition-colors duration-200 shadow-md">
-                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <a href="{% url 'gravity:seleccionar_plan' %}" class="inline-flex items-center justify-center bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-semibold hover:bg-principal-dark transition-colors duration-200 shadow-md w-full sm:w-auto">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
                             Agregar Plan
@@ -131,7 +131,21 @@
                                     </div>
                                 {% endif %}
 
-                                <div class="flex justify-end space-x-2">
+                                <div class="flex justify-end items-center space-x-3 mt-2">
+                                    {% now "j" as dia_hoy %}
+                                    {% if dia_hoy|add:"0" <= 4 %}
+                                        <span class="text-xs text-exito bg-exito/10 px-2 py-1 rounded-full">
+                                            Si cancelás hoy, no se te cobra el mes
+                                        </span>
+                                    {% elif dia_hoy|add:"0" <= 9 %}
+                                        <span class="text-xs text-advertencia bg-advertencia/10 px-2 py-1 rounded-full">
+                                            Si cancelás hoy, se cobra medio mes
+                                        </span>
+                                    {% else %}
+                                        <span class="text-xs text-error bg-error/10 px-2 py-1 rounded-full">
+                                            Si cancelás hoy, se cobra el mes completo
+                                        </span>
+                                    {% endif %}
                                     <a href="{% url 'gravity:cancelar_plan' plan_usuario.id %}" class="text-error hover:text-error/80 text-sm font-medium transition-colors duration-200">
                                         Cancelar Plan
                                     </a>
@@ -197,46 +211,82 @@
 
                 <!-- Historial de Planes -->
                 {% if planes_vencidos %}
-                <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
-                    <h3 class="text-lg font-bold text-principal mb-4 font-cinzel flex items-center">
-                        <svg class="w-5 h-5 text-gris-medio mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Historial
-                    </h3>
-                    
-                    <div class="space-y-3">
-                        {% for plan_vencido in planes_vencidos %}
-                        <div class="border border-gris-claro rounded-lg p-3 text-sm opacity-75">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <div class="font-medium text-gris-oscuro">{{ plan_vencido.plan.nombre }}</div>
-                                    <div class="text-xs text-gris-medio">
-                                        {{ plan_vencido.fecha_inicio|date:"d/m/Y" }} - {{ plan_vencido.fecha_fin|date:"d/m/Y" }}
+                    <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
+                        <h3 class="text-lg font-bold text-principal mb-4 font-cinzel flex items-center">
+                            <svg class="w-5 h-5 text-gris-medio mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Historial
+                        </h3>
+                        
+                        <div class="space-y-3">
+                            {% for plan_vencido in planes_vencidos %}
+                            <div class="border border-gris-claro rounded-lg p-3 text-sm opacity-75">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-medium text-gris-oscuro">{{ plan_vencido.plan.nombre }}</div>
+                                        <div class="text-xs text-gris-medio">
+                                            {{ plan_vencido.fecha_inicio|date:"d/m/Y" }} - {{ plan_vencido.fecha_fin|date:"d/m/Y" }}
+                                        </div>
+                                    </div>
+                                    <div class="text-xs bg-gris-claro text-gris-medio px-2 py-1 rounded">
+                                        Vencido
                                     </div>
                                 </div>
-                                <div class="text-xs bg-gris-claro text-gris-medio px-2 py-1 rounded">
-                                    Vencido
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Política de Cancelación -->
+                {% if tiene_planes_activos %}
+                    <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
+                        <h3 class="text-lg font-bold text-principal mb-4 font-cinzel flex items-center">
+                            <svg class="w-5 h-5 text-advertencia mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Política de Cancelación
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-start p-3 bg-exito/5 rounded-lg border border-exito/20">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-exito mt-1 mr-3 flex-shrink-0"></span>
+                                <div>
+                                    <p class="text-sm font-semibold text-gris-oscuro">Días 1 al 4</p>
+                                    <p class="text-xs text-gris-medio">No se cobra el mes en curso.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start p-3 bg-advertencia/5 rounded-lg border border-advertencia/20">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-advertencia mt-1 mr-3 flex-shrink-0"></span>
+                                <div>
+                                    <p class="text-sm font-semibold text-gris-oscuro">Días 5 al 9</p>
+                                    <p class="text-xs text-gris-medio">Se cobra la mitad del mes.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start p-3 bg-error/5 rounded-lg border border-error/20">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-error mt-1 mr-3 flex-shrink-0"></span>
+                                <div>
+                                    <p class="text-sm font-semibold text-gris-oscuro">Día 10 en adelante</p>
+                                    <p class="text-xs text-gris-medio">Se cobra el mes completo.</p>
                                 </div>
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
                 {% endif %}
+
             </div>
         </div>
 
         <!-- Botones de acción -->
-        <div class="text-center mt-8 space-x-4">
-            <a href="{% url 'gravity:reservar_clase' %}" class="inline-block bg-principal text-fondo py-3 px-6 rounded-lg font-semibold hover:bg-principal/90 transition-colors duration-200 shadow-md">
-                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+            <a href="{% url 'gravity:reservar_clase' %}" class="flex items-center justify-center bg-principal text-fondo py-3 px-6 rounded-lg font-semibold hover:bg-principal/90 transition-colors duration-200 shadow-md">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
                 Reservar Clase
             </a>
-            <a href="{% url 'gravity:seleccionar_plan' %}" class="inline-block bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
-                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="{% url 'gravity:seleccionar_plan' %}" class="flex items-center justify-center bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"></path>
                 </svg>
                 Cambiar Plan

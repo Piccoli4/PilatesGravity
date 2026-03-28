@@ -7,6 +7,7 @@ from django.views.decorators.http import require_http_methods
 from .models import Reserva, Clase, PlanUsuario, AusenciaTemporal, NotificacionCancelacion, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
 from .forms import ReservaForm, ModificarReservaForm, BuscarReservaForm
 import json
+import calendar
 from accounts.models import UserProfile
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
@@ -25,7 +26,7 @@ from .email_service import (
     enviar_email_bienvenida,
     enviar_email_modificacion_reserva
 )
-from .models import PlanPago, EstadoPagoCliente, RegistroPago
+from .models import PlanPago, EstadoPagoCliente, RegistroPago, DeudaMensual
 from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
 from django.db.models import Sum, Count, Q
 from decimal import Decimal
@@ -2355,7 +2356,8 @@ def seleccionar_plan(request):
             
             # Calcular fechas (inicio hoy, fin en un mes)
             fecha_inicio = timezone.now().date()
-            fecha_fin = fecha_inicio + timedelta(days=30)
+            ultimo_dia = calendar.monthrange(fecha_inicio.year, fecha_inicio.month)[1]
+            fecha_fin = date(fecha_inicio.year, fecha_inicio.month, ultimo_dia)
             
             # Crear el plan del usuario
             plan_usuario = PlanUsuario.objects.create(
@@ -2460,17 +2462,73 @@ def cancelar_plan(request, plan_id):
     if request.method == 'POST':
         confirmacion = request.POST.get('confirmar_cancelacion')
         if confirmacion == 'confirmar':
+            hoy = timezone.now().date()
+            dia_actual = hoy.day
+            primer_dia_mes = date(hoy.year, hoy.month, 1)
+
+            # Aplicar política de cobro según el día de cancelación
+            try:
+                deuda_actual = DeudaMensual.objects.get(
+                    usuario=request.user,
+                    mes_año=primer_dia_mes
+                )
+
+                if dia_actual <= 4:
+                    # Sin cargo: anular la deuda si está pendiente
+                    if deuda_actual.estado in ('pendiente', 'vencido', 'parcial'):
+                        deuda_actual.monto_pendiente = Decimal('0')
+                        deuda_actual.estado = 'pagado'
+                        deuda_actual.observaciones += (
+                            f'\nDeuda anulada por cancelación de plan '
+                            f'antes del día 5 ({hoy.strftime("%d/%m/%Y")}).'
+                        )
+                        deuda_actual.save()
+                        try:
+                            estado = request.user.estado_pago
+                            estado.monto_deuda_mensual = Decimal('0')
+                            estado.save()
+                        except Exception:
+                            pass
+
+                elif dia_actual <= 9:
+                    # Medio mes: reducir la deuda a la mitad
+                    if deuda_actual.estado in ('pendiente', 'vencido', 'parcial'):
+                        monto_medio = (deuda_actual.monto_original / Decimal('2')).quantize(
+                            Decimal('0.01')
+                        )
+                        deuda_actual.monto_original = monto_medio
+                        deuda_actual.monto_pendiente = min(monto_medio, deuda_actual.monto_pendiente)
+                        deuda_actual.observaciones += (
+                            f'\nMonto ajustado a medio mes por cancelación '
+                            f'entre día 5 y 9 ({hoy.strftime("%d/%m/%Y")}).'
+                        )
+                        deuda_actual.save()
+
+                # Día 10+: mes completo, no se toca la deuda
+
+            except DeudaMensual.DoesNotExist:
+                pass  # Sin deuda registrada este mes, no hay nada que ajustar
+
+            # Cancelar el plan
             plan.activo = False
             plan.save()
-            
+
+            # Mensaje según política aplicada
+            if dia_actual <= 4:
+                mensaje_cobro = 'No se te cobrará el mes actual.'
+            elif dia_actual <= 9:
+                mensaje_cobro = 'Se te cobrará la mitad del mes actual.'
+            else:
+                mensaje_cobro = 'Se te cobrará el mes completo.'
+
             messages.success(
                 request,
-                f'Plan "{plan.plan.nombre}" cancelado exitosamente. '
+                f'Plan "{plan.plan.nombre}" cancelado exitosamente. {mensaje_cobro} '
                 f'Las reservas existentes no se ven afectadas.'
             )
         else:
             messages.error(request, 'Error en la confirmación.')
-        
+
         return redirect('gravity:mis_planes')
     
     # Verificar si tiene reservas que podrían verse afectadas
@@ -2482,12 +2540,28 @@ def cancelar_plan(request, plan_id):
     
     reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
     
+    # Calcular política de cancelación según el día actual
+    hoy = timezone.now().date()
+    dia_actual = hoy.day
+    if dia_actual <= 4:
+        politica_cancelacion = 'sin_cargo'
+        mensaje_politica = 'Como cancelás antes del día 5, no se te cobrará el mes actual.'
+    elif dia_actual <= 9:
+        politica_cancelacion = 'medio_mes'
+        mensaje_politica = 'Como cancelás entre el día 5 y 9, se te cobrará la mitad del mes actual.'
+    else:
+        politica_cancelacion = 'mes_completo'
+        mensaje_politica = 'Como cancelás a partir del día 10, se te cobrará el mes completo.'
+
     context = {
         'plan': plan,
         'clases_actuales': clases_disponibles_sin_plan,
         'clases_despues_cancelacion': clases_despues_cancelacion,
         'reservas_actuales': reservas_actuales,
-        'podria_afectar_reservas': clases_despues_cancelacion < reservas_actuales
+        'podria_afectar_reservas': clases_despues_cancelacion < reservas_actuales,
+        'politica_cancelacion': politica_cancelacion,
+        'mensaje_politica': mensaje_politica,
+        'dia_actual': dia_actual,
     }
     
     return render(request, 'gravity/cancelar_plan.html', context)

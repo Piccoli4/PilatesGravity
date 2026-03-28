@@ -204,12 +204,38 @@
                     </svg>
                     Información Importante
                 </h3>
-                <ul class="space-y-2 text-gris-oscuro">
-                    <li>• Los planes se renuevan automáticamente cada mes</li>
-                    <li>• Puedes cancelar o modificar tus planes en cualquier momento</li>
-                    <li>• Las clases no utilizadas no se acumulan para el siguiente mes</li>
-                    <li>• Los planes temporales no se renuevan automáticamente</li>
+                <ul class="space-y-2 text-gris-oscuro text-sm">
+                    <li class="flex items-start">
+                        <span class="text-principal font-bold mr-2 mt-0.5">•</span>
+                        Tu plan es válido hasta el último día del mes en curso.
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-principal font-bold mr-2 mt-0.5">•</span>
+                        Las clases no utilizadas no se acumulan para el siguiente mes.
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-principal font-bold mr-2 mt-0.5">•</span>
+                        Los planes temporales no se renuevan automáticamente.
+                    </li>
                 </ul>
+
+                <div class="mt-4 pt-4 border-t border-advertencia/30">
+                    <p class="text-sm font-semibold text-gris-oscuro mb-2">Política de cancelación:</p>
+                    <ul class="space-y-1 text-sm text-gris-oscuro">
+                        <li class="flex items-center">
+                            <span class="inline-block w-2 h-2 rounded-full bg-exito mr-2 flex-shrink-0"></span>
+                            <span><strong>Del 1 al 4 del mes:</strong> no se cobra el mes en curso.</span>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="inline-block w-2 h-2 rounded-full bg-advertencia mr-2 flex-shrink-0"></span>
+                            <span><strong>Del 5 al 9 del mes:</strong> se cobra la mitad del mes.</span>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="inline-block w-2 h-2 rounded-full bg-error mr-2 flex-shrink-0"></span>
+                            <span><strong>A partir del día 10:</strong> se cobra el mes completo.</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
