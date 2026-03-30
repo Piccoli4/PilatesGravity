@@ -1395,6 +1395,19 @@ class PlanUsuario(models.Model):
         help_text="Administrador que asignó este plan"
     )
 
+    fecha_cancelacion_reservas = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de cancelación de reservas",
+        help_text="Fecha en que el cron debe cancelar las reservas de este plan"
+    )
+
+    reservas_canceladas = models.BooleanField(
+        default=False,
+        verbose_name="Reservas canceladas",
+        help_text="True si el cron ya procesó la cancelación de reservas de este plan"
+    )
+
     def clean(self):
         """Validaciones personalizadas del modelo"""
         super().clean()

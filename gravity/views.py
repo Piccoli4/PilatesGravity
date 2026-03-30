@@ -2465,16 +2465,15 @@ def cancelar_plan(request, plan_id):
             hoy = timezone.now().date()
             dia_actual = hoy.day
             primer_dia_mes = date(hoy.year, hoy.month, 1)
+            clases_a_cancelar = plan.plan.clases_por_semana
 
-            # Aplicar política de cobro según el día de cancelación
+            # --- Política de cobro ---
             try:
                 deuda_actual = DeudaMensual.objects.get(
                     usuario=request.user,
                     mes_año=primer_dia_mes
                 )
-
                 if dia_actual <= 4:
-                    # Sin cargo: anular la deuda si está pendiente
                     if deuda_actual.estado in ('pendiente', 'vencido', 'parcial'):
                         deuda_actual.monto_pendiente = Decimal('0')
                         deuda_actual.estado = 'pagado'
@@ -2489,13 +2488,9 @@ def cancelar_plan(request, plan_id):
                             estado.save()
                         except Exception:
                             pass
-
                 elif dia_actual <= 9:
-                    # Medio mes: reducir la deuda a la mitad
                     if deuda_actual.estado in ('pendiente', 'vencido', 'parcial'):
-                        monto_medio = (deuda_actual.monto_original / Decimal('2')).quantize(
-                            Decimal('0.01')
-                        )
+                        monto_medio = (deuda_actual.monto_original / Decimal('2')).quantize(Decimal('0.01'))
                         deuda_actual.monto_original = monto_medio
                         deuda_actual.monto_pendiente = min(monto_medio, deuda_actual.monto_pendiente)
                         deuda_actual.observaciones += (
@@ -2503,11 +2498,50 @@ def cancelar_plan(request, plan_id):
                             f'entre día 5 y 9 ({hoy.strftime("%d/%m/%Y")}).'
                         )
                         deuda_actual.save()
-
-                # Día 10+: mes completo, no se toca la deuda
-
             except DeudaMensual.DoesNotExist:
-                pass  # Sin deuda registrada este mes, no hay nada que ajustar
+                pass
+
+            # --- Política de reservas ---
+            reservas_activas = list(
+                request.user.reservas_pilates.filter(activa=True).select_related('clase')
+            )
+
+            if dia_actual <= 4:
+                # Cancelar X reservas inmediatamente
+                canceladas = 0
+                for reserva in reservas_activas:
+                    if canceladas >= clases_a_cancelar:
+                        break
+                    reserva.activa = False
+                    reserva.save()
+                    canceladas += 1
+                plan.reservas_canceladas = True
+
+            elif dia_actual <= 9:
+                # Calcular la fecha de la X-ésima próxima ocurrencia
+                ocurrencias = []
+                for reserva in reservas_activas:
+                    proxima = reserva.get_proxima_fecha()
+                    if proxima:
+                        for semana in range(clases_a_cancelar + 4):
+                            ocurrencias.append(proxima + timedelta(weeks=semana))
+
+                ocurrencias.sort()
+
+                if len(ocurrencias) >= clases_a_cancelar:
+                    plan.fecha_cancelacion_reservas = ocurrencias[clases_a_cancelar - 1]
+                else:
+                    # Si no hay suficientes ocurrencias, cancelar al fin de mes
+                    import calendar
+                    ultimo_dia = calendar.monthrange(hoy.year, hoy.month)[1]
+                    plan.fecha_cancelacion_reservas = date(hoy.year, hoy.month, ultimo_dia)
+
+            else:
+                # Día 10+: cancelar el 1º del mes siguiente
+                if hoy.month == 12:
+                    plan.fecha_cancelacion_reservas = date(hoy.year + 1, 1, 1)
+                else:
+                    plan.fecha_cancelacion_reservas = date(hoy.year, hoy.month + 1, 1)
 
             # Cancelar el plan
             plan.activo = False
@@ -2515,43 +2549,55 @@ def cancelar_plan(request, plan_id):
 
             # Mensaje según política aplicada
             if dia_actual <= 4:
-                mensaje_cobro = 'No se te cobrará el mes actual.'
+                msg_cobro = 'No se te cobrará el mes actual.'
+                msg_reservas = f'Tus {canceladas} reserva{"s" if canceladas != 1 else ""} fueron canceladas.'
             elif dia_actual <= 9:
-                mensaje_cobro = 'Se te cobrará la mitad del mes actual.'
+                msg_cobro = 'Se te cobrará la mitad del mes actual.'
+                msg_reservas = (
+                    f'Podrás asistir a tus próximas {clases_a_cancelar} '
+                    f'clase{"s" if clases_a_cancelar != 1 else ""} y luego se cancelarán automáticamente.'
+                )
             else:
-                mensaje_cobro = 'Se te cobrará el mes completo.'
+                msg_cobro = 'Se te cobrará el mes completo.'
+                msg_reservas = 'Podrás asistir a tus clases hasta fin de mes. El 1º del mes siguiente se cancelarán.'
 
             messages.success(
                 request,
-                f'Plan "{plan.plan.nombre}" cancelado exitosamente. {mensaje_cobro} '
-                f'Las reservas existentes no se ven afectadas.'
+                f'Plan "{plan.plan.nombre}" cancelado. {msg_cobro} {msg_reservas}'
             )
         else:
             messages.error(request, 'Error en la confirmación.')
 
         return redirect('gravity:mis_planes')
-    
-    # Verificar si tiene reservas que podrían verse afectadas
+
+    # --- GET: preparar contexto ---
     clases_disponibles_sin_plan, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    # Simular la cancelación para ver cuántas clases quedarían
     plan.activo = False
     clases_despues_cancelacion, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    plan.activo = True  # Restaurar
-    
+    plan.activo = True
+
     reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
-    
-    # Calcular política de cancelación según el día actual
+
     hoy = timezone.now().date()
     dia_actual = hoy.day
     if dia_actual <= 4:
         politica_cancelacion = 'sin_cargo'
         mensaje_politica = 'Como cancelás antes del día 5, no se te cobrará el mes actual.'
+        mensaje_reservas = (
+            f'Tus {plan.plan.clases_por_semana} reserva{"s" if plan.plan.clases_por_semana != 1 else ""} '
+            f'se cancelarán inmediatamente.'
+        )
     elif dia_actual <= 9:
         politica_cancelacion = 'medio_mes'
         mensaje_politica = 'Como cancelás entre el día 5 y 9, se te cobrará la mitad del mes actual.'
+        mensaje_reservas = (
+            f'Podrás asistir a tus próximas {plan.plan.clases_por_semana} '
+            f'clase{"s" if plan.plan.clases_por_semana != 1 else ""} y luego se cancelarán automáticamente.'
+        )
     else:
         politica_cancelacion = 'mes_completo'
         mensaje_politica = 'Como cancelás a partir del día 10, se te cobrará el mes completo.'
+        mensaje_reservas = 'Podrás asistir a tus clases hasta fin de mes. El 1º del mes siguiente se cancelarán.'
 
     context = {
         'plan': plan,
@@ -2561,6 +2607,7 @@ def cancelar_plan(request, plan_id):
         'podria_afectar_reservas': clases_despues_cancelacion < reservas_actuales,
         'politica_cancelacion': politica_cancelacion,
         'mensaje_politica': mensaje_politica,
+        'mensaje_reservas': mensaje_reservas,
         'dia_actual': dia_actual,
     }
     

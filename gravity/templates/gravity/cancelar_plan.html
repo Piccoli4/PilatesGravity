@@ -105,25 +105,47 @@
                 </div>
                 {% endif %}
 
-                <!-- Información adicional -->
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
-                    <div class="flex items-start space-x-3">
-                        <div class="flex-shrink-0">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <!-- Información sobre política aplicada -->
+                {% if politica_cancelacion == 'sin_cargo' %}
+                    <div class="bg-exito/10 border border-exito/30 rounded-xl p-4 mb-6">
+                        <div class="flex items-start space-x-3">
+                            <svg class="w-6 h-6 text-exito flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                        </div>
-                        <div>
-                            <h4 class="text-blue-800 font-semibold mb-1">Información importante</h4>
-                            <ul class="text-blue-700 text-sm space-y-1">
-                                <li>• Las reservas actuales <strong>no se cancelarán</strong> automáticamente</li>
-                                <li>• La cancelación es <strong>inmediata</strong> y no se puede deshacer</li>
-                                <li>• Puedes volver a seleccionar un plan en cualquier momento</li>
-                                <li>• No se procesan reembolsos por tiempo restante</li>
-                            </ul>
+                            <div>
+                                <h4 class="text-exito font-semibold mb-1">Sin cargo</h4>
+                                <p class="text-gris-oscuro text-sm">{{ mensaje_politica }}</p>
+                                <p class="text-gris-oscuro text-sm mt-1">{{ mensaje_reservas }}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {% elif politica_cancelacion == 'medio_mes' %}
+                    <div class="bg-advertencia/10 border border-advertencia/30 rounded-xl p-4 mb-6">
+                        <div class="flex items-start space-x-3">
+                            <svg class="w-6 h-6 text-advertencia flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            <div>
+                                <h4 class="text-advertencia font-semibold mb-1">Medio mes</h4>
+                                <p class="text-gris-oscuro text-sm">{{ mensaje_politica }}</p>
+                                <p class="text-gris-oscuro text-sm mt-1">{{ mensaje_reservas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="bg-error/10 border border-error/30 rounded-xl p-4 mb-6">
+                        <div class="flex items-start space-x-3">
+                            <svg class="w-6 h-6 text-error flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            <div>
+                                <h4 class="text-error font-semibold mb-1">Mes completo</h4>
+                                <p class="text-gris-oscuro text-sm">{{ mensaje_politica }}</p>
+                                <p class="text-gris-oscuro text-sm mt-1">{{ mensaje_reservas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
 
                 <!-- Formulario de confirmación -->
                 <form method="post" class="mt-8">
@@ -142,8 +164,16 @@
                                 <strong>Confirmo que entiendo las consecuencias:</strong>
                                 <ul class="mt-2 space-y-1 text-gris-medio">
                                     <li>• El plan será cancelado inmediatamente</li>
-                                    <li>• Las reservas actuales no se verán afectadas</li>
-                                    <li>• No habrá reembolso por tiempo restante</li>
+                                    {% if politica_cancelacion == 'sin_cargo' %}
+                                        <li>• No se me cobrará el mes en curso</li>
+                                        <li>• Mis reservas se cancelarán de inmediato</li>
+                                    {% elif politica_cancelacion == 'medio_mes' %}
+                                        <li>• Se me cobrará la mitad del mes en curso</li>
+                                        <li>• {{ mensaje_reservas }}</li>
+                                    {% else %}
+                                        <li>• Se me cobrará el mes completo</li>
+                                        <li>• {{ mensaje_reservas }}</li>
+                                    {% endif %}
                                     <li>• Podré seleccionar un nuevo plan cuando desee</li>
                                 </ul>
                             </div>
@@ -184,6 +214,53 @@
             </div>
         </div>
 
+        <!-- Modal de confirmación personalizado -->
+        <div id="modal-confirmacion" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+            <!-- Overlay -->
+            <div class="absolute inset-0 bg-gris-oscuro/60 backdrop-blur-sm" id="modal-overlay"></div>
+            
+            <!-- Card del modal -->
+            <div class="relative bg-white rounded-2xl shadow-2xl border border-gris-claro/30 max-w-md w-full p-8 transform transition-all duration-300 scale-95 opacity-0" id="modal-card">
+                
+                <!-- Ícono -->
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Título -->
+                <h3 class="text-xl font-cinzel font-semibold text-principal text-center mb-2">
+                    Confirmar cancelación
+                </h3>
+                <div class="w-16 h-0.5 bg-gradient-to-r from-principal to-secundario mx-auto rounded-full mb-4"></div>
+
+                <!-- Mensaje -->
+                <p class="text-gris-oscuro text-center text-sm mb-2">
+                    Estás a punto de cancelar el plan <strong>{{ plan.plan.nombre }}</strong>.
+                </p>
+                <p class="text-gris-medio text-center text-sm mb-6">
+                    Esta acción no se puede deshacer.
+                </p>
+
+                <!-- Botones -->
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button 
+                        id="modal-cancelar"
+                        class="flex-1 px-6 py-3 border-2 border-gris-medio text-gris-oscuro rounded-xl font-medium hover:bg-fondo hover:border-gris-oscuro transition-all duration-200 text-center">
+                        Volver
+                    </button>
+                    <button 
+                        id="modal-confirmar"
+                        class="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg text-center">
+                        Sí, cancelar plan
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Navegación adicional -->
         <div class="text-center space-y-2">
             <p class="text-gris-medio text-sm">
@@ -203,20 +280,58 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const checkbox = document.getElementById('confirmar_entiendo');
-    const btnConfirmar = document.getElementById('btn_confirmar');
-    
-    checkbox.addEventListener('change', function() {
-        btnConfirmar.disabled = !this.checked;
-    });
-    
-    // Confirmación adicional antes de enviar
-    btnConfirmar.addEventListener('click', function(e) {
-        if (!confirm('¿Estás completamente seguro de que deseas cancelar este plan? Esta acción no se puede deshacer.')) {
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('confirmar_entiendo');
+        const btnConfirmar = document.getElementById('btn_confirmar');
+        const modal = document.getElementById('modal-confirmacion');
+        const modalCard = document.getElementById('modal-card');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalCancelar = document.getElementById('modal-cancelar');
+        const modalConfirmar = document.getElementById('modal-confirmar');
+        const form = btnConfirmar.closest('form');
+
+        // Habilitar botón según checkbox
+        checkbox.addEventListener('change', function() {
+            btnConfirmar.disabled = !this.checked;
+        });
+
+        // Abrir modal al hacer click en confirmar
+        btnConfirmar.addEventListener('click', function(e) {
             e.preventDefault();
+            abrirModal();
+        });
+
+        function abrirModal() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modalCard.classList.remove('scale-95', 'opacity-0');
+                modalCard.classList.add('scale-100', 'opacity-100');
+            }, 10);
         }
+
+        function cerrarModal() {
+            modalCard.classList.remove('scale-100', 'opacity-100');
+            modalCard.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+
+        // Cerrar con el botón volver o el overlay
+        modalCancelar.addEventListener('click', cerrarModal);
+        modalOverlay.addEventListener('click', cerrarModal);
+
+        // Confirmar y enviar el form
+        modalConfirmar.addEventListener('click', function() {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'confirmar_cancelacion';
+            input.value = 'confirmar';
+            form.appendChild(input);
+            form.submit();
+        });
     });
-});
 </script>
 {% endblock %}
