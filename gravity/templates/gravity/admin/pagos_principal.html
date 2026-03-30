@@ -590,13 +590,13 @@
                             <div>
                                 <div class="text-xs text-gray-500">Saldo</div>
                                 {% if puede_ver_pagos %}
-                                <div
-                                    class="font-bold money {% if cliente_estado.saldo_actual > 0 %}text-green-600{% elif cliente_estado.saldo_actual == 0 %}text-gray-400{% else %}text-red-600{% endif %}">
-                                    {% if cliente_estado.saldo_actual > 0 %}+{% endif %} $ {{
-                                    cliente_estado.saldo_actual|floatformat:0 }}
-                                </div>
+                                    {% with saldo_redondeado=cliente_estado.saldo_actual|floatformat:0 %}
+                                        <div class="font-bold money {% if saldo_redondeado|add:'0' > 0 %}text-green-600{% elif saldo_redondeado|add:'0' == 0 %}text-gray-400{% else %}text-red-600{% endif %}">
+                                            {% if saldo_redondeado|add:'0' > 0 %}+{% endif %}${{ saldo_redondeado }}
+                                        </div>
+                                    {% endwith %}
                                 {% else %}
-                                <div class="font-bold text-gray-300">—</div>
+                                    <div class="font-bold text-gray-300">—</div>
                                 {% endif %}
                             </div>
                         </div>
