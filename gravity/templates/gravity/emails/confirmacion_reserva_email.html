@@ -227,8 +227,8 @@
 
             <!-- Nota y acceso -->
             <p class="nota">
-                Esta es una <strong>reserva recurrente</strong>: asistirás cada {{ reserva.clase.dia }} a las {{
-                reserva.clase.horario|time:"H:i" }} hasta que decidas cancelarla.<br><br>
+                Esta es una <strong>reserva recurrente</strong>: asistirás cada {{ reserva.clase.dia }} a las 
+                {{ reserva.clase.horario|time:"H:i" }} hasta que decidas cancelarla.<br><br>
                 Para cancelar o gestionar tu reserva, ingresá a tu cuenta en
                 <a href="{{ domain_url }}">{{ domain_url }}</a>.
                 Recordá que las cancelaciones deben realizarse con al menos <strong>3 horas de anticipación</strong>.
