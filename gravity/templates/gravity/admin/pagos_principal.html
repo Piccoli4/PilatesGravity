@@ -764,6 +764,33 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Modal de confirmación: Editar estado -->
+<div id="modal-editar-estado" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4 animate-fadeInUp">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-secundario/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-secundario-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6 6M3 21h4l11-11a2.121 2.121 0 00-3-3L4 18v3z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-principal">Editar estado de pago</h3>
+        </div>
+        <p class="text-gris-oscuro text-sm mb-6">
+            ¿Confirmas que querés editar el estado de pago de este cliente?
+        </p>
+        <div class="flex justify-end gap-3">
+            <button id="modal-editar-cancelar"
+                class="px-4 py-2 rounded-lg border border-gris-claro text-gris-oscuro hover:bg-gris-claro transition-colors duration-200 text-sm font-medium">
+                Cancelar
+            </button>
+            <a id="modal-editar-confirmar" href="#"
+                class="px-4 py-2 rounded-lg bg-principal text-white hover:bg-principal/90 transition-colors duration-200 text-sm font-medium">
+                Confirmar
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -809,16 +836,30 @@
             });
         });
 
-        // Confirmación para acciones importantes
-        const actionButtons = document.querySelectorAll('[title*="Registrar"], [title*="Editar"]');
-        actionButtons.forEach(function (button) {
+        // Modal de confirmación para "Editar estado"
+        const modalEditar = document.getElementById('modal-editar-estado');
+        const modalConfirmar = document.getElementById('modal-editar-confirmar');
+        const modalCancelar = document.getElementById('modal-editar-cancelar');
+
+        document.querySelectorAll('[title*="Editar"]').forEach(function (button) {
             button.addEventListener('click', function (e) {
-                if (this.title.includes('Editar')) {
-                    if (!confirm('¿Estás seguro de que quieres editar el estado de este cliente?')) {
-                        e.preventDefault();
-                    }
-                }
+                e.preventDefault();
+                modalConfirmar.href = this.href;
+                modalEditar.classList.remove('hidden');
+                modalEditar.classList.add('flex');
             });
+        });
+
+        modalCancelar.addEventListener('click', function () {
+            modalEditar.classList.add('hidden');
+            modalEditar.classList.remove('flex');
+        });
+
+        modalEditar.addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+                this.classList.remove('flex');
+            }
         });
 
         // Función para formatear números como moneda

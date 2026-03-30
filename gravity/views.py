@@ -2210,19 +2210,21 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
         defaults={'activo': True}
     )
     
-    if form.is_valid():
-        plan_anterior = estado_pago.plan_actual
-        estado_actualizado = form.save()
+    if request.method == 'POST':
+        form = EstadoPagoClienteForm(request.POST, instance=estado_pago)
+        if form.is_valid():
+            plan_anterior = estado_pago.plan_actual
+            estado_actualizado = form.save()
 
-        # Si se asignó un plan nuevo, generar la deuda del mes si no existe
-        if estado_actualizado.plan_actual and estado_actualizado.plan_actual != plan_anterior:
-            estado_actualizado.generar_deuda_mes_actual()
+            # Si se asignó un plan nuevo, generar la deuda del mes si no existe
+            if estado_actualizado.plan_actual and estado_actualizado.plan_actual != plan_anterior:
+                estado_actualizado.generar_deuda_mes_actual()
 
-        messages.success(
-            request,
-            f'Estado de pago actualizado para {cliente.get_full_name() or cliente.username}'
-        )
-        return redirect('gravity:admin_pagos_vista_principal')
+            messages.success(
+                request,
+                f'Estado de pago actualizado para {cliente.get_full_name() or cliente.username}'
+            )
+            return redirect('gravity:admin_pagos_vista_principal')
     else:
         form = EstadoPagoClienteForm(instance=estado_pago)
     
