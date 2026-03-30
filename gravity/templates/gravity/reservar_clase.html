@@ -69,6 +69,16 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(93, 118, 139, 0.15);
         }
+
+        /* Estilos para stat-label responsive */
+        .stat-label {
+            font-size: 10px;
+        }
+        @media (min-width: 640px) {
+            .stat-label {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -86,19 +96,19 @@
         <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto">
                 <!-- Encabezado de la página -->
-                <div class="text-center mb-12">
-                    <h1 class="text-4xl md:text-5xl font-cinzel font-bold text-principal mb-4 animate-fadeInUp">
+                <div class="text-center mb-6 sm:mb-12">
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-cinzel font-bold text-principal mb-3 sm:mb-4 animate-fadeInUp">
                         Reservá tu Clase
                     </h1>
-                    <div class="w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-6"></div>
-                    <p class="text-lg text-gris-oscuro max-w-2xl mx-auto animate-fadeInUp" style="animation-delay: 0.2s;">
+                    <div class="w-20 sm:w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-4 sm:mb-6"></div>
+                    <p class="text-base sm:text-lg text-gris-oscuro max-w-2xl mx-auto animate-fadeInUp" style="animation-delay: 0.2s;">
                         Completá el formulario para reservar tu lugar fijo. Tu reserva será recurrente, 
                         asistirás todas las semanas al mismo día y horario en la sede elegida.
                     </p>
                 </div>
 
                 <!-- Formulario de reserva -->
-                <div class="bg-white rounded-2xl shadow-wizard p-8 animate-fadeInUp" style="animation-delay: 0.4s;">
+                <div class="bg-white rounded-2xl shadow-wizard p-4 sm:p-8 animate-fadeInUp" style="animation-delay: 0.4s;">
                     <form method="post" novalidate class="space-y-8">
                         {% csrf_token %}
                         
@@ -108,7 +118,7 @@
                                 Datos Personales
                             </h2>
                             
-                            <div class="bg-gris-claro rounded-xl p-6">
+                            <div class="bg-gris-claro rounded-xl p-4 sm:p-6">
                                 <!-- Primera fila: Nombre y Apellido -->
                                 <div class="grid md:grid-cols-2 gap-6 mb-4">
                                     <div class="space-y-2">
@@ -185,50 +195,40 @@
                             </h2>
                             
                             <!-- Estado del plan activo -->
-                            <div class="bg-gradient-to-r from-fondo to-white rounded-xl border border-secundario/20 p-6">
-                                <!-- Si tiene planes activos -->
-                                {% if planes_activos %}
-                                    <div class="flex items-center justify-between flex-wrap gap-4">
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center space-x-3 mb-2">
-                                                <div class="flex-shrink-0">
-                                                    <div class="w-10 h-10 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center">
-                                                        <i class="fas fa-check text-white text-sm"></i>
-                                                    </div>
-                                                </div>
-                                                <div class="flex-1 min-w-0">
-                                                    <h3 class="text-lg font-semibold text-principal truncate">
-                                                        {{ planes_activos.first.plan.nombre }}
-                                                    </h3>
-                                                    <p class="text-sm text-gris-medio">
-                                                        Válido hasta {{ planes_activos.first.fecha_fin|date:"d/m/Y" }}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Estadísticas de uso -->
-                                        <div class="flex items-center space-x-6">
-                                            <div class="text-center px-4 py-2 bg-white/80 rounded-lg border border-principal/20 plan-stat-card">
-                                                <div class="text-2xl font-bold text-principal">
-                                                    {{ clases_disponibles|default:0 }}
-                                                </div>
-                                                <div class="text-xs text-gris-medio font-medium">Disponibles</div>
-                                            </div>
-                                            <div class="text-center px-4 py-2 bg-white/80 rounded-lg border border-gris-medio/20 plan-stat-card">
-                                                <div class="text-2xl font-bold text-gris-oscuro">
-                                                    {{ reservas_actuales|default:0 }}
-                                                </div>
-                                                <div class="text-xs text-gris-medio font-medium">Usadas</div>
-                                            </div>
-                                            <div class="text-center px-4 py-2 bg-white/80 rounded-lg border border-exito/20 plan-stat-card">
-                                                <div class="text-2xl font-bold {% if clases_restantes > 0 %}text-exito{% else %}text-error{% endif %}">
-                                                    {{ clases_restantes|default:0 }}
-                                                </div>
-                                                <div class="text-xs text-gris-medio font-medium">Restantes</div>
-                                            </div>
+                            <div class="bg-gradient-to-r from-fondo to-white rounded-xl border border-secundario/20 p-4 sm:p-6">
+                            {% if planes_activos %}
+                                <!-- Nombre del plan y fecha -->
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center">
+                                            <i class="fas fa-check text-white text-sm"></i>
                                         </div>
                                     </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-base sm:text-lg font-semibold text-principal truncate">
+                                            {{ planes_activos.first.plan.nombre }}
+                                        </h3>
+                                        <p class="text-sm text-gris-medio">
+                                            Válido hasta {{ planes_activos.first.fecha_fin|date:"d/m/Y" }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Estadísticas en grid de 3 columnas -->
+                                <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                                    <div class="text-center p-2 sm:p-3 bg-white/80 rounded-lg border border-principal/20 plan-stat-card overflow-hidden">
+                                        <div class="text-xl sm:text-2xl font-bold text-principal">{{ clases_disponibles|default:0 }}</div>
+                                        <div class="stat-label text-gris-medio font-medium leading-tight break-words">Disponibles</div>
+                                    </div>
+                                    <div class="text-center p-2 sm:p-3 bg-white/80 rounded-lg border border-gris-medio/20 plan-stat-card overflow-hidden">
+                                        <div class="text-xl sm:text-2xl font-bold text-gris-oscuro">{{ reservas_actuales|default:0 }}</div>
+                                        <div class="stat-label text-gris-medio font-medium leading-tight break-words">Usadas</div>
+                                    </div>
+                                    <div class="text-center p-2 sm:p-3 bg-white/80 rounded-lg border border-exito/20 plan-stat-card overflow-hidden">
+                                        <div class="text-xl sm:text-2xl font-bold {% if clases_restantes > 0 %}text-exito{% else %}text-error{% endif %}">{{ clases_restantes|default:0 }}</div>
+                                        <div class="stat-label text-gris-medio font-medium leading-tight break-words">Restantes</div>
+                                    </div>
+                                </div>
                                     
                                     <!-- Barra de progreso visual -->
                                     <div class="mt-4">
@@ -320,32 +320,32 @@
                             </h2>
                             
                             <!-- Indicador de progreso -->
-                            <div class="flex items-center justify-between mb-6">
-                                <div class="flex items-center space-x-2">
-                                    <div class="step-indicator step-active" data-step="1">
-                                        <span class="step-number">1</span>
-                                        <span class="step-text">Tipo de Clase</span>
-                                    </div>
-                                    <div class="step-connector"></div>
-                                    <div class="step-indicator" data-step="2">
-                                        <span class="step-number">2</span>
-                                        <span class="step-text">Sede</span>
-                                    </div>
-                                    <div class="step-connector"></div>
-                                    <div class="step-indicator" data-step="3">
-                                        <span class="step-number">3</span>
-                                        <span class="step-text">Día</span>
-                                    </div>
-                                    <div class="step-connector"></div>
-                                    <div class="step-indicator" data-step="4">
-                                        <span class="step-number">4</span>
-                                        <span class="step-text">Horario</span>
-                                    </div>
+                            <div class="flex items-center w-full mb-6">
+                                <div class="flex flex-col items-center flex-1">
+                                    <div class="w-8 h-8 rounded-full bg-principal text-white text-sm font-bold flex items-center justify-center" data-step-circle="1">1</div>
+                                    <span class="text-xs text-principal font-medium mt-1 hidden sm:block">Tipo de Clase</span>
+                                    <span class="text-xs text-principal font-medium mt-1 sm:hidden">Tipo</span>
+                                </div>
+                                <div class="flex-1 h-0.5 bg-gris-claro" data-step-line="1"></div>
+                                <div class="flex flex-col items-center flex-1">
+                                    <div class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio text-sm font-bold flex items-center justify-center" data-step-circle="2">2</div>
+                                    <span class="text-xs text-gris-medio font-medium mt-1">Sede</span>
+                                </div>
+                                <div class="flex-1 h-0.5 bg-gris-claro" data-step-line="2"></div>
+                                <div class="flex flex-col items-center flex-1">
+                                    <div class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio text-sm font-bold flex items-center justify-center" data-step-circle="3">3</div>
+                                    <span class="text-xs text-gris-medio font-medium mt-1">Día</span>
+                                </div>
+                                <div class="flex-1 h-0.5 bg-gris-claro" data-step-line="3"></div>
+                                <div class="flex flex-col items-center flex-1">
+                                    <div class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio text-sm font-bold flex items-center justify-center" data-step-circle="4">4</div>
+                                    <span class="text-xs text-gris-medio font-medium mt-1 hidden sm:block">Horario</span>
+                                    <span class="text-xs text-gris-medio font-medium mt-1 sm:hidden">Hora</span>
                                 </div>
                             </div>
 
                             <!-- Formulario de selección -->
-                            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                                 <!-- Tipo de Clase -->
                                 <div class="form-step active">
                                     <label for="id_tipo_clase" class="block text-sm font-medium text-gris-oscuro mb-2">
@@ -621,28 +621,23 @@
                 }
 
                 // Actualizar indicador visual de pasos
-                updateStepVisual(activeStep) {
-                    // Actualizar indicadores de paso
-                    const stepIndicators = document.querySelectorAll('.step-indicator');
-                    stepIndicators.forEach((indicator, index) => {
-                        const stepNumber = index + 1;
-                        if (stepNumber <= activeStep) {
-                            indicator.classList.add('step-active');
+                updateStepVisual(stepActivo) {
+                    for (let i = 1; i <= 4; i++) {
+                        const circle = document.querySelector(`[data-step-circle="${i}"]`);
+                        const line = document.querySelector(`[data-step-line="${i}"]`);
+                        const labels = circle.parentElement.querySelectorAll('span');
+                        if (i <= stepActivo) {
+                            circle.classList.remove('bg-gris-claro', 'text-gris-medio');
+                            circle.classList.add('bg-principal', 'text-white');
+                            labels.forEach(l => { l.classList.remove('text-gris-medio'); l.classList.add('text-principal'); });
+                            if (line) { line.classList.remove('bg-gris-claro'); line.classList.add('bg-principal'); }
                         } else {
-                            indicator.classList.remove('step-active');
+                            circle.classList.remove('bg-principal', 'text-white');
+                            circle.classList.add('bg-gris-claro', 'text-gris-medio');
+                            labels.forEach(l => { l.classList.remove('text-principal'); l.classList.add('text-gris-medio'); });
+                            if (line) { line.classList.remove('bg-principal'); line.classList.add('bg-gris-claro'); }
                         }
-                    });
-
-                    // Habilitar/deshabilitar campos de formulario
-                    const formSteps = document.querySelectorAll('.form-step');
-                    formSteps.forEach((step, index) => {
-                        const stepNumber = index + 1;
-                        if (stepNumber <= activeStep) {
-                            step.classList.add('active');
-                        } else {
-                            step.classList.remove('active');
-                        }
-                    });
+                    }
                 }
 
                 // Método para cargar sedes via AJAX
