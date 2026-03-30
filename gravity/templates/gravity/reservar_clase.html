@@ -347,7 +347,7 @@
                             <!-- Formulario de selección -->
                             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                                 <!-- Tipo de Clase -->
-                                <div class="form-step active">
+                                <div class="form-step active" data-form-step="1">
                                     <label for="id_tipo_clase" class="block text-sm font-medium text-gris-oscuro mb-2">
                                         Tipo de Clase
                                     </label>
@@ -362,7 +362,7 @@
                                 </div>
 
                                 <!-- Sede -->
-                                <div class="form-step">
+                                <div class="form-step" data-form-step="2">
                                     <label for="id_sede" class="block text-sm font-medium text-gris-oscuro mb-2">
                                         Sede
                                     </label>
@@ -377,7 +377,7 @@
                                 </div>
 
                                 <!-- Día -->
-                                <div class="form-step">
+                                <div class="form-step" data-form-step="3">
                                     <label for="id_dia" class="block text-sm font-medium text-gris-oscuro mb-2">
                                         Día de la Semana
                                     </label>
@@ -392,7 +392,7 @@
                                 </div>
 
                                 <!-- Horario -->
-                                <div class="form-step">
+                                <div class="form-step" data-form-step="4">
                                     <label for="id_horario" class="block text-sm font-medium text-gris-oscuro mb-2">
                                         Horario
                                     </label>
@@ -625,17 +625,20 @@
                     for (let i = 1; i <= 4; i++) {
                         const circle = document.querySelector(`[data-step-circle="${i}"]`);
                         const line = document.querySelector(`[data-step-line="${i}"]`);
+                        const formStep = document.querySelector(`[data-form-step="${i}"]`);
                         const labels = circle.parentElement.querySelectorAll('span');
                         if (i <= stepActivo) {
                             circle.classList.remove('bg-gris-claro', 'text-gris-medio');
                             circle.classList.add('bg-principal', 'text-white');
                             labels.forEach(l => { l.classList.remove('text-gris-medio'); l.classList.add('text-principal'); });
                             if (line) { line.classList.remove('bg-gris-claro'); line.classList.add('bg-principal'); }
+                            if (formStep) { formStep.classList.add('active'); }
                         } else {
                             circle.classList.remove('bg-principal', 'text-white');
                             circle.classList.add('bg-gris-claro', 'text-gris-medio');
                             labels.forEach(l => { l.classList.remove('text-principal'); l.classList.add('text-gris-medio'); });
                             if (line) { line.classList.remove('bg-principal'); line.classList.add('bg-gris-claro'); }
+                            if (formStep) { formStep.classList.remove('active'); }
                         }
                     }
                 }
