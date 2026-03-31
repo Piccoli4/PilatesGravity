@@ -5,6 +5,7 @@ module.exports = {
     "./gravity/templates/**/*.html",
     "./accounts/templates/**/*.html",
     "./static/js/**/*.js",
+    "./venv/lib/python3.13/site-packages/unfold/templates/**/*.html",
   ],
   theme: {
     extend: {
