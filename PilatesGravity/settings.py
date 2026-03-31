@@ -20,6 +20,7 @@ Año: 2026
 
 from pathlib import Path
 from decouple import config
+from django.urls import reverse_lazy
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,6 +41,8 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=lambda v: [s.strip() fo
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
+    'unfold.contrib.filters',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -207,6 +210,60 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+UNFOLD = {
+    "SITE_TITLE": "Pilates Gravity",
+    "SITE_HEADER": "Pilates Gravity",
+    "SITE_URL": "/",
+    "SITE_SYMBOL": "self_improvement",  # ícono de Material Symbols
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": False,
+    "COLORS": {
+        "primary": {
+            "50":  "248 243 238",
+            "100": "240 232 220",
+            "200": "225 208 190",
+            "300": "205 179 155",
+            "400": "185 150 120",
+            "500": "93 118 139",   # principal (#5D768B)
+            "600": "75 97 116",
+            "700": "58 76 92",
+            "800": "42 56 68",
+            "900": "28 38 47",
+            "950": "16 22 28",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Usuarios",
+                "icon": "people",
+                "items": [
+                    {
+                        "title": "Usuarios",
+                        "icon": "person",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+            {
+                "title": "Sistema",
+                "icon": "settings",
+                "items": [
+                    {
+                        "title": "Grupos",
+                        "icon": "group",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+        ],
+    },
+}
 
 # Información del desarrollador
 DEVELOPER_INFO = {
