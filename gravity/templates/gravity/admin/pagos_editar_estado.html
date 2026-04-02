@@ -82,15 +82,38 @@
                         <label for="{{ form.saldo_actual.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
                             {{ form.saldo_actual.label }}
                         </label>
+
+                        <!-- Toggle Crédito / Deuda -->
+                        <div class="flex rounded-lg border border-gris-claro overflow-hidden mb-2">
+                            <button type="button" id="btn-credito"
+                                    class="flex-1 py-2 text-sm font-medium transition-colors duration-200 bg-principal text-white"
+                                    onclick="setSaldoSign('credito')">
+                                ＋ Crédito
+                            </button>
+                            <button type="button" id="btn-deuda"
+                                    class="flex-1 py-2 text-sm font-medium transition-colors duration-200 bg-white text-gris-oscuro"
+                                    onclick="setSaldoSign('deuda')">
+                                − Deuda
+                            </button>
+                        </div>
+
+                        <!-- Input visible (siempre positivo) -->
                         <div class="relative">
-                            <input type="number" name="{{ form.saldo_actual.name }}" id="{{ form.saldo_actual.id_for_label }}" 
-                                   value="{{ form.saldo_actual.value|default:'' }}" step="0.01"
-                                   class="w-full px-3 py-2 pl-6 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors"
-                                   placeholder="0,00">
+                            <input type="number" id="saldo_display"
+                                value="{{ form.saldo_actual.value|default:''|cut:'-' }}"
+                                step="0.01" min="0"
+                                inputmode="decimal"
+                                class="w-full px-3 py-2 pl-6 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors"
+                                placeholder="0,00"
+                                oninput="actualizarSaldoOculto()">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <span class="text-gris-medio text-sm">$</span>
                             </div>
                         </div>
+
+                        <!-- Input oculto que se envía al servidor -->
+                        <input type="hidden" name="{{ form.saldo_actual.name }}" id="{{ form.saldo_actual.id_for_label }}">
+
                         {% if form.saldo_actual.errors %}
                             <div class="flex items-center gap-2 text-error text-sm">
                                 <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -165,46 +188,49 @@
 {% endblock %}
 
 {% block extra_js %}
-    <!-- Script para mejorar la UX -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Añadir animación de focus a los inputs
-            const inputs = document.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    this.parentElement.classList.add('ring-2', 'ring-principal', 'ring-opacity-20');
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.parentElement.classList.remove('ring-2', 'ring-principal', 'ring-opacity-20');
-                });
-            });
+<script>
+    // Determinar signo inicial según el valor actual del saldo
+    const saldoInicial = parseFloat("{{ form.saldo_actual.value|default:0 }}") || 0;
+    let esDeuda = saldoInicial < 0;
 
-            // Animación para el botón de submit
-            const submitBtn = document.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.addEventListener('click', function() {
-                    this.classList.add('animate-pulse');
-                    setTimeout(() => {
-                        this.classList.remove('animate-pulse');
-                    }, 2000);
-                });
-            }
+    function setSaldoSign(tipo) {
+        esDeuda = (tipo === 'deuda');
+        
+        const btnCredito = document.getElementById('btn-credito');
+        const btnDeuda = document.getElementById('btn-deuda');
+        
+        if (esDeuda) {
+            btnDeuda.classList.add('bg-principal', 'text-white');
+            btnDeuda.classList.remove('bg-white', 'text-gris-oscuro');
+            btnCredito.classList.remove('bg-principal', 'text-white');
+            btnCredito.classList.add('bg-white', 'text-gris-oscuro');
+        } else {
+            btnCredito.classList.add('bg-principal', 'text-white');
+            btnCredito.classList.remove('bg-white', 'text-gris-oscuro');
+            btnDeuda.classList.remove('bg-principal', 'text-white');
+            btnDeuda.classList.add('bg-white', 'text-gris-oscuro');
+        }
+        
+        actualizarSaldoOculto();
+    }
 
-            // Validación en tiempo real para el saldo
-            const saldoInput = document.querySelector('#{{ form.saldo_actual.id_for_label }}');
-            if (saldoInput) {
-                saldoInput.addEventListener('input', function() {
-                    const value = parseFloat(this.value);
-                    if (isNaN(value) || value < 0) {
-                        this.classList.add('border-error', 'focus:ring-error');
-                        this.classList.remove('border-gris-claro', 'focus:ring-principal');
-                    } else {
-                        this.classList.remove('border-error', 'focus:ring-error');
-                        this.classList.add('border-gris-claro', 'focus:ring-principal');
-                    }
-                });
-            }
+    function actualizarSaldoOculto() {
+        const display = document.getElementById('saldo_display');
+        const hidden = document.getElementById('{{ form.saldo_actual.id_for_label }}');
+        const valor = parseFloat(display.value) || 0;
+        hidden.value = esDeuda ? -Math.abs(valor) : Math.abs(valor);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar toggle según valor actual
+        setSaldoSign(esDeuda ? 'deuda' : 'credito');
+        actualizarSaldoOculto();
+
+        // Actualizar hidden antes de submit
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function() {
+            actualizarSaldoOculto();
         });
-    </script>
+    });
+</script>
 {% endblock %}

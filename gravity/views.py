@@ -1514,6 +1514,130 @@ def registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, admin_user
         return False
 
 # ==============================================================================
+# RESERVA DE CLASE POR ADMINISTRADOR
+# ==============================================================================
+
+@admin_required
+def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
+    """
+    Permite al administrador crear una reserva para cualquier usuario.
+    - Si viene con clase_id: la clase está preseleccionada (desde lista de clases)
+    - Si viene con usuario_id: el usuario está preseleccionado (desde ficha de cliente)
+    - Bypasea validaciones de plan/saldo del usuario
+    - Respeta cupo máximo y duplicados
+    """
+    # Preselecciones opcionales
+    clase_preseleccionada = None
+    usuario_preseleccionado = None
+
+    if clase_id:
+        clase_preseleccionada = get_object_or_404(Clase, id=clase_id, activa=True)
+    if usuario_id:
+        usuario_preseleccionado = get_object_or_404(User, id=usuario_id, is_staff=False)
+
+    # Datos para los selectores
+    clases_disponibles = Clase.objects.filter(activa=True).order_by(
+        'direccion', 'tipo', 'dia', 'horario'
+    )
+    todos_los_usuarios = User.objects.filter(
+        is_active=True, is_staff=False
+    ).order_by('last_name', 'first_name', 'username')
+
+    if request.method == 'POST':
+        clase_id_post = request.POST.get('clase')
+        usuario_id_post = request.POST.get('usuario')
+        notificar = request.POST.get('notificar_usuario') == 'on'
+
+        # Validar que se seleccionaron ambos
+        if not clase_id_post or not usuario_id_post:
+            messages.error(request, 'Debés seleccionar un alumno y una clase.')
+            return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
+                'clases_disponibles': clases_disponibles,
+                'todos_los_usuarios': todos_los_usuarios,
+                'clase_preseleccionada': clase_preseleccionada,
+                'usuario_preseleccionado': usuario_preseleccionado,
+            })
+
+        clase = get_object_or_404(Clase, id=clase_id_post, activa=True)
+        usuario = get_object_or_404(User, id=usuario_id_post, is_staff=False)
+
+        # Validar que no tenga ya una reserva activa en esa clase
+        if Reserva.objects.filter(usuario=usuario, clase=clase, activa=True).exists():
+            messages.error(
+                request,
+                f'{usuario.get_full_name() or usuario.username} ya tiene una reserva activa '
+                f'en {clase.get_nombre_display()} - {clase.dia} {clase.horario.strftime("%H:%M")}.'
+            )
+            return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
+                'clases_disponibles': clases_disponibles,
+                'todos_los_usuarios': todos_los_usuarios,
+                'clase_preseleccionada': clase_preseleccionada,
+                'usuario_preseleccionado': usuario_preseleccionado,
+            })
+
+        # Validar cupo disponible
+        if clase.cupos_disponibles() <= 0:
+            messages.error(
+                request,
+                f'La clase {clase.get_nombre_display()} - {clase.dia} {clase.horario.strftime("%H:%M")} '
+                f'no tiene cupos disponibles.'
+            )
+            return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
+                'clases_disponibles': clases_disponibles,
+                'todos_los_usuarios': todos_los_usuarios,
+                'clase_preseleccionada': clase_preseleccionada,
+                'usuario_preseleccionado': usuario_preseleccionado,
+            })
+
+        try:
+            with transaction.atomic():
+                reserva = Reserva.objects.create(
+                    usuario=usuario,
+                    clase=clase,
+                )
+
+                # Email opcional
+                email_enviado = False
+                if notificar and usuario.email:
+                    try:
+                        email_enviado = enviar_email_confirmacion_reserva_detallado(reserva)
+                    except Exception as e:
+                        logger.error(f"Error enviando email de confirmación (admin): {str(e)}")
+
+                mensaje = (
+                    f'✅ Reserva {reserva.numero_reserva} creada para '
+                    f'{usuario.get_full_name() or usuario.username} en '
+                    f'{clase.get_nombre_display()} - {clase.dia} '
+                    f'{clase.horario.strftime("%H:%M")} ({clase.get_direccion_corta()}).'
+                )
+                if notificar:
+                    if email_enviado:
+                        mensaje += f' Email de confirmación enviado a {usuario.email}.'
+                    elif usuario.email:
+                        mensaje += f' ⚠️ No se pudo enviar el email a {usuario.email}.'
+                    else:
+                        mensaje += ' ⚠️ El alumno no tiene email configurado.'
+
+                messages.success(request, mensaje)
+
+                # Redirigir según el origen
+                if usuario_id:
+                    return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
+                return redirect('gravity:admin_clases_lista')
+
+        except IntegrityError:
+            messages.error(request, 'Error: ya existe una reserva para ese alumno en esa clase.')
+        except Exception as e:
+            messages.error(request, f'Error al crear la reserva: {str(e)}')
+
+    return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
+        'clases_disponibles': clases_disponibles,
+        'todos_los_usuarios': todos_los_usuarios,
+        'clase_preseleccionada': clase_preseleccionada,
+        'usuario_preseleccionado': usuario_preseleccionado,
+    })
+
+# ==============================================================================
 # GESTIÓN DE USUARIOS
 # ==============================================================================
 
@@ -2771,3 +2895,4 @@ def service_worker_js(request):
         });
     """
     return HttpResponse(sw_content, content_type='application/javascript')
+
