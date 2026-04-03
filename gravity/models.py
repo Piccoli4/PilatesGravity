@@ -1163,11 +1163,17 @@ class RegistroPago(models.Model):
                 usuario=self.cliente,
                 defaults={'activo': True}
             )
-            
+
             # Actualizar fecha y monto del último pago
             estado_cliente.ultimo_pago = self.fecha_pago
             estado_cliente.monto_ultimo_pago = self.monto
-            
+
+            # ⚡ PASO 0: Generar la deuda del mes actual ANTES de aplicar el pago.
+            # Esto garantiza que si la deuda no fue creada aún por el cron,
+            # exista al momento de aplicar el descuento por efectivo en el PASO 1.
+            if estado_cliente.plan_actual:
+                estado_cliente.generar_deuda_mes_actual()
+
             # 💰 PASO 1: Aplicar el pago a las deudas pendientes (más antiguas primero)
             monto_restante = Decimal(str(self.monto))
             es_pago_efectivo = self.tipo_pago == 'efectivo'
@@ -1202,62 +1208,29 @@ class RegistroPago(models.Model):
                 # Aplicar pago a esta deuda
                 monto_aplicado = deuda.aplicar_pago_parcial(monto_restante)
                 monto_restante -= Decimal(str(monto_aplicado))
-            
+
             # 📊 PASO 2: Recalcular el saldo DESDE CERO
-            # Saldo = Total de pagos confirmados - Total de deudas pendientes
-            
-            # Total pagado por el cliente (todos los pagos confirmados)
+            # Saldo = Total pagado - Total de deudas generadas (monto_original ajustado)
+
             total_pagado = RegistroPago.objects.filter(
                 cliente=self.cliente,
                 estado='confirmado'
             ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-            
-            # Total que aún debe (deudas pendientes)
-            total_debe = DeudaMensual.objects.filter(
-                usuario=self.cliente,
-                estado__in=['pendiente', 'vencido', 'parcial']
-            ).aggregate(total=Sum('monto_pendiente'))['total'] or Decimal('0')
-            
-            # Total que debió haber pagado (todas las deudas generadas)
-            total_deudas_generadas = DeudaMensual.objects.filter(
-                usuario=self.cliente
-            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-            
-            # Saldo = Lo que pagó - Lo que se generó de deuda
-            # Positivo = Crédito a favor
-            # Cero = Al día
-            # Negativo = Debe
-            # Generar deuda del mes si tiene plan pero no tiene deuda aún
-            if estado_cliente.plan_actual:
-                estado_cliente.generar_deuda_mes_actual()
 
-            # Recalcular deudas generadas después de generar la del mes actual
             total_deudas_generadas = DeudaMensual.objects.filter(
                 usuario=self.cliente
             ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
 
             estado_cliente.saldo_actual = total_pagado - total_deudas_generadas
-            
+
             # Guardar cambios
             estado_cliente.save()
-            
+
         except Exception as e:
             # Log del error pero no fallar la operación
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Error actualizando estado de cliente en pago {self.id}: {str(e)}")
-
-    def get_nombre_completo_cliente(self):
-        """Devuelve el nombre completo del cliente"""
-        if not self.cliente:
-            return "Cliente no especificado"
-        
-        if self.cliente.first_name and self.cliente.last_name:
-            return f"{self.cliente.first_name} {self.cliente.last_name}"
-        return self.cliente.username
-
-    def __str__(self):
-        return f"Pago ${self.monto} - {self.get_nombre_completo_cliente()} - {self.fecha_pago}"
 
     class Meta:
         verbose_name = "Registro de Pago"
@@ -1627,9 +1600,10 @@ class DeudaMensual(models.Model):
     def aplicar_pago_parcial(self, monto_pago):
         """Aplica un pago parcial a la deuda"""
         if monto_pago >= self.monto_pendiente:
-            # Pago completo
+            # Capturar monto antes de zerear con marcar_como_pagado()
+            monto_aplicado = self.monto_pendiente
             self.marcar_como_pagado()
-            return self.monto_pendiente  # Devuelve el monto que se pudo aplicar
+            return monto_aplicado
         else:
             # Pago parcial
             self.monto_pendiente -= monto_pago
