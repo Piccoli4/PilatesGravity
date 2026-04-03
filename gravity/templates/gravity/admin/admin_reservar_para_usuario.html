@@ -69,8 +69,7 @@
                             </div>
                             <input type="hidden" name="usuario" value="{{ usuario_preseleccionado.id }}">
                         {% else %}
-                            <select name="usuario" id="id_usuario"
-                                    class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors">
+                            <select name="usuario" id="id_usuario">
                                 <option value="">— Seleccioná un alumno —</option>
                                 {% for u in todos_los_usuarios %}
                                     <option value="{{ u.id }}">
@@ -167,27 +166,68 @@
 {% endblock %}
 
 {% block extra_js %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const selectClase = document.getElementById('id_clase');
-        const infoCupos = document.getElementById('info-cupos');
-        const cuposValor = document.getElementById('cupos-valor');
+    // Tom Select - selector de alumno
+    const usuarioEl = document.getElementById('id_usuario');
+    if (usuarioEl) {
+        new TomSelect('#id_usuario', {
+            placeholder: '— Buscá por nombre o email —',
+            searchField: ['text'],
+            maxOptions: 50,
+        });
+    }
 
-        if (selectClase) {
-            selectClase.addEventListener('change', function () {
-                const selected = this.options[this.selectedIndex];
-                const cupos = selected.dataset.cupos;
-                const maximo = selected.dataset.maximo;
+    // Tom Select - selector de clase
+    const selectClaseEl = document.getElementById('id_clase');
+    if (selectClaseEl) {
+        new TomSelect('#id_clase', {
+            placeholder: '— Buscá por nombre, día u horario —',
+            searchField: ['text'],
+            maxOptions: 100,
+            onChange: function(value) {
+                const selected = selectClaseEl.options[selectClaseEl.selectedIndex];
+                const cupos = selected?.dataset.cupos;
+                const maximo = selected?.dataset.maximo;
+                const infoCupos = document.getElementById('info-cupos');
+                const cuposValor = document.getElementById('cupos-valor');
 
-                if (cupos !== undefined && this.value) {
+                if (cupos !== undefined && value) {
                     infoCupos.classList.remove('hidden');
                     cuposValor.textContent = cupos + '/' + maximo;
                     cuposValor.className = 'font-semibold ' + (parseInt(cupos) === 0 ? 'text-error' : 'text-principal');
                 } else {
                     infoCupos.classList.add('hidden');
                 }
-            });
-        }
-    });
+            }
+        });
+    }
 </script>
+
+<!-- Adaptar Tom Select a la paleta del proyecto -->
+<style>
+    .ts-wrapper.single .ts-control {
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        color: #3A4D5C;
+        background: white;
+    }
+    .ts-wrapper.single.focus .ts-control {
+        border-color: #5D768B;
+        box-shadow: 0 0 0 2px rgba(93,118,139,0.2);
+        outline: none;
+    }
+    .ts-dropdown .option.active,
+    .ts-dropdown .option:hover {
+        background-color: #F8EFE5;
+        color: #3A4D5C;
+    }
+    .ts-dropdown .option.selected {
+        background-color: #5D768B;
+        color: #FDFDFD;
+    }
+</style>
 {% endblock %}

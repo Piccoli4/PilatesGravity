@@ -162,21 +162,33 @@
             margin-bottom: 28px;
         }
 
-        .saldo-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #777;
-            padding: 5px 0;
+        .saldo-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .saldo-row.total {
+        .saldo-table td {
+            padding: 6px 4px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        .saldo-table .td-right {
+            text-align: right;
+        }
+
+        .saldo-table .row-total td {
             border-top: 1px solid #E8D8C8;
-            margin-top: 8px;
-            padding-top: 10px;
+            padding-top: 12px;
             font-size: 15px;
             font-weight: 600;
             color: #5D768B;
+        }
+
+        .saldo-table .row-plan td {
+            border-top: 1px solid #E8D8C8;
+            padding-top: 10px;
+            padding-bottom: 2px;
         }
 
         .saldo-positivo {
@@ -294,30 +306,33 @@
             <!-- Estado de cuenta -->
             <p class="section-label">Tu estado de cuenta</p>
             <div class="saldo-block">
-                <div class="saldo-row">
-                    <span>Saldo anterior</span>
-                    <span>${{ saldo_anterior }}</span>
-                </div>
-                <div class="saldo-row">
-                    <span>Pago recibido</span>
-                    <span>+${{ pago.monto }}</span>
-                </div>
-                <div class="saldo-row total">
-                    <span>Saldo actual</span>
-                    <span
-                        class="{% if saldo_actual > 0 %}saldo-positivo{% elif saldo_actual == 0 %}saldo-cero{% else %}saldo-negativo{% endif %}">
-                        ${{ saldo_actual }}
-                        {% if saldo_actual > 0 %}&nbsp;(a favor)
-                        {% elif saldo_actual == 0 %}&nbsp;(al día)
-                        {% else %}&nbsp;(pendiente){% endif %}
-                    </span>
-                </div>
-                {% if plan_actual %}
-                <div class="saldo-row" style="margin-top: 10px; border-top: 1px solid #E8D8C8; padding-top: 10px;">
-                    <span>Plan actual</span>
-                    <span style="color: #5D768B; font-weight: 500;">{{ plan_actual.nombre }}</span>
-                </div>
-                {% endif %}
+                <table class="saldo-table">
+                    <tr>
+                        <td>Saldo anterior</td>
+                        <td class="td-right">${{ saldo_anterior }}</td>
+                    </tr>
+                    <tr>
+                        <td>Pago recibido</td>
+                        <td class="td-right">+${{ pago.monto }}</td>
+                    </tr>
+                    <tr class="row-total">
+                        <td>Saldo actual</td>
+                        <td class="td-right">
+                            <span class="{% if saldo_actual > 0 %}saldo-positivo{% elif saldo_actual == 0 %}saldo-cero{% else %}saldo-negativo{% endif %}">
+                                ${{ saldo_actual }}
+                                {% if saldo_actual > 0 %}&nbsp;(a favor)
+                                {% elif saldo_actual == 0 %}&nbsp;(al día)
+                                {% else %}&nbsp;(pendiente){% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% if plan_actual %}
+                    <tr class="row-plan">
+                        <td style="color: #777;">Plan actual</td>
+                        <td class="td-right" style="color: #5D768B; font-weight: 500;">{{ plan_actual.nombre }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
             </div>
 
             <hr class="divider">

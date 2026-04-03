@@ -97,29 +97,32 @@
         }
 
         /* FILAS DE DETALLE */
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            padding: 7px 0;
-            border-bottom: 1px solid rgba(93, 118, 139, 0.1);
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .detail-table td {
+            padding: 7px 4px;
             font-size: 14px;
+            border-bottom: 1px solid rgba(93, 118, 139, 0.1);
         }
 
-        .clase-anterior-block .detail-row {
-            border-bottom-color: rgba(201, 123, 123, 0.12);
-        }
-
-        .detail-row:last-child {
+        .detail-table tr:last-child td {
             border-bottom: none;
         }
 
-        .detail-label {
-            color: #7a8e99;
-            font-weight: 500;
+        .clase-anterior-block .detail-table td {
+            border-bottom-color: rgba(201, 123, 123, 0.12);
         }
 
-        .detail-value {
+        .detail-table .td-label {
+            color: #7a8e99;
+            font-weight: 500;
+            width: 45%;
+        }
+
+        .detail-table .td-value {
             color: #3A4D5C;
             font-weight: 600;
             text-align: right;
@@ -188,22 +191,24 @@
             <!-- Clase anterior -->
             <div class="clase-anterior-block">
                 <p class="block-title">Clase anterior</p>
-                <div class="detail-row">
-                    <span class="detail-label">Clase</span>
-                    <span class="detail-value">{{ clase_anterior.get_nombre_display }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Día</span>
-                    <span class="detail-value">{{ clase_anterior.dia }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Horario</span>
-                    <span class="detail-value">{{ clase_anterior.horario|time:"H:i" }} hs</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Sede</span>
-                    <span class="detail-value">{{ clase_anterior.get_direccion_display }}</span>
-                </div>
+                <table class="detail-table">
+                    <tr>
+                        <td class="td-label">Clase</td>
+                        <td class="td-value">{{ clase_anterior.get_nombre_display }}</td>
+                    </tr>
+                    <tr>
+                        <td class="td-label">Día</td>
+                        <td class="td-value">{{ clase_anterior.dia }}</td>
+                    </tr>
+                    <tr>
+                        <td class="td-label">Horario</td>
+                        <td class="td-value">{{ clase_anterior.horario|time:"H:i" }} hs</td>
+                    </tr>
+                    <tr>
+                        <td class="td-label">Sede</td>
+                        <td class="td-value">{{ clase_anterior.get_direccion_display }}</td>
+                    </tr>
+                </table>
             </div>
 
             <!-- Flecha -->
@@ -212,22 +217,24 @@
             <!-- Nueva clase -->
             <div class="clase-nueva-block">
                 <p class="block-title">Nueva clase ✓</p>
-                <div class="detail-row">
-                    <span class="detail-label">Clase</span>
-                    <span class="detail-value">{{ clase_nueva.get_nombre_display }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Día</span>
-                    <span class="detail-value">{{ clase_nueva.dia }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Horario</span>
-                    <span class="detail-value">{{ clase_nueva.horario|time:"H:i" }} hs</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Sede</span>
-                    <span class="detail-value">{{ clase_nueva.get_direccion_display }}</span>
-                </div>
+                <table class="detail-table">
+                    <tr>
+                        <td class="td-label">Clase</td>
+                        <td class="td-value">{{ clase_nueva.get_nombre_display }}</td>
+                    </tr>
+                    <tr>
+                        <td class="td-label">Día</td>
+                        <td class="td-value">{{ clase_nueva.dia }}</td>
+                    </tr>
+                    <tr>
+                        <td class="td-label">Horario</td>
+                        <td class="td-value">{{ clase_nueva.horario|time:"H:i" }} hs</td>
+                    </tr>
+                    <tr>
+                        <td class="td-label">Sede</td>
+                        <td class="td-value">{{ clase_nueva.get_direccion_display }}</td>
+                    </tr>
+                </table>
             </div>
 
             <!-- Nota final -->
