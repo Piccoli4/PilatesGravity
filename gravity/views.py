@@ -2340,8 +2340,35 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
             plan_anterior = estado_pago.plan_actual
             estado_actualizado = form.save()
 
-            # Si se asignó un plan nuevo, generar la deuda del mes si no existe
+            # Si se asignó un plan nuevo
             if estado_actualizado.plan_actual and estado_actualizado.plan_actual != plan_anterior:
+                
+                # Crear PlanUsuario para que el cliente pueda reservar
+                import calendar
+                hoy = timezone.now().date()
+                ultimo_dia = calendar.monthrange(hoy.year, hoy.month)[1]
+                fecha_fin = date(hoy.year, hoy.month, ultimo_dia)
+
+                # Desactivar planes anteriores vigentes del mismo tipo
+                PlanUsuario.objects.filter(
+                    usuario=cliente,
+                    activo=True,
+                    fecha_fin__gte=hoy
+                ).update(activo=False)
+
+                PlanUsuario.objects.create(
+                    usuario=cliente,
+                    plan=estado_actualizado.plan_actual,
+                    fecha_inicio=hoy,
+                    fecha_fin=fecha_fin,
+                    activo=True,
+                    tipo_plan='permanente',
+                    renovacion_automatica=True,
+                    creado_por=request.user,
+                    observaciones='Asignado por administrador desde panel de pagos'
+                )
+
+                # Generar deuda del mes si no existe
                 estado_actualizado.generar_deuda_mes_actual()
 
             messages.success(
@@ -2352,10 +2379,16 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
     else:
         form = EstadoPagoClienteForm(instance=estado_pago)
     
+    planes_precios = {
+        str(p.id): str(p.precio_mensual)
+        for p in PlanPago.objects.filter(activo=True)
+    }
+
     context = {
         'form': form,
         'cliente': cliente,
         'estado_pago': estado_pago,
+        'planes_precios': planes_precios,
     }
     
     return render(request, 'gravity/admin/pagos_editar_estado.html', context)

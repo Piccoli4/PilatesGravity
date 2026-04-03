@@ -188,6 +188,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ planes_precios|json_script:"planes-precios-data" }}
 <script>
     // Determinar signo inicial según el valor actual del saldo
     const saldoInicial = parseFloat("{{ form.saldo_actual.value|default:0 }}") || 0;
@@ -230,6 +231,26 @@
         const form = document.querySelector('form');
         form.addEventListener('submit', function() {
             actualizarSaldoOculto();
+        });
+    });
+
+    // Auto-completar saldo al seleccionar un plan
+    document.addEventListener('DOMContentLoaded', function() {
+        const planesPrecios = JSON.parse(document.getElementById('planes-precios-data').textContent);
+        const planSelect = document.getElementById('{{ form.plan_actual.id_for_label }}');
+        const saldoDisplay = document.getElementById('saldo_display');
+
+        planSelect.addEventListener('change', function() {
+            const planId = this.value;
+            if (planId && planesPrecios[planId]) {
+                const precio = parseFloat(planesPrecios[planId]);
+                saldoDisplay.value = precio.toFixed(2);
+                setSaldoSign('deuda');
+                actualizarSaldoOculto();
+            } else {
+                saldoDisplay.value = '';
+                actualizarSaldoOculto();
+            }
         });
     });
 </script>

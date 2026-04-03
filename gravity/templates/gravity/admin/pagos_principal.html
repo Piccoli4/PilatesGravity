@@ -301,7 +301,7 @@
     <div class="card-body p-3">
         {% if page_obj.object_list %}
         <!-- Desktop Table -->
-        <div class="hidden md:block overflow-x-auto m-2">
+        <div class="hidden lg:block overflow-x-auto m-2">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-300 bg-gray-200 rounded-t-lg">
@@ -358,15 +358,15 @@
 
                         <td class="py-4 px-1">
                             {% if puede_ver_pagos %}
-                            {% if cliente_estado.plan_actual %}
-                            <span class="font-semibold text-gray-900 money">
-                                ${{ cliente_estado.plan_actual.precio_mensual|floatformat:0 }}
-                            </span>
-                            {% else %}
-                            <span class="text-gray-400">-</span>
-                            {% endif %}
-                            {% else %}
-                            <span class="text-gray-300">—</span>
+                                {% if cliente_estado.plan_actual %}
+                                    <span class="font-semibold text-gray-900">
+                                        {{ cliente_estado.plan_actual.nombre }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                                {% else %}
+                                    <span class="text-gray-300">—</span>
                             {% endif %}
                         </td>
 
@@ -512,7 +512,7 @@
         </div>
 
         <!-- Mobile Cards -->
-        <div class="md:hidden space-y-4">
+        <div class="lg:hidden space-y-4">
             {% for cliente_estado in page_obj.object_list %}
             <div class="bg-blanco rounded-lg border border-gray-200 p-4 shadow-sm">
                 <div class="flex">

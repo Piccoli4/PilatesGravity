@@ -837,7 +837,7 @@ class EstadoPagoCliente(models.Model):
         """
         plan_correcto = self.calcular_plan_segun_reservas()
         
-        if plan_correcto != self.plan_actual:
+        if plan_correcto is not None and plan_correcto != self.plan_actual:
             self.plan_actual = plan_correcto
             self.save()
         
@@ -1227,10 +1227,16 @@ class RegistroPago(models.Model):
             # Positivo = Crédito a favor
             # Cero = Al día
             # Negativo = Debe
+            # Generar deuda del mes si tiene plan pero no tiene deuda aún
+            if estado_cliente.plan_actual:
+                estado_cliente.generar_deuda_mes_actual()
+
+            # Recalcular deudas generadas después de generar la del mes actual
+            total_deudas_generadas = DeudaMensual.objects.filter(
+                usuario=self.cliente
+            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+
             estado_cliente.saldo_actual = total_pagado - total_deudas_generadas
-            
-            # Actualizar plan según reservas actuales
-            estado_cliente.actualizar_plan_automatico()
             
             # Guardar cambios
             estado_cliente.save()
