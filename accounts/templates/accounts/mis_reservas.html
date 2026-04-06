@@ -158,6 +158,29 @@
                             </a>
                         </div>
 
+                        <!-- Reserva Temporal -->
+                        {% if puede_recuperar %}
+                        <div class="mb-5 bg-amber-50 border-2 border-amber-300 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6 text-amber-500 flex-shrink-0 mt-0.5">
+                                    <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-amber-800 text-sm mb-0.5">
+                                        Tenés {{ n_recuperos_disponibles }} ausencia{{ n_recuperos_disponibles|pluralize }} registrada{{ n_recuperos_disponibles|pluralize }} esta semana
+                                    </p>
+                                    <p class="text-xs text-amber-700">
+                                        Podés reservar una clase de recupero para no perder tu{{ n_recuperos_disponibles|pluralize:"," }} clase{{ n_recuperos_disponibles|pluralize }} de esta semana.
+                                    </p>
+                                </div>
+                            </div>
+                            <a href="{% url 'gravity:reservar_recupero' %}"
+                               class="flex-shrink-0 bg-secundario hover:bg-secundario/60 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 whitespace-nowrap">
+                                Reservar Recupero
+                            </a>
+                        </div>
+                        {% endif %}
+
                         <div class="grid lg:grid-cols-2 gap-6">
                             {% for reserva in reservas_activas %}
                                 <div class="reserva-card rounded-xl shadow-wizard p-4 fade-in-up">
@@ -176,6 +199,11 @@
                                             </span>
                                             Activa
                                         </div>
+                                        {% if reserva.fecha_unica %}
+                                            <span class="bg-teal-100 text-teal-700 text-xs font-semibold px-2 py-1 rounded-full ml-2 whitespace-nowrap">
+                                                Solo el {{ reserva.fecha_unica|date:"d/m" }}
+                                            </span>
+                                        {% endif %}
                                     </div>
                                     <div class="flex justify-between items-center px-2 py-3 text-principal text-md">
                                         <div class="flex items-center justify-center gap-2">

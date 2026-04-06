@@ -3,6 +3,7 @@ from .views import (
     home, reservar_clase, conoce_mas,
     dias_disponibles, horarios_disponibles,
     verificar_disponibilidad, modificar_reserva,
+    reservar_recupero, reservar_cupo_temporal,
     cancelar_reserva, buscar_reservas_usuario,
     clases_disponibles_api, clases_disponibles, detalle_reserva,
     sedes_disponibles,
@@ -36,6 +37,10 @@ urlpatterns = [
     path('reserva/<str:numero_reserva>/', detalle_reserva, name='detalle_reserva'),
     path('reserva/<str:numero_reserva>/modificar/', modificar_reserva, name='modificar_reserva'),
     path('reserva/<str:numero_reserva>/cancelar/', cancelar_reserva, name='cancelar_reserva'),
+
+    # Recupero y cupos temporales
+    path('reservar-recupero/', reservar_recupero, name='reservar_recupero'),
+    path('cupo-temporal/<int:clase_id>/<str:fecha_str>/', reservar_cupo_temporal, name='reservar_cupo_temporal'),
     
     # Páginas informativas
     path('politica-de-privacidad/', TemplateView.as_view(template_name='gravity/politica_privacidad.html'), name='politica_privacidad'),

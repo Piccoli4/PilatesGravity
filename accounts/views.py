@@ -162,13 +162,20 @@ def cambiar_password(request):
 @login_required
 def mis_reservas(request):
     """Vista para mostrar las reservas del usuario actual"""
+    from gravity.models import Reserva
+
     reservas_activas = request.user.reservas_pilates.filter(activa=True).select_related('clase')
-    reservas_inactivas = request.user.reservas_pilates.filter(activa=False).select_related('clase')[:10]  # Últimas 10 canceladas
-    
+    reservas_inactivas = request.user.reservas_pilates.filter(activa=False).select_related('clase')[:10]
+
+    puede_recuperar, n_recuperos_disponibles, ausencias_recupero = Reserva.usuario_puede_hacer_recupero(request.user)
+
     context = {
         'reservas_activas': reservas_activas,
         'reservas_inactivas': reservas_inactivas,
-        'total_reservas': request.user.reservas_pilates.count()
+        'total_reservas': request.user.reservas_pilates.count(),
+        'puede_recuperar': puede_recuperar,
+        'n_recuperos_disponibles': n_recuperos_disponibles,
+        'ausencias_recupero': ausencias_recupero,
     }
     return render(request, 'accounts/mis_reservas.html', context)
 

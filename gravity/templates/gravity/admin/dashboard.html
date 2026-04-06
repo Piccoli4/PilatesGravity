@@ -515,40 +515,89 @@
     </div>
 </div>
 
-<!-- Alertas Importantes (Solo si hay) -->
-{% if clases_casi_llenas %}
-<div class="mb-6">
-    <div class="alert-pilates p-6 rounded-xl">
-        <h5 class="text-lg font-semibold flex felx-row items-center gap-1 mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                <path fill-rule="evenodd"
-                    d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
-                    clip-rule="evenodd" />
-            </svg>
-            ¡Atención! Clases Casi Llenas
-        </h5>
-        <p class="mb-4">Las siguientes clases tienen más del 80% de ocupación:</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {% for item in clases_casi_llenas|slice:":4" %}
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div class="p-3">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="font-semibold">{{ item.clase.get_nombre_display }}</div>
-                            <small class="text-gray-600">
-                                {{ item.clase.dia }} - {{ item.clase.get_direccion_corta }}
-                            </small>
-                        </div>
-                        <span class="bg-secundario text-fondo px-2 py-1 rounded text-sm">
-                            {{ item.porcentaje_ocupacion }}%
-                        </span>
-                    </div>
-                </div>
+<!-- Notificaciones de Cancelación de Planes -->
+{% if hay_notificaciones_plan %}
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #b45309 0%, #d97706 100%);">
+                <h5 class="text-lg font-semibold text-white flex items-center gap-2 mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.121-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z" clip-rule="evenodd" />
+                    </svg>
+                    Planes Cancelados
+                    <span class="bg-white text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full ml-1">
+                        {{ notificaciones_cancelacion_plan|length }}
+                    </span>
+                </h5>
+                <button onclick="marcarPlanesLeidos()"
+                    class="text-white text-sm underline hover:no-underline opacity-80 hover:opacity-100 transition-opacity">
+                    Marcar como leídas
+                </button>
             </div>
-            {% endfor %}
+            <div class="divide-y divide-gray-100" id="lista-notificaciones-plan">
+                {% for notif in notificaciones_cancelacion_plan %}
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                            style="background-color: #fef3c7;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-5" style="color: #b45309;">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800 mb-0">
+                                {{ notif.usuario.get_full_name|default:notif.usuario.username }}
+                            </p>
+                            <p class="text-sm text-gray-500 mb-0">
+                                Canceló el plan <span class="font-medium text-gray-700">{{ notif.plan.nombre|default:"(plan eliminado)" }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-400 flex-shrink-0">
+                        {{ notif.fecha_creacion|date:"d/m H:i" }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
+{% endif %}
+
+<!-- Alertas Importantes (Solo si hay) -->
+{% if clases_casi_llenas %}
+    <div class="mb-6">
+        <div class="alert-pilates p-6 rounded-xl">
+            <h5 class="text-lg font-semibold flex felx-row items-center gap-1 mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                    <path fill-rule="evenodd"
+                        d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                        clip-rule="evenodd" />
+                </svg>
+                ¡Atención! Clases Casi Llenas
+            </h5>
+            <p class="mb-4">Las siguientes clases tienen más del 80% de ocupación:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {% for item in clases_casi_llenas|slice:":4" %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="p-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-semibold">{{ item.clase.get_nombre_display }}</div>
+                                <small class="text-gray-600">
+                                    {{ item.clase.dia }} - {{ item.clase.get_direccion_corta }}
+                                </small>
+                            </div>
+                            <span class="bg-secundario text-fondo px-2 py-1 rounded text-sm">
+                                {{ item.porcentaje_ocupacion }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 {% endif %}
 
 <!-- Enlaces Rápidos -->
@@ -616,30 +665,41 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Animación simple para las estadísticas
-        const statNumbers = document.querySelectorAll('h2');
-        statNumbers.forEach(function (stat) {
-            const finalValue = parseInt(stat.textContent);
-            if (!isNaN(finalValue)) {
-                let currentValue = 0;
-                const increment = Math.ceil(finalValue / 20);
-                const timer = setInterval(function () {
-                    currentValue += increment;
-                    if (currentValue >= finalValue) {
-                        currentValue = finalValue;
-                        clearInterval(timer);
-                    }
-                    stat.textContent = currentValue;
-                }, 50);
-            }
-        });
+    <script>
 
-        // Actualización automática cada 5 minutos
-        setInterval(function () {
-            location.reload();
-        }, 300000);
-    });
-</script>
+        function marcarPlanesLeidos() {
+            fetch("{% url 'gravity:admin_marcar_notificaciones_leidas' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+            }).then(() => {
+                document.getElementById('lista-notificaciones-plan')
+                    ?.closest('.mb-6')?.remove();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Animación simple para las estadísticas
+            const statNumbers = document.querySelectorAll('h2');
+            statNumbers.forEach(function (stat) {
+                const finalValue = parseInt(stat.textContent);
+                if (!isNaN(finalValue)) {
+                    let currentValue = 0;
+                    const increment = Math.ceil(finalValue / 20);
+                    const timer = setInterval(function () {
+                        currentValue += increment;
+                        if (currentValue >= finalValue) {
+                            currentValue = finalValue;
+                            clearInterval(timer);
+                        }
+                        stat.textContent = currentValue;
+                    }, 50);
+                }
+            });
+
+            // Actualización automática cada 5 minutos
+            setInterval(function () {
+                location.reload();
+            }, 300000);
+        });
+    </script>
 {% endblock %}

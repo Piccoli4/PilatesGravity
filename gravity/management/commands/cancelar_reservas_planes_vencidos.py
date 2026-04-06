@@ -27,6 +27,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         hoy = timezone.now().date()
 
+        # Cancelar reservas de fecha única (recupero y cupo temporal) cuya fecha ya pasó
+        from gravity.models import Reserva as ReservaModel
+        vencidas = ReservaModel.objects.filter(activa=True, fecha_unica__lt=hoy)
+        count_vencidas = vencidas.count()
+        if not options['dry_run'] and count_vencidas > 0:
+            vencidas.update(activa=False)
+        if count_vencidas > 0:
+            self.stdout.write(
+                self.style.SUCCESS(f'  ✅ Reservas de fecha única vencidas canceladas: {count_vencidas}')
+            )
+
         self.stdout.write(
             self.style.SUCCESS(
                 f'\n{"="*70}\n'

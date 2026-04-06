@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
-from .models import Reserva, Clase, PlanUsuario, AusenciaTemporal, NotificacionCancelacion, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
+from .models import Reserva, Clase, PlanUsuario, AusenciaTemporal, NotificacionCancelacion, NotificacionCancelacionPlan, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
 from .forms import ReservaForm, ModificarReservaForm, BuscarReservaForm
 import json
 import calendar
@@ -451,7 +451,8 @@ def clases_disponibles(request):
             'clase': clase,
             'cupos_disponibles': cupos_disponibles,
             'esta_completa': esta_completa,
-            'porcentaje_ocupacion': porcentaje_ocupacion
+            'porcentaje_ocupacion': porcentaje_ocupacion,
+            'cupo_temporal': clase.get_cupo_temporal_semana() if esta_completa else None,
         }
         
         clases_por_sede[sede_key]['clases'].append(clase_info)
@@ -811,7 +812,7 @@ def admin_dashboard(request):
     # Configuración del estudio
     configuracion = ConfiguracionEstudio.get_configuracion()
 
-    # Notificaciones de cancelaciones (últimos 7 días, no leídas por este admin)
+    # Notificaciones de cancelaciones de reservas (últimos 7 días, no leídas)
     desde_7_dias = timezone.now() - timedelta(days=7)
     try:
         notificaciones_cancelacion = NotificacionCancelacion.objects.filter(
@@ -821,7 +822,25 @@ def admin_dashboard(request):
         ).select_related('reserva', 'reserva__clase', 'reserva__usuario').order_by('-fecha_creacion')
     except Exception:
         notificaciones_cancelacion = NotificacionCancelacion.objects.none()
-    
+
+    # Notificaciones de cancelaciones de planes (últimos 30 días, no leídas)
+    desde_30_dias = timezone.now() - timedelta(days=30)
+    try:
+        notificaciones_cancelacion_plan = NotificacionCancelacionPlan.objects.filter(
+            fecha_creacion__gte=desde_30_dias
+        ).exclude(
+            leida_por=request.user
+        ).select_related('usuario', 'plan').order_by('-fecha_creacion')
+    except Exception:
+        notificaciones_cancelacion_plan = NotificacionCancelacionPlan.objects.none()
+
+    # Reservas temporales recientes (últimos 7 días)
+    reservas_temporales_recientes = Reserva.objects.filter(
+        fecha_unica__isnull=False,
+        activa=True,
+        fecha_reserva__gte=desde_7_dias
+    ).select_related('usuario', 'clase').order_by('-fecha_reserva')
+
     context = {
         'total_clases': total_clases,
         'total_reservas_activas': total_reservas_activas,
@@ -834,6 +853,10 @@ def admin_dashboard(request):
         'configuracion': configuracion,
         'notificaciones_cancelacion': notificaciones_cancelacion,
         'hay_notificaciones': notificaciones_cancelacion.exists(),
+        'notificaciones_cancelacion_plan': notificaciones_cancelacion_plan,
+        'hay_notificaciones_plan': notificaciones_cancelacion_plan.exists(),
+        'reservas_temporales_recientes': reservas_temporales_recientes,
+        'hay_reservas_temporales': reservas_temporales_recientes.exists(),
         'puede_ver_pagos': get_puede_ver_pagos(request.user),
     }
 
@@ -853,6 +876,14 @@ def admin_marcar_notificaciones_leidas(request):
         ).exclude(leida_por=request.user)
 
         for n in notificaciones:
+            n.leida_por.add(request.user)
+
+        # También marcar notificaciones de planes como leídas
+        desde_30 = timezone.now() - timedelta(days=30)
+        notificaciones_plan = NotificacionCancelacionPlan.objects.filter(
+            fecha_creacion__gte=desde_30
+        ).exclude(leida_por=request.user)
+        for n in notificaciones_plan:
             n.leida_por.add(request.user)
 
         return JsonResponse({'ok': True, 'marcadas': notificaciones.count()})
@@ -1182,7 +1213,7 @@ def admin_clase_detalle(request, clase_id):
     ).order_by('usuario__first_name', 'usuario__last_name')
     
     # Calcular próxima fecha de esta clase
-    hoy = timezone.now()
+    hoy = timezone.localtime(timezone.now())
     dias_semana = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
     dia_num = dias_semana.get(clase.dia, 0)
     dias_hasta = (dia_num - hoy.weekday()) % 7
@@ -1512,6 +1543,184 @@ def registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, admin_user
     except Exception as e:
         logger.error(f"Error registrando incidencia de cancelación: {str(e)}")
         return False
+
+@login_required
+def reservar_recupero(request):
+    """
+    Permite reservar una clase de recupero por ausencia temporal registrada esta semana.
+    La reserva es solo para esa fecha. No consume clases del plan.
+    """
+    puede, n_disponibles, ausencias = Reserva.usuario_puede_hacer_recupero(request.user)
+
+    if not puede:
+        messages.error(request, 'No tenés ausencias disponibles para recuperar esta semana.')
+        return redirect('accounts:mis_reservas')
+
+    hoy = timezone.now().date()
+    fin_semana = hoy + timedelta(days=10)
+
+    clases_para_recupero = []
+    for offset in range(11):  # hoy + 10 días
+        fecha_dia = hoy + timedelta(days=offset)
+        if fecha_dia > fin_semana:
+            break
+        dia_nombre = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][fecha_dia.weekday()]
+        for clase in Clase.objects.filter(activa=True, dia=dia_nombre).order_by('horario'):
+            cupos = clase.cupos_disponibles(fecha=fecha_dia)
+            if cupos <= 0:
+                continue
+            ya_tiene = Reserva.objects.filter(
+                usuario=request.user,
+                clase=clase,
+                activa=True
+            ).filter(
+                fecha_unica=fecha_dia
+            ).exists()
+            ya_tiene_permanente = Reserva.objects.filter(
+                usuario=request.user,
+                clase=clase,
+                activa=True,
+                fecha_unica__isnull=True
+            ).exists()
+            if ya_tiene or ya_tiene_permanente:
+                continue
+            clases_para_recupero.append({
+                'clase': clase,
+                'fecha': fecha_dia,
+                'fecha_str': fecha_dia.strftime('%Y-%m-%d'),
+                'cupos': cupos,
+            })
+
+    if request.method == 'POST':
+        clase_id = request.POST.get('clase_id')
+        fecha_str = request.POST.get('fecha')
+        try:
+            from datetime import date as date_type
+            fecha_recupero = date_type.fromisoformat(fecha_str)
+            clase = get_object_or_404(Clase, id=clase_id, activa=True)
+
+            if fecha_recupero < hoy or fecha_recupero > fin_semana:
+                messages.error(request, 'Fecha inválida para el recupero.')
+                return redirect('gravity:reservar_recupero')
+
+            if clase.cupos_disponibles(fecha=fecha_recupero) <= 0:
+                messages.error(request, 'Ya no hay cupos disponibles para esa clase en esa fecha.')
+                return redirect('gravity:reservar_recupero')
+
+            puede, _, _ = Reserva.usuario_puede_hacer_recupero(request.user)
+            if not puede:
+                messages.error(request, 'Ya no tenés recuperos disponibles esta semana.')
+                return redirect('accounts:mis_reservas')
+
+            reserva = Reserva(
+                usuario=request.user,
+                clase=clase,
+                es_recupero=True,
+                fecha_unica=fecha_recupero,
+                notas=f'Recupero por ausencia temporal — {fecha_recupero.strftime("%d/%m/%Y")}'
+            )
+            reserva.full_clean()
+            reserva.save()
+
+            messages.success(
+                request,
+                f'¡Recupero reservado! Asistirás a {clase.get_nombre_display()} '
+                f'el {fecha_recupero.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
+                f'en {clase.get_direccion_corta()}. Esta reserva es solo por ese día.'
+            )
+            return redirect('accounts:mis_reservas')
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar el recupero: {str(e)}')
+            return redirect('gravity:reservar_recupero')
+
+    context = {
+        'clases_para_recupero': clases_para_recupero,
+        'ausencias': ausencias,
+        'n_disponibles': n_disponibles,
+        'hoy': hoy,
+    }
+    return render(request, 'gravity/reservar_recupero.html', context)
+
+@login_required
+def reservar_cupo_temporal(request, clase_id, fecha_str):
+    """
+    Permite tomar un cupo temporal liberado por la ausencia de otro usuario.
+    La reserva es solo para esa fecha y cuenta contra el límite semanal del plan.
+    """
+    from datetime import date as date_type
+
+    clase = get_object_or_404(Clase, id=clase_id, activa=True)
+
+    try:
+        fecha = date_type.fromisoformat(fecha_str)
+    except ValueError:
+        messages.error(request, 'Fecha inválida.')
+        return redirect('gravity:clases_disponibles')
+
+    hoy = timezone.now().date()
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    fin_semana = inicio_semana + timedelta(days=5)
+
+    if fecha < hoy or fecha > fin_semana:
+        messages.error(request, 'El cupo temporal ya no está disponible.')
+        return redirect('gravity:clases_disponibles')
+
+    cupos = clase.cupos_disponibles(fecha=fecha)
+    if cupos <= 0:
+        messages.error(request, 'Ya no hay cupos disponibles para esta clase en esa fecha.')
+        return redirect('gravity:clases_disponibles')
+
+    clases_disponibles_usuario, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
+    if clases_disponibles_usuario == 0:
+        messages.error(request, 'Necesitás un plan activo para reservar.')
+        return redirect('gravity:mis_planes')
+
+    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
+    if reservas_actuales >= clases_disponibles_usuario:
+        messages.error(
+            request,
+            'Ya usaste todas tus clases disponibles esta semana. '
+            'Si tenés una ausencia registrada, podés hacer un recupero desde Mis Reservas.'
+        )
+        return redirect('accounts:mis_reservas')
+
+    ya_tiene = Reserva.objects.filter(
+        usuario=request.user, clase=clase, activa=True
+    ).exists()
+    if ya_tiene:
+        messages.error(request, 'Ya tenés una reserva para esta clase.')
+        return redirect('gravity:clases_disponibles')
+
+    if request.method == 'POST':
+        try:
+            reserva = Reserva(
+                usuario=request.user,
+                clase=clase,
+                es_recupero=False,
+                fecha_unica=fecha,
+                notas=f'Cupo temporal — {fecha.strftime("%d/%m/%Y")}'
+            )
+            reserva.full_clean()
+            reserva.save()
+
+            messages.success(
+                request,
+                f'¡Reserva temporal confirmada! Asistirás a {clase.get_nombre_display()} '
+                f'el {fecha.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
+                f'en {clase.get_direccion_corta()}. Esta reserva es solo por ese día.'
+            )
+            return redirect('accounts:mis_reservas')
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar la reserva: {str(e)}')
+
+    context = {
+        'clase': clase,
+        'fecha': fecha,
+        'cupos': cupos,
+    }
+    return render(request, 'gravity/reservar_cupo_temporal.html', context)
 
 # ==============================================================================
 # RESERVA DE CLASE POR ADMINISTRADOR
@@ -2341,19 +2550,23 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
             estado_actualizado = form.save()
 
             # Si se asignó un plan nuevo
-            if estado_actualizado.plan_actual and estado_actualizado.plan_actual != plan_anterior:
+            tiene_plan_usuario_activo = PlanUsuario.objects.filter(
+                usuario=cliente,
+                activo=True,
+            ).exists()
+
+            if estado_actualizado.plan_actual and (
+                estado_actualizado.plan_actual != plan_anterior or not tiene_plan_usuario_activo
+            ):
                 
                 # Crear PlanUsuario para que el cliente pueda reservar
-                import calendar
                 hoy = timezone.now().date()
-                ultimo_dia = calendar.monthrange(hoy.year, hoy.month)[1]
-                fecha_fin = date(hoy.year, hoy.month, ultimo_dia)
+                fecha_fin = date(2099, 12, 31)
 
-                # Desactivar planes anteriores vigentes del mismo tipo
+                # Desactivar planes anteriores activos
                 PlanUsuario.objects.filter(
                     usuario=cliente,
                     activo=True,
-                    fecha_fin__gte=hoy
                 ).update(activo=False)
 
                 PlanUsuario.objects.create(
@@ -2414,7 +2627,6 @@ def admin_gestionar_admins(request):
     }
     return render(request, 'gravity/admin/gestionar_admins.html', context)
 
-
 @superadmin_required
 def admin_crear_admin_restringido(request):
     """
@@ -2464,7 +2676,6 @@ def admin_crear_admin_restringido(request):
         return redirect('gravity:admin_gestionar_admins')
 
     return redirect('gravity:admin_gestionar_admins')
-
 
 @superadmin_required
 def admin_eliminar_admin_restringido(request, admin_id):
@@ -2518,8 +2729,7 @@ def seleccionar_plan(request):
             
             # Calcular fechas (inicio hoy, fin en un mes)
             fecha_inicio = timezone.now().date()
-            ultimo_dia = calendar.monthrange(fecha_inicio.year, fecha_inicio.month)[1]
-            fecha_fin = date(fecha_inicio.year, fecha_inicio.month, ultimo_dia)
+            fecha_fin = date(2099, 12, 31)
             
             # Crear el plan del usuario
             plan_usuario = PlanUsuario.objects.create(
@@ -2580,15 +2790,14 @@ def mis_planes(request):
     # Obtener planes activos - CORREGIR 'activa' por 'activo'
     planes_activos = PlanUsuario.objects.filter(
         usuario=request.user,
-        activo=True,  # Cambiar 'activa' por 'activo'
-        fecha_fin__gte=timezone.now().date()
-    ).select_related('plan').order_by('fecha_fin')
-    
-    # Obtener planes vencidos (últimos 5)
+        activo=True,
+    ).select_related('plan').order_by('-fecha_creacion')
+
+    # Planes cancelados explícitamente (historial)
     planes_vencidos = PlanUsuario.objects.filter(
-        Q(usuario=request.user) & 
-        (Q(activo=False) | Q(fecha_fin__lt=timezone.now().date()))
-    ).select_related('plan').order_by('-fecha_fin')[:5]
+        usuario=request.user,
+        activo=False,
+    ).select_related('plan').order_by('-fecha_creacion')[:5]
     
     # Calcular estadísticas de la semana actual
     clases_disponibles, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
@@ -2629,6 +2838,52 @@ def cancelar_plan(request, plan_id):
             primer_dia_mes = date(hoy.year, hoy.month, 1)
             clases_a_cancelar = plan.plan.clases_por_semana
 
+            # --- Verificar si puede cancelar ---
+
+            # 1. Deuda de meses anteriores → bloqueo siempre
+            deuda_anterior = DeudaMensual.objects.filter(
+                usuario=request.user,
+                mes_año__lt=primer_dia_mes,
+                estado__in=('pendiente', 'vencido', 'parcial')
+            ).order_by('mes_año').first()
+
+            if deuda_anterior:
+                mes_str = deuda_anterior.mes_año.strftime('%B %Y').capitalize()
+                messages.error(
+                    request,
+                    f'No podés cancelar tu plan porque tenés una deuda pendiente de {mes_str} '
+                    f'(${deuda_anterior.monto_pendiente:,.0f}). '
+                    f'Regularizá tu situación con la administración antes de cancelar.'
+                )
+                return redirect('gravity:mis_planes')
+
+            # 2. Deuda del mes actual → bloqueo según situación
+            try:
+                deuda_mes_actual = DeudaMensual.objects.get(
+                    usuario=request.user,
+                    mes_año=primer_dia_mes
+                )
+                if deuda_mes_actual.monto_pendiente > 0:
+                    # Detectar si la deuda fue modificada por una cancelación previa este mes
+                    # (el monto original no coincide con el precio del plan y no es un medio mes por ingreso tardío)
+                    deuda_de_cancelacion_previa = (
+                        deuda_mes_actual.monto_original != plan.plan.precio_mensual
+                        and not deuda_mes_actual.es_medio_mes
+                    )
+                    # Día 10+: debe pagar el mes completo antes de cancelar
+                    debe_pagar_primero = dia_actual >= 10
+
+                    if deuda_de_cancelacion_previa or debe_pagar_primero:
+                        messages.error(
+                            request,
+                            f'No podés cancelar tu plan porque tenés una deuda pendiente de '
+                            f'${deuda_mes_actual.monto_pendiente:,.0f} de este mes. '
+                            f'Regularizá tu situación con la administración antes de cancelar.'
+                        )
+                        return redirect('gravity:mis_planes')
+            except DeudaMensual.DoesNotExist:
+                pass
+
             # --- Política de cobro ---
             try:
                 deuda_actual = DeudaMensual.objects.get(
@@ -2660,6 +2915,13 @@ def cancelar_plan(request, plan_id):
                             f'entre día 5 y 9 ({hoy.strftime("%d/%m/%Y")}).'
                         )
                         deuda_actual.save()
+                        try:
+                            estado = request.user.estado_pago
+                            estado.monto_deuda_mensual = monto_medio
+                            estado.saldo_actual = -monto_medio
+                            estado.save(update_fields=['monto_deuda_mensual', 'saldo_actual'])
+                        except EstadoPagoCliente.DoesNotExist:
+                            pass
             except DeudaMensual.DoesNotExist:
                 pass
 
@@ -2708,6 +2970,21 @@ def cancelar_plan(request, plan_id):
             # Cancelar el plan
             plan.activo = False
             plan.save()
+
+            # Limpiar plan_actual en EstadoPagoCliente si no quedan otros planes activos
+            if not PlanUsuario.objects.filter(usuario=request.user, activo=True).exists():
+                try:
+                    ep = request.user.estado_pago
+                    ep.plan_actual = None
+                    ep.save(update_fields=['plan_actual'])
+                except EstadoPagoCliente.DoesNotExist:
+                    pass
+
+            # Crear notificación para administradores
+            NotificacionCancelacionPlan.objects.create(
+                usuario=request.user,
+                plan=plan.plan,
+            )
 
             # Mensaje según política aplicada
             if dia_actual <= 4:

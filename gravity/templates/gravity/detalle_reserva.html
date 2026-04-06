@@ -184,7 +184,7 @@
                         <div class="bg-exito/10 border border-exito/30 rounded-lg p-3 flex items-start gap-2">
                             <span class="text-exito text-lg">✅</span>
                             <p class="text-exito text-sm font-medium">
-                                Puedes cancelar tu reserva hasta 12 horas antes de la clase.
+                                Puedes cancelar tu reserva hasta 3 horas antes de la clase.
                             </p>
                         </div>
                         {% else %}
@@ -312,8 +312,8 @@
                     </h3>
                     <p class="text-lg text-gris-oscuro mb-6 leading-relaxed">
                         Esta reserva es <strong>recurrente</strong>, lo que significa que tienes tu lugar asegurado
-                        todos los <strong>{{ reserva.clase.dia }}</strong> a las <strong>{{
-                            reserva.clase.horario|time:"H:i" }}</strong>
+                        todos los <strong>{{ reserva.clase.dia }}</strong> a las <strong>
+                            {{ reserva.clase.horario|time:"H:i" }}</strong>
                         en <strong>{{ reserva.clase.get_direccion_corta }}</strong> hasta que decidas cancelarla.
                     </p>
 
@@ -334,7 +334,7 @@
                             <div class="text-advertencia text-2xl mb-2">⏰</div>
                             <p class="font-medium text-advertencia">Flexible</p>
                             <p class="text-advertencia/80">Puedes modificar o cancelar cuando quieras.<br>
-                                (Hasta 12 horas antes de un turno)</p>
+                                (Hasta 3 horas antes de un turno)</p>
                         </div>
                     </div>
                 </div>

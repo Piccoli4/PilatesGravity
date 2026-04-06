@@ -141,19 +141,75 @@ class Clase(models.Model):
         return direcciones_cortas.get(self.direccion, self.get_direccion_display())
 
     def cupos_disponibles(self, fecha=None):
-        """Devuelve la cantidad de cupos disponibles en esta clase.
-        Si se pasa una fecha, descuenta las ausencias temporales de ese día."""
+        """
+        Devuelve cupos disponibles.
+        Sin fecha: solo cuenta reservas permanentes (para display general).
+        Con fecha: cuenta permanentes - ausencias_de_ese_día + reservas_de_fecha_única_de_ese_día.
+        """
         if not self.activa:
             return 0
-        reservas_activas = self.reserva_set.filter(activa=True).count()
-        ausencias_del_dia = 0
+
+        # Solo las permanentes siempre ocupan cupo
+        reservas_permanentes = self.reserva_set.filter(
+            activa=True,
+            fecha_unica__isnull=True
+        ).count()
+
         if fecha:
             ausencias_del_dia = AusenciaTemporal.objects.filter(
                 reserva__clase=self,
                 reserva__activa=True,
+                reserva__fecha_unica__isnull=True,
                 fecha=fecha
             ).count()
-        return max(0, self.cupo_maximo - reservas_activas + ausencias_del_dia)
+            reservas_fecha = self.reserva_set.filter(
+                activa=True,
+                fecha_unica=fecha
+            ).count()
+            total = reservas_permanentes - ausencias_del_dia + reservas_fecha
+        else:
+            total = reservas_permanentes
+
+        return max(0, self.cupo_maximo - total)
+
+    def get_cupo_temporal_semana(self):
+        """
+        Retorna {fecha, cupos, fecha_str} si en los próximos 10 días hay un
+        cupo temporal disponible por ausencia. Retorna None si no hay ninguno.
+        """
+        hoy = timezone.now().date()
+        fin_ventana = hoy + timedelta(days=10)
+
+        dias_map = {
+            'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+            'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+        }
+        dia_objetivo = dias_map.get(self.dia)
+        if dia_objetivo is None:
+            return None
+
+        # Próxima ocurrencia de este día (nunca hoy mismo, siempre hacia adelante)
+        dias_hasta = (dia_objetivo - hoy.weekday()) % 7
+        if dias_hasta == 0:
+            dias_hasta = 7
+
+        fecha_clase = hoy + timedelta(days=dias_hasta)
+
+        if fecha_clase > fin_ventana:
+            return None
+
+        # Solo aplica si la clase está permanentemente llena
+        if self.cupos_disponibles() > 0:
+            return None
+
+        cupos_fecha = self.cupos_disponibles(fecha=fecha_clase)
+        if cupos_fecha > 0:
+            return {
+                'fecha': fecha_clase,
+                'cupos': cupos_fecha,
+                'fecha_str': fecha_clase.strftime('%Y-%m-%d'),
+            }
+        return None
 
     def esta_completa(self):
         """Verifica si la clase está completa"""
@@ -231,6 +287,17 @@ class Reserva(models.Model):
         verbose_name="Notas adicionales",
         help_text="Notas internas sobre la reserva"
     )
+    es_recupero = models.BooleanField(
+        default=False,
+        verbose_name="Es recupero",
+        help_text="Reserva de recupero por ausencia propia. No cuenta para el límite semanal del plan."
+    )
+    fecha_unica = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha única",
+        help_text="Para recuperos y cupos temporales. Se cancela automáticamente al día siguiente de esta fecha."
+    )
 
     def clean(self):
         """Validaciones personalizadas del modelo"""
@@ -242,19 +309,37 @@ class Reserva(models.Model):
                 'clase': 'No se puede reservar una clase inactiva'
             })
         
-        # Validar que no haya duplicados activos para el mismo usuario y clase
+        # Validar duplicados (las reservas de fecha única se permiten mientras no choquen con otra del mismo día o con una permanente)
         if self.activa and self.usuario and self.clase:
-            existing_reserva = Reserva.objects.filter(
-                usuario=self.usuario,
-                clase=self.clase,
-                activa=True
-            ).exclude(pk=self.pk)
-            
-            if existing_reserva.exists():
-                raise ValidationError(
-                    'Ya tienes una reserva activa para esta clase. '
-                    'Cancela la reserva actual antes de crear una nueva.'
-                )
+            if self.fecha_unica:
+                tiene_permanente = Reserva.objects.filter(
+                    usuario=self.usuario,
+                    clase=self.clase,
+                    activa=True,
+                    fecha_unica__isnull=True
+                ).exclude(pk=self.pk).exists()
+                tiene_misma_fecha = Reserva.objects.filter(
+                    usuario=self.usuario,
+                    clase=self.clase,
+                    activa=True,
+                    fecha_unica=self.fecha_unica
+                ).exclude(pk=self.pk).exists()
+                if tiene_permanente or tiene_misma_fecha:
+                    raise ValidationError(
+                        'Ya tienes una reserva activa para esta clase en esa fecha. '
+                        'Cancela la reserva actual antes de crear una nueva.'
+                    )
+            else:
+                existing_reserva = Reserva.objects.filter(
+                    usuario=self.usuario,
+                    clase=self.clase,
+                    activa=True
+                ).exclude(pk=self.pk)
+                if existing_reserva.exists():
+                    raise ValidationError(
+                        'Ya tienes una reserva activa para esta clase. '
+                        'Cancela la reserva actual antes de crear una nueva.'
+                    )
 
     def save(self, *args, **kwargs):
         # Generar número de reserva único
@@ -284,7 +369,7 @@ class Reserva(models.Model):
             return False, "La clase ya no está disponible"
         
         # Obtener el día de la semana actual
-        hoy = timezone.now()
+        hoy = timezone.localtime(timezone.now())
         dias_semana = {
             'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
         }
@@ -332,7 +417,7 @@ class Reserva(models.Model):
 
     def get_proxima_clase_info(self):
         """Devuelve información sobre cuándo es la próxima clase"""
-        hoy = timezone.now()
+        hoy = timezone.localtime(timezone.now())
         dias_semana = {
             'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
         }
@@ -362,7 +447,7 @@ class Reserva(models.Model):
 
     def get_proxima_fecha(self):
         """Devuelve la fecha (date) de la próxima ocurrencia de esta clase."""
-        hoy = timezone.now()
+        hoy = timezone.localtime(timezone.now())
         dias_semana = {
             'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
             'Jueves': 3, 'Viernes': 4, 'Sábado': 5
@@ -408,22 +493,31 @@ class Reserva(models.Model):
         Cuenta las reservas activas de un usuario en una semana específica
         """
         if fecha_inicio_semana is None:
-            # Obtener el lunes de la semana actual
             hoy = timezone.now().date()
             fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
-        
-        fecha_fin_semana = fecha_inicio_semana + timedelta(days=5)  # Hasta sábado
-        
-        # Mapear días de la semana
+
+        fecha_fin_semana = fecha_inicio_semana + timedelta(days=5)
         dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-        
-        reservas_count = Reserva.objects.filter(
+
+        # Reservas permanentes (siempre cuentan contra el límite)
+        permanentes = Reserva.objects.filter(
             usuario=usuario,
             activa=True,
-            clase__dia__in=dias_semana
+            clase__dia__in=dias_semana,
+            fecha_unica__isnull=True
         ).count()
-        
-        return reservas_count
+
+        # Cupos temporales tomados esta semana (cuentan, los recuperos NO)
+        temporales = Reserva.objects.filter(
+            usuario=usuario,
+            activa=True,
+            es_recupero=False,
+            fecha_unica__isnull=False,
+            fecha_unica__gte=fecha_inicio_semana,
+            fecha_unica__lte=fecha_fin_semana
+        ).count()
+
+        return permanentes + temporales
 
     @staticmethod
     def usuario_puede_reservar(usuario, nueva_clase=None):
@@ -471,6 +565,39 @@ class Reserva(models.Model):
                 ('can_manage_all_reservas', 'Puede gestionar todas las reservas'),
                 ('can_view_all_reservas', 'Puede ver todas las reservas'),
             ]
+
+    @staticmethod
+    def usuario_puede_hacer_recupero(usuario):
+        """
+        Retorna (puede: bool, n_disponibles: int, ausencias: QuerySet).
+        El usuario puede hacer recupero si tiene ausencias futuras esta semana
+        y no agotó los recuperos disponibles.
+        """
+        hoy = timezone.now().date()
+        fin_ventana = hoy + timedelta(days=10)
+
+        ausencias = AusenciaTemporal.objects.filter(
+            reserva__usuario=usuario,
+            reserva__activa=True,
+            reserva__fecha_unica__isnull=True,
+            fecha__gte=hoy,
+            fecha__lte=fin_ventana
+        ).select_related('reserva__clase')
+
+        n_ausencias = ausencias.count()
+        if n_ausencias == 0:
+            return False, 0, ausencias
+
+        recuperos_usados = Reserva.objects.filter(
+            usuario=usuario,
+            activa=True,
+            es_recupero=True,
+            fecha_unica__gte=hoy,
+            fecha_unica__lte=fin_ventana
+        ).count()
+
+        disponibles = n_ausencias - recuperos_usados
+        return disponibles > 0, disponibles, ausencias
 
 class AusenciaTemporal(models.Model):
     """
@@ -1620,3 +1747,40 @@ class DeudaMensual(models.Model):
         verbose_name_plural = "Deudas Mensuales"
         unique_together = ['usuario', 'mes_año']
         ordering = ['-mes_año']
+
+class NotificacionCancelacionPlan(models.Model):
+    """
+    Notifica a los administradores cuando un usuario cancela su plan.
+    """
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notificaciones_cancelacion_plan',
+        verbose_name="Usuario"
+    )
+    plan = models.ForeignKey(
+        PlanPago,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Plan cancelado"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de cancelación"
+    )
+    leida_por = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='notificaciones_plan_leidas',
+        verbose_name="Vista por"
+    )
+
+    class Meta:
+        verbose_name = "Notificación de Cancelación de Plan"
+        verbose_name_plural = "Notificaciones de Cancelaciones de Plan"
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        nombre = self.usuario.get_full_name() or self.usuario.username
+        plan_nombre = self.plan.nombre if self.plan else 'Plan eliminado'
+        return f"[Cancelación Plan] {nombre} — {plan_nombre}"
