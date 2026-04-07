@@ -737,7 +737,6 @@ def superadmin_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-
 def get_puede_ver_pagos(user):
     """
     Retorna True si el usuario tiene permiso para ver información financiera.
@@ -813,10 +812,9 @@ def admin_dashboard(request):
     configuracion = ConfiguracionEstudio.get_configuracion()
 
     # Notificaciones de cancelaciones de reservas (últimos 7 días, no leídas)
-    desde_7_dias = timezone.now() - timedelta(days=7)
     try:
         notificaciones_cancelacion = NotificacionCancelacion.objects.filter(
-            fecha_creacion__gte=desde_7_dias
+            fecha_creacion__gte=hace_una_semana
         ).exclude(
             leida_por=request.user
         ).select_related('reserva', 'reserva__clase', 'reserva__usuario').order_by('-fecha_creacion')
@@ -834,12 +832,16 @@ def admin_dashboard(request):
     except Exception:
         notificaciones_cancelacion_plan = NotificacionCancelacionPlan.objects.none()
 
-    # Reservas temporales recientes (últimos 7 días)
+    # Reservas de cupos temporales recientes (últimos 7 días, no vistas en sesión)
+    recuperos_vistos = request.session.get('recuperos_vistos', [])
     reservas_temporales_recientes = Reserva.objects.filter(
-        fecha_unica__isnull=False,
         activa=True,
-        fecha_reserva__gte=desde_7_dias
+        fecha_unica__isnull=False,
+        fecha_reserva__gte=hace_una_semana,
+    ).exclude(
+        id__in=recuperos_vistos
     ).select_related('usuario', 'clase').order_by('-fecha_reserva')
+    hay_reservas_temporales = reservas_temporales_recientes.exists()
 
     context = {
         'total_clases': total_clases,
@@ -856,7 +858,12 @@ def admin_dashboard(request):
         'notificaciones_cancelacion_plan': notificaciones_cancelacion_plan,
         'hay_notificaciones_plan': notificaciones_cancelacion_plan.exists(),
         'reservas_temporales_recientes': reservas_temporales_recientes,
-        'hay_reservas_temporales': reservas_temporales_recientes.exists(),
+        'hay_reservas_temporales': hay_reservas_temporales,
+        'total_notificaciones': (
+            notificaciones_cancelacion.count() +
+            notificaciones_cancelacion_plan.count() +
+            reservas_temporales_recientes.count()
+        ),
         'puede_ver_pagos': get_puede_ver_pagos(request.user),
     }
 
@@ -870,15 +877,23 @@ def admin_marcar_notificaciones_leidas(request):
     """
     if request.method == 'POST':
         from .models import NotificacionCancelacion
+
+        # Leer IDs de recuperos/cupos temporales desde el body
+        try:
+            data = json.loads(request.body)
+            recupero_ids = data.get('recupero_ids', [])
+        except (json.JSONDecodeError, TypeError):
+            recupero_ids = []
+
+        # Marcar cancelaciones de reservas como leídas
         desde = timezone.now() - timedelta(days=7)
         notificaciones = NotificacionCancelacion.objects.filter(
             fecha_creacion__gte=desde
         ).exclude(leida_por=request.user)
-
         for n in notificaciones:
             n.leida_por.add(request.user)
 
-        # También marcar notificaciones de planes como leídas
+        # Marcar cancelaciones de planes como leídas
         desde_30 = timezone.now() - timedelta(days=30)
         notificaciones_plan = NotificacionCancelacionPlan.objects.filter(
             fecha_creacion__gte=desde_30
@@ -886,7 +901,13 @@ def admin_marcar_notificaciones_leidas(request):
         for n in notificaciones_plan:
             n.leida_por.add(request.user)
 
-        return JsonResponse({'ok': True, 'marcadas': notificaciones.count()})
+        # Guardar IDs de reservas temporales vistas en la sesión
+        if recupero_ids:
+            vistos = list(request.session.get('recuperos_vistos', []))
+            vistos.extend([int(i) for i in recupero_ids if str(i).isdigit()])
+            request.session['recuperos_vistos'] = vistos
+
+        return JsonResponse({'ok': True})
 
     return JsonResponse({'ok': False}, status=400)
 
@@ -1659,10 +1680,8 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
         return redirect('gravity:clases_disponibles')
 
     hoy = timezone.now().date()
-    inicio_semana = hoy - timedelta(days=hoy.weekday())
-    fin_semana = inicio_semana + timedelta(days=5)
 
-    if fecha < hoy or fecha > fin_semana:
+    if fecha < hoy:
         messages.error(request, 'El cupo temporal ya no está disponible.')
         return redirect('gravity:clases_disponibles')
 
@@ -1676,14 +1695,18 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
         messages.error(request, 'Necesitás un plan activo para reservar.')
         return redirect('gravity:mis_planes')
 
-    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
-    if reservas_actuales >= clases_disponibles_usuario:
-        messages.error(
-            request,
-            'Ya usaste todas tus clases disponibles esta semana. '
-            'Si tenés una ausencia registrada, podés hacer un recupero desde Mis Reservas.'
-        )
-        return redirect('accounts:mis_reservas')
+    # Detectar si el usuario tiene una ausencia disponible para usar como recupero
+    puede_recupero, _, _ = Reserva.usuario_puede_hacer_recupero(request.user)
+
+    if not puede_recupero:
+        # Sin ausencia disponible: verificar límite semanal normal
+        reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
+        if reservas_actuales >= clases_disponibles_usuario:
+            messages.error(
+                request,
+                'Ya usaste todas tus clases disponibles esta semana.'
+            )
+            return redirect('accounts:mis_reservas')
 
     ya_tiene = Reserva.objects.filter(
         usuario=request.user, clase=clase, activa=True
@@ -1694,22 +1717,31 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
 
     if request.method == 'POST':
         try:
+            tipo_nota = 'Recupero' if puede_recupero else 'Cupo temporal'
             reserva = Reserva(
                 usuario=request.user,
                 clase=clase,
-                es_recupero=False,
+                es_recupero=puede_recupero,
                 fecha_unica=fecha,
-                notas=f'Cupo temporal — {fecha.strftime("%d/%m/%Y")}'
+                notas=f'{tipo_nota} — {fecha.strftime("%d/%m/%Y")}'
             )
             reserva.full_clean()
             reserva.save()
 
-            messages.success(
-                request,
-                f'¡Reserva temporal confirmada! Asistirás a {clase.get_nombre_display()} '
-                f'el {fecha.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
-                f'en {clase.get_direccion_corta()}. Esta reserva es solo por ese día.'
-            )
+            if puede_recupero:
+                messages.success(
+                    request,
+                    f'¡Recupero confirmado! Asistirás a {clase.get_nombre_display()} '
+                    f'el {fecha.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
+                    f'en {clase.get_direccion_corta()}. Esta reserva no descuenta de tu plan semanal.'
+                )
+            else:
+                messages.success(
+                    request,
+                    f'¡Reserva temporal confirmada! Asistirás a {clase.get_nombre_display()} '
+                    f'el {fecha.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
+                    f'en {clase.get_direccion_corta()}. Esta reserva es solo por ese día y cuenta como una clase de tu plan.'
+                )
             return redirect('accounts:mis_reservas')
 
         except Exception as e:
@@ -1719,6 +1751,7 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
         'clase': clase,
         'fecha': fecha,
         'cupos': cupos,
+        'es_recupero': puede_recupero,
     }
     return render(request, 'gravity/reservar_cupo_temporal.html', context)
 

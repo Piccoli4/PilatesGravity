@@ -719,13 +719,13 @@
                         </svg>
                     </div>
                     <div>
-                        <h2 class="font-semibold text-gray-800 text-lg">Cancelaciones recientes</h2>
+                        <h2 class="font-semibold text-gray-800 text-lg">Actividad reciente</h2>
                         <p class="text-sm text-gray-400">Últimos 7 días</p>
                     </div>
                 </div>
                 {% with total=notificaciones_cancelacion|length|add:notificaciones_cancelacion_plan|length|add:reservas_temporales_recientes|length %}
                     <span class="bg-red-100 text-red-700 text-md font-bold px-2.5 py-1 rounded-full">
-                        {{ total }} nueva{{ total|pluralize }}
+                        {{ total_notificaciones }} nueva{{ total_notificaciones|pluralize }}
                     </span>
                 {% endwith %}
             </div>
@@ -826,8 +826,12 @@
                                     </span>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-md font-medium text-gray-800">
-                                        {{ reserva.usuario.get_full_name|default:reserva.usuario.username }}
+                                    <p class="text-sm text-gray-500 mt-0.5">
+                                        {% if reserva.es_recupero %}
+                                            <span class="font-medium text-gray-800">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</span> recuperó una clase el {{ reserva.fecha_unica|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="font-medium text-gray-800">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</span> realizó una reserva temporal el {{ reserva.fecha_unica|date:"d/m/Y" }}
+                                        {% endif %}
                                     </p>
                                     <p class="text-sm text-gray-500 mt-0.5">
                                         {{ reserva.clase.get_nombre_display }} —
@@ -837,7 +841,6 @@
                                     <div class="flex items-center gap-2 mt-1">
                                         <span class="text-xs text-teal-600 font-medium">
                                             {% if reserva.es_recupero %}Recupero{% else %}Cupo temporal{% endif %}
-                                            el {{ reserva.fecha_unica|date:"d/m/Y" }}
                                         </span>
                                         <span class="text-gray-300">·</span>
                                         <span class="text-xs text-gray-400">{{ reserva.fecha_reserva|timesince }} atrás</span>
@@ -866,25 +869,27 @@
             const btnCerrar = document.getElementById('pgNotifCerrar');
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value
                 || '{{ csrf_token }}';
+            const recuperoIds = [{% for reserva in reservas_temporales_recientes %}{{ reserva.id }}{% if not forloop.last %},{% endif %}{% endfor %}];
 
+            // Cierra el pop-up y marca las notificaciones como leídas
             function cerrarYMarcar() {
-                // Animación de salida
                 overlay.style.opacity = '0';
                 setTimeout(() => overlay.remove(), 300);
 
-                // Marcar como leídas por AJAX
                 fetch('{% url "gravity:admin_marcar_notificaciones_leidas" %}', {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrfToken,
                         'Content-Type': 'application/json',
                     },
+                    body: JSON.stringify({ recupero_ids: recuperoIds }),
                 });
             }
 
+            // Cierra el pop-up al hacer clic en el botón
             btnCerrar.addEventListener('click', cerrarYMarcar);
 
-            // También cerrar al hacer clic fuera del modal
+            // Cierra el pop-up al hacer clic fuera del modal
             overlay.addEventListener('click', function (e) {
                 if (e.target === overlay) cerrarYMarcar();
             });

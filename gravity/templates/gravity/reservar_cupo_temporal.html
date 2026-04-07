@@ -4,12 +4,12 @@
 {% block title %}Reservar Cupo Temporal - Pilates Gravity{% endblock %}
 
 {% block content %}
-<section class="min-h-screen bg-fondo py-12">
+<section class="min-h-screen bg-fondo pt-5 pb-10">
     <div class="container mx-auto px-4">
         <div class="max-w-lg mx-auto">
 
             <!-- Header -->
-            <div class="text-center mb-8">
+            <div class="text-center mb-4">
                 <h1 class="text-3xl font-cinzel font-bold text-principal mb-3">Cupo Temporal Disponible</h1>
                 <div class="w-20 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-4"></div>
                 <p class="text-gris-medio text-sm">
@@ -21,7 +21,7 @@
             <div class="bg-white rounded-xl shadow-wizard p-8 mb-6">
 
                 <!-- Info de la clase -->
-                <div class="flex items-center gap-4 mb-6">
+                <div class="flex items-center justify-center gap-4 mb-6">
                     <div class="w-14 h-14 rounded-full bg-gradient-to-br from-principal to-secundario flex items-center justify-center flex-shrink-0">
                         {% if clase.tipo == 'Reformer' %}
                             <img src="{% static 'icons/reformer.png' %}" class="w-8 h-8 object-contain" alt="Reformer">
@@ -38,20 +38,20 @@
                 </div>
 
                 <!-- Detalles -->
-                <div class="space-y-3 mb-6 text-sm text-gris-oscuro">
-                    <div class="flex items-center gap-3">
+                <div class="space-y-2 mb-3 text-sm text-gris-oscuro">
+                    <div class="flex items-center justify-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5 text-principal flex-shrink-0">
                             <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
                         </svg>
                         <span class="font-medium">{{ fecha|date:"l d/m/Y" }}</span>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5 text-principal flex-shrink-0">
                             <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
                         </svg>
                         <span>{{ clase.horario|time:"H:i" }} hs</span>
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5 text-principal flex-shrink-0">
                             <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
                         </svg>
@@ -60,20 +60,31 @@
                 </div>
 
                 <!-- Aviso temporal -->
-                <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-6">
-                    <p class="text-sm font-semibold text-teal-800 mb-1">
-                        📅 Reserva solo para el {{ fecha|date:"d/m/Y" }}
-                    </p>
-                    <p class="text-xs text-teal-700">
-                        Esta clase tiene un cupo disponible por ausencia de otro alumno. Tu reserva se cancela automáticamente al día siguiente y cuenta como una clase de tu plan semanal.
-                    </p>
-                </div>
+                {% if es_recupero %}
+                    <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-3">
+                        <p class="text-sm font-semibold text-teal-800 mb-1">
+                            🔄 Recupero de clase — {{ fecha|date:"d/m/Y" }}
+                        </p>
+                        <p class="text-xs text-teal-700">
+                            Tenés una ausencia registrada esta semana, por lo que este cupo se toma como recupero. <strong>No descuenta una clase de tu plan semanal.</strong>
+                        </p>
+                    </div>
+                {% else %}
+                    <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-3">
+                        <p class="text-sm font-semibold text-teal-800 mb-1">
+                            📅 Reserva solo para el {{ fecha|date:"d/m/Y" }}
+                        </p>
+                        <p class="text-xs text-teal-700">
+                            Este cupo quedó disponible por la ausencia de otro alumno. Tu reserva se cancela automáticamente al día siguiente y <strong>cuenta como una clase de tu plan semanal</strong>.
+                        </p>
+                    </div>
+                {% endif %}
 
                 <!-- Acciones -->
                 <form method="post">
                     {% csrf_token %}
                     <button type="submit"
-                            class="w-full bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:-translate-y-0.5 mb-3">
+                            class="w-full bg-principal hover:bg-principal/50 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:-translate-y-0.5 mb-3">
                         Confirmar reserva para el {{ fecha|date:"d/m" }}
                     </button>
                     <a href="{% url 'gravity:clases_disponibles' %}"
