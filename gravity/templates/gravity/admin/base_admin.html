@@ -828,7 +828,7 @@
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm text-gray-500 mt-0.5">
                                         {% if reserva.es_recupero %}
-                                            <span class="font-medium text-gray-800">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</span> recuperó una clase el {{ reserva.fecha_unica|date:"d/m/Y" }}
+                                            <span class="font-medium text-gray-800">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</span> recupera una clase el {{ reserva.fecha_unica|date:"d/m/Y" }}
                                         {% else %}
                                             <span class="font-medium text-gray-800">{{ reserva.usuario.get_full_name|default:reserva.usuario.username }}</span> realizó una reserva temporal el {{ reserva.fecha_unica|date:"d/m/Y" }}
                                         {% endif %}

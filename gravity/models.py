@@ -961,13 +961,25 @@ class EstadoPagoCliente(models.Model):
     def actualizar_plan_automatico(self):
         """
         Actualiza automáticamente el plan según las reservas actuales.
+        Si el plan_actual ya tiene las clases_por_semana correctas, no lo pisa
+        para evitar ambigüedad cuando hay varios PlanPago con igual cantidad de clases.
         """
         plan_correcto = self.calcular_plan_segun_reservas()
-        
-        if plan_correcto is not None and plan_correcto != self.plan_actual:
+
+        if plan_correcto is None:
+            return plan_correcto
+
+        # Si ya tiene un plan con las mismas clases/semana, respetarlo
+        if (
+            self.plan_actual is not None
+            and self.plan_actual.clases_por_semana == plan_correcto.clases_por_semana
+        ):
+            return self.plan_actual
+
+        if plan_correcto != self.plan_actual:
             self.plan_actual = plan_correcto
             self.save()
-        
+
         return plan_correcto
 
     def calcular_deuda_mensual(self):
