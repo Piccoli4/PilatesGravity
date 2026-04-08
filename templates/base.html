@@ -9,6 +9,52 @@
 
         {% include 'components/base/header.html' %}
 
+        {% if messages %}
+        <div id="pg-messages-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4 space-y-3 pointer-events-none">
+            {% for message in messages %}
+            <div class="pg-message pointer-events-auto flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl border
+                {% if message.tags == 'success' %}bg-green-50 border-green-300 text-green-900
+                {% elif message.tags == 'error' %}bg-red-50 border-red-300 text-red-900
+                {% elif message.tags == 'warning' %}bg-amber-50 border-amber-300 text-amber-900
+                {% else %}bg-blue-50 border-blue-300 text-blue-900{% endif %}"
+                style="animation: pgSlideIn 0.4s ease;">
+                <div class="shrink-0 mt-0.5">
+                    {% if message.tags == 'success' %}
+                    <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {% elif message.tags == 'error' %}
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {% elif message.tags == 'warning' %}
+                    <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {% else %}
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {% endif %}
+                </div>
+                <p class="flex-1 text-sm font-semibold leading-snug">{{ message }}</p>
+                <button onclick="this.closest('.pg-message').remove()" class="shrink-0 opacity-50 hover:opacity-100 transition-opacity">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        <style>
+            @keyframes pgSlideIn {
+                from { opacity: 0; transform: translateY(-12px); }
+                to   { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+        <script>
+            (function () {
+                setTimeout(function () {
+                    document.querySelectorAll('.pg-message').forEach(function (m) {
+                        m.style.transition = 'opacity 0.5s ease';
+                        m.style.opacity = '0';
+                        setTimeout(function () { m.remove(); }, 500);
+                    });
+                }, 6000);
+            })();
+        </script>
+        {% endif %}
+
         <main>
             {% block content %}{% endblock %}
         </main>

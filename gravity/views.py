@@ -1253,6 +1253,14 @@ def admin_clase_detalle(request, clase_id):
         ).values_list('reserva_id', flat=True)
     )
 
+    # IDs de reservas que son recuperos para la próxima fecha de esta clase
+    ids_recupero = set(
+        reservas.filter(
+            es_recupero=True,
+            fecha_unica=proxima_fecha_clase
+        ).values_list('id', flat=True)
+    )
+
     context = {
         'clase': clase,
         'reservas': reservas,
@@ -1261,6 +1269,7 @@ def admin_clase_detalle(request, clase_id):
         'porcentaje_ocupacion': clase.get_porcentaje_ocupacion(),
         'proxima_fecha_clase': proxima_fecha_clase,
         'reservas_con_ausencia': reservas_con_ausencia,
+        'ids_recupero': ids_recupero,
     }
         
     return render(request, 'gravity/admin/clase_detalle.html', context)
@@ -2616,6 +2625,17 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
 
                 # Generar deuda del mes si no existe
                 estado_actualizado.generar_deuda_mes_actual()
+
+                # Recalcular saldo desde cero para evitar que el valor del
+                # formulario + la deuda generada se dupliquen
+                total_pagado = RegistroPago.objects.filter(
+                    cliente=cliente, estado='confirmado'
+                ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+                total_deudas = DeudaMensual.objects.filter(
+                    usuario=cliente
+                ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+                estado_actualizado.saldo_actual = total_pagado - total_deudas
+                estado_actualizado.save(update_fields=['saldo_actual'])
 
             messages.success(
                 request,

@@ -4,12 +4,12 @@
 {% block title %}Reservar Recupero - Pilates Gravity{% endblock %}
 
 {% block content %}
-<section class="min-h-screen bg-fondo py-12">
+<section class="min-h-screen bg-fondo py-7">
     <div class="container mx-auto px-4">
         <div class="max-w-3xl mx-auto">
 
             <!-- Header -->
-            <div class="text-center mb-8">
+            <div class="text-center mb-4">
                 <h1 class="text-3xl font-cinzel font-bold text-principal mb-3">Reserva de Recupero</h1>
                 <div class="w-20 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-4"></div>
                 <p class="text-gris-medio">
@@ -42,9 +42,37 @@
 
             <!-- Clases disponibles para recupero -->
             {% if clases_para_recupero %}
-            <div class="grid sm:grid-cols-2 gap-4">
+
+            <!-- Filtros -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                <h3 class="text-xs font-bold text-gris-medio uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                        <path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" />
+                    </svg>
+                    Filtros
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="text-xs font-semibold text-gris-medio w-10">Sede:</span>
+                        <div id="pg-btns-sede" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <span class="text-xs font-semibold text-gris-medio w-10">Día:</span>
+                        <div id="pg-btns-dia" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pg-sin-resultados" class="hidden text-center py-8 text-gris-medio text-sm">
+                No hay clases que coincidan con los filtros seleccionados.
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4" id="pg-grid-recupero">
                 {% for item in clases_para_recupero %}
-                <div class="bg-white rounded-xl shadow-wizard p-5 border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+                <div class="bg-white rounded-xl shadow-wizard p-5 border border-gray-100 hover:shadow-lg transition-shadow duration-300 pg-card-recupero"
+                     data-sede="{{ item.clase.get_direccion_corta }}"
+                     data-dia="{{ item.fecha|date:'l' }}"
+                >
                     <!-- Header de la clase -->
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-principal to-secundario flex items-center justify-center flex-shrink-0">
@@ -126,4 +154,87 @@
         </div>
     </div>
 </section>
+
+{% block extra_js %}
+<script>
+    var pgFiltroSede = '';
+    var pgFiltroDia  = '';
+
+    var ESTILO_ACTIVO_SEDE = ['bg-principal', 'text-white', 'border-principal'];
+    var ESTILO_INAC_SEDE   = ['bg-white', 'text-principal', 'border-principal/40', 'hover:bg-principal/10'];
+    var ESTILO_ACTIVO_DIA  = ['bg-secundario', 'text-white', 'border-secundario'];
+    var ESTILO_INAC_DIA    = ['bg-white', 'text-secundario', 'border-secundario/40', 'hover:bg-secundario/10'];
+
+    function pgCrearBtn(label, valor, grupo, estilosActivo, estilosInac) {
+        var btn = document.createElement('button');
+        btn.textContent = label;
+        btn.dataset.valor = valor;
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ' +
+            (valor === '' ? estilosActivo.join(' ') : estilosInac.join(' '));
+        btn.addEventListener('click', function () {
+            if (grupo === 'sede') {
+                pgFiltroSede = valor;
+                document.querySelectorAll('#pg-btns-sede button').forEach(function (b) {
+                    b.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ' +
+                        (b.dataset.valor === valor ? estilosActivo.join(' ') : estilosInac.join(' '));
+                });
+            } else {
+                pgFiltroDia = valor;
+                document.querySelectorAll('#pg-btns-dia button').forEach(function (b) {
+                    b.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ' +
+                        (b.dataset.valor === valor ? estilosActivo.join(' ') : estilosInac.join(' '));
+                });
+            }
+            pgAplicarFiltros();
+        });
+        return btn;
+    }
+
+    function pgAplicarFiltros() {
+        var cards   = document.querySelectorAll('.pg-card-recupero');
+        var visibles = 0;
+        cards.forEach(function (card) {
+            var okSede = !pgFiltroSede || card.dataset.sede === pgFiltroSede;
+            var okDia  = !pgFiltroDia  || card.dataset.dia  === pgFiltroDia;
+            card.style.display = (okSede && okDia) ? '' : 'none';
+            if (okSede && okDia) visibles++;
+        });
+        document.getElementById('pg-sin-resultados').classList.toggle('hidden', visibles > 0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var cards = document.querySelectorAll('.pg-card-recupero');
+        var sedes = [], dias = [];
+        var contSede = document.getElementById('pg-btns-sede');
+        var contDia  = document.getElementById('pg-btns-dia');
+        if (contSede.dataset.init) return;   // evita doble ejecución
+        contSede.dataset.init = '1';
+        contSede.innerHTML = '';
+        contDia.innerHTML  = '';
+
+        cards.forEach(function (card) {
+            if (!sedes.includes(card.dataset.sede)) sedes.push(card.dataset.sede);
+            if (!dias.includes(card.dataset.dia))   dias.push(card.dataset.dia);
+        });
+
+        // Botón "Todas las sedes"
+        contSede.appendChild(pgCrearBtn('Todas las sedes', '', 'sede', ESTILO_ACTIVO_SEDE, ESTILO_INAC_SEDE));
+        sedes.forEach(function (s) {
+            contSede.appendChild(pgCrearBtn(s, s, 'sede', ESTILO_ACTIVO_SEDE, ESTILO_INAC_SEDE));
+        });
+
+        // Botón "Todos los días"
+        contDia.appendChild(pgCrearBtn('Todos los días', '', 'dia', ESTILO_ACTIVO_DIA, ESTILO_INAC_DIA));
+        dias.forEach(function (d) {
+            contDia.appendChild(pgCrearBtn(d, d, 'dia', ESTILO_ACTIVO_DIA, ESTILO_INAC_DIA));
+        });
+
+        // Ocultar filtros si todo es único (solo 1 sede y 1 día)
+        if (sedes.length <= 1 && dias.length <= 1) {
+            document.querySelector('.mb-5.space-y-3').style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}
+
 {% endblock %}
