@@ -580,7 +580,7 @@ class Reserva(models.Model):
             reserva__usuario=usuario,
             reserva__activa=True,
             reserva__fecha_unica__isnull=True,
-            fecha__gte=hoy,
+            fecha__gte=hoy - timedelta(days=6),  # incluir ausencias cuyo plazo todavía no venció
         ).select_related('reserva__clase')
 
         # Filtrar solo las que todavía están en plazo de recupero
