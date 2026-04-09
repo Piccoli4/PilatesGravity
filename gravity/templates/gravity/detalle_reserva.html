@@ -356,32 +356,44 @@
 
             <div class="flex flex-col gap-4">
 
-                <!-- OPCIÓN 1: Solo el próximo día -->
-                {% if not reserva.tiene_ausencia_proxima %}
-                <div class="border border-[#C8B39B] rounded-xl p-4 bg-[#F8EFE5]">
-                    <p class="font-medium text-[#5D768B] mb-1">📅 Solo el próximo día</p>
-                    <p class="text-sm text-gray-600 mb-3">
-                        No asistirás el <strong>{{ reserva.get_proxima_fecha }}</strong>.
-                        Ese cupo queda libre para otra persona.
-                        Tu reserva sigue activa para las semanas siguientes.
-                    </p>
-                    <form method="POST" action="{% url 'gravity:cancelar_reserva' reserva.numero_reserva %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="confirmar_cancelacion" value="confirmar">
-                        <input type="hidden" name="tipo_cancelacion" value="temporal">
-                        <button type="submit"
-                            class="w-full bg-[#5D768B] hover:bg-[#4a6070] text-white text-sm font-medium py-2 px-4 rounded-lg transition">
-                            Cancelar solo el {{ reserva.get_proxima_fecha }}
-                        </button>
-                    </form>
-                </div>
-                {% else %}
-                <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                    <p class="font-medium text-gray-400 mb-1">📅 Solo el próximo día</p>
-                    <p class="text-sm text-gray-400">
-                        Ya tenés registrada una ausencia para el <strong>{{ reserva.get_proxima_fecha }}</strong>.
-                    </p>
-                </div>
+                <!-- OPCIÓN 1: Solo el próximo día (solo para reservas recurrentes) -->
+                {% if not reserva.fecha_unica %}
+                    {% if not reserva.tiene_ausencia_proxima %}
+                    <div class="border border-[#C8B39B] rounded-xl p-4 bg-[#F8EFE5]">
+                        <p class="font-medium text-[#5D768B] mb-1">📅 Solo el próximo día</p>
+                        <p class="text-sm text-gray-600 mb-3">
+                            No asistirás el <strong>{{ reserva.get_proxima_fecha }}</strong>.
+                            Ese cupo queda libre para otra persona.
+                            Tu reserva sigue activa para las semanas siguientes.
+                        </p>
+                        <form method="POST" action="{% url 'gravity:cancelar_reserva' reserva.numero_reserva %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="confirmar_cancelacion" value="confirmar">
+                            <input type="hidden" name="tipo_cancelacion" value="temporal">
+                            <button type="submit"
+                                class="w-full bg-[#5D768B] hover:bg-[#4a6070] text-white text-sm font-medium py-2 px-4 rounded-lg transition">
+                                Cancelar solo el {{ reserva.get_proxima_fecha }}
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                        <div class="border border-amber-200 rounded-xl p-4 bg-amber-50">
+                            <p class="font-medium text-amber-700 mb-1">📅 Solo el próximo día</p>
+                            <p class="text-sm text-gray-600 mb-3">
+                                Ya tenés registrada una ausencia para el <strong>{{ reserva.get_proxima_fecha }}</strong>.
+                                Si querés volver a tu clase ese día, podés cancelar la ausencia.
+                            </p>
+                            {% if ausencia_proxima %}
+                            <form method="POST" action="{% url 'gravity:cancelar_ausencia' ausencia_proxima.id %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition">
+                                    Cancelar ausencia del {{ reserva.get_proxima_fecha }}
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 {% endif %}
 
                 <!-- OPCIÓN 2: Cancelación permanente -->

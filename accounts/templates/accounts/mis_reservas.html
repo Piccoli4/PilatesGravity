@@ -418,6 +418,251 @@
             </div>
         </div>
     </section>
+
+    <!-- Modal de reserva exitosa -->
+    {% if reserva_exitosa %}
+        <div id="modal-reserva-exitosa" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <!-- Card principal -->
+            <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeInUp">
+
+                <!-- Header con gradiente -->
+                <div class="relative bg-gradient-to-br from-principal to-principal-dark px-8 pt-10 pb-16 text-center overflow-hidden">
+                    <!-- Círculos decorativos de fondo -->
+                    <div class="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-8 translate-x-8"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-secundario/20 translate-y-8 -translate-x-8"></div>
+
+                    <!-- Ícono animado -->
+                    <div class="relative inline-flex items-center justify-center mb-4">
+                        <div class="absolute w-20 h-20 rounded-full bg-secundario/30 animate-pulse-ring"></div>
+                        <div class="relative w-16 h-16 rounded-full bg-white/20 flex items-center justify-center animate-successBounce">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-white">
+                                <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    {% if reserva_exitosa.tipo == 'recupero' %}
+                        <h2 class="font-cinzel text-2xl font-bold text-white mb-1">¡Recupero Confirmado!</h2>
+                    {% else %}
+                        <h2 class="font-cinzel text-2xl font-bold text-white mb-1">¡Reserva Confirmada!</h2>
+                    {% endif %}
+                    <p class="text-white/70 text-sm">Tu lugar está asegurado</p>
+                </div>
+
+                <!-- Solapa decorativa -->
+                <div class="relative -mt-8 mx-6">
+                    <div class="bg-fondo rounded-2xl shadow-wizard px-6 py-5 border border-secundario/30">
+
+                        <!-- Clase -->
+                        <div class="flex items-center gap-4 mb-4 pb-4 border-b border-secundario/20">
+                            <div class="w-10 h-10 rounded-xl bg-principal/10 flex items-center justify-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-principal">
+                                    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gris-medio uppercase tracking-wide">Clase</p>
+                                <p class="font-bold text-principal text-lg leading-tight">{{ reserva_exitosa.clase }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Detalles en grilla -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Día -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-secundario/20 flex items-center justify-center shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-secundario-dark">
+                                        <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gris-medio">Día</p>
+                                    <p class="font-semibold text-gris-oscuro text-sm">{{ reserva_exitosa.dia }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Horario -->
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-secundario/20 flex items-center justify-center shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-secundario-dark">
+                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gris-medio">Horario</p>
+                                    <p class="font-semibold text-gris-oscuro text-sm">{{ reserva_exitosa.horario }} hs</p>
+                                </div>
+                            </div>
+
+                            <!-- Sede (ocupa el ancho completo) -->
+                            <div class="col-span-2 flex items-center gap-3 pt-1">
+                                <div class="w-8 h-8 rounded-lg bg-secundario/20 flex items-center justify-center shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-secundario-dark">
+                                        <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gris-medio">Sede</p>
+                                    <p class="font-semibold text-gris-oscuro text-sm">{{ reserva_exitosa.sede }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-8 py-6 text-center">
+                    <p class="text-sm text-gris-medio mb-4">
+                        {% if reserva_exitosa.tipo == 'recurrente' %}
+                            Esta reserva es <strong>recurrente</strong> — tu lugar queda asegurado cada semana.
+                        {% elif reserva_exitosa.tipo == 'recupero' %}
+                            Esta reserva es <strong>solo para el {{ reserva_exitosa.fecha }}</strong>. No descuenta de tu plan semanal.
+                        {% else %}
+                            Esta reserva es <strong>solo para el {{ reserva_exitosa.fecha }}</strong>. Descuenta una clase de tu plan semanal.
+                        {% endif %}
+                    </p>
+                    <button id="btn-cerrar-reserva-exitosa"
+                        class="w-full bg-gradient-to-r from-principal to-principal-dark hover:from-principal-dark hover:to-principal text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-btn-primary hover:shadow-btn-primary-hover transform hover:-translate-y-0.5">
+                        ¡Perfecto!
+                    </button>
+
+                    <script>
+                        document.getElementById('btn-cerrar-reserva-exitosa').addEventListener('click', function () {
+                            fetch("{% url 'gravity:cerrar_modal_reserva_exitosa' %}", {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': '{{ csrf_token }}',
+                                },
+                            })
+                            .then(() => {
+                                document.getElementById('modal-reserva-exitosa').remove();
+                            })
+                            .catch(() => {
+                                document.getElementById('modal-reserva-exitosa').remove();
+                            });
+                        });
+                    </script>
+                </div>
+
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Modal de ausencia registrada -->
+    {% if ausencia_registrada %}
+        <div id="modal-ausencia-registrada" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+
+            <div class="relative bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-fadeInUp">
+
+                <!-- Header -->
+                <div class="relative bg-gradient-to-br from-secundario to-secundario-dark px-8 pt-10 pb-16 text-center overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 -translate-y-8 translate-x-8"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-principal/20 translate-y-8 -translate-x-8"></div>
+
+                    <!-- Ícono -->
+                    <div class="relative inline-flex items-center justify-center mb-4">
+                        <div class="absolute w-20 h-20 rounded-full bg-white/20 animate-pulse-ring"></div>
+                        <div class="relative w-16 h-16 rounded-full bg-white/30 flex items-center justify-center animate-successBounce">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-white">
+                                <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <h2 class="font-cinzel text-2xl font-bold text-white mb-1">¡Ausencia Registrada!</h2>
+                    <p class="text-white/80 text-sm">Tu reserva sigue activa para las semanas siguientes</p>
+                </div>
+
+                <!-- Solapa de información -->
+                <div class="relative -mt-8 mx-6">
+                    <div class="bg-fondo rounded-2xl shadow-wizard px-6 py-5 border border-secundario/30">
+
+                        <!-- Clase -->
+                        <div class="flex items-center gap-4 mb-4 pb-4 border-b border-secundario/20">
+                            <div class="w-10 h-10 rounded-xl bg-secundario/20 flex items-center justify-center shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-secundario-dark">
+                                    <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gris-medio uppercase tracking-wide">Clase ausente</p>
+                                <p class="font-bold text-principal text-lg leading-tight">{{ ausencia_registrada.clase }}</p>
+                                <p class="text-sm text-gris-medio">{{ ausencia_registrada.dia }} {{ ausencia_registrada.horario }} hs — {{ ausencia_registrada.sede }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Fechas -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-error">
+                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gris-medio">Ausente el</p>
+                                    <p class="font-semibold text-gris-oscuro text-sm">{{ ausencia_registrada.fecha_ausencia }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-advertencia/20 flex items-center justify-center shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-advertencia">
+                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gris-medio">Recuperar antes del</p>
+                                    <p class="font-semibold text-gris-oscuro text-sm">{{ ausencia_registrada.fecha_limite }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Footer con botones -->
+                <div class="px-8 py-6 flex flex-col gap-3">
+                    <a href="{% url 'gravity:reservar_recupero' %}"
+                        id="btn-recuperar-clase"
+                        class="w-full text-center bg-gradient-to-r from-principal to-principal-dark hover:from-principal-dark hover:to-principal text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-btn-primary hover:shadow-btn-primary-hover transform hover:-translate-y-0.5">
+                        Quiero recuperar la clase
+                    </a>
+                    <button id="btn-cerrar-ausencia-registrada"
+                        class="w-full text-center bg-fondo hover:bg-secundario/30 text-gris-oscuro font-semibold py-3 px-6 rounded-xl transition-all duration-300 border border-secundario/40">
+                        Entendido, lo haré después
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            function cerrarModalAusencia() {
+                fetch("{% url 'gravity:cerrar_modal_ausencia_registrada' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                })
+                .then(() => {
+                    document.getElementById('modal-ausencia-registrada').remove();
+                })
+                .catch(() => {
+                    document.getElementById('modal-ausencia-registrada').remove();
+                });
+            }
+
+            document.getElementById('btn-cerrar-ausencia-registrada').addEventListener('click', cerrarModalAusencia);
+
+            // Al ir a recuperar también limpiamos la sesión
+            document.getElementById('btn-recuperar-clase').addEventListener('click', function() {
+                fetch("{% url 'gravity:cerrar_modal_ausencia_registrada' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                });
+            });
+        </script>
+    {% endif %}
+
 {% endblock %}
 
 {% block extra_js %}

@@ -3,10 +3,10 @@ from .views import (
     home, reservar_clase, conoce_mas,
     dias_disponibles, horarios_disponibles,
     verificar_disponibilidad, modificar_reserva,
-    reservar_recupero, reservar_cupo_temporal,
-    cancelar_reserva, buscar_reservas_usuario,
+    reservar_recupero, reservar_cupo_temporal, marcar_vencimiento_visto,
+    cancelar_reserva, cancelar_ausencia, buscar_reservas_usuario,
     clases_disponibles_api, clases_disponibles, detalle_reserva,
-    sedes_disponibles,
+    sedes_disponibles, cerrar_modal_reserva_exitosa, cerrar_modal_ausencia_registrada, 
     # IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_marcar_notificaciones_leidas, admin_clases_lista, admin_clase_crear, 
     admin_clase_editar, admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
@@ -37,10 +37,14 @@ urlpatterns = [
     path('reserva/<str:numero_reserva>/', detalle_reserva, name='detalle_reserva'),
     path('reserva/<str:numero_reserva>/modificar/', modificar_reserva, name='modificar_reserva'),
     path('reserva/<str:numero_reserva>/cancelar/', cancelar_reserva, name='cancelar_reserva'),
+    path('cerrar-modal-reserva/', cerrar_modal_reserva_exitosa, name='cerrar_modal_reserva_exitosa'),
+    path('cerrar-modal-ausencia/', cerrar_modal_ausencia_registrada, name='cerrar_modal_ausencia_registrada'),
 
     # Recupero y cupos temporales
     path('reservar-recupero/', reservar_recupero, name='reservar_recupero'),
     path('cupo-temporal/<int:clase_id>/<str:fecha_str>/', reservar_cupo_temporal, name='reservar_cupo_temporal'),
+    path('marcar-vencimiento-visto/', marcar_vencimiento_visto, name='marcar_vencimiento_visto'),
+    path('ausencia/<int:ausencia_id>/cancelar/', cancelar_ausencia, name='cancelar_ausencia'),
     
     # Páginas informativas
     path('politica-de-privacidad/', TemplateView.as_view(template_name='gravity/politica_privacidad.html'), name='politica_privacidad'),

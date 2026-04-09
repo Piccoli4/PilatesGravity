@@ -10,6 +10,8 @@ from django.urls import reverse_lazy
 from .forms import SignUpForm, ProfileUpdateForm, UserProfileForm, CambiarPasswordForm, CustomPasswordResetForm, CustomSetPasswordForm, TestimonioForm
 from .models import UserProfile, Testimonio
 from gravity.email_service import enviar_email_bienvenida_completo, enviar_email_despedida_completo
+from gravity.models import AusenciaTemporal
+from datetime import date, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -99,11 +101,20 @@ def profile(request):
 
     testimonio_form = TestimonioForm(instance=testimonio)
 
+    # Ausencias cuyo plazo de recupero ya venció y el usuario aún no vio el aviso
+    hoy = date.today()
+    ausencias_vencidas_sin_ver = AusenciaTemporal.objects.filter(
+        reserva__usuario=request.user,
+        notificacion_vencimiento_vista=False,
+        fecha__lt=hoy - timedelta(days=6),
+    ).select_related('reserva__clase')
+
     context = {
         'form': form,
         'user_profile': user_profile,
         'testimonio': testimonio,
         'testimonio_form': testimonio_form,
+        'ausencias_vencidas_sin_ver': ausencias_vencidas_sin_ver,
     }
     return render(request, 'accounts/profile.html', context)
 
@@ -169,6 +180,9 @@ def mis_reservas(request):
 
     puede_recuperar, n_recuperos_disponibles, ausencias_recupero = Reserva.usuario_puede_hacer_recupero(request.user)
 
+    reserva_exitosa = request.session.get('reserva_exitosa', None)
+    ausencia_registrada = request.session.get('ausencia_registrada', None)
+
     context = {
         'reservas_activas': reservas_activas,
         'reservas_inactivas': reservas_inactivas,
@@ -176,6 +190,8 @@ def mis_reservas(request):
         'puede_recuperar': puede_recuperar,
         'n_recuperos_disponibles': n_recuperos_disponibles,
         'ausencias_recupero': ausencias_recupero,
+        'reserva_exitosa': reserva_exitosa,
+        'ausencia_registrada': ausencia_registrada,
     }
     return render(request, 'accounts/mis_reservas.html', context)
 

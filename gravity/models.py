@@ -569,35 +569,39 @@ class Reserva(models.Model):
     @staticmethod
     def usuario_puede_hacer_recupero(usuario):
         """
-        Retorna (puede: bool, n_disponibles: int, ausencias: QuerySet).
-        El usuario puede hacer recupero si tiene ausencias futuras esta semana
-        y no agotó los recuperos disponibles.
+        Retorna (puede: bool, n_disponibles: int, ausencias: list).
+        Una ausencia es válida para recupero si su fecha_limite_recupero >= hoy.
+        Cada ausencia tiene su propio plazo independiente (fecha_ausencia + 6 días).
         """
         hoy = timezone.now().date()
-        fin_ventana = hoy + timedelta(days=10)
 
-        ausencias = AusenciaTemporal.objects.filter(
+        # Traer todas las ausencias futuras del usuario (la clase aún no ocurrió)
+        todas_las_ausencias = AusenciaTemporal.objects.filter(
             reserva__usuario=usuario,
             reserva__activa=True,
             reserva__fecha_unica__isnull=True,
             fecha__gte=hoy,
-            fecha__lte=fin_ventana
         ).select_related('reserva__clase')
 
-        n_ausencias = ausencias.count()
-        if n_ausencias == 0:
-            return False, 0, ausencias
+        # Filtrar solo las que todavía están en plazo de recupero
+        ausencias_en_plazo = [a for a in todas_las_ausencias if not a.recupero_vencido]
 
+        n_ausencias = len(ausencias_en_plazo)
+        if n_ausencias == 0:
+            return False, 0, ausencias_en_plazo
+
+        # Contar recuperos ya usados dentro del rango máximo de las ausencias vigentes
+        fecha_max = max(a.fecha_limite_recupero for a in ausencias_en_plazo)
         recuperos_usados = Reserva.objects.filter(
             usuario=usuario,
             activa=True,
             es_recupero=True,
             fecha_unica__gte=hoy,
-            fecha_unica__lte=fin_ventana
+            fecha_unica__lte=fecha_max,
         ).count()
 
         disponibles = n_ausencias - recuperos_usados
-        return disponibles > 0, disponibles, ausencias
+        return disponibles > 0, disponibles, ausencias_en_plazo
 
 class AusenciaTemporal(models.Model):
     """
@@ -618,12 +622,31 @@ class AusenciaTemporal(models.Model):
         auto_now_add=True,
         verbose_name="Registrado el"
     )
+    notificacion_vencimiento_vista = models.BooleanField(
+        default=False,
+        verbose_name="Notificación de vencimiento vista",
+        help_text="True cuando el usuario ya vio el aviso de que perdió el plazo de recupero"
+    )
 
     class Meta:
         verbose_name = "Ausencia Temporal"
         verbose_name_plural = "Ausencias Temporales"
         unique_together = ['reserva', 'fecha']
         ordering = ['-fecha']
+
+    @property
+    def fecha_limite_recupero(self):
+        """
+        Fecha límite para reservar un recupero por esta ausencia.
+        Es el día anterior a la siguiente clase (fecha_ausencia + 6 días,
+        ya que la clase repite semanalmente a los 7 días).
+        """
+        return self.fecha + timedelta(days=6)
+
+    @property
+    def recupero_vencido(self):
+        """True si ya pasó la fecha límite para hacer el recupero."""
+        return timezone.now().date() > self.fecha_limite_recupero
 
     def __str__(self):
         return (
@@ -1085,7 +1108,12 @@ class EstadoPagoCliente(models.Model):
         ).first()
         
         if deuda_existente:
-            # Ya existe una deuda para este mes, no crear duplicado
+            # El admin cambió el plan: sobreescribir la deuda del mes actual
+            deuda_existente.plan_aplicado = self.plan_actual
+            deuda_existente.monto_original = monto_a_cobrar
+            deuda_existente.monto_pendiente = monto_a_cobrar
+            deuda_existente.es_medio_mes = es_medio_mes
+            deuda_existente.save()
             return deuda_existente
         
         # Crear la deuda mensual

@@ -114,18 +114,14 @@ def reservar_clase(request):
                 except Exception as e:
                     logger.error(f"Error enviando email de confirmación: {str(e)}")
                 
-                # Recalcular reservas después de crear
-                nuevas_reservas = Reserva.contar_reservas_usuario_semana(request.user)
-                
-                messages.success(
-                    request,
-                    f'¡Reserva exitosa! Tu número de reserva es {reserva.numero_reserva}. '
-                    f'Asistirás todos los {clase.dia} a las {clase.horario.strftime("%H:%M")} '
-                    f'a la clase de {clase.get_nombre_display()} en {clase.get_direccion_corta()}. '
-                    f'Reservas esta semana: {nuevas_reservas}/{clases_disponibles}'
-                )
-                
-                return redirect('gravity:home')
+                request.session['reserva_exitosa'] = {
+                    'tipo': 'recurrente',
+                    'clase': clase.get_nombre_display(),
+                    'dia': clase.dia,
+                    'horario': clase.horario.strftime('%H:%M'),
+                    'sede': clase.get_direccion_corta(),
+                }
+                return redirect('accounts:mis_reservas')
                 
             except IntegrityError:
                 # Error de duplicado - no debería ocurrir por las validaciones del form
@@ -293,13 +289,17 @@ def cancelar_reserva(request, numero_reserva):
                         f'{proxima_fecha.strftime("%d/%m/%Y")}.'
                     )
                 else:
-                    messages.success(
-                        request,
-                        f'Ausencia registrada para el {proxima_fecha.strftime("%d/%m/%Y")}. '
-                        f'Tu reserva sigue activa para las semanas siguientes.'
-                    )
+                    request.session['ausencia_registrada'] = {
+                        'clase': reserva.clase.get_nombre_display(),
+                        'dia': reserva.clase.dia,
+                        'horario': reserva.clase.horario.strftime('%H:%M'),
+                        'sede': reserva.clase.get_direccion_corta(),
+                        'fecha_ausencia': proxima_fecha.strftime('%d/%m/%Y'),
+                        'fecha_limite': ausencia.fecha_limite_recupero.strftime('%d/%m/%Y'),
+                    }
                     # Notificar admins
                     notificar_admins_cancelacion(reserva, tipo='temporal', fecha=proxima_fecha)
+                    return redirect('accounts:mis_reservas')
 
             else:  # permanente
                 reserva.activa = False
@@ -345,6 +345,67 @@ def notificar_admins_cancelacion(reserva, tipo, fecha=None):
         enviar_notificacion_cancelacion_a_admins(reserva, tipo=tipo, fecha=fecha)
     except Exception as e:
         logger.error(f"Error notificando admins por cancelación de {reserva.numero_reserva}: {e}")
+
+@login_required
+def cancelar_ausencia(request, ausencia_id):
+    """
+    Permite al usuario cancelar una ausencia temporal ya registrada,
+    recuperando su lugar en la clase.
+    Restricciones:
+      - Misma ventana de 3 horas que la cancelación de reserva.
+      - No se puede cancelar si ya hay un recupero reservado en la ventana de esa ausencia.
+    """
+    ausencia = get_object_or_404(
+        AusenciaTemporal,
+        id=ausencia_id,
+        reserva__usuario=request.user,
+        reserva__activa=True,
+    )
+    reserva = ausencia.reserva
+    numero_reserva = reserva.numero_reserva
+
+    if request.method != 'POST':
+        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+    # 1. Verificar ventana de 3 horas
+    puede_modificar, mensaje = reserva.puede_modificarse()
+    if not puede_modificar:
+        messages.error(
+            request,
+            f'No podés cancelar la ausencia: {mensaje}'
+        )
+        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+    # 2. Verificar que no haya un recupero ya reservado en la ventana de esta ausencia
+    hoy = timezone.now().date()
+    recupero_existente = Reserva.objects.filter(
+        usuario=request.user,
+        activa=True,
+        es_recupero=True,
+        fecha_unica__gte=hoy,
+        fecha_unica__lte=ausencia.fecha_limite_recupero,
+    ).first()
+
+    if recupero_existente:
+        messages.error(
+            request,
+            f'No podés cancelar esta ausencia porque ya tenés un recupero reservado '
+            f'para el {recupero_existente.fecha_unica.strftime("%d/%m/%Y")} '
+            f'({recupero_existente.clase.get_nombre_display()} '
+            f'en {recupero_existente.clase.get_direccion_corta()}). '
+            f'Primero cancelá ese recupero desde "Mis Reservas".'
+        )
+        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+    # 3. Todo ok: eliminar la ausencia
+    fecha_str = ausencia.fecha.strftime('%d/%m/%Y')
+    ausencia.delete()
+
+    messages.success(
+        request,
+        f'Ausencia cancelada. Tu lugar para el {fecha_str} está confirmado nuevamente.'
+    )
+    return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
 
 # Vista para buscar reservas de usuario (pública)
 def buscar_reservas_usuario(request):
@@ -401,12 +462,22 @@ def detalle_reserva(request, numero_reserva):
     # Obtener información sobre si puede modificarse
     puede_modificar, mensaje_modificacion = reserva.puede_modificarse()
     
+     # Ausencia registrada para la próxima clase (filtrando por fecha exacta)
+    proxima_fecha = reserva.get_proxima_fecha()
+    ausencia_proxima = None
+    if proxima_fecha:
+        ausencia_proxima = AusenciaTemporal.objects.filter(
+            reserva=reserva,
+            fecha=proxima_fecha,
+        ).first()
+
     return render(request, 'gravity/detalle_reserva.html', {
         'reserva': reserva,
         'puede_modificar': puede_modificar,
         'mensaje_modificacion': mensaje_modificacion,
         'proxima_clase_info': reserva.get_proxima_clase_info(),
-        'es_propietario': es_propietario
+        'es_propietario': es_propietario,
+        'ausencia_proxima': ausencia_proxima,
     })
 
 # Vista para mostrar clases disponibles (pública)
@@ -1587,13 +1658,13 @@ def reservar_recupero(request):
         return redirect('accounts:mis_reservas')
 
     hoy = timezone.now().date()
-    fin_semana = hoy + timedelta(days=10)
+    # El plazo máximo es la fecha_limite_recupero más lejana entre las ausencias vigentes
+    fin_ventana = max((a.fecha_limite_recupero for a in ausencias), default=hoy)
 
     clases_para_recupero = []
-    for offset in range(11):  # hoy + 10 días
+    dias_totales = (fin_ventana - hoy).days + 1
+    for offset in range(dias_totales):
         fecha_dia = hoy + timedelta(days=offset)
-        if fecha_dia > fin_semana:
-            break
         dia_nombre = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][fecha_dia.weekday()]
         for clase in Clase.objects.filter(activa=True, dia=dia_nombre).order_by('horario'):
             cupos = clase.cupos_disponibles(fecha=fecha_dia)
@@ -1629,7 +1700,7 @@ def reservar_recupero(request):
             fecha_recupero = date_type.fromisoformat(fecha_str)
             clase = get_object_or_404(Clase, id=clase_id, activa=True)
 
-            if fecha_recupero < hoy or fecha_recupero > fin_semana:
+            if fecha_recupero < hoy or fecha_recupero > fin_ventana:
                 messages.error(request, 'Fecha inválida para el recupero.')
                 return redirect('gravity:reservar_recupero')
 
@@ -1652,12 +1723,14 @@ def reservar_recupero(request):
             reserva.full_clean()
             reserva.save()
 
-            messages.success(
-                request,
-                f'¡Recupero reservado! Asistirás a {clase.get_nombre_display()} '
-                f'el {fecha_recupero.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
-                f'en {clase.get_direccion_corta()}. Esta reserva es solo por ese día.'
-            )
+            request.session['reserva_exitosa'] = {
+                'tipo': 'recupero',
+                'clase': clase.get_nombre_display(),
+                'dia': clase.dia,
+                'horario': clase.horario.strftime('%H:%M'),
+                'sede': clase.get_direccion_corta(),
+                'fecha': fecha_recupero.strftime('%d/%m/%Y'),
+            }
             return redirect('accounts:mis_reservas')
 
         except Exception as e:
@@ -1669,8 +1742,39 @@ def reservar_recupero(request):
         'ausencias': ausencias,
         'n_disponibles': n_disponibles,
         'hoy': hoy,
+        'fin_ventana': fin_ventana,
     }
     return render(request, 'gravity/reservar_recupero.html', context)
+
+@login_required
+def marcar_vencimiento_visto(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+    hoy = timezone.now().date()
+    AusenciaTemporal.objects.filter(
+        reserva__usuario=request.user,
+        notificacion_vencimiento_vista=False,
+        fecha__lt=hoy - timedelta(days=6),  # fecha_limite_recupero < hoy → vencida
+    ).update(notificacion_vencimiento_vista=True)
+
+    return JsonResponse({'success': True})
+
+@login_required
+def cerrar_modal_reserva_exitosa(request):
+    """Limpia el modal de reserva exitosa de la sesión al hacer click en Entendido."""
+    if request.method == 'POST':
+        request.session.pop('reserva_exitosa', None)
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=405)
+
+@login_required
+def cerrar_modal_ausencia_registrada(request):
+    """Limpia el modal de ausencia registrada de la sesión."""
+    if request.method == 'POST':
+        request.session.pop('ausencia_registrada', None)
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=405)
 
 @login_required
 def reservar_cupo_temporal(request, clase_id, fecha_str):
@@ -1737,20 +1841,14 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
             reserva.full_clean()
             reserva.save()
 
-            if puede_recupero:
-                messages.success(
-                    request,
-                    f'¡Recupero confirmado! Asistirás a {clase.get_nombre_display()} '
-                    f'el {fecha.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
-                    f'en {clase.get_direccion_corta()}. Esta reserva no descuenta de tu plan semanal.'
-                )
-            else:
-                messages.success(
-                    request,
-                    f'¡Reserva temporal confirmada! Asistirás a {clase.get_nombre_display()} '
-                    f'el {fecha.strftime("%d/%m/%Y")} a las {clase.horario.strftime("%H:%M")} '
-                    f'en {clase.get_direccion_corta()}. Esta reserva es solo por ese día y cuenta como una clase de tu plan.'
-                )
+            request.session['reserva_exitosa'] = {
+                'tipo': 'recupero' if puede_recupero else 'temporal',
+                'clase': clase.get_nombre_display(),
+                'dia': clase.dia,
+                'horario': clase.horario.strftime('%H:%M'),
+                'sede': clase.get_direccion_corta(),
+                'fecha': fecha.strftime('%d/%m/%Y'),
+            }
             return redirect('accounts:mis_reservas')
 
         except Exception as e:
@@ -2798,13 +2896,13 @@ def seleccionar_plan(request):
                 messages.success(
                     request,
                     f'¡Plan adicional agregado exitosamente! '
-                    f'Ahora tienes "{plan_seleccionado.nombre}" válido hasta {fecha_fin.strftime("%d/%m/%Y")}.'
+                    f'Ahora tienes "{plan_seleccionado.nombre}" válido hasta que decidas cancelarlo.'
                 )
             else:
                 messages.success(
                     request,
                     f'¡Plan seleccionado exitosamente! '
-                    f'Tienes "{plan_seleccionado.nombre}" válido hasta {fecha_fin.strftime("%d/%m/%Y")}. '
+                    f'Tienes "{plan_seleccionado.nombre}" válido hasta que decidas cancelarlo. '
                     f'Ya puedes empezar a reservar tus clases.'
                 )
             
@@ -3138,7 +3236,6 @@ def admin_testimonios_lista(request):
         'busqueda_filtro': busqueda_filtro,
     }
     return render(request, 'gravity/admin/testimonios_lista.html', context)
-
 
 @staff_member_required
 def admin_testimonio_aprobar(request, testimonio_id):
