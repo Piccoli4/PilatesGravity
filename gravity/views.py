@@ -3339,8 +3339,11 @@ def manifest_json(request):
     return JsonResponse(manifest)
 
 def service_worker_js(request):
-    sw_content = """
-        const CACHE_NAME = 'pilates-gravity-v1';
+    from django.utils.timezone import now
+    # Cambiar esta versión en cada deploy para forzar actualización en clientes
+    version = now().strftime('%Y%m%d')  # Ej: '20250410' — cambia automáticamente cada día
+    sw_content = f"""
+        const CACHE_NAME = 'pilates-gravity-{version}';
         const STATIC_ASSETS = [
             '/',
             '/static/css/tailwind-output.css',
@@ -3348,38 +3351,41 @@ def service_worker_js(request):
             '/static/icons/icon-192x192.png',
         ];
 
-        self.addEventListener('install', (event) => {
+        self.addEventListener('install', (event) => {{
             event.waitUntil(
-                caches.open(CACHE_NAME).then((cache) => {
+                caches.open(CACHE_NAME).then((cache) => {{
                     return cache.addAll(STATIC_ASSETS);
-                })
+                }})
             );
             self.skipWaiting();
-        });
+        }});
 
-        self.addEventListener('activate', (event) => {
+        self.addEventListener('activate', (event) => {{
             event.waitUntil(
-                caches.keys().then((cacheNames) => {
+                caches.keys().then((cacheNames) => {{
                     return Promise.all(
                         cacheNames
                             .filter((name) => name !== CACHE_NAME)
                             .map((name) => caches.delete(name))
                     );
-                })
+                }}).then(() => {{
+                    return self.clients.matchAll({{ type: 'window' }});
+                }}).then((clients) => {{
+                    clients.forEach(client => client.postMessage({{ type: 'SW_UPDATED' }}));
+                }})
             );
             self.clients.claim();
-        });
+        }});
 
-        self.addEventListener('fetch', (event) => {
-            // Solo cachear GET requests
+        self.addEventListener('fetch', (event) => {{
             if (event.request.method !== 'GET') return;
 
             event.respondWith(
-                caches.match(event.request).then((cached) => {
+                caches.match(event.request).then((cached) => {{
                     return cached || fetch(event.request);
-                })
+                }})
             );
-        });
+        }});
     """
     return HttpResponse(sw_content, content_type='application/javascript')
 

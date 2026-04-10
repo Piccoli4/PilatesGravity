@@ -71,5 +71,188 @@
         <!-- Bloque para JavaScript específico de cada página -->
         {% block extra_js %}
         {% endblock %}
+
+        <!-- ============================================================ -->
+        <!-- PWA - BANNER INSTALACIÓN ANDROID + MODAL iOS                 -->
+        <!-- ============================================================ -->
+
+        <!-- Banner Android (toast inferior) -->
+        <div id="pwa-banner-android" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999;
+            background:#5D768B; color:white; padding:14px 16px;
+            box-shadow:0 -4px 20px rgba(0,0,0,0.2);
+            animation: pwaSlideUp 0.4s ease;">
+            <div style="display:flex; align-items:center; gap:12px; max-width:480px; margin:0 auto;">
+                <img src="/static/icons/icon-192x192.png" style="width:44px; height:44px; border-radius:10px; flex-shrink:0;">
+                <div style="flex:1; min-width:0;">
+                    <p style="margin:0; font-weight:700; font-size:14px; font-family:'Cinzel',serif;">Pilates Gravity</p>
+                    <p style="margin:0; font-size:12px; opacity:0.85;">Instalá la app para acceder más rápido</p>
+                </div>
+                <button onclick="instalarPWA()" style="background:#F8EFE5; color:#5D768B;
+                    border:none; border-radius:20px; padding:8px 16px;
+                    font-weight:700; font-size:13px; cursor:pointer; flex-shrink:0;
+                    font-family:'Cinzel',serif;">
+                    Instalar
+                </button>
+                <button onclick="cerrarBannerAndroid()" style="background:transparent; border:none;
+                    color:white; opacity:0.7; cursor:pointer; padding:4px; flex-shrink:0; font-size:20px; line-height:1;">
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal iOS (Safari) -->
+        <div id="pwa-modal-ios" style="display:none; position:fixed; inset:0; z-index:9999;
+            background:rgba(0,0,0,0.5); align-items:flex-end; justify-content:center;">
+            <div style="background:#F8EFE5; border-radius:20px 20px 0 0; padding:28px 24px 36px;
+                width:100%; max-width:480px; animation: pwaSlideUp 0.35s ease;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <img src="/static/icons/icon-192x192.png" style="width:48px; height:48px; border-radius:12px;">
+                        <div>
+                            <p style="margin:0; font-weight:700; font-size:16px; color:#5D768B; font-family:'Cinzel',serif;">Pilates Gravity</p>
+                            <p style="margin:0; font-size:12px; color:#666;">Instalá la app en tu iPhone</p>
+                        </div>
+                    </div>
+                    <button onclick="cerrarModalIOS()" style="background:transparent; border:none;
+                        color:#999; font-size:22px; cursor:pointer; padding:4px; line-height:1;">✕</button>
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div style="background:#5D768B; color:white; border-radius:50%;
+                            width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+                            font-weight:700; font-size:14px; flex-shrink:0;">1</div>
+                        <p style="margin:0; font-size:14px; color:#444;">
+                            Tocá el botón
+                            <span style="display:inline-flex; align-items:center; gap:3px; font-weight:600; color:#5D768B;">
+                                Compartir
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="#5D768B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                                    <polyline points="16 6 12 2 8 6"/>
+                                    <line x1="12" y1="2" x2="12" y2="15"/>
+                                </svg>
+                            </span>
+                            en la barra de Safari
+                        </p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div style="background:#5D768B; color:white; border-radius:50%;
+                            width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+                            font-weight:700; font-size:14px; flex-shrink:0;">2</div>
+                        <p style="margin:0; font-size:14px; color:#444;">
+                            Deslizá hacia abajo y tocá
+                            <strong style="color:#5D768B;">"Agregar a pantalla de inicio"</strong>
+                        </p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div style="background:#5D768B; color:white; border-radius:50%;
+                            width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+                            font-weight:700; font-size:14px; flex-shrink:0;">3</div>
+                        <p style="margin:0; font-size:14px; color:#444;">
+                            Tocá <strong style="color:#5D768B;">"Agregar"</strong> para confirmar
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Flecha apuntando hacia abajo (Safari bar) -->
+                <div style="text-align:center; margin-top:20px; color:#5D768B; font-size:28px;">↓</div>
+            </div>
+        </div>
+
+        <style>
+            @keyframes pwaSlideUp {
+                from { transform: translateY(100%); opacity: 0; }
+                to   { transform: translateY(0);    opacity: 1; }
+            }
+        </style>
+
+        <script>
+            // ─── ANDROID ───────────────────────────────────────────────
+            var deferredInstallPrompt = null;
+            var PWA_BANNER_KEY = 'pwa_banner_cerrado_hasta';
+
+            function cerrarBannerAndroid() {
+                document.getElementById('pwa-banner-android').style.display = 'none';
+                // No volver a mostrar por 7 días
+                var hasta = Date.now() + (7 * 24 * 60 * 60 * 1000);
+                localStorage.setItem(PWA_BANNER_KEY, hasta);
+            }
+
+            function instalarPWA() {
+                if (!deferredInstallPrompt) return;
+                deferredInstallPrompt.prompt();
+                deferredInstallPrompt.userChoice.then(function(result) {
+                    deferredInstallPrompt = null;
+                    document.getElementById('pwa-banner-android').style.display = 'none';
+                });
+            }
+
+            window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                deferredInstallPrompt = e;
+
+                // Verificar si el usuario lo cerró recientemente
+                var cerradoHasta = localStorage.getItem(PWA_BANNER_KEY);
+                if (cerradoHasta && Date.now() < parseInt(cerradoHasta)) return;
+
+                // Mostrar con un pequeño delay para no ser intrusivo
+                setTimeout(function() {
+                    document.getElementById('pwa-banner-android').style.display = 'block';
+                }, 2000);
+            });
+
+            window.addEventListener('appinstalled', function() {
+                document.getElementById('pwa-banner-android').style.display = 'none';
+                deferredInstallPrompt = null;
+            });
+
+            // ─── iOS ───────────────────────────────────────────────────
+            var PWA_IOS_KEY = 'pwa_ios_modal_cerrado_hasta';
+
+            function cerrarModalIOS() {
+                document.getElementById('pwa-modal-ios').style.display = 'none';
+                var hasta = Date.now() + (14 * 24 * 60 * 60 * 1000);
+                localStorage.setItem(PWA_IOS_KEY, hasta);
+            }
+
+            (function() {
+                var esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+                var esSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                var yaInstalada = window.navigator.standalone === true;
+
+                if (!esIOS || !esSafari || yaInstalada) return;
+
+                var cerradoHasta = localStorage.getItem(PWA_IOS_KEY);
+                if (cerradoHasta && Date.now() < parseInt(cerradoHasta)) return;
+
+                setTimeout(function() {
+                    var modal = document.getElementById('pwa-modal-ios');
+                    modal.style.display = 'flex';
+                }, 3000);
+            })();
+        </script>
+
+        <!-- Registro del Service Worker (PWA) -->
+        <script>
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    registration.addEventListener('updatefound', function() {
+                        var newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', function() {
+                            if (newWorker.state === 'activated') {
+                                window.location.reload();
+                            }
+                        });
+                    });
+                });
+
+                navigator.serviceWorker.addEventListener('message', function(event) {
+                    if (event.data && event.data.type === 'SW_UPDATED') {
+                        window.location.reload();
+                    }
+                });
+            }
+        </script>
     </body>
 </html>
