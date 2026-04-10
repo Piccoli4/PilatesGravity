@@ -568,40 +568,30 @@ class Reserva(models.Model):
 
     @staticmethod
     def usuario_puede_hacer_recupero(usuario):
-        """
-        Retorna (puede: bool, n_disponibles: int, ausencias: list).
-        Una ausencia es válida para recupero si su fecha_limite_recupero >= hoy.
-        Cada ausencia tiene su propio plazo independiente (fecha_ausencia + 6 días).
-        """
         hoy = timezone.now().date()
 
-        # Traer todas las ausencias futuras del usuario (la clase aún no ocurrió)
-        todas_las_ausencias = AusenciaTemporal.objects.filter(
+        # Ausencias vigentes: cuya ventana de recupero no venció (fecha + 6 días >= hoy)
+        ausencias = AusenciaTemporal.objects.filter(
             reserva__usuario=usuario,
             reserva__activa=True,
             reserva__fecha_unica__isnull=True,
-            fecha__gte=hoy - timedelta(days=6),  # incluir ausencias cuyo plazo todavía no venció
+            fecha__gte=hoy - timedelta(days=6),
         ).select_related('reserva__clase')
 
-        # Filtrar solo las que todavía están en plazo de recupero
-        ausencias_en_plazo = [a for a in todas_las_ausencias if not a.recupero_vencido]
-
-        n_ausencias = len(ausencias_en_plazo)
+        n_ausencias = ausencias.count()
         if n_ausencias == 0:
-            return False, 0, ausencias_en_plazo
+            return False, 0, ausencias
 
-        # Contar recuperos ya usados dentro del rango máximo de las ausencias vigentes
-        fecha_max = max(a.fecha_limite_recupero for a in ausencias_en_plazo)
+        # Recuperos ya reservados activos a partir de hoy
         recuperos_usados = Reserva.objects.filter(
             usuario=usuario,
             activa=True,
             es_recupero=True,
             fecha_unica__gte=hoy,
-            fecha_unica__lte=fecha_max,
         ).count()
 
         disponibles = n_ausencias - recuperos_usados
-        return disponibles > 0, disponibles, ausencias_en_plazo
+        return disponibles > 0, disponibles, ausencias
 
 class AusenciaTemporal(models.Model):
     """

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+    {% if tipo == 'temporal' %}Ausencia temporal{% else %}Cancelación permanente{% endif %}
+    — {{ cliente }}
+  </title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5; font-family: Arial, Helvetica, sans-serif;">
+
+  <!-- Wrapper -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5; padding: 32px 16px;">
+    <tr>
+      <td align="center">
+
+        <!-- Card -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px; background-color:#ffffff; border-radius:8px; overflow:hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td bgcolor="#0f0f0f" style="padding: 28px 32px; text-align:center;">
+              <p style="margin:0; font-size:11px; letter-spacing:3px; color:#9ca3af; text-transform:uppercase; font-weight:600;">Sistema de gestión</p>
+              <h1 style="margin:6px 0 0; font-size:22px; font-weight:700; color:#ffffff; letter-spacing:0.5px;">Pilates Gravity</h1>
+            </td>
+          </tr>
+
+          <!-- Badge de tipo -->
+          {% if tipo == 'temporal' %}
+          <tr>
+            <td bgcolor="#fef9c3" style="padding: 12px 32px; border-bottom: 1px solid #fde047;">
+              <p style="margin:0; font-size:13px; font-weight:700; color:#854d0e; text-align:center; letter-spacing:0.3px;">
+                &#9200; AUSENCIA TEMPORAL
+              </p>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td bgcolor="#fef2f2" style="padding: 12px 32px; border-bottom: 1px solid #fecaca;">
+              <p style="margin:0; font-size:13px; font-weight:700; color:#991b1b; text-align:center; letter-spacing:0.3px;">
+                &#10006; CANCELACIÓN PERMANENTE
+              </p>
+            </td>
+          </tr>
+          {% endif %}
+
+          <!-- Cuerpo -->
+          <tr>
+            <td style="padding: 28px 32px 8px;">
+
+              <!-- Mensaje principal -->
+              <p style="margin:0 0 24px; font-size:15px; color:#374151; line-height:1.6;">
+                {% if tipo == 'temporal' %}
+                  El cliente <strong style="color:#111827;">{{ cliente }}</strong> registró una <strong>ausencia temporal</strong>. El cupo queda libre solo para ese día. La reserva sigue activa para las semanas siguientes.
+                {% else %}
+                  El cliente <strong style="color:#111827;">{{ cliente }}</strong> canceló su reserva de forma <strong>permanente</strong>. El cupo quedó libre definitivamente.
+                {% endif %}
+              </p>
+
+              <!-- Tabla de detalles -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f9fafb; border-radius:6px; border: 1px solid #e5e7eb;">
+
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; letter-spacing:1px; color:#9ca3af; text-transform:uppercase; width:40%;">Clase</td>
+                        <td style="font-size:14px; color:#111827; font-weight:600;">{{ clase }}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; letter-spacing:1px; color:#9ca3af; text-transform:uppercase; width:40%;">
+                          {% if tipo == 'temporal' %}Día habitual{% else %}Día{% endif %}
+                        </td>
+                        <td style="font-size:14px; color:#111827;">{{ dia }} a las {{ horario }}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; letter-spacing:1px; color:#9ca3af; text-transform:uppercase; width:40%;">Sede</td>
+                        <td style="font-size:14px; color:#111827;">{{ sede }}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                {% if tipo == 'temporal' %}
+                <tr>
+                  <td style="padding: 12px 16px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; letter-spacing:1px; color:#9ca3af; text-transform:uppercase; width:40%;">Fecha de ausencia</td>
+                        <td style="font-size:14px; color:#111827; font-weight:600;">{{ fecha_str }}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td style="padding: 12px 16px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; letter-spacing:1px; color:#9ca3af; text-transform:uppercase; width:40%;">N° de reserva</td>
+                        <td style="font-size:14px; color:#111827; font-family: monospace; font-weight:600;">{{ numero_reserva }}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {% endif %}
+
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Espacio inferior -->
+          <tr>
+            <td style="padding: 24px 32px 8px;">
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td bgcolor="#f9fafb" style="padding: 20px 32px; border-top: 1px solid #e5e7eb; text-align:center;">
+              <p style="margin:0 0 4px; font-size:12px; color:#6b7280;">
+                <strong style="color:#374151;">Pilates Gravity</strong> &nbsp;·&nbsp; La Rioja 3044 y 9 de Julio 3698, Santa Fe
+              </p>
+              <p style="margin:0; font-size:11px; color:#9ca3af;">
+                Este es un mensaje automático del sistema de gestión.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
+  <!-- /Wrapper -->
+
+</body>
+</html>

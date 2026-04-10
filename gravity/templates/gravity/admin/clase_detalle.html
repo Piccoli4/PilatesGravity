@@ -164,8 +164,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                     </svg>
-                    <h3 class="text-2xl font-bold mb-1">{{ total_reservas }}</h3>
-                    <small>Reservas Activas</small>
+                    <h3 class="text-2xl font-bold mb-1">{{ asistentes_proxima }}</h3>
+                    <small>Asistentes próx. clase</small>
                 </div>
             </div>
 
@@ -176,8 +176,7 @@
                             d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
                             clip-rule="evenodd" />
                     </svg>
-                    <h3 class="text-2xl font-bold mb-1">{{ cupos_disponibles }}</h3>
-                    <small>Cupos Disponibles</small>
+                    <h3 class="text-2xl font-bold mb-1">{{ cupos_disponibles_proxima }}</h3>
                 </div>
             </div>
 
@@ -187,7 +186,7 @@
                         <path
                             d="M544.4 304L368.4 304C350.7 304 336.4 289.7 336.4 272L336.4 96C336.4 78.3 350.8 63.8 368.3 66.1C475.3 80.3 560.1 165.1 574.3 272.1C576.6 289.6 562.1 304 544.4 304zM254.6 101.2C272.7 97.4 288.4 112.2 288.4 130.7L288.4 328C288.4 333.6 290.4 339 293.9 343.3L426 502.7C437.7 516.8 435.2 538.1 419.1 546.8C385 565.4 345.9 576 304.4 576C171.9 576 64.4 468.5 64.4 336C64.4 220.5 145.9 124.1 254.6 101.2zM509.8 352L573.8 352C592.3 352 607.1 367.7 603.3 385.8C593.1 434.2 568.3 477.2 533.7 510C521.4 521.7 502.1 519.2 491.3 506.1L406.9 404.4C389.6 383.5 404.5 352 431.5 352L509.7 352z" />
                     </svg>
-                    <h3 class="text-2xl font-bold mb-1">{{ porcentaje_ocupacion }}%</h3>
+                    <h3 class="text-2xl font-bold mb-1">{{ porcentaje_proxima }}%</h3>
                     <small>Ocupación</small>
                 </div>
             </div>
@@ -214,22 +213,22 @@
                     <div class="flex-1 p-3">
                         <div class="mb-2">
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-700">Ocupación Actual</span>
+                                <span class="text-gray-700">Ocupación próxima clase ({{ proxima_fecha_clase|date:"d/m/Y" }})</span>
                                 <span class="font-bold text-gray-800">
-                                    {{ total_reservas }}/{{ clase.cupo_maximo }}
+                                    {{ asistentes_proxima }}/{{ clase.cupo_maximo }}
                                 </span>
                             </div>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-5 mb-3">
                             <div class="h-5 rounded-full transition-all duration-1000 ease-in-out
-                                    {% if porcentaje_ocupacion == 100 %}bg-red-700
-                                    {% elif porcentaje_ocupacion >= 85 %}bg-orange-600
-                                    {% elif porcentaje_ocupacion >= 70 %}bg-yellow-500
-                                    {% elif porcentaje_ocupacion >= 50 %}bg-blue-500
+                                    {% if porcentaje_proxima == 100 %}bg-red-700
+                                    {% elif porcentaje_proxima >= 85 %}bg-orange-600
+                                    {% elif porcentaje_proxima >= 70 %}bg-yellow-500
+                                    {% elif porcentaje_proxima >= 50 %}bg-blue-500
                                     {% else %}bg-green-500{% endif %}"
-                                data-width="{{ porcentaje_ocupacion|default:0 }}" style="width: 0%">
+                                data-width="{{ porcentaje_proxima|default:0 }}" style="width: 0%">
                                 <span class="flex items-center justify-center h-full text-white text-xs font-medium">
-                                    {{ porcentaje_ocupacion|default:0 }}%
+                                    {{ porcentaje_proxima|default:0 }}%
                                 </span>
                             </div>
                         </div>
@@ -264,7 +263,7 @@
                     </div>
 
                     <div class="text-center p-2">
-                        {% if porcentaje_ocupacion == 100 %}
+                        {% if porcentaje_proxima == 100 %}
                         <svg class="size-14 mx-auto text-red-600 mb-2" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -273,7 +272,7 @@
                         </svg>
                         <h6 class="text-red-600 font-semibold text-2xl">Clase Llena</h6>
                         <p class="text-md text-gray-600">¡Deberás crear otra clase!</p>
-                        {% elif porcentaje_ocupacion >= 85 %}
+                        {% elif porcentaje_proxima >= 85 %}
                         <svg class="size-14 mx-auto text-red-500 mb-2" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -282,7 +281,7 @@
                         </svg>
                         <h6 class="text-orange-600 font-semibold text-2xl">Clase Casi Llena</h6>
                         <p class="text-md text-gray-600">Considera abrir otra clase</p>
-                        {% elif porcentaje_ocupacion >= 70 %}
+                        {% elif porcentaje_proxima >= 70 %}
                         <svg class="size-14 mx-auto text-yellow-500 mb-2" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -290,7 +289,7 @@
                         </svg>
                         <h6 class="text-yellow-600 font-semibold text-2xl">Alta Demanda</h6>
                         <p class="text-md text-gray-600">Monitorea la ocupación</p>
-                        {% elif porcentaje_ocupacion >= 50 %}
+                        {% elif porcentaje_proxima >= 50 %}
                         <svg class="size-14 mx-auto text-blue-500 mb-2" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -335,31 +334,6 @@
                     </span>
                     {% endif %}
                 </h5>
-
-                {% if total_reservas %}
-                <div class="flex space-x-2">
-                    <button type="button"
-                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 text-sm rounded-lg transition-colors duration-200 flex items-center"
-                        onclick="exportReservas()">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
-                        Exportar
-                    </button>
-                    <button type="button"
-                        class="bg-secundario hover:bg-secundario/70 text-gray-700 px-3 py-1 text-sm rounded-lg transition-colors duration-200 flex items-center"
-                        onclick="printReservas()">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
-                            </path>
-                        </svg>
-                        Imprimir
-                    </button>
-                </div>
-                {% endif %}
             </div>
             <div class="card-body">
                 {% if reservas %}
@@ -406,6 +380,14 @@
                                                             <path fill-rule="evenodd" d="M12 5.25c1.213 0 2.415.046 3.605.135a3.256 3.256 0 0 1 3.01 3.01c.044.583.077 1.17.1 1.759L17.03 8.47a.75.75 0 1 0-1.06 1.06l3 3a.75.75 0 0 0 1.06 0l3-3a.75.75 0 0 0-1.06-1.06l-1.752 1.751c-.023-.65-.06-1.296-.108-1.939a4.756 4.756 0 0 0-4.392-4.392 49.422 49.422 0 0 0-7.436 0A4.756 4.756 0 0 0 3.89 8.282c-.017.224-.033.448-.046.673a.75.75 0 1 0 1.497.092c.013-.217.028-.434.044-.651a3.256 3.256 0 0 1 3.01-3.01c1.19-.09 2.392-.135 3.605-.135Zm-6.97 6.22a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.752-1.751c.023.65.06 1.296.108 1.939a4.756 4.756 0 0 0 4.392 4.392 49.413 49.413 0 0 0 7.436 0 4.756 4.756 0 0 0 4.392-4.392c.017-.223.032-.447.046-.672a.75.75 0 0 0-1.497-.092c-.013.217-.028.434-.044.651a3.256 3.256 0 0 1-3.01 3.01 47.953 47.953 0 0 1-7.21 0 3.256 3.256 0 0 1-3.01-3.01 47.759 47.759 0 0 1-.1-1.759L5.03 15.53a.75.75 0 0 0 1.06-1.06l-3-3Z" clip-rule="evenodd" />
                                                         </svg>
                                                         Recupera clase
+                                                    </span>
+                                                {% endif %}
+                                                {% if reserva.id in ids_cupo_temporal %}
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-full border border-blue-200">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
+                                                            <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
+                                                        </svg>
+                                                        Clase única
                                                     </span>
                                                 {% endif %}
                                             </div>
@@ -512,6 +494,12 @@
                                         <span
                                             class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-secundario text-principal text-sm font-medium rounded-full border border-secundario">
                                             Recupera clase
+                                        </span>
+                                        {% endif %}
+                                        {% if reserva.id in ids_cupo_temporal %}
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-full border border-blue-200">
+                                            Clase única
                                         </span>
                                         {% endif %}
                                     </h6>
@@ -963,58 +951,6 @@
                 /* ── fin AJAX ── */
             }
         );
-    }
-
-    // Function to export reservations
-    function exportReservas() {
-        const table = document.getElementById('reservasTable');
-        if (!table) return;
-
-        let csv = 'Usuario,Email,Teléfono,Número de Reserva,Fecha de Reserva\n';
-
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(function (row) {
-            const cells = row.querySelectorAll('td');
-            const usuario = cells[0].querySelector('.font-semibold').textContent;
-            const email = cells[1].querySelector('small').textContent;
-            const telefono = cells[1].querySelectorAll('small')[1] ?
-                cells[1].querySelectorAll('small')[1].textContent : 'N/A';
-            const reserva = cells[2].textContent.trim();
-            const fecha = cells[3].textContent.trim();
-
-            csv += usuario + ',' + email + ',' + telefono + ',' + reserva + ',' + fecha + '\n';
-        });
-
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'reservas_{{ clase.tipo }}_{{ clase.dia }}_{{ clase.horario|time:"H-i" }}.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    }
-
-    // Function to print reservations
-    function printReservas() {
-        const printWindow = window.open('', '_blank');
-        const className = '{{ clase.get_tipo_display }} - {{ clase.dia }} {{ clase.horario|time:"H:i" }}';
-
-        let printContent = '<html><head><title>Reservas - ' + className + '</title>';
-        printContent += '<style>body{font-family:Arial,sans-serif;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ddd;padding:8px;text-align:left;} th{background-color:#f2f2f2;}</style>';
-        printContent += '</head><body>';
-        printContent += '<h1>Reservas - ' + className + '</h1>';
-        printContent += '<p>Fecha de impresión: ' + new Date().toLocaleDateString() + '</p>';
-
-        const table = document.getElementById('reservasTable');
-        if (table) { printContent += table.outerHTML; }
-
-        printContent += '</body></html>';
-
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        printWindow.print();
     }
 </script>
 {% endblock %}

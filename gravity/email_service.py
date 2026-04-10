@@ -2055,10 +2055,11 @@ def enviar_notificacion_cancelacion_a_admins(reserva, tipo, fecha=None):
         dia = reserva.clase.dia
         horario = reserva.clase.horario.strftime('%H:%M')
         sede = reserva.clase.get_direccion_corta()
+        domain_url = getattr(settings, 'SITE_URL', 'https://pilatesgravity.com.ar')
 
         if tipo == 'temporal':
             fecha_str = fecha.strftime('%d/%m/%Y') if fecha else 'fecha desconocida'
-            subject = f"[Pilates Gravity] Ausencia temporal — {cliente}"
+            subject = f"Ausencia temporal — {cliente}"
             body = (
                 f"El cliente {cliente} registró una ausencia temporal.\n\n"
                 f"Clase: {clase}\n"
@@ -2070,7 +2071,8 @@ def enviar_notificacion_cancelacion_a_admins(reserva, tipo, fecha=None):
                 f"— Sistema Pilates Gravity"
             )
         else:
-            subject = f"[Pilates Gravity] Cancelación permanente — {cliente}"
+            fecha_str = None
+            subject = f"Cancelación permanente — {cliente}"
             body = (
                 f"El cliente {cliente} canceló su reserva de forma permanente.\n\n"
                 f"Clase: {clase}\n"
@@ -2081,13 +2083,31 @@ def enviar_notificacion_cancelacion_a_admins(reserva, tipo, fecha=None):
                 f"— Sistema Pilates Gravity"
             )
 
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=emails_admins,
-            fail_silently=False,
+        context = {
+            'tipo': tipo,
+            'cliente': cliente,
+            'clase': clase,
+            'dia': dia,
+            'horario': horario,
+            'sede': sede,
+            'fecha_str': fecha_str,
+            'numero_reserva': reserva.numero_reserva,
+            'domain_url': domain_url,
+        }
+
+        html_message = render_to_string(
+            'gravity/emails/notificacion_cancelacion_admin_email.html',
+            context
         )
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=emails_admins,
+        )
+        email.attach_alternative(html_message, 'text/html')
+        email.send(fail_silently=False)
 
         logger.info(
             f"Notificación de cancelación ({tipo}) enviada a admins "

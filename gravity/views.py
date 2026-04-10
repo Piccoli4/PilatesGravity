@@ -1298,12 +1298,7 @@ def admin_clase_detalle(request, clase_id):
     Ver detalle completo de una clase con todas sus reservas
     """
     clase = get_object_or_404(Clase, id=clase_id)
-    
-    # Obtener todas las reservas de esta clase
-    reservas = clase.reserva_set.filter(activa=True).select_related(
-        'usuario', 'usuario__profile'
-    ).order_by('usuario__first_name', 'usuario__last_name')
-    
+
     # Calcular próxima fecha de esta clase
     hoy = timezone.localtime(timezone.now())
     dias_semana = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
@@ -1315,7 +1310,19 @@ def admin_clase_detalle(request, clase_id):
             dias_hasta = 7
     proxima_fecha_clase = (hoy + timedelta(days=dias_hasta)).date()
 
-    # IDs de reservas que tienen ausencia temporal para la próxima clase
+    # Reservas permanentes (asisten todas las semanas)
+    reservas_permanentes = clase.reserva_set.filter(
+        activa=True,
+        fecha_unica__isnull=True,
+    ).select_related('usuario', 'usuario__profile')
+
+    # Reservas de fecha única SOLO para la próxima clase
+    reservas_fecha_unica = clase.reserva_set.filter(
+        activa=True,
+        fecha_unica=proxima_fecha_clase,
+    ).select_related('usuario', 'usuario__profile')
+
+    # IDs de ausencias para la próxima clase
     reservas_con_ausencia = set(
         AusenciaTemporal.objects.filter(
             reserva__clase=clase,
@@ -1324,25 +1331,45 @@ def admin_clase_detalle(request, clase_id):
         ).values_list('reserva_id', flat=True)
     )
 
-    # IDs de reservas que son recuperos para la próxima fecha de esta clase
+    # Badge "Recupera clase": fue a su propia clase y recupera aquí
     ids_recupero = set(
-        reservas.filter(
-            es_recupero=True,
-            fecha_unica=proxima_fecha_clase
-        ).values_list('id', flat=True)
+        reservas_fecha_unica.filter(es_recupero=True).values_list('id', flat=True)
     )
+
+    # Badge "Clase única": eligió venir solo esta vez (cupo temporal)
+    ids_cupo_temporal = set(
+        reservas_fecha_unica.filter(es_recupero=False).values_list('id', flat=True)
+    )
+
+    # Lista unificada ordenada por nombre
+    from itertools import chain
+    reservas = sorted(
+        chain(reservas_permanentes, reservas_fecha_unica),
+        key=lambda r: (r.usuario.first_name or '', r.usuario.last_name or '')
+    )
+
+    total_reservas = reservas_permanentes.count() + reservas_fecha_unica.count()
+
+    # Estadísticas reales para la próxima clase (descuenta ausencias, suma fecha única)
+    cupos_disponibles_proxima = clase.cupos_disponibles(fecha=proxima_fecha_clase)
+    asistentes_proxima = clase.cupo_maximo - cupos_disponibles_proxima
+    porcentaje_proxima = round((asistentes_proxima / clase.cupo_maximo) * 100) if clase.cupo_maximo > 0 else 0
 
     context = {
         'clase': clase,
         'reservas': reservas,
-        'total_reservas': reservas.count(),
+        'total_reservas': total_reservas,
         'cupos_disponibles': clase.cupos_disponibles(),
         'porcentaje_ocupacion': clase.get_porcentaje_ocupacion(),
         'proxima_fecha_clase': proxima_fecha_clase,
         'reservas_con_ausencia': reservas_con_ausencia,
         'ids_recupero': ids_recupero,
+        'ids_cupo_temporal': ids_cupo_temporal,
+        'cupos_disponibles_proxima': cupos_disponibles_proxima,
+        'asistentes_proxima': asistentes_proxima,
+        'porcentaje_proxima': porcentaje_proxima,
     }
-        
+
     return render(request, 'gravity/admin/clase_detalle.html', context)
 
 @admin_required
