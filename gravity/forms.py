@@ -1418,3 +1418,28 @@ class FiltrosPagosForm(forms.Form):
             'id': 'filtro_mes'
         })
     )
+
+class AjusteDeudaForm(forms.Form):
+    """
+    Formulario para que superadmins registren un monto especial acordado con un cliente.
+    """
+    monto_ajustado = forms.DecimalField(
+        label="Nuevo monto acordado ($)",
+        min_value=0,
+        max_digits=10,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'step': '0.01',
+            'min': '0',
+            'placeholder': '0.00',
+        }),
+        help_text="Monto real acordado. La deuda quedará marcada como pagada con este valor."
+    )
+    motivo = forms.CharField(
+        label="Motivo del ajuste",
+        required=False,
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Acuerdo especial, descuento puntual, etc. (opcional)',
+        }),
+    )

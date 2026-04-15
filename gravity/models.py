@@ -1105,6 +1105,9 @@ class EstadoPagoCliente(models.Model):
         ).first()
         
         if deuda_existente:
+            # No sobreescribir deudas ya pagadas (pueden ser ajustes especiales acordados)
+            if deuda_existente.estado == 'pagado':
+                return deuda_existente
             # El admin cambió el plan: sobreescribir la deuda del mes actual
             deuda_existente.plan_aplicado = self.plan_actual
             deuda_existente.monto_original = monto_a_cobrar
@@ -1827,3 +1830,55 @@ class NotificacionCancelacionPlan(models.Model):
         nombre = self.usuario.get_full_name() or self.usuario.username
         plan_nombre = self.plan.nombre if self.plan else 'Plan eliminado'
         return f"[Cancelación Plan] {nombre} — {plan_nombre}"
+
+class AjusteDeudaEspecial(models.Model):
+    """
+    Registro de auditoría de ajustes de deuda acordados con el cliente.
+    Solo los superusuarios pueden crear estos ajustes.
+    """
+    deuda = models.ForeignKey(
+        DeudaMensual,
+        on_delete=models.CASCADE,
+        verbose_name="Deuda ajustada",
+        related_name='ajustes'
+    )
+    usuario_cliente = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Cliente",
+        related_name='ajustes_deuda'
+    )
+    admin_que_ajusto = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Administrador",
+        related_name='ajustes_realizados'
+    )
+    monto_original_anterior = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto original anterior"
+    )
+    monto_ajustado = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto ajustado"
+    )
+    motivo = models.TextField(
+        blank=True,
+        verbose_name="Motivo del ajuste"
+    )
+    fecha_ajuste = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha del ajuste"
+    )
+
+    class Meta:
+        verbose_name = "Ajuste de Deuda Especial"
+        verbose_name_plural = "Ajustes de Deudas Especiales"
+        ordering = ['-fecha_ajuste']
+
+    def __str__(self):
+        mes = self.deuda.mes_año.strftime('%B %Y')
+        return f"Ajuste {mes} — {self.usuario_cliente.get_full_name() or self.usuario_cliente.username} — ${self.monto_ajustado}"
+

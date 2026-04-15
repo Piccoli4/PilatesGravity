@@ -4,8 +4,23 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
-from .models import Reserva, Clase, PlanUsuario, AusenciaTemporal, NotificacionCancelacion, NotificacionCancelacionPlan, DIAS_SEMANA, DIAS_SEMANA_COMPLETOS
-from .forms import ReservaForm, ModificarReservaForm, BuscarReservaForm
+from .models import ( 
+    Reserva, 
+    Clase, 
+    PlanUsuario, 
+    AusenciaTemporal, 
+    NotificacionCancelacion, 
+    NotificacionCancelacionPlan, 
+    AjusteDeudaEspecial, 
+    DIAS_SEMANA, 
+    DIAS_SEMANA_COMPLETOS
+)
+from .forms import ( 
+    ReservaForm, 
+    ModificarReservaForm, 
+    BuscarReservaForm, 
+    AjusteDeudaForm
+)
 import json
 import calendar
 from accounts.models import UserProfile
@@ -2849,6 +2864,7 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
         'cliente': cliente,
         'estado_pago': estado_pago,
         'planes_precios': planes_precios,
+        'deudas': DeudaMensual.objects.filter(usuario=cliente).order_by('-mes_año'),
     }
     
     return render(request, 'gravity/admin/pagos_editar_estado.html', context)
@@ -2947,6 +2963,63 @@ def admin_eliminar_admin_restringido(request, admin_id):
 
     messages.success(request, f'Administrador {nombre_completo} eliminado del sistema.')
     return redirect('gravity:admin_gestionar_admins')
+
+@superadmin_required
+def admin_ajustar_deuda_especial(request, deuda_id):
+    """
+    Procesa el ajuste de una deuda a un monto especial acordado con el cliente.
+    Solo accesible por superusuarios. Solo acepta POST (accionado desde modal).
+    """
+    if request.method != 'POST':
+        return redirect('gravity:admin_pagos_vista_principal')
+
+    deuda = get_object_or_404(DeudaMensual, id=deuda_id)
+    cliente = deuda.usuario
+    form = AjusteDeudaForm(request.POST)
+
+    if form.is_valid():
+        monto_ajustado = form.cleaned_data['monto_ajustado']
+        motivo = form.cleaned_data.get('motivo', '')
+
+        with transaction.atomic():
+            AjusteDeudaEspecial.objects.create(
+                deuda=deuda,
+                usuario_cliente=cliente,
+                admin_que_ajusto=request.user,
+                monto_original_anterior=deuda.monto_original,
+                monto_ajustado=monto_ajustado,
+                motivo=motivo,
+            )
+
+            deuda.monto_original = monto_ajustado
+            deuda.monto_pendiente = Decimal('0')
+            deuda.estado = 'pagado'
+            deuda.save(update_fields=['monto_original', 'monto_pendiente', 'estado'])
+
+            total_pagado = RegistroPago.objects.filter(
+                cliente=cliente, estado='confirmado'
+            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+            total_deudas = DeudaMensual.objects.filter(
+                usuario=cliente
+            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+            nuevo_saldo = total_pagado - total_deudas
+
+            estado_pago, _ = EstadoPagoCliente.objects.get_or_create(usuario=cliente)
+            estado_pago.saldo_actual = nuevo_saldo
+            if nuevo_saldo >= Decimal('0'):
+                estado_pago.puede_reservar = True
+            estado_pago.save(update_fields=['saldo_actual', 'puede_reservar'])
+
+        nombre_cliente = cliente.get_full_name() or cliente.username
+        mes_str = deuda.mes_año.strftime('%B %Y')
+        messages.success(
+            request,
+            f'Deuda de {mes_str} de {nombre_cliente} ajustada a ${monto_ajustado:,.0f}. Saldo recalculado.'
+        )
+    else:
+        messages.error(request, 'Error al procesar el ajuste. Revisá los datos ingresados.')
+
+    return redirect('gravity:admin_pagos_vista_principal')
 
 # ==============================================================================
 # VISTAS DE PLANES DE PAGO
