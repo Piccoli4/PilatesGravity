@@ -303,7 +303,7 @@
                                                     Clase Completa
                                                 </button>
                                             {% else %}
-                                                <a href="{% url 'gravity:reservar_clase' %}?tipo={{ clase_info.clase.tipo }}"
+                                                <a href="{% url 'gravity:reservar_clase' %}?tipo={{ clase_info.clase.tipo }}&sede={{ sede_key }}&dia={{ clase_info.clase.dia }}&horario={{ clase_info.clase.horario|time:'H:i' }}"
                                                    class="block w-full bg-principal hover:bg-principal/90 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300 hover:shadow-btn-primary-hover">
                                                     Reservar Clase
                                                 </a>

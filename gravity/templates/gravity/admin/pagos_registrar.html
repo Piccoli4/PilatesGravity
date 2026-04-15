@@ -95,6 +95,39 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
+                    <label for="{{ form.tipo_pago.id_for_label }}"
+                        class="block text-sm font-medium text-gris-oscuro mb-2">
+                        {{ form.tipo_pago.label }}
+                    </label>
+                    <select name="{{ form.tipo_pago.name }}" id="{{ form.tipo_pago.id_for_label }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.tipo_pago.errors %}border-error{% endif %}">
+                        <option value="">Selecciona método de pago</option>
+                        {% for value, label in form.tipo_pago.field.choices %}
+                        <option value="{{ value }}" {% if form.tipo_pago.value == value %}selected{% endif %}>{{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% if form.tipo_pago.errors %}
+                    <p class="mt-1 text-sm text-error">{{ form.tipo_pago.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.fecha_pago.id_for_label }}"
+                        class="block text-sm font-medium text-gris-oscuro mb-2">
+                        {{ form.fecha_pago.label }}
+                    </label>
+                    <input type="date" name="{{ form.fecha_pago.name }}" id="{{ form.fecha_pago.id_for_label }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.fecha_pago.errors %}border-error{% endif %}"
+                        value="{{ form.fecha_pago.value|default:'' }}">
+                    {% if form.fecha_pago.errors %}
+                    <p class="mt-1 text-sm text-error">{{ form.fecha_pago.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
                     <label for="{{ form.monto.id_for_label }}" class="block text-sm font-medium text-gris-oscuro mb-2">
                         {{ form.monto.label }}
                     </label>
@@ -118,39 +151,6 @@
                                 <span class="text-gris-medio" id="texto-precio-completo"></span>
                             </span>
                         </div>
-                    {% endif %}
-                </div>
-
-                <div>
-                    <label for="{{ form.fecha_pago.id_for_label }}"
-                        class="block text-sm font-medium text-gris-oscuro mb-2">
-                        {{ form.fecha_pago.label }}
-                    </label>
-                    <input type="date" name="{{ form.fecha_pago.name }}" id="{{ form.fecha_pago.id_for_label }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.fecha_pago.errors %}border-error{% endif %}"
-                        value="{{ form.fecha_pago.value|default:'' }}">
-                    {% if form.fecha_pago.errors %}
-                    <p class="mt-1 text-sm text-error">{{ form.fecha_pago.errors.0 }}</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label for="{{ form.tipo_pago.id_for_label }}"
-                        class="block text-sm font-medium text-gris-oscuro mb-2">
-                        {{ form.tipo_pago.label }}
-                    </label>
-                    <select name="{{ form.tipo_pago.name }}" id="{{ form.tipo_pago.id_for_label }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors duration-200 {% if form.tipo_pago.errors %}border-error{% endif %}">
-                        <option value="">Selecciona método de pago</option>
-                        {% for value, label in form.tipo_pago.field.choices %}
-                        <option value="{{ value }}" {% if form.tipo_pago.value == value %}selected{% endif %}>{{ label }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    {% if form.tipo_pago.errors %}
-                    <p class="mt-1 text-sm text-error">{{ form.tipo_pago.errors.0 }}</p>
                     {% endif %}
                 </div>
 

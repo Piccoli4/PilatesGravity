@@ -516,9 +516,9 @@
                         {% if reserva_exitosa.tipo == 'recurrente' %}
                             Esta reserva es <strong>recurrente</strong> — tu lugar queda asegurado cada semana.
                         {% elif reserva_exitosa.tipo == 'recupero' %}
-                            Esta reserva es <strong>solo para el {{ reserva_exitosa.fecha }}</strong>. No descuenta de tu plan semanal.
+                            Esta reserva es <strong>solo para el {{ reserva_exitosa.dia }} a las {{ reserva_exitosa.horario }}</strong>. No descuenta de tu plan semanal.
                         {% else %}
-                            Esta reserva es <strong>solo para el {{ reserva_exitosa.fecha }}</strong>. Descuenta una clase de tu plan semanal.
+                            Esta reserva es <strong>solo para el {{ reserva_exitosa.dia }} a las {{ reserva_exitosa.horario }}</strong>. Descuenta una clase de tu plan semanal.
                         {% endif %}
                     </p>
                     <button id="btn-cerrar-reserva-exitosa"

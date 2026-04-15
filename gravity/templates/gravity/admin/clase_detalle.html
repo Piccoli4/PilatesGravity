@@ -442,10 +442,12 @@
                                                 </path>
                                             </svg>
                                         </a>
-                                        <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}"
+                                        <a href="#"
                                             class="btn bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-lg transition-colors duration-200"
                                             title="Cancelar reserva"
-                                            onclick="return confirm('¿Estás seguro de cancelar la reserva de {{ reserva.get_nombre_completo_usuario }}?')">
+                                            data-cancel-url="{% url 'gravity:admin_reserva_cancelar' reserva.id %}"
+                                            data-nombre="{{ reserva.get_nombre_completo_usuario }}"
+                                            onclick="confirmarCancelacion(event, this)">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M6 18L18 6M6 6l12 12"></path>
@@ -544,9 +546,11 @@
                                                 </path>
                                             </svg>
                                         </a>
-                                        <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}"
+                                        <a href="#"
                                             class="bg-red-100 hover:bg-red-200 text-red-700 p-3 rounded-lg transition-colors duration-200"
-                                            onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                                            data-cancel-url="{% url 'gravity:admin_reserva_cancelar' reserva.id %}"
+                                            data-nombre="{{ reserva.get_nombre_completo_usuario }}"
+                                            onclick="confirmarCancelacion(event, this)">
                                             <svg class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M6 18L18 6M6 6l12 12"></path>
@@ -949,6 +953,20 @@
 
                 xhr.send(data);
                 /* ── fin AJAX ── */
+            }
+        );
+    }
+
+    function confirmarCancelacion(event, el) {
+        event.preventDefault();
+        const url = el.dataset.cancelUrl;
+        const nombre = el.dataset.nombre;
+        _pgConfirm(
+            false,
+            'Cancelar reserva',
+            '¿Estás seguro de cancelar la reserva de ' + nombre + '?',
+            function () {
+                window.location.href = url;
             }
         );
     }

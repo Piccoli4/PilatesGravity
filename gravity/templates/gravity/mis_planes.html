@@ -16,27 +16,6 @@
             </p>
         </div>
 
-        <!-- Mensajes del sistema -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-6 px-5 py-4 rounded-xl border flex items-start gap-3
-                    {% if message.tags == 'success' %}bg-exito/10 border-exito/30 text-exito
-                    {% elif message.tags == 'error' %}bg-error/10 border-error/30 text-error
-                    {% else %}bg-info/10 border-info/30 text-info{% endif %}">
-                    {% if message.tags == 'success' %}
-                        <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    {% else %}
-                        <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    {% endif %}
-                    <span class="text-sm font-medium">{{ message }}</span>
-                </div>
-            {% endfor %}
-        {% endif %}
-
         <!-- Estadísticas de la semana actual -->
         <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6 mb-8">
             <h2 class="text-xl font-bold text-principal mb-6 font-cinzel flex items-center">

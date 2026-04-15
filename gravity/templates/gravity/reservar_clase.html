@@ -30,7 +30,8 @@
         }
         
         .availability-success {
-            background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
+            background: linear-gradient(135deg, #4A5F73 0%, #5D768B 100%);
+            color: #F8EFE5 !important;
         }
         
         .availability-warning {
@@ -421,6 +422,35 @@
                                 </div>
                             </div>
 
+                            <!-- Toggle Recurrente / Una sola vez -->
+                            <div class="space-y-3 pt-2">
+                                <label class="block text-sm font-medium text-gris-oscuro">Tipo de reserva</label>
+                                <div class="flex gap-2 bg-gris-claro rounded-xl p-1">
+                                    <button type="button" id="btn-recurrente"
+                                        class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-principal shadow-sm">
+                                        🔁 Recurrente
+                                    </button>
+                                    <button type="button" id="btn-temporal"
+                                        class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 text-gris-medio">
+                                        📅 Una sola vez
+                                    </button>
+                                </div>
+                                <input type="hidden" name="es_temporal" id="es_temporal" value="false">
+
+                                <!-- Descripción contextual -->
+                                <div id="desc-recurrente" class="text-sm text-gris-medio">
+                                    Asistirás todas las semanas al mismo día y horario.
+                                </div>
+                                <div id="desc-temporal" class="hidden">
+                                    <div class="bg-secundario/10 border border-secundario/30 rounded-lg px-4 py-3 text-sm text-gris-oscuro">
+                                        <span class="font-medium text-principal">Reserva de una sola vez.</span>
+                                        Irás únicamente el próximo
+                                        <span id="fecha-temporal-display" class="font-semibold text-principal">—</span>.
+                                        Consume una clase de tu plan.
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Botón de envío -->
                             <div class="text-center pt-6">
                                 <button type="submit" id="btn-reservar"
@@ -430,7 +460,7 @@
                                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
-                                    <span id="btn-text">Confirmar Reserva Recurrente</span>
+                                    <span id="btn-text">Confirmar Reserva</span>
                                     
                                     <!-- Efecto de brillo -->
                                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
@@ -444,8 +474,13 @@
                                     <div>
                                         <p class="text-info font-medium mb-1">Información importante</p>
                                         <ul class="text-gris-oscuro text-sm space-y-1">
-                                            <li>• Tu reserva será <strong>recurrente</strong>: asistirás cada semana al mismo día y horario</li>
-                                            <li>• Puedes modificar o cancelar con 12 horas de anticipación</li>
+                                            <li>• Tu reserva podrá ser:
+                                                <ul class="mt-1 ml-4 space-y-0.5">
+                                                    <li><strong>Recurrente:</strong> asistirás cada semana al mismo día y horario</li>
+                                                    <li><strong>Una sola vez:</strong> asistirás únicamente el turno seleccionado</li>
+                                                </ul>
+                                            </li>
+                                            <li>• Puedes modificar o cancelar con 3 horas de anticipación</li>
                                             <li>• Recibirás un recordatorio 24 horas antes de cada clase</li>
                                             <li id="limite-clases-info">• Esta reserva contará contra tu límite semanal</li>
                                         </ul>
@@ -498,6 +533,12 @@
             const formStatusIndicator = document.getElementById('form-status-indicator');
             const infoImportante = document.getElementById('info-importante');
             const limiteClasesInfo = document.getElementById('limite-clases-info');
+
+            // Params preseleccionados desde clases_disponibles
+            const urlParams = new URLSearchParams(window.location.search);
+            const preselectedSede = urlParams.get('sede');
+            const preselectedDia = urlParams.get('dia');
+            const preselectedHorario = urlParams.get('horario');
 
             // Configurar estado inicial del formulario
             function configurarEstadoFormulario() {
@@ -559,6 +600,10 @@
                     sede?.addEventListener('change', () => this.onSedeChange());
                     dia?.addEventListener('change', () => this.onDiaChange());
                     horario?.addEventListener('change', () => this.onHorarioChange());
+
+                    // Listeners del toggle
+                    document.getElementById('btn-recurrente')?.addEventListener('click', () => this.setModoReserva(false));
+                    document.getElementById('btn-temporal')?.addEventListener('click', () => this.setModoReserva(true));
                     
                     // Event listener para el formulario
                     document.querySelector('form')?.addEventListener('submit', (e) => this.onFormSubmit(e));
@@ -605,6 +650,9 @@
                         this.resetearSelectHorario();
                         this.currentStep = 3;
                         this.updateStepVisual(3);
+                    }
+                    if (document.getElementById('es_temporal')?.value === 'true') {
+                        this.actualizarFechaTemporal();
                     }
                 }
 
@@ -767,6 +815,15 @@
                         option.textContent = sedeInfo.text;
                         sede.appendChild(option);
                     });
+
+                    // Preseleccionar sede si viene desde clases_disponibles
+                    if (preselectedSede) {
+                        const matchingSede = sede.querySelector(`option[value="${preselectedSede}"]`);
+                        if (matchingSede) {
+                            sede.value = preselectedSede;
+                            sede.dispatchEvent(new Event('change'));
+                        }
+                    }
                 }
 
                 actualizarSelectDias(diasDisponibles) {
@@ -778,6 +835,15 @@
                         option.textContent = diaDisponible;
                         dia.appendChild(option);
                     });
+
+                    // Preseleccionar día si viene desde clases_disponibles
+                    if (preselectedDia) {
+                        const matchingDia = dia.querySelector(`option[value="${preselectedDia}"]`);
+                        if (matchingDia) {
+                            dia.value = preselectedDia;
+                            dia.dispatchEvent(new Event('change'));
+                        }
+                    }
                 }
 
                 actualizarSelectHorarios(horariosDisponibles) {
@@ -793,6 +859,15 @@
                         }
                         horario.appendChild(option);
                     });
+
+                    // Preseleccionar horario si viene desde clases_disponibles
+                    if (preselectedHorario) {
+                        const matchingHorario = horario.querySelector(`option[value="${preselectedHorario}"]`);
+                        if (matchingHorario) {
+                            horario.value = preselectedHorario;
+                            horario.dispatchEvent(new Event('change'));
+                        }
+                    }
                 }
 
                 limpiarSelect(selectElement, placeholderText) {
@@ -829,7 +904,7 @@
                     disponibilidadInfo.classList.remove('hidden');
                     
                     // Remover clases anteriores
-                    disponibilidadMensaje.className = 'rounded-lg p-4 text-principal font-medium flex items-center space-x-3';
+                    disponibilidadMensaje.className = 'rounded-lg p-4 font-medium flex items-center space-x-3';
                     
                     if (disponibilidad.disponible) {
                         disponibilidadMensaje.classList.add('availability-success');
@@ -894,6 +969,59 @@
                     }
 
                     return true;
+                }
+
+                // Reserva por un día
+                setModoReserva(esTemporal) {
+                    const btnRec = document.getElementById('btn-recurrente');
+                    const btnTemp = document.getElementById('btn-temporal');
+                    const inputTemporal = document.getElementById('es_temporal');
+                    const descRec = document.getElementById('desc-recurrente');
+                    const descTemp = document.getElementById('desc-temporal');
+
+                    inputTemporal.value = esTemporal ? 'true' : 'false';
+
+                    if (esTemporal) {
+                        btnTemp.classList.add('bg-white', 'text-principal', 'shadow-sm');
+                        btnTemp.classList.remove('text-gris-medio');
+                        btnRec.classList.remove('bg-white', 'text-principal', 'shadow-sm');
+                        btnRec.classList.add('text-gris-medio');
+                        descTemp.classList.remove('hidden');
+                        descRec.classList.add('hidden');
+                        this.actualizarFechaTemporal();
+                    } else {
+                        btnRec.classList.add('bg-white', 'text-principal', 'shadow-sm');
+                        btnRec.classList.remove('text-gris-medio');
+                        btnTemp.classList.remove('bg-white', 'text-principal', 'shadow-sm');
+                        btnTemp.classList.add('text-gris-medio');
+                        descRec.classList.remove('hidden');
+                        descTemp.classList.add('hidden');
+                    }
+                }
+
+                // actualiza la fecha de la reserva por un día
+                actualizarFechaTemporal() {
+                    const diaSeleccionado = dia?.value;
+                    const displayEl = document.getElementById('fecha-temporal-display');
+                    if (!diaSeleccionado || !displayEl) return;
+
+                    const diasMap = {
+                        'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
+                        'Jueves': 4, 'Viernes': 5, 'Sábado': 6
+                    };
+                    const hoy = new Date();
+                    const diaHoyJS = hoy.getDay(); // 0=Dom, 1=Lun, ...
+                    const diaObjetivo = diasMap[diaSeleccionado];
+                    if (diaObjetivo === undefined) return;
+
+                    let diasHasta = (diaObjetivo - diaHoyJS + 7) % 7;
+                    if (diasHasta === 0) diasHasta = 7; // nunca hoy, siempre próxima semana
+
+                    const fechaProxima = new Date(hoy);
+                    fechaProxima.setDate(hoy.getDate() + diasHasta);
+
+                    const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+                    displayEl.textContent = fechaProxima.toLocaleDateString('es-AR', opciones);
                 }
 
                 getCSRFToken() {

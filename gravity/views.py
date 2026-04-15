@@ -101,9 +101,32 @@ def reservar_clase(request):
                 clase = form.cleaned_data['clase']
                 
                 # Crear la reserva
+                es_temporal = request.POST.get('es_temporal') == 'true'
+                fecha_unica = None
+
+                if es_temporal:
+                    hoy = timezone.now().date()
+                    dias_map = {
+                        'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+                        'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+                    }
+                    dia_clase = dias_map.get(clase.dia, 0)
+                    dias_hasta = (dia_clase - hoy.weekday()) % 7
+                    if dias_hasta == 0:
+                        ahora = timezone.localtime(timezone.now())
+                        clase_hoy = ahora.replace(
+                            hour=clase.horario.hour,
+                            minute=clase.horario.minute,
+                            second=0, microsecond=0
+                        )
+                        if ahora >= clase_hoy - timedelta(hours=3):
+                            dias_hasta = 7
+                    fecha_unica = hoy + timedelta(days=dias_hasta)
+
                 reserva = Reserva.objects.create(
                     usuario=request.user,
-                    clase=clase
+                    clase=clase,
+                    fecha_unica=fecha_unica
                 )
 
                 # 📧 ENVIAR EMAIL DE CONFIRMACIÓN DE RESERVA
@@ -115,11 +138,12 @@ def reservar_clase(request):
                     logger.error(f"Error enviando email de confirmación: {str(e)}")
                 
                 request.session['reserva_exitosa'] = {
-                    'tipo': 'recurrente',
+                    'tipo': 'temporal' if es_temporal else 'recurrente',
                     'clase': clase.get_nombre_display(),
                     'dia': clase.dia,
                     'horario': clase.horario.strftime('%H:%M'),
                     'sede': clase.get_direccion_corta(),
+                    'fecha_unica': fecha_unica.strftime('%d/%m/%Y') if fecha_unica else None,
                 }
                 return redirect('accounts:mis_reservas')
                 
@@ -250,9 +274,13 @@ def cancelar_reserva(request, numero_reserva):
     reserva = get_object_or_404(
         Reserva,
         numero_reserva=numero_reserva,
-        usuario=request.user,
-        activa=True
+        usuario=request.user
     )
+
+    # Protección contra double-POST: si ya fue cancelada, redirigir limpiamente
+    if not reserva.activa:
+        messages.info(request, 'Esta reserva ya fue cancelada.')
+        return redirect('accounts:mis_reservas')
 
     puede_cancelar, mensaje = reserva.puede_modificarse()
 
@@ -318,6 +346,10 @@ def cancelar_reserva(request, numero_reserva):
         except Exception as e:
             messages.error(request, 'Ocurrió un error al procesar la cancelación. Intentá nuevamente.')
 
+        # Si la reserva quedó inactiva en DB (por el save antes de la excepción),
+        # no redirigir a detalle_reserva (causaría 404)
+        if not reserva.activa:
+            return redirect('accounts:mis_reservas')
         return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
 
     # GET: redirigir al detalle (el modal está ahí)
@@ -345,6 +377,16 @@ def notificar_admins_cancelacion(reserva, tipo, fecha=None):
         enviar_notificacion_cancelacion_a_admins(reserva, tipo=tipo, fecha=fecha)
     except Exception as e:
         logger.error(f"Error notificando admins por cancelación de {reserva.numero_reserva}: {e}")
+
+@login_required
+@require_http_methods(["POST"])
+def cerrar_modal_ausencia_registrada(request):
+    """
+    Elimina la session key 'ausencia_registrada' cuando el usuario cierra el modal.
+    Se llama por AJAX desde mis_reservas.html.
+    """
+    request.session.pop('ausencia_registrada', None)
+    return JsonResponse({'ok': True})
 
 @login_required
 def cancelar_ausencia(request, ausencia_id):
@@ -1923,6 +1965,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
         clase_id_post = request.POST.get('clase')
         usuario_id_post = request.POST.get('usuario')
         notificar = request.POST.get('notificar_usuario') == 'on'
+        tipo_reserva = request.POST.get('tipo_reserva', 'recurrente')
 
         # Validar que se seleccionaron ambos
         if not clase_id_post or not usuario_id_post:
@@ -1937,8 +1980,9 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
         clase = get_object_or_404(Clase, id=clase_id_post, activa=True)
         usuario = get_object_or_404(User, id=usuario_id_post, is_staff=False)
 
-        # Validar que no tenga ya una reserva activa en esa clase
-        if Reserva.objects.filter(usuario=usuario, clase=clase, activa=True).exists():
+        # Para recurrente: no puede haber ninguna reserva activa en esa clase
+        # Para temporal/recupero: el modelo valida duplicados de fecha_unica
+        if tipo_reserva == 'recurrente' and Reserva.objects.filter(usuario=usuario, clase=clase, activa=True).exists():
             messages.error(
                 request,
                 f'{usuario.get_full_name() or usuario.username} ya tiene una reserva activa '
@@ -1965,11 +2009,30 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 'usuario_preseleccionado': usuario_preseleccionado,
             })
 
+        # Reemplazar con:
         try:
             with transaction.atomic():
+                # Calcular fecha_unica y es_recupero según tipo
+                fecha_unica = None
+                es_recupero = False
+                if tipo_reserva in ('temporal', 'recupero'):
+                    hoy = timezone.now().date()
+                    dias_map = {
+                        'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+                        'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+                    }
+                    dia_num = dias_map.get(clase.dia, 0)
+                    dias_hasta = (dia_num - hoy.weekday()) % 7
+                    if dias_hasta == 0:
+                        dias_hasta = 7
+                    fecha_unica = hoy + timedelta(days=dias_hasta)
+                    es_recupero = (tipo_reserva == 'recupero')
+
                 reserva = Reserva.objects.create(
                     usuario=usuario,
                     clase=clase,
+                    fecha_unica=fecha_unica,
+                    es_recupero=es_recupero,
                 )
 
                 # Email opcional
@@ -1980,8 +2043,14 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                     except Exception as e:
                         logger.error(f"Error enviando email de confirmación (admin): {str(e)}")
 
+                tipo_label = {
+                    'recurrente': 'recurrente',
+                    'temporal': 'una sola vez',
+                    'recupero': 'recupero',
+                }.get(tipo_reserva, 'recurrente')
+
                 mensaje = (
-                    f'✅ Reserva {reserva.numero_reserva} creada para '
+                    f'✅ Reserva {reserva.numero_reserva} ({tipo_label}) creada para '
                     f'{usuario.get_full_name() or usuario.username} en '
                     f'{clase.get_nombre_display()} - {clase.dia} '
                     f'{clase.horario.strftime("%H:%M")} ({clase.get_direccion_corta()}).'

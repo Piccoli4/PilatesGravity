@@ -1079,8 +1079,15 @@ class EstadoPagoCliente(models.Model):
         hoy = timezone.now().date()
         primer_dia_mes = date(hoy.year, hoy.month, 1)
         
-        # Calcular fecha de vencimiento (día 10 del mes actual)
-        fecha_vencimiento = date(hoy.year, hoy.month, 10)
+        # Calcular fecha de vencimiento
+        # Si ya pasó el día 10, el vencimiento es el 10 del mes siguiente
+        if hoy.day > 10:
+            if hoy.month == 12:
+                fecha_vencimiento = date(hoy.year + 1, 1, 10)
+            else:
+                fecha_vencimiento = date(hoy.year, hoy.month + 1, 10)
+        else:
+            fecha_vencimiento = date(hoy.year, hoy.month, 10)
         
         # Determinar si cobrar mes completo o medio mes
         es_medio_mes = False
@@ -1123,10 +1130,6 @@ class EstadoPagoCliente(models.Model):
         self.saldo_actual -= monto_a_cobrar
         self.monto_deuda_mensual = monto_a_cobrar
         self.fecha_limite_pago = fecha_vencimiento
-        
-        # Si ya pasó la fecha límite, no puede reservar
-        if hoy > fecha_vencimiento:
-            self.puede_reservar = False
         
         self.save()
         
@@ -1379,6 +1382,16 @@ class RegistroPago(models.Model):
             ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
 
             estado_cliente.saldo_actual = total_pagado - total_deudas_generadas
+
+            # Si no quedan deudas vencidas pendientes, desbloquear reservas
+            if not estado_cliente.puede_reservar:
+                tiene_deudas_vencidas = DeudaMensual.objects.filter(
+                    usuario=self.cliente,
+                    estado='vencido',
+                    monto_pendiente__gt=0
+                ).exists()
+                if not tiene_deudas_vencidas:
+                    estado_cliente.puede_reservar = True
 
             # Guardar cambios
             estado_cliente.save()

@@ -112,7 +112,8 @@
                                 {% for clase in clases_disponibles %}
                                     <option value="{{ clase.id }}"
                                             data-cupos="{{ clase.cupos_disponibles }}"
-                                            data-maximo="{{ clase.cupo_maximo }}">
+                                            data-maximo="{{ clase.cupo_maximo }}"
+                                            data-dia="{{ clase.dia }}">
                                         {{ clase.get_nombre_display }} — {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }} ({{ clase.cupos_disponibles }}/{{ clase.cupo_maximo }} cupos)
                                     </option>
                                 {% endfor %}
@@ -124,6 +125,62 @@
                         {% endif %}
                     </div>
 
+                </div>
+
+                <!-- Tipo de reserva -->
+                <input type="hidden" name="tipo_reserva" id="tipo_reserva" value="recurrente">
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium text-gris-oscuro">Tipo de reserva</label>
+                    <div class="grid grid-cols-3 gap-2">
+
+                        <button type="button" id="btn-recurrente" onclick="setTipoReserva('recurrente')"
+                            class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border-2 border-principal text-principal bg-white transition-all duration-200">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+                                <path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+                            </svg>
+                            <span class="text-sm font-semibold leading-none">Recurrente</span>
+                            <span class="text-xs font-normal leading-none opacity-70">Cada semana</span>
+                        </button>
+
+                        <button type="button" id="btn-temporal" onclick="setTipoReserva('temporal')"
+                            class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border border-gris-medio/30 text-gris-medio bg-white transition-all duration-200">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="4" rx="2"/>
+                                <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/>
+                                <line x1="3" x2="21" y1="10" y2="10"/>
+                            </svg>
+                            <span class="text-sm font-semibold leading-none">Una sola vez</span>
+                            <span class="text-xs font-normal leading-none opacity-70">Consume plan</span>
+                        </button>
+
+                        <button type="button" id="btn-recupero" onclick="setTipoReserva('recupero')"
+                            class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border border-gris-medio/30 text-gris-medio bg-white transition-all duration-200">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                            <span class="text-sm font-semibold leading-none">Recupero</span>
+                            <span class="text-xs font-normal leading-none opacity-70">No consume plan</span>
+                        </button>
+
+                    </div>
+
+                    <div id="desc-recurrente" class="bg-secundario/10 border border-principal/30 rounded-lg px-4 py-3 text-md text-principal">
+                        El alumno asistirá todas las semanas al mismo día y horario.
+                    </div>
+                    <div id="desc-temporal" class="hidden bg-secundario/10 border border-secundario/30 rounded-lg px-4 py-3 text-md text-gris-oscuro">
+                        <span class="font-medium text-principal">Clase única.</span>
+                        El alumno irá únicamente el próximo
+                        <span id="fecha-display-temporal" class="font-semibold text-principal">—</span>.
+                        Consume una clase del plan.
+                    </div>
+                    <div id="desc-recupero" class="hidden bg-principal/10 border border-principal/30 rounded-lg px-4 py-3 text-md text-gris-oscuro">
+                        <span class="font-medium text-principal">Recupero de clase.</span>
+                        El alumno irá únicamente el próximo
+                        <span id="fecha-display-recupero" class="font-semibold text-principal">—</span>.
+                        <strong>No</strong> consume clases del plan.
+                    </div>
                 </div>
 
                 <!-- Checkbox notificación -->
@@ -203,6 +260,86 @@
             }
         });
     }
+
+    // ── Tipo de reserva ──────────────────────────────────────────────
+    function setTipoReserva(tipo) {
+        document.getElementById('tipo_reserva').value = tipo;
+
+        const btns = {
+            recurrente: document.getElementById('btn-recurrente'),
+            temporal:   document.getElementById('btn-temporal'),
+            recupero:   document.getElementById('btn-recupero'),
+        };
+        const descs = {
+            recurrente: document.getElementById('desc-recurrente'),
+            temporal:   document.getElementById('desc-temporal'),
+            recupero:   document.getElementById('desc-recupero'),
+        };
+
+        Object.entries(btns).forEach(([key, btn]) => {
+            if (key === tipo) {
+                btn.classList.add('border-2', 'border-principal', 'text-principal');
+                btn.classList.remove('border', 'border-gris-medio/30', 'text-gris-medio');
+                descs[key].classList.remove('hidden');
+            } else {
+                btn.classList.remove('border-2', 'border-principal', 'text-principal');
+                btn.classList.add('border', 'border-gris-medio/30', 'text-gris-medio');
+                descs[key].classList.add('hidden');
+            }
+        });
+
+        if (tipo !== 'recurrente') actualizarFechaDisplay();
+    }
+
+    function actualizarFechaDisplay() {
+        // Obtener día de la clase seleccionada
+        let diaClase = null;
+
+        {% if clase_preseleccionada %}
+            diaClase = '{{ clase_preseleccionada.dia }}';
+        {% else %}
+            const selectClase = document.getElementById('id_clase');
+            if (selectClase && selectClase.value) {
+                const opt = selectClase.options[selectClase.selectedIndex];
+                diaClase = opt?.dataset.dia || null;
+            }
+        {% endif %}
+
+        if (!diaClase) return;
+
+        const diasMap = {
+            'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
+            'Jueves': 4, 'Viernes': 5, 'Sábado': 6
+        };
+        const hoy = new Date();
+        const diaHoyJS = hoy.getDay();
+        const diaObjetivo = diasMap[diaClase];
+        if (diaObjetivo === undefined) return;
+
+        let diasHasta = (diaObjetivo - diaHoyJS + 7) % 7;
+        if (diasHasta === 0) diasHasta = 7;
+
+        const fechaProxima = new Date(hoy);
+        fechaProxima.setDate(hoy.getDate() + diasHasta);
+
+        const opts = { weekday: 'long', day: 'numeric', month: 'long' };
+        const texto = fechaProxima.toLocaleDateString('es-AR', opts);
+
+        document.getElementById('fecha-display-temporal').textContent = texto;
+        document.getElementById('fecha-display-recupero').textContent = texto;
+    }
+
+    // Actualizar fecha si cambia la clase (solo cuando no está preseleccionada)
+    {% if not clase_preseleccionada %}
+    document.addEventListener('DOMContentLoaded', () => {
+        // Tom Select emite 'change' en el select original
+        const selectClase = document.getElementById('id_clase');
+        selectClase?.addEventListener('change', () => {
+            const tipo = document.getElementById('tipo_reserva').value;
+            if (tipo !== 'recurrente') actualizarFechaDisplay();
+        });
+    });
+    {% endif %}
 </script>
 
 <!-- Adaptar Tom Select a la paleta del proyecto -->
