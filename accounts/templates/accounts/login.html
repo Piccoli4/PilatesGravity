@@ -5,33 +5,6 @@
 {% block title %}Iniciar Sesión - Pilates Gravity{% endblock %}
 
 {% block content %}
-    <!-- Mostrar solo mensajes relacionados con login -->
-    {% if messages %}
-        {% for message in messages %}
-            {% if "login" in message.message|lower or "credenciales" in message.message|lower or "usuario" in message.message|lower or "contraseña" in message.message|lower or message.tags == 'error' or message.tags == 'danger' %}
-                <div class="mb-6 px-5 py-4 rounded-xl border-none border-l-4 relative animate-fadeIn
-                            {% if message.tags == 'success' %}
-                                bg-gradient-to-r from-green-100 to-green-50 border-l-green-500 text-green-800
-                            {% elif message.tags == 'error' or message.tags == 'danger' %}
-                                bg-gradient-to-r from-red-100 to-red-50 border-l-red-500 text-red-800
-                            {% elif message.tags == 'warning' %}
-                                bg-gradient-to-r from-yellow-100 to-yellow-50 border-l-yellow-500 text-yellow-800
-                            {% elif message.tags == 'info' %}
-                                bg-gradient-to-r from-blue-100 to-blue-50 border-l-blue-500 text-blue-800
-                            {% endif %}">
-                    {{ message }}
-                    <button 
-                        type="button" 
-                        class="absolute top-1/2 right-4 -translate-y-1/2 bg-none border-none text-xl font-bold text-current cursor-pointer opacity-70 hover:opacity-100 transition-opacity duration-300 w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/10"
-                        onclick="this.parentElement.style.display='none'"
-                    >
-                        ×
-                    </button>
-                </div>
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-
     <!-- Header del login -->
     <div class="text-center mb-1 relative">
         <!-- Icono principal con efectos -->
@@ -182,6 +155,7 @@
         <!-- Botón de envío -->
         <div class="my-3">
             <button type="submit" 
+                    data-loading-text="Iniciando sesión..."
                     class="w-full px-6 py-4 bg-gradient-to-br from-secundario to-principal text-white border-none rounded-full font-inherit font-semibold text-lg cursor-pointer transition-all duration-500 relative overflow-hidden flex items-center justify-center gap-3 shadow-btn-primary btn-shine
                            hover:-translate-y-1 hover:shadow-btn-primary-hover">
                 <span class="transition-transform duration-300">Iniciar Sesión</span>

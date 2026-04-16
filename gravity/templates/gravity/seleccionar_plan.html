@@ -135,7 +135,7 @@
                                         {% if es_primer_plan %}
                                             <!-- Solo plan permanente para el primer plan -->
                                             <input type="hidden" name="tipo_plan" value="permanente">
-                                            <button type="submit" class="w-full bg-gradient-to-r from-principal to-principal-dark text-blanco py-3 px-5 rounded-xl font-bold text-base hover:from-principal-dark hover:to-principal transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-principal/30">
+                                            <button type="submit" data-loading-text="Seleccionando plan..." class="w-full bg-gradient-to-r from-principal to-principal-dark text-blanco py-3 px-5 rounded-xl font-bold text-base hover:from-principal-dark hover:to-principal transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-principal/30">
                                                 <span class="flex items-center justify-center">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -145,7 +145,7 @@
                                             </button>
                                         {% else %}
                                             <!-- Opciones de tipo de plan para planes adicionales -->
-                                            <button type="submit" name="tipo_plan" value="temporal" class="w-full bg-gradient-to-r from-info to-info/80 text-blanco py-2 px-4 rounded-xl font-semibold hover:from-info/90 hover:to-info transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-102 focus:outline-none focus:ring-4 focus:ring-info/30">
+                                            <button type="submit" data-loading-text="Seleccionando plan..." name="tipo_plan" value="temporal" class="w-full bg-gradient-to-r from-info to-info/80 text-blanco py-2 px-4 rounded-xl font-semibold hover:from-info/90 hover:to-info transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-102 focus:outline-none focus:ring-4 focus:ring-info/30">
                                                 <span class="flex items-center justify-center text-sm">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -153,7 +153,7 @@
                                                     Agregar Temporalmente
                                                 </span>
                                             </button>
-                                            <button type="submit" name="tipo_plan" value="permanente" class="w-full bg-gradient-to-r from-principal to-principal-dark text-blanco py-2 px-4 rounded-xl font-semibold hover:from-principal-dark hover:to-principal transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-102 focus:outline-none focus:ring-4 focus:ring-principal/30">
+                                            <button type="submit" data-loading-text="Seleccionando plan..." name="tipo_plan" value="permanente" class="w-full bg-gradient-to-r from-principal to-principal-dark text-blanco py-2 px-4 rounded-xl font-semibold hover:from-principal-dark hover:to-principal transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-102 focus:outline-none focus:ring-4 focus:ring-principal/30">
                                                 <span class="flex items-center justify-center text-sm">
                                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>

@@ -97,7 +97,7 @@
                     
                     <!-- Botón Crear -->
                     <div class="w-full self-end mb-0.5">
-                        <button type="submit" 
+                        <button type="submit" data-loading-text="Creando..."
                                 class="w-full bg-principal hover:bg-principal-dark text-blanco font-medium py-2 px-4 rounded-lg transition-colors duration-200 shadow-btn-primary hover:shadow-btn-primary-hover flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
@@ -171,7 +171,7 @@
                             <form method="post" class="inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="toggle_activo_plan" value="{{ plan.id }}">
-                                <button type="submit"
+                                <button type="submit" data-loading-text="Activando..."
                                     class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors duration-200
                                     {% if plan.activo %}bg-green-50 text-exito hover:bg-green-100{% else %}bg-gray-100 text-gris-medio hover:bg-gray-200{% endif %}">
                                     {% if plan.activo %}
@@ -293,7 +293,7 @@
                                         <form method="post" class="inline">
                                             {% csrf_token %}
                                             <input type="hidden" name="toggle_activo_plan" value="{{ plan.id }}">
-                                            <button type="submit"
+                                            <button type="submit" data-loading-text="Activando..."
                                                 class="p-2 {% if plan.activo %}text-exito hover:text-green-700 hover:bg-green-50{% else %}text-gris-medio hover:text-gray-500 hover:bg-gray-100{% endif %} rounded-lg transition-colors duration-200"
                                                 title="{% if plan.activo %}Desactivar plan{% else %}Activar plan{% endif %}">
                                                 {% if plan.activo %}
@@ -409,7 +409,7 @@
                                 class="px-4 py-2 bg-gris-claro text-gris-oscuro rounded-lg hover:bg-gray-300 transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" 
+                        <button type="submit" data-loading-text="Guardando..."
                                 class="px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark transition-colors">
                             Guardar Cambios
                         </button>

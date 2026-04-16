@@ -12,6 +12,7 @@ from .models import UserProfile, Testimonio
 from gravity.email_service import enviar_email_bienvenida_completo, enviar_email_despedida_completo
 from gravity.models import AusenciaTemporal
 from datetime import date, timedelta
+from django.db import IntegrityError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,11 @@ def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            try:
+                user = form.save()
+            except IntegrityError:
+                form.add_error('username', 'Ya existe una cuenta con ese nombre de usuario. Por favor elegí uno diferente.')
+                return render(request, 'accounts/signup.html', {'form': form})
             username = form.cleaned_data.get('username')
             messages.success(
                 request,
@@ -275,6 +280,7 @@ class CustomPasswordResetView(PasswordResetView):
     form_class = CustomPasswordResetForm
     email_template_name = 'accounts/password_reset_email.txt'
     subject_template_name = 'accounts/password_reset_subject.txt'
+    html_email_template_name = 'accounts/password_reset_email.html'
     success_url = reverse_lazy('accounts:password_reset_done')
     
     def form_valid(self, form):

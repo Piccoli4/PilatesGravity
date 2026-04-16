@@ -416,34 +416,99 @@ class Reserva(models.Model):
         return True, "Puedes modificar tu reserva"
 
     def get_proxima_clase_info(self):
-        """Devuelve información sobre cuándo es la próxima clase"""
+        """Devuelve información sobre cuándo es la próxima clase, respetando ausencias y fecha_unica."""
         hoy = timezone.localtime(timezone.now())
+        horario = self.clase.horario.strftime('%H:%M')
+        sede = self.clase.get_direccion_corta()
+
+        # Caso 1: reserva de fecha única (recupero o cupo temporal)
+        if self.fecha_unica:
+            dias_hasta = (self.fecha_unica - hoy.date()).days
+            if dias_hasta == 0:
+                return f"Hoy a las {horario} en {sede}"
+            elif dias_hasta == 1:
+                return f"Mañana a las {horario} en {sede}"
+            else:
+                return f"El {self.fecha_unica.strftime('%d/%m')} ({self.clase.dia}) a las {horario} en {sede}"
+
+        # Caso 2: reserva recurrente
         dias_semana = {
-            'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+            'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+            'Jueves': 3, 'Viernes': 4, 'Sábado': 5
         }
-        
         dia_clase = dias_semana.get(self.clase.dia)
         if dia_clase is None:
             return "Día inválido"
-        
-        # Encontrar la próxima fecha de esta clase
+
         dias_hasta_clase = (dia_clase - hoy.weekday()) % 7
-        if dias_hasta_clase == 0:  # Es hoy
-            proxima_clase = hoy.replace(
-                hour=self.clase.horario.hour, 
-                minute=self.clase.horario.minute, 
-                second=0, 
-                microsecond=0
-            )
-            if proxima_clase <= hoy:  # La clase ya pasó hoy
-                dias_hasta_clase = 7
-        
         if dias_hasta_clase == 0:
-            return f"Hoy a las {self.clase.horario.strftime('%H:%M')} en {self.clase.get_direccion_corta()}"
-        elif dias_hasta_clase == 1:
-            return f"Mañana a las {self.clase.horario.strftime('%H:%M')} en {self.clase.get_direccion_corta()}"
+            proxima_hoy = hoy.replace(
+                hour=self.clase.horario.hour,
+                minute=self.clase.horario.minute,
+                second=0, microsecond=0
+            )
+            if proxima_hoy <= hoy:
+                dias_hasta_clase = 7
+
+        proxima_fecha = None
+        for _ in range(10):
+            fecha_candidata = (hoy + timedelta(days=dias_hasta_clase)).date()
+            if not self.ausencias_temporales.filter(fecha=fecha_candidata).exists():
+                proxima_fecha = fecha_candidata
+                break
+            dias_hasta_clase += 7
+
+        if not proxima_fecha:
+            return "Sin próximas clases programadas"
+
+        dias_hasta = (proxima_fecha - hoy.date()).days
+        if dias_hasta == 0:
+            return f"Hoy a las {horario} en {sede}"
+        elif dias_hasta == 1:
+            return f"Mañana a las {horario} en {sede}"
         else:
-            return f"En {dias_hasta_clase} días ({self.clase.dia} a las {self.clase.horario.strftime('%H:%M')} en {self.clase.get_direccion_corta()})"
+            return f"El {proxima_fecha.strftime('%d/%m')} ({self.clase.dia}) a las {horario} en {sede}"
+
+    def get_aclaracion_ausencia(self):
+        """
+        Si la próxima ocurrencia natural tiene una ausencia registrada,
+        devuelve un string descriptivo para mostrar en el template. Si no, devuelve None.
+        """
+        if self.fecha_unica:
+            return None
+
+        hoy = timezone.localtime(timezone.now())
+        dias_semana = {
+            'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+            'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+        }
+        dia_clase = dias_semana.get(self.clase.dia)
+        if dia_clase is None:
+            return None
+
+        dias_hasta_clase = (dia_clase - hoy.weekday()) % 7
+        if dias_hasta_clase == 0:
+            proxima_hoy = hoy.replace(
+                hour=self.clase.horario.hour,
+                minute=self.clase.horario.minute,
+                second=0, microsecond=0
+            )
+            if proxima_hoy <= hoy:
+                dias_hasta_clase = 7
+
+        primera_fecha = (hoy + timedelta(days=dias_hasta_clase)).date()
+        if not self.ausencias_temporales.filter(fecha=primera_fecha).exists():
+            return None
+
+        dias_ausencia = (primera_fecha - hoy.date()).days
+        if dias_ausencia == 0:
+            ref = "hoy"
+        elif dias_ausencia == 1:
+            ref = "mañana"
+        else:
+            ref = f"el {primera_fecha.strftime('%d/%m')}"
+
+        return f"Cancelación registrada para {ref}"
 
     def get_proxima_fecha(self):
         """Devuelve la fecha (date) de la próxima ocurrencia de esta clase."""

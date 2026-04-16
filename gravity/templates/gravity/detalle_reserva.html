@@ -370,7 +370,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="confirmar_cancelacion" value="confirmar">
                             <input type="hidden" name="tipo_cancelacion" value="temporal">
-                            <button type="submit"
+                            <button type="submit" data-loading-text="Cancelando..."
                                 class="w-full bg-[#5D768B] hover:bg-[#4a6070] text-white text-sm font-medium py-2 px-4 rounded-lg transition">
                                 Cancelar solo el {{ reserva.get_proxima_fecha }}
                             </button>
@@ -386,7 +386,7 @@
                             {% if ausencia_proxima %}
                             <form method="POST" action="{% url 'gravity:cancelar_ausencia' ausencia_proxima.id %}">
                                 {% csrf_token %}
-                                <button type="submit"
+                                <button type="submit" data-loading-text="Cancelando..."
                                     class="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition">
                                     Cancelar ausencia del {{ reserva.get_proxima_fecha }}
                                 </button>
@@ -407,7 +407,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="confirmar_cancelacion" value="confirmar">
                         <input type="hidden" name="tipo_cancelacion" value="permanente">
-                        <button type="submit"
+                        <button type="submit" data-loading-text="Cancelando..."
                             class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition">
                             Cancelar definitivamente
                         </button>

@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from .models import UserProfile, Testimonio
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class SignUpForm(UserCreationForm):
@@ -459,6 +460,7 @@ class CustomPasswordResetForm(PasswordResetForm):
                 'studio_name': config.nombre_estudio,
                 'studio_phone': config.telefono_contacto,
                 'studio_email': config.email_contacto,
+                'domain_url': settings.SITE_URL,
             })
         except Exception:
             # Si no se puede obtener la configuración, usar valores por defecto
@@ -466,6 +468,7 @@ class CustomPasswordResetForm(PasswordResetForm):
                 'studio_name': 'Pilates Gravity',
                 'studio_phone': '+54 342 511 4448',
                 'studio_email': 'pilatesgravity@gmail.com',
+                'domain_url': settings.SITE_URL,
             })
 
         return super().save(
@@ -476,7 +479,7 @@ class CustomPasswordResetForm(PasswordResetForm):
             token_generator=token_generator,
             from_email=from_email,
             request=request,
-            html_email_template_name=html_email_template_name,
+            html_email_template_name='accounts/password_reset_email.html',
             extra_email_context=extra_email_context
         )
 
