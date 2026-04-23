@@ -358,15 +358,17 @@
 
                         <td class="py-4 px-1">
                             {% if puede_ver_pagos %}
-                                {% if cliente_estado.plan_actual %}
-                                    <span class="font-semibold text-gray-900">
-                                        {{ cliente_estado.plan_actual.nombre }}
-                                    </span>
+                                {% if cliente_estado.planes_activos_lista %}
+                                    {% for plan_u in cliente_estado.planes_activos_lista %}
+                                        <div class="font-semibold text-gray-900 {% if not forloop.last %}mb-1{% endif %}">
+                                            {{ plan_u.plan.nombre }}
+                                        </div>
+                                    {% endfor %}
                                 {% else %}
                                     <span class="text-gray-400">-</span>
                                 {% endif %}
-                                {% else %}
-                                    <span class="text-gray-300">—</span>
+                            {% else %}
+                                <span class="text-gray-300">—</span>
                             {% endif %}
                         </td>
 
@@ -578,14 +580,16 @@
 
                         <div class="grid grid-cols-2 gap-4 text-center mb-3">
                             <div>
-                                <div class="text-xs text-gray-500">Plan</div>
-                                <div class="font-bold text-gray-900">
-                                    {% if cliente_estado.plan_actual %}
-                                    {{ cliente_estado.plan_actual.nombre }}
-                                    {% else %}
-                                    Sin plan
-                                    {% endif %}
-                                </div>
+                                <div class="text-xs text-gray-500">Plan{{ cliente_estado.planes_activos_lista|length|pluralize }}</div>
+                                {% if cliente_estado.planes_activos_lista %}
+                                    {% for plan_u in cliente_estado.planes_activos_lista %}
+                                        <div class="font-bold text-gray-900 text-sm {% if not forloop.last %}mb-1{% endif %}">
+                                            {{ plan_u.plan.nombre }}
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="font-bold text-gray-900">Sin plan</div>
+                                {% endif %}
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Saldo</div>

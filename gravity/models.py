@@ -1482,6 +1482,11 @@ def actualizar_estado_pago_por_reserva(sender, instance, created, **kwargs):
     Actualiza el estado de pago cuando se crea o modifica una reserva.
     Genera deuda automática al asignar un plan nuevo.
     """
+
+    # Las reservas de fecha única (cupos temporales y recuperos) no cambian el plan
+    if instance.fecha_unica:
+        return
+
     try:
         estado_cliente, created_estado = EstadoPagoCliente.objects.get_or_create(
             usuario=instance.usuario,
@@ -1895,6 +1900,43 @@ class NotificacionCancelacionPlan(models.Model):
         nombre = self.usuario.get_full_name() or self.usuario.username
         plan_nombre = self.plan.nombre if self.plan else 'Plan eliminado'
         return f"[Cancelación Plan] {nombre} — {plan_nombre}"
+
+class NotificacionPlanAdicional(models.Model):
+    """
+    Notifica a los administradores cuando un usuario agrega un segundo plan activo.
+    """
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notificaciones_plan_adicional',
+        verbose_name="Usuario"
+    )
+    plan = models.ForeignKey(
+        PlanPago,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Plan agregado"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha"
+    )
+    leida_por = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='notificaciones_plan_adicional_leidas',
+        verbose_name="Vista por"
+    )
+
+    class Meta:
+        verbose_name = "Notificación de Plan Adicional"
+        verbose_name_plural = "Notificaciones de Planes Adicionales"
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        nombre = self.usuario.get_full_name() or self.usuario.username
+        plan_nombre = self.plan.nombre if self.plan else 'Plan eliminado'
+        return f"[Plan Adicional] {nombre} — {plan_nombre}"
 
 class AjusteDeudaEspecial(models.Model):
     """

@@ -606,6 +606,68 @@
                 </div>
             </div>
 
+            <!-- Planes Activos -->
+            <div class="mb-6">
+                <div class="info-card">
+                    <h6 class="text-sm uppercase text-gray-500 font-semibold mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                        </svg>
+                        Planes Activos ({{ planes_activos_usuario|length }})
+                    </h6>
+
+                    {% if planes_activos_usuario %}
+                        {% for plan_u in planes_activos_usuario %}
+                            <div class="reserva-item" style="border-left-color: var(--secundario);">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
+                                    <div class="md:col-span-8">
+                                        <h6 class="font-semibold text-gray-900 mb-1">
+                                            {{ plan_u.plan.nombre }}
+                                        </h6>
+                                        <div class="text-sm text-gray-600">
+                                            {{ plan_u.plan.clases_por_semana }} clase{{ plan_u.plan.clases_por_semana|pluralize }} por semana
+                                            &nbsp;·&nbsp;
+                                            ${{ plan_u.plan.precio_mensual|floatformat:0 }}/mes
+                                        </div>
+                                        <div class="text-xs text-gray-400 mt-1">
+                                            Activo desde {{ plan_u.fecha_inicio|date:"d/m/Y" }}
+                                            {% if plan_u.creado_por %}
+                                                · Asignado por {{ plan_u.creado_por.get_full_name|default:plan_u.creado_por.username }}
+                                            {% else %}
+                                                · Seleccionado por el usuario
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="md:col-span-4 flex justify-end items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            Activo
+                                        </span>
+                                        <button onclick="confirmarCancelarPlan('{{ plan_u.id }}', '{{ plan_u.plan.nombre|escapejs }}')"
+                                                class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-white hover:bg-red-50 transition-colors"
+                                                title="Cancelar este plan">
+                                            <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                            </svg>
+                            <h5 class="text-lg font-medium text-gray-500 mb-2">Sin Planes Activos</h5>
+                            <p class="text-gray-500">Este usuario no tiene planes activos.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Reservas Activas -->
             <div class="mb-6">
                 <div class="info-card">
@@ -846,6 +908,40 @@
                     >
                         Cancelar
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de cancelación de plan (admin) -->
+    <div id="cancelarPlanModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-medium text-gray-900 mb-2">Cancelar Plan</h3>
+                <p class="text-gray-600 mb-1">Vas a cancelar el plan:</p>
+                <p class="font-semibold text-gray-900 mb-4" id="modal-plan-nombre"></p>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-left">
+                    <p class="text-sm text-red-700">
+                        ⚠️ Esta acción cancelará el plan <strong>inmediatamente</strong> y eliminará todas las reservas permanentes activas del usuario.
+                    </p>
+                </div>
+                <div class="flex justify-center gap-3">
+                    <button onclick="document.getElementById('cancelarPlanModal').classList.add('hidden')"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <form id="form-cancelar-plan" method="POST" action="">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700">
+                            Sí, cancelar plan
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1119,5 +1215,13 @@
                 location.reload();
             }
         }, 300000); // 5 minutos
+
+        // Modal para cancelar plan
+        function confirmarCancelarPlan(planId, planNombre) {
+            document.getElementById('modal-plan-nombre').textContent = planNombre;
+            document.getElementById('form-cancelar-plan').action = `/admin-panel/planes/${planId}/cancelar/`;
+            document.getElementById('cancelarPlanModal').classList.remove('hidden');
+        }
+        
     </script>
 {% endblock %}

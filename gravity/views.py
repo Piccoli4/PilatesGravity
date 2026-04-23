@@ -11,7 +11,8 @@ from .models import (
     AusenciaTemporal, 
     NotificacionCancelacion, 
     NotificacionCancelacionPlan, 
-    AjusteDeudaEspecial, 
+    AjusteDeudaEspecial,
+    NotificacionPlanAdicional, 
     DIAS_SEMANA, 
     DIAS_SEMANA_COMPLETOS
 )
@@ -960,6 +961,16 @@ def admin_dashboard(request):
     except Exception:
         notificaciones_cancelacion_plan = NotificacionCancelacionPlan.objects.none()
 
+    # Notificaciones de planes adicionales (últimos 30 días, no leídas)
+    try:
+        notificaciones_plan_adicional = NotificacionPlanAdicional.objects.filter(
+            fecha_creacion__gte=desde_30_dias
+        ).exclude(
+            leida_por=request.user
+        ).select_related('usuario', 'plan').order_by('-fecha_creacion')
+    except Exception:
+        notificaciones_plan_adicional = NotificacionPlanAdicional.objects.none()
+
     # Reservas de cupos temporales recientes (últimos 7 días, no vistas en sesión)
     recuperos_vistos = request.session.get('recuperos_vistos', [])
     reservas_temporales_recientes = Reserva.objects.filter(
@@ -987,10 +998,13 @@ def admin_dashboard(request):
         'hay_notificaciones_plan': notificaciones_cancelacion_plan.exists(),
         'reservas_temporales_recientes': reservas_temporales_recientes,
         'hay_reservas_temporales': hay_reservas_temporales,
+        'notificaciones_plan_adicional': notificaciones_plan_adicional,
+        'hay_notificaciones_plan_adicional': notificaciones_plan_adicional.exists(),
         'total_notificaciones': (
             notificaciones_cancelacion.count() +
             notificaciones_cancelacion_plan.count() +
-            reservas_temporales_recientes.count()
+            reservas_temporales_recientes.count() +
+            notificaciones_plan_adicional.count()
         ),
         'puede_ver_pagos': get_puede_ver_pagos(request.user),
     }
@@ -1027,6 +1041,13 @@ def admin_marcar_notificaciones_leidas(request):
             fecha_creacion__gte=desde_30
         ).exclude(leida_por=request.user)
         for n in notificaciones_plan:
+            n.leida_por.add(request.user)
+
+        # Marcar planes adicionales como leídos
+        notificaciones_adicional = NotificacionPlanAdicional.objects.filter(
+            fecha_creacion__gte=desde_30
+        ).exclude(leida_por=request.user)
+        for n in notificaciones_adicional:
             n.leida_por.add(request.user)
 
         # Guardar IDs de reservas temporales vistas en la sesión
@@ -2182,6 +2203,11 @@ def admin_usuario_detalle(request, usuario_id):
         'clase'
     ).order_by('-fecha_modificacion')[:10]  # Últimas 10 canceladas
     
+    planes_activos_usuario = PlanUsuario.objects.filter(
+        usuario=usuario,
+        activo=True
+    ).select_related('plan').order_by('fecha_inicio')
+
     context = {
         'usuario': usuario,
         'profile': profile,
@@ -2189,6 +2215,7 @@ def admin_usuario_detalle(request, usuario_id):
         'reservas_canceladas': reservas_canceladas,
         'total_reservas_activas': reservas_activas.count(),
         'total_reservas_historicas': usuario.reservas_pilates.count(),
+        'planes_activos_usuario': planes_activos_usuario,
     }
     
     return render(request, 'gravity/admin/usuario_detalle.html', context)
@@ -2562,6 +2589,12 @@ def admin_pagos_vista_principal(request):
         ).order_by('-fecha_pago').first()
         
         cliente_estado.ultimo_pago_obj = ultimo_pago
+        cliente_estado.planes_activos_lista = list(
+            PlanUsuario.objects.filter(
+                usuario=cliente_estado.usuario,
+                activo=True
+            ).select_related('plan').order_by('fecha_inicio')
+        )
         clientes_procesados.append(cliente_estado)
     
     # ===== APLICAR FILTROS =====
@@ -2865,9 +2898,55 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
         'estado_pago': estado_pago,
         'planes_precios': planes_precios,
         'deudas': DeudaMensual.objects.filter(usuario=cliente).order_by('-mes_año'),
+        'planes_activos_usuario': PlanUsuario.objects.filter(
+            usuario=cliente,
+            activo=True
+        ).select_related('plan').order_by('fecha_inicio'),
     }
     
     return render(request, 'gravity/admin/pagos_editar_estado.html', context)
+
+@admin_required
+def admin_cancelar_plan_usuario(request, plan_id):
+    """
+    Permite al administrador cancelar un plan específico de un usuario.
+    Cancela el plan inmediatamente y todas sus reservas permanentes activas.
+    """
+    if request.method != 'POST':
+        return redirect('gravity:admin_usuarios_lista')
+
+    plan = get_object_or_404(PlanUsuario, id=plan_id, activo=True)
+    usuario = plan.usuario
+
+    # Cancelar todas las reservas permanentes activas del usuario
+    reservas_canceladas = usuario.reservas_pilates.filter(
+        activa=True,
+        fecha_unica__isnull=True
+    )
+    cantidad_canceladas = reservas_canceladas.count()
+    reservas_canceladas.update(activa=False)
+
+    # Desactivar el plan
+    plan.activo = False
+    plan.reservas_canceladas = True
+    plan.save()
+
+    # Recalcular plan_actual en EstadoPagoCliente
+    try:
+        estado = usuario.estado_pago
+        nuevo_plan = estado.actualizar_plan_automatico()
+        if not PlanUsuario.objects.filter(usuario=usuario, activo=True).exists():
+            estado.plan_actual = None
+            estado.save(update_fields=['plan_actual'])
+    except EstadoPagoCliente.DoesNotExist:
+        pass
+
+    messages.success(
+        request,
+        f'Plan "{plan.plan.nombre}" cancelado para {usuario.get_full_name() or usuario.username}. '
+        f'{cantidad_canceladas} reserva{"s" if cantidad_canceladas != 1 else ""} cancelada{"s" if cantidad_canceladas != 1 else ""}.'
+    )
+    return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
 
 # ==============================================================================
 # GESTIÓN DE ADMINISTRADORES CON PERMISOS RESTRINGIDOS (solo superadmins)
@@ -3046,7 +3125,20 @@ def seleccionar_plan(request):
         
         try:
             plan_seleccionado = PlanPago.objects.get(id=plan_id, activo=True)
-            
+
+            # Verificar que no exista ya un PlanUsuario activo con el mismo plan
+            if PlanUsuario.objects.filter(
+                usuario=request.user,
+                plan=plan_seleccionado,
+                activo=True
+            ).exists():
+                messages.error(
+                    request,
+                    f'Ya tenés un plan activo de "{plan_seleccionado.nombre}". '
+                    f'Si querés cambiarlo, primero cancelá el actual.'
+                )
+                return redirect('gravity:mis_planes')
+
             # Calcular fechas (inicio hoy, fin en un mes)
             fecha_inicio = timezone.now().date()
             fecha_fin = date(2099, 12, 31)
@@ -3062,6 +3154,10 @@ def seleccionar_plan(request):
             )
             
             if planes_actuales.exists():
+                NotificacionPlanAdicional.objects.create(
+                    usuario=request.user,
+                    plan=plan_seleccionado,
+                )
                 messages.success(
                     request,
                     f'¡Plan adicional agregado exitosamente! '

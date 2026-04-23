@@ -16,7 +16,7 @@ from .views import (
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, 
-    admin_pagos_editar_estado_cliente, admin_ajustar_deuda_especial,
+    admin_pagos_editar_estado_cliente, admin_ajustar_deuda_especial, admin_cancelar_plan_usuario,
     # IMPORTACIONES PARA PLANES DE PAGO
     mis_planes, seleccionar_plan, cancelar_plan,
     # IMPORTACIONES PARA TESTIMONIOS
@@ -117,6 +117,7 @@ urlpatterns = [
     path('admin-panel/pagos/configurar-planes/', admin_pagos_configurar_planes, name='admin_pagos_configurar_planes'),
     path('admin-panel/pagos/editar-estado/<int:cliente_id>/', admin_pagos_editar_estado_cliente, name='admin_pagos_editar_estado_cliente'),
     path('admin-panel/pagos/ajustar-deuda/<int:deuda_id>/', admin_ajustar_deuda_especial, name='admin_ajustar_deuda_especial'),
+    path('admin-panel/planes/<int:plan_id>/cancelar/', admin_cancelar_plan_usuario, name='admin_cancelar_plan_usuario'),
 
     # Gestión de planes de pago
     path('planes/', mis_planes, name='mis_planes'),

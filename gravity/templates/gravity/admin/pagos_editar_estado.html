@@ -191,6 +191,58 @@
         </div>
     </div>
 
+    <!-- Planes Activos del Cliente -->
+    <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
+        <div class="card-header text-blanco flex items-center gap-2">
+            <svg class="size-6" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+            </svg>
+            <h5 class="text-lg mb-0">Planes Activos del Cliente</h5>
+        </div>
+        <div class="card-body p-3">
+            {% if planes_activos_usuario %}
+                <div class="space-y-3">
+                    {% for plan_u in planes_activos_usuario %}
+                        <div class="flex items-center justify-between p-3 bg-fondo rounded-lg border border-gris-claro">
+                            <div>
+                                <div class="font-semibold text-gris-oscuro">{{ plan_u.plan.nombre }}</div>
+                                <div class="text-sm text-gris-medio">
+                                    {{ plan_u.plan.clases_por_semana }} clase{{ plan_u.plan.clases_por_semana|pluralize }} por semana
+                                    &nbsp;·&nbsp;
+                                    ${{ plan_u.plan.precio_mensual|floatformat:0 }}/mes
+                                </div>
+                                <div class="text-xs text-gris-medio mt-1">
+                                    Desde {{ plan_u.fecha_inicio|date:"d/m/Y" }}
+                                    {% if plan_u.creado_por %}
+                                        · Asignado por {{ plan_u.creado_por.get_full_name|default:plan_u.creado_por.username }}
+                                    {% else %}
+                                        · Seleccionado por el usuario
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 ml-4 shrink-0">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Activo
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if planes_activos_usuario|length > 1 %}
+                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm text-yellow-800">
+                            <strong>⚠️ Atención:</strong> Este cliente tiene {{ planes_activos_usuario|length }} planes activos simultáneos.
+                            Al guardar un nuevo plan desde el formulario de arriba, se desactivarán todos los actuales y se asignará uno solo.
+                        </p>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p class="text-gris-medio text-sm">Este cliente no tiene planes activos asignados.</p>
+            {% endif %}
+        </div>
+    </div>
+
     {% if request.user.is_superuser %}
     <!-- Card: Ajuste de Deudas Especiales -->
     <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">

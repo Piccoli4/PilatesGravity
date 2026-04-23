@@ -564,6 +564,61 @@
     </div>
 {% endif %}
 
+<!-- Notificaciones de Planes Adicionales -->
+{% if hay_notificaciones_plan_adicional %}
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);">
+                <h5 class="text-lg font-semibold text-white flex items-center gap-2 mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                    </svg>
+                    Planes Adicionales Agregados
+                    <span class="bg-white text-teal-700 text-xs font-bold px-2 py-0.5 rounded-full ml-1">
+                        {{ notificaciones_plan_adicional|length }}
+                    </span>
+                </h5>
+                <button onclick="marcarPlanesAdicionalesLeidos()"
+                    class="text-white text-sm underline hover:no-underline opacity-80 hover:opacity-100 transition-opacity">
+                    Marcar como leídas
+                </button>
+            </div>
+            <div class="divide-y divide-gray-100" id="lista-notificaciones-plan-adicional">
+                {% for notif in notificaciones_plan_adicional %}
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                            style="background-color: #ccfbf1;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-5" style="color: #0f766e;">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800 mb-0">
+                                {{ notif.usuario.get_full_name|default:notif.usuario.username }}
+                            </p>
+                            <p class="text-sm text-gray-500 mb-0">
+                                Agregó el plan <span class="font-medium text-gray-700">{{ notif.plan.nombre|default:"(plan eliminado)" }}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <span class="text-xs text-gray-400">
+                            {{ notif.fecha_creacion|date:"d/m H:i" }}
+                        </span>
+                        <a href="{% url 'gravity:admin_usuario_detalle' notif.usuario.id %}"
+                           class="text-xs px-2 py-1 border border-teal-600 text-teal-700 rounded hover:bg-teal-50 transition-colors">
+                            Ver usuario
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endif %}
+
 <!-- Alertas Importantes (Solo si hay) -->
 {% if clases_casi_llenas %}
     <div class="mb-6">
@@ -673,6 +728,16 @@
                 headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
             }).then(() => {
                 document.getElementById('lista-notificaciones-plan')
+                    ?.closest('.mb-6')?.remove();
+            });
+        }
+
+        function marcarPlanesAdicionalesLeidos() {
+            fetch("{% url 'gravity:admin_marcar_notificaciones_leidas' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' }
+            }).then(() => {
+                document.getElementById('lista-notificaciones-plan-adicional')
                     ?.closest('.mb-6')?.remove();
             });
         }
