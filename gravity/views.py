@@ -3152,7 +3152,23 @@ def seleccionar_plan(request):
                 tipo_plan=tipo_plan,
                 renovacion_automatica=True if tipo_plan == 'permanente' else False
             )
-            
+
+            # Actualizar EstadoPagoCliente y generar deuda del mes actual
+            try:
+                estado_cliente, _ = EstadoPagoCliente.objects.get_or_create(
+                    usuario=request.user,
+                    defaults={'activo': True}
+                )
+                estado_cliente.actualizar_plan_automatico()
+                estado_cliente.refresh_from_db()
+                estado_cliente.generar_deuda_mes_actual()
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(
+                    f"Error generando deuda al seleccionar plan para "
+                    f"{request.user.username}: {e}"
+                )
+
             if planes_actuales.exists():
                 NotificacionPlanAdicional.objects.create(
                     usuario=request.user,
