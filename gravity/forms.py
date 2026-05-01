@@ -1215,20 +1215,14 @@ class EstadoPagoClienteForm(forms.ModelForm):
     """
     Formulario para editar manualmente el estado de pago de un cliente.
     """
-    
+
     class Meta:
         model = EstadoPagoCliente
-        fields = ['plan_actual', 'saldo_actual', 'observaciones', 'activo']
+        fields = ['plan_actual', 'observaciones', 'activo', 'puede_reservar']
         widgets = {
             'plan_actual': forms.Select(attrs={
                 'class': 'form-select',
                 'id': 'id_plan_actual'
-            }),
-            'saldo_actual': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'placeholder': '0,00',
-                'id': 'id_saldo_actual'
             }),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -1239,29 +1233,29 @@ class EstadoPagoClienteForm(forms.ModelForm):
             'activo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
                 'id': 'id_activo'
-            })
+            }),
+            'puede_reservar': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'id_puede_reservar'
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        # Solo mostrar planes activos
+
         self.fields['plan_actual'].queryset = PlanPago.objects.filter(activo=True)
         self.fields['plan_actual'].empty_label = "Sin plan asignado"
-        
-        # Labels personalizados
+
         self.fields['plan_actual'].label = "Plan Asignado"
-        self.fields['saldo_actual'].label = "Saldo Actual ($)"
         self.fields['observaciones'].label = "Observaciones"
         self.fields['activo'].label = "Cliente activo en sistema de pagos"
-        
-        # Help text
+        self.fields['puede_reservar'].label = "Puede reservar clases"
+
         self.fields['plan_actual'].help_text = "Plan asignado manualmente (o automático según reservas)"
-        self.fields['saldo_actual'].help_text = "Saldo actual: positivo = crédito, negativo = deuda"
         self.fields['observaciones'].help_text = "Notas internas sobre el estado de pago"
         self.fields['activo'].help_text = "Si el cliente está activo en el sistema de pagos"
-        
-        # Campos opcionales
+        self.fields['puede_reservar'].help_text = "Desactivar para bloquear reservas por deuda vencida"
+
         self.fields['observaciones'].required = False
 
 class EnviarEmailPagoForm(forms.Form):

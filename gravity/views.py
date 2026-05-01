@@ -2628,6 +2628,9 @@ def admin_pagos_vista_principal(request):
                 activo=True
             ).select_related('plan').order_by('fecha_inicio')
         )
+        cliente_estado.costo_mensual_total = sum(
+            pu.plan.precio_mensual for pu in cliente_estado.planes_activos_lista
+        )
         clientes_procesados.append(cliente_estado)
     
     # ===== APLICAR FILTROS =====
@@ -2925,18 +2928,27 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
         for p in PlanPago.objects.filter(activo=True)
     }
 
+    total_pagado = RegistroPago.objects.filter(
+        cliente=cliente, estado='confirmado'
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    total_deudas = DeudaMensual.objects.filter(
+        usuario=cliente
+    ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+    saldo_calculado = total_pagado - total_deudas
+
     context = {
         'form': form,
         'cliente': cliente,
         'estado_pago': estado_pago,
         'planes_precios': planes_precios,
+        'saldo_calculado': saldo_calculado,
         'deudas': DeudaMensual.objects.filter(usuario=cliente).order_by('-mes_año'),
         'planes_activos_usuario': PlanUsuario.objects.filter(
             usuario=cliente,
             activo=True
         ).select_related('plan').order_by('fecha_inicio'),
     }
-    
+
     return render(request, 'gravity/admin/pagos_editar_estado.html', context)
 
 @admin_required
@@ -2984,6 +2996,100 @@ def admin_cancelar_plan_usuario(request, plan_id):
 # ==============================================================================
 # GESTIÓN DE ADMINISTRADORES CON PERMISOS RESTRINGIDOS (solo superadmins)
 # ==============================================================================
+
+@superadmin_required
+def admin_generar_deuda_manual(request, cliente_id):
+    """
+    Genera una DeudaMensual manualmente para un mes que no tiene deuda aún.
+    Si el mes ya tiene deuda, rechaza con mensaje de error (usar Ajustar).
+    Solo acepta POST. Solo superusuarios.
+    """
+    cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
+
+    if request.method != 'POST':
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente_id)
+
+    mes_str = request.POST.get('mes_año', '')
+    monto_str = request.POST.get('monto', '')
+    motivo = request.POST.get('motivo', '').strip()
+
+    try:
+        partes = mes_str.split('-')
+        año, mes = int(partes[0]), int(partes[1])
+        primer_dia_mes = date(año, mes, 1)
+        monto = Decimal(monto_str)
+
+        if monto <= 0:
+            messages.error(request, 'El monto debe ser mayor a cero.')
+            return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente_id)
+
+        if DeudaMensual.objects.filter(usuario=cliente, mes_año=primer_dia_mes).exists():
+            messages.error(
+                request,
+                f'Ya existe una deuda para ese mes. Usá el botón "Ajustar" sobre la fila correspondiente.'
+            )
+            return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente_id)
+
+        estado_pago = EstadoPagoCliente.objects.filter(usuario=cliente).first()
+        plan = estado_pago.plan_actual if estado_pago else None
+
+        if not plan:
+            messages.error(
+                request,
+                'El cliente no tiene un plan asignado. Asigná uno antes de generar una deuda.'
+            )
+            return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente_id)
+
+        # Fecha de vencimiento: día 10 del mismo mes si no pasó, sino día 10 del mes siguiente
+        hoy = timezone.localtime(timezone.now()).date()
+        dia_10_mismo_mes = date(año, mes, 10)
+        if hoy <= dia_10_mismo_mes:
+            fecha_vencimiento = dia_10_mismo_mes
+        else:
+            if mes == 12:
+                fecha_vencimiento = date(año + 1, 1, 10)
+            else:
+                fecha_vencimiento = date(año, mes + 1, 10)
+
+        with transaction.atomic():
+            DeudaMensual.objects.create(
+                usuario=cliente,
+                mes_año=primer_dia_mes,
+                plan_aplicado=plan,
+                monto_original=monto,
+                monto_pendiente=monto,
+                es_medio_mes=False,
+                estado='pendiente',
+                fecha_vencimiento=fecha_vencimiento,
+                observaciones=(
+                    f'Generada manualmente por '
+                    f'{request.user.get_full_name() or request.user.username}.'
+                    + (f' {motivo}' if motivo else '')
+                ).strip()
+            )
+
+            total_pagado = RegistroPago.objects.filter(
+                cliente=cliente, estado='confirmado'
+            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+            total_deudas = DeudaMensual.objects.filter(
+                usuario=cliente
+            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+            nuevo_saldo = total_pagado - total_deudas
+
+            if estado_pago:
+                estado_pago.saldo_actual = nuevo_saldo
+                estado_pago.save(update_fields=['saldo_actual'])
+
+        mes_display = primer_dia_mes.strftime('%B %Y')
+        messages.success(
+            request,
+            f'Deuda de {mes_display} generada por ${monto:,.0f}. Saldo recalculado.'
+        )
+
+    except (ValueError, TypeError, IndexError):
+        messages.error(request, 'Datos inválidos. Verificá el mes y el monto ingresados.')
+
+    return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente_id)
 
 @superadmin_required
 def admin_gestionar_admins(request):
@@ -3082,11 +3188,11 @@ def admin_ajustar_deuda_especial(request, deuda_id):
     Procesa el ajuste de una deuda a un monto especial acordado con el cliente.
     Solo accesible por superusuarios. Solo acepta POST (accionado desde modal).
     """
-    if request.method != 'POST':
-        return redirect('gravity:admin_pagos_vista_principal')
-
     deuda = get_object_or_404(DeudaMensual, id=deuda_id)
     cliente = deuda.usuario
+
+    if request.method != 'POST':
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
     form = AjusteDeudaForm(request.POST)
 
     if form.is_valid():
@@ -3131,7 +3237,7 @@ def admin_ajustar_deuda_especial(request, deuda_id):
     else:
         messages.error(request, 'Error al procesar el ajuste. Revisá los datos ingresados.')
 
-    return redirect('gravity:admin_pagos_vista_principal')
+    return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
 
 # ==============================================================================
 # VISTAS DE PLANES DE PAGO

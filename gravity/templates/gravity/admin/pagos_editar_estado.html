@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block content %}
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="card p-3 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
         <div>
             <div class="flex items-center gap-2 mb-2 text-principal">
@@ -27,7 +27,7 @@
                 Cliente: <strong class="text-principal">{{ cliente.get_full_name|default:cliente.username }}</strong>
             </p>
         </div>
-        <a href="{% url 'gravity:admin_pagos_vista_principal' %}" 
+        <a href="{% url 'gravity:admin_pagos_vista_principal' %}"
            class="inline-flex items-center gap-2 px-4 py-2 bg-fondo border border-principal text-principal rounded-lg hover:bg-principal hover:text-fondo transition-all duration-200 shadow-sm hover:shadow-md">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
@@ -36,151 +36,121 @@
         </a>
     </div>
 
+    <!-- CARD 1: Formulario plan + configuración -->
     <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden">
-        <!-- Header de la card -->
         <div class="card-header text-blanco flex items-center gap-2">
             <svg class="size-6" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
                 <path d="M432.5 82.3L382.4 132.4L507.7 257.7L557.8 207.6C579.7 185.7 579.7 150.3 557.8 128.4L511.7 82.3C489.8 60.4 454.4 60.4 432.5 82.3zM343.3 161.2L342.8 161.3L198.7 204.5C178.8 210.5 163 225.7 156.4 245.5L67.8 509.8C64.9 518.5 65.9 528 70.3 535.8L225.7 380.4C224.6 376.4 224.1 372.3 224.1 368C224.1 341.5 245.6 320 272.1 320C298.6 320 320.1 341.5 320.1 368C320.1 394.5 298.6 416 272.1 416C267.8 416 263.6 415.4 259.7 414.4L104.3 569.7C112.1 574.1 121.5 575.1 130.3 572.2L394.6 483.6C414.3 477 429.6 461.2 435.6 441.3L478.8 297.2L478.9 296.7L343.4 161.2z"/>
             </svg>
-            <h5 class="text-lg mb-0">Configuración Manual del Estado</h5>
+            <h5 class="text-lg mb-0">Plan y Configuración del Cliente</h5>
         </div>
-        
-        <!-- Body de la card -->
         <div class="card-body p-3">
             <form method="post" class="space-y-6">
                 {% csrf_token %}
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Plan Actual -->
+
+                <!-- Sección A: Plan -->
+                <div>
+                    <h6 class="text-sm font-semibold text-gris-oscuro uppercase tracking-wide mb-3">Plan asignado</h6>
                     <div class="space-y-2">
                         <label for="{{ form.plan_actual.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
                             {{ form.plan_actual.label }}
                         </label>
-                        <div class="relative">
-                            <select name="{{ form.plan_actual.name }}" id="{{ form.plan_actual.id_for_label }}" 
-                                    class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors">
-                                {% for value, label in form.plan_actual.field.choices %}
-                                    <option value="{{ value }}" {% if form.plan_actual.value == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        <select name="{{ form.plan_actual.name }}" id="{{ form.plan_actual.id_for_label }}"
+                                class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors">
+                            {% for value, label in form.plan_actual.field.choices %}
+                                <option value="{{ value }}" {% if form.plan_actual.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <!-- Precio informativo del plan seleccionado -->
+                        <p id="precio-plan-info" class="text-sm text-gris-medio hidden">
+                            Precio mensual: <strong id="precio-plan-valor" class="text-gris-oscuro"></strong>
+                        </p>
                         {% if form.plan_actual.errors %}
-                            <div class="flex items-center gap-2 text-error text-sm">
-                                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                                {{ form.plan_actual.errors.0 }}
-                            </div>
+                            <p class="text-sm text-error">{{ form.plan_actual.errors.0 }}</p>
                         {% endif %}
                         {% if form.plan_actual.help_text %}
                             <p class="text-sm text-gris-medio">{{ form.plan_actual.help_text }}</p>
                         {% endif %}
                     </div>
-                    
-                    <!-- Saldo Actual -->
+
+                    {% if planes_activos_usuario|length > 1 %}
+                        <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm text-yellow-800">
+                                <strong>⚠️ Atención:</strong> Este cliente tiene {{ planes_activos_usuario|length }} planes activos simultáneos.
+                                Al guardar un nuevo plan desde aquí, se desactivarán todos los actuales y se asignará uno solo.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <hr class="border-gris-claro">
+
+                <!-- Sección B: Configuración del cliente -->
+                <div>
+                    <h6 class="text-sm font-semibold text-gris-oscuro uppercase tracking-wide mb-3">Configuración del cliente</h6>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+
+                        <!-- Activo -->
+                        <div class="bg-fondo rounded-lg p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center h-5">
+                                    <input type="checkbox" name="{{ form.activo.name }}" id="{{ form.activo.id_for_label }}"
+                                           {% if form.activo.value %}checked{% endif %}
+                                           class="w-4 h-4 text-principal bg-white border-gris-claro rounded focus:ring-principal focus:ring-2">
+                                </div>
+                                <div class="flex-1">
+                                    <label for="{{ form.activo.id_for_label }}" class="text-sm font-medium text-gris-oscuro cursor-pointer">
+                                        {{ form.activo.label }}
+                                    </label>
+                                    {% if form.activo.help_text %}
+                                        <p class="text-xs text-gris-medio mt-0.5">{{ form.activo.help_text }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Puede reservar -->
+                        <div class="bg-fondo rounded-lg p-4">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center h-5">
+                                    <input type="checkbox" name="{{ form.puede_reservar.name }}" id="{{ form.puede_reservar.id_for_label }}"
+                                           {% if form.puede_reservar.value %}checked{% endif %}
+                                           class="w-4 h-4 text-principal bg-white border-gris-claro rounded focus:ring-principal focus:ring-2">
+                                </div>
+                                <div class="flex-1">
+                                    <label for="{{ form.puede_reservar.id_for_label }}" class="text-sm font-medium text-gris-oscuro cursor-pointer">
+                                        {{ form.puede_reservar.label }}
+                                    </label>
+                                    {% if form.puede_reservar.help_text %}
+                                        <p class="text-xs text-gris-medio mt-0.5">{{ form.puede_reservar.help_text }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
                     <div class="space-y-2">
-                        <label for="{{ form.saldo_actual.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                            {{ form.saldo_actual.label }}
+                        <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
+                            {{ form.observaciones.label }}
                         </label>
-
-                        <!-- Toggle Crédito / Deuda -->
-                        <div class="flex rounded-lg border border-gris-claro overflow-hidden mb-2">
-                            <button type="button" id="btn-credito"
-                                    class="flex-1 py-2 text-sm font-medium transition-colors duration-200 bg-principal text-white"
-                                    onclick="setSaldoSign('credito')">
-                                ＋ Crédito
-                            </button>
-                            <button type="button" id="btn-deuda"
-                                    class="flex-1 py-2 text-sm font-medium transition-colors duration-200 bg-white text-gris-oscuro"
-                                    onclick="setSaldoSign('deuda')">
-                                − Deuda
-                            </button>
-                        </div>
-
-                        <!-- Input visible (siempre positivo) -->
-                        <div class="relative">
-                            <input type="number" id="saldo_display"
-                                value="{{ form.saldo_actual.value|default:''|cut:'-' }}"
-                                step="0.01" min="0"
-                                inputmode="decimal"
-                                class="w-full px-3 py-2 pl-6 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors"
-                                placeholder="0,00"
-                                oninput="actualizarSaldoOculto()">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gris-medio text-sm">$</span>
-                            </div>
-                        </div>
-
-                        <!-- Input oculto que se envía al servidor -->
-                        <input type="hidden" name="{{ form.saldo_actual.name }}" id="{{ form.saldo_actual.id_for_label }}">
-
-                        {% if form.saldo_actual.errors %}
-                            <div class="flex items-center gap-2 text-error text-sm">
-                                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                                {{ form.saldo_actual.errors.0 }}
-                            </div>
+                        <textarea name="{{ form.observaciones.name }}" id="{{ form.observaciones.id_for_label }}"
+                                  class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors resize-y min-h-[80px]"
+                                  placeholder="Observaciones adicionales...">{{ form.observaciones.value|default:'' }}</textarea>
+                        {% if form.observaciones.errors %}
+                            <p class="text-sm text-error">{{ form.observaciones.errors.0 }}</p>
                         {% endif %}
-                        {% if form.saldo_actual.help_text %}
-                            <p class="text-sm text-gris-medio">{{ form.saldo_actual.help_text }}</p>
-                        {% endif %}
-                        <p class="text-sm text-gris-medio mt-1">
-                            ⚠️ Para acordar un monto especial con un cliente, usá la sección 
-                            <strong class="text-gris-oscuro">Ajuste de Deudas Especiales</strong> 
-                            más abajo.<br/> Eso deja un registro de edición de saldo en la base de datos.
-                        </p>
                     </div>
                 </div>
-                
-                <!-- Observaciones -->
-                <div class="space-y-2">
-                    <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                        {{ form.observaciones.label }}
-                    </label>
-                    <textarea name="{{ form.observaciones.name }}" id="{{ form.observaciones.id_for_label }}" 
-                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors resize-y min-h-[100px]"
-                              placeholder="Observaciones adicionales...">{{ form.observaciones.value|default:'' }}</textarea>
-                    {% if form.observaciones.errors %}
-                        <div class="flex items-center gap-2 text-error text-sm">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                            </svg>
-                            {{ form.observaciones.errors.0 }}
-                        </div>
-                    {% endif %}
-                    {% if form.observaciones.help_text %}
-                        <p class="text-sm text-gris-medio">{{ form.observaciones.help_text }}</p>
-                    {% endif %}
-                </div>
-                
-                <!-- Checkbox Activo -->
-                <div class="bg-fondo rounded-lg p-4">
-                    <div class="flex items-start gap-3">
-                        <div class="flex items-center h-5">
-                            <input type="checkbox" name="{{ form.activo.name }}" id="{{ form.activo.id_for_label }}" 
-                                   {% if form.activo.value %}checked{% endif %}
-                                   class="w-4 h-4 text-principal bg-white border-gris-claro rounded focus:ring-principal focus:ring-2">
-                        </div>
-                        <div class="flex-1">
-                            <label for="{{ form.activo.id_for_label }}" class="text-sm font-medium text-gris-oscuro cursor-pointer">
-                                {{ form.activo.label }}
-                            </label>
-                            {% if form.activo.help_text %}
-                                <p class="text-sm text-gris-medio mt-1">{{ form.activo.help_text }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Botones de acción -->
+
+                <!-- Botones -->
                 <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gris-claro">
-                    <a href="{% url 'gravity:admin_pagos_vista_principal' %}" 
-                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro hover:border-gris-medio transition-all duration-200 shadow-sm hover:shadow-md">
+                    <a href="{% url 'gravity:admin_pagos_vista_principal' %}"
+                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro transition-all duration-200">
                         Cancelar
                     </a>
                     <button type="submit" data-loading-text="Guardando..."
-                            class="inline-flex items-center justify-center gap-2 px-6 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+                            class="inline-flex items-center justify-center gap-2 px-6 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark transition-all duration-200 shadow-sm transform hover:scale-105">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
@@ -191,7 +161,7 @@
         </div>
     </div>
 
-    <!-- Planes Activos del Cliente -->
+    <!-- CARD 2: Planes activos del cliente -->
     <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
         <div class="card-header text-blanco flex items-center gap-2">
             <svg class="size-6" fill="currentColor" viewBox="0 0 24 24">
@@ -229,84 +199,118 @@
                         </div>
                     {% endfor %}
                 </div>
-                {% if planes_activos_usuario|length > 1 %}
-                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p class="text-sm text-yellow-800">
-                            <strong>⚠️ Atención:</strong> Este cliente tiene {{ planes_activos_usuario|length }} planes activos simultáneos.
-                            Al guardar un nuevo plan desde el formulario de arriba, se desactivarán todos los actuales y se asignará uno solo.
-                        </p>
-                    </div>
-                {% endif %}
             {% else %}
                 <p class="text-gris-medio text-sm">Este cliente no tiene planes activos asignados.</p>
             {% endif %}
         </div>
     </div>
 
-    {% if request.user.is_superuser %}
-    <!-- Card: Ajuste de Deudas Especiales -->
+    <!-- CARD 3: Deudas y saldo -->
     <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
-        <div class="card-header text-blanco flex items-center gap-2">
-            <svg class="size-6" fill="currentColor" viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg">
-                <path d="M64 64C28.7 64 0 92.7 0 128v64c0 8.8 7.4 15.7 15.7 18.6C34.5 217.1 48 235 48 256s-13.5 38.9-32.3 45.4C7.4 304.3 0 311.2 0 320v64c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V320c0-8.8-7.4-15.7-15.7-18.6C541.5 294.9 528 277 528 256s13.5-38.9 32.3-45.4c8.3-2.9 15.7-9.8 15.7-18.6V128c0-35.3-28.7-64-64-64H64zm64 112l0 160c0 8.8 7.2 16 16 16H432c8.8 0 16-7.2 16-16V176c0-8.8-7.2-16-16-16H144c-8.8 0-16 7.2-16 16zM96 160c0-17.7 14.3-32 32-32H448c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32H128c-17.7 0-32-14.3-32-32V160z"/>
-            </svg>
-            <h5 class="text-lg mb-0">Ajuste de Deudas Especiales</h5>
+        <div class="card-header text-blanco flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="size-6" fill="currentColor" viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M64 64C28.7 64 0 92.7 0 128v64c0 8.8 7.4 15.7 15.7 18.6C34.5 217.1 48 235 48 256s-13.5 38.9-32.3 45.4C7.4 304.3 0 311.2 0 320v64c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V320c0-8.8-7.4-15.7-15.7-18.6C541.5 294.9 528 277 528 256s13.5-38.9 32.3-45.4c8.3-2.9 15.7-9.8 15.7-18.6V128c0-35.3-28.7-64-64-64H64zm64 112l0 160c0 8.8 7.2 16 16 16H432c8.8 0 16-7.2 16-16V176c0-8.8-7.2-16-16-16H144c-8.8 0-16 7.2-16 16zM96 160c0-17.7 14.3-32 32-32H448c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32H128c-17.7 0-32-14.3-32-32V160z"/>
+                </svg>
+                <h5 class="text-lg mb-0">Deudas y Saldo</h5>
+            </div>
+            <!-- Saldo calculado (solo lectura) -->
+            <div class="text-right">
+                <span class="text-xs opacity-75 block">Saldo actual</span>
+                {% if saldo_calculado > 0 %}
+                    <span class="text-lg font-bold text-green-300">+${{ saldo_calculado|floatformat:0 }}</span>
+                {% elif saldo_calculado < 0 %}
+                    <span class="text-lg font-bold text-red-300">-${{ saldo_calculado|floatformat:0|cut:"-" }}</span>
+                {% else %}
+                    <span class="text-lg font-bold text-white">Al día</span>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body p-3">
-            <p class="text-sm text-gris-medio mb-4">
-                Usá <strong>Ajustar</strong> para registrar un monto especial acordado con el cliente. La deuda quedará marcada como pagada y el saldo se recalculará automáticamente.
-            </p>
             {% if deudas %}
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-gris-claro text-gris-oscuro">
-                            <th class="pb-2 text-left font-medium">Mes</th>
-                            <th class="pb-2 text-left font-medium">Plan</th>
-                            <th class="pb-2 text-right font-medium">Monto</th>
-                            <th class="pb-2 text-center font-medium">Estado</th>
-                            <th class="pb-2 text-center font-medium">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gris-claro">
-                        {% for deuda in deudas %}
-                        <tr>
-                            <td class="py-3 text-gris-oscuro font-medium">{{ deuda.mes_año|date:"F Y" }}</td>
-                            <td class="py-3 text-gris-medio">{{ deuda.plan_aplicado.nombre }}</td>
-                            <td class="py-3 text-right font-medium">${{ deuda.monto_original|floatformat:0 }}</td>
-                            <td class="py-3 text-center">
-                                {% if deuda.estado == 'pagado' %}
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#D1FAE5;color:#065F46;">Pagado</span>
-                                {% elif deuda.estado == 'vencido' %}
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#FEE2E2;color:#991B1B;">Vencido</span>
-                                {% elif deuda.estado == 'parcial' %}
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#DBEAFE;color:#1E40AF;">Parcial</span>
-                                {% else %}
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#FEF3C7;color:#92400E;">Pendiente</span>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gris-claro text-gris-oscuro">
+                                <th class="pb-2 text-left font-medium">Mes</th>
+                                <th class="pb-2 text-left font-medium hidden sm:table-cell">Plan</th>
+                                <th class="pb-2 text-right font-medium">Original</th>
+                                <th class="pb-2 text-right font-medium">Pendiente</th>
+                                <th class="pb-2 text-center font-medium">Estado</th>
+                                {% if request.user.is_superuser %}
+                                    <th class="pb-2 text-center font-medium">Acción</th>
                                 {% endif %}
-                            </td>
-                            <td class="py-3 text-center">
-                                <button type="button"
-                                        data-deuda-id="{{ deuda.id }}"
-                                        data-mes="{{ deuda.mes_año|date:'F Y' }}"
-                                        data-monto="{{ deuda.monto_original }}"
-                                        onclick="abrirModalAjuste(this)"
-                                        class="px-3 py-1 text-xs bg-secundario text-principal rounded-lg hover:bg-principal hover:text-blanco transition-all duration-200 font-medium">
-                                    Ajustar
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gris-claro">
+                            {% for deuda in deudas %}
+                            <tr>
+                                <td class="py-3 text-gris-oscuro font-medium">{{ deuda.mes_año|date:"F Y" }}</td>
+                                <td class="py-3 text-gris-medio hidden sm:table-cell">{{ deuda.plan_aplicado.nombre }}</td>
+                                <td class="py-3 text-right font-medium">${{ deuda.monto_original|floatformat:0 }}</td>
+                                <td class="py-3 text-right">
+                                    {% if deuda.monto_pendiente > 0 %}
+                                        <span class="font-medium text-error">${{ deuda.monto_pendiente|floatformat:0 }}</span>
+                                    {% else %}
+                                        <span class="text-green-600">$0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 text-center">
+                                    {% if deuda.estado == 'pagado' %}
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#D1FAE5;color:#065F46;">Pagado</span>
+                                    {% elif deuda.estado == 'vencido' %}
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#FEE2E2;color:#991B1B;">Vencido</span>
+                                    {% elif deuda.estado == 'parcial' %}
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#DBEAFE;color:#1E40AF;">Parcial</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#FEF3C7;color:#92400E;">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                {% if request.user.is_superuser %}
+                                    <td class="py-3 text-center">
+                                        {% if deuda.estado != 'pagado' %}
+                                            <button type="button"
+                                                    data-deuda-id="{{ deuda.id }}"
+                                                    data-mes="{{ deuda.mes_año|date:'F Y' }}"
+                                                    data-monto="{{ deuda.monto_original }}"
+                                                    onclick="abrirModalAjuste(this)"
+                                                    class="px-3 py-1 text-xs bg-secundario text-principal rounded-lg hover:bg-principal hover:text-blanco transition-all duration-200 font-medium">
+                                                Ajustar
+                                            </button>
+                                        {% else %}
+                                            <span class="text-xs text-gris-medio">—</span>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
-            <p class="text-gris-medio text-sm">Este cliente no tiene deudas registradas.</p>
+                <p class="text-gris-medio text-sm">Este cliente no tiene deudas registradas.</p>
+            {% endif %}
+
+            {% if request.user.is_superuser %}
+                <div class="mt-4 pt-4 border-t border-gris-claro">
+                    <p class="text-xs text-gris-medio mb-2">
+                        ¿Falta un mes en la lista? Podés generarlo manualmente si el cron no lo creó automáticamente.
+                    </p>
+                    <button type="button" onclick="abrirModalNuevaDeuda()"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-fondo border border-gris-claro text-gris-oscuro rounded-lg hover:border-principal hover:text-principal transition-all duration-200 font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Generar deuda para mes sin cobro
+                    </button>
+                </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Modal de Ajuste de Deuda -->
+    {% if request.user.is_superuser %}
+
+    <!-- Modal: Ajuste de deuda especial -->
     <div id="modal-ajuste" class="fixed inset-0 z-50 hidden items-center justify-center" style="background-color:rgba(0,0,0,0.5);">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
             <div class="flex justify-between items-center mb-4">
@@ -317,24 +321,23 @@
                     </svg>
                 </button>
             </div>
-
             <div class="bg-fondo rounded-lg p-3 mb-4 text-sm">
                 <p class="text-gris-medio">Mes: <span id="modal-mes" class="font-medium text-gris-oscuro"></span></p>
                 <p class="text-gris-medio">Monto original: <span id="modal-monto-original" class="font-medium text-gris-oscuro"></span></p>
             </div>
-
+            <p class="text-xs text-gris-medio mb-4">
+                Ingresá el monto acordado. La deuda quedará marcada como <strong>pagada</strong> y el saldo se recalculará.
+                Podés ingresar 0 para condonarla completamente.
+            </p>
             <form id="form-ajuste" method="post" action="">
                 {% csrf_token %}
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gris-oscuro mb-1">
-                            Nuevo monto acordado ($)
-                        </label>
+                        <label class="block text-sm font-medium text-gris-oscuro mb-1">Nuevo monto acordado ($)</label>
                         <input type="number" name="monto_ajustado" id="modal-monto-ajustado"
                                min="0" step="0.01" required
                                class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors"
                                placeholder="0.00">
-                        <p class="text-xs text-gris-medio mt-1">Puede ser menor al monto original. Puede ser 0 para condonar la deuda.</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gris-oscuro mb-1">
@@ -358,91 +361,97 @@
             </form>
         </div>
     </div>
-    {% endif %}
 
+    <!-- Modal: Generar deuda manual -->
+    <div id="modal-nueva-deuda" class="fixed inset-0 z-50 hidden items-center justify-center" style="background-color:rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-principal">Generar Deuda Manual</h3>
+                <button type="button" onclick="cerrarModalNuevaDeuda()" class="text-gris-medio hover:text-gris-oscuro transition-colors">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-sm text-gris-medio mb-4">
+                Solo para meses que <strong>no aparecen en la tabla</strong> de arriba. Si el mes ya tiene deuda, usá el botón "Ajustar" sobre esa fila.
+            </p>
+            <form method="post" action="{% url 'gravity:admin_generar_deuda_manual' cliente.id %}">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gris-oscuro mb-1">Mes a cobrar</label>
+                        <input type="month" name="mes_año" required
+                               class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gris-oscuro mb-1">Monto a cobrar ($)</label>
+                        <input type="number" name="monto" min="1" step="0.01" required
+                               class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors"
+                               placeholder="0.00">
+                        <p class="text-xs text-gris-medio mt-1">El plan actual del cliente es: <strong>{{ estado_pago.plan_actual.nombre|default:"Sin plan" }}</strong>
+                            {% if estado_pago.plan_actual %} — ${{ estado_pago.plan_actual.precio_mensual|floatformat:0 }}/mes{% endif %}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gris-oscuro mb-1">
+                            Motivo <span class="text-gris-medio font-normal">(opcional)</span>
+                        </label>
+                        <textarea name="motivo" rows="2"
+                                  class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors resize-y"
+                                  placeholder="Ej: mes no cobrado por el cron, ajuste retroactivo, etc."></textarea>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="cerrarModalNuevaDeuda()"
+                            class="flex-1 px-4 py-2 border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" data-loading-text="Generando..."
+                            class="flex-1 px-4 py-2 bg-principal text-blanco rounded-lg hover:opacity-90 transition-colors font-medium">
+                        Generar Deuda
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% endif %}
 {% endblock %}
 
 {% block extra_js %}
 {{ planes_precios|json_script:"planes-precios-data" }}
 <script>
-    // Determinar signo inicial según el valor actual del saldo
-    const saldoInicial = parseFloat("{{ form.saldo_actual.value|default:0 }}") || 0;
-    let esDeuda = saldoInicial < 0;
-
-    function setSaldoSign(tipo) {
-        esDeuda = (tipo === 'deuda');
-        
-        const btnCredito = document.getElementById('btn-credito');
-        const btnDeuda = document.getElementById('btn-deuda');
-        
-        if (esDeuda) {
-            btnDeuda.classList.add('bg-principal', 'text-white');
-            btnDeuda.classList.remove('bg-white', 'text-gris-oscuro');
-            btnCredito.classList.remove('bg-principal', 'text-white');
-            btnCredito.classList.add('bg-white', 'text-gris-oscuro');
-        } else {
-            btnCredito.classList.add('bg-principal', 'text-white');
-            btnCredito.classList.remove('bg-white', 'text-gris-oscuro');
-            btnDeuda.classList.remove('bg-principal', 'text-white');
-            btnDeuda.classList.add('bg-white', 'text-gris-oscuro');
-        }
-        
-        actualizarSaldoOculto();
-    }
-
-    function actualizarSaldoOculto() {
-        const display = document.getElementById('saldo_display');
-        const hidden = document.getElementById('{{ form.saldo_actual.id_for_label }}');
-        const valor = parseFloat(display.value) || 0;
-        hidden.value = esDeuda ? -Math.abs(valor) : Math.abs(valor);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar toggle según valor actual
-        setSaldoSign(esDeuda ? 'deuda' : 'credito');
-        actualizarSaldoOculto();
-
-        // Actualizar hidden antes de submit
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function() {
-            actualizarSaldoOculto();
-        });
-    });
-
-    // Auto-completar saldo al seleccionar un plan
-    document.addEventListener('DOMContentLoaded', function() {
+    // ── Info de precio al seleccionar plan ──
+    document.addEventListener('DOMContentLoaded', function () {
         const planesPrecios = JSON.parse(document.getElementById('planes-precios-data').textContent);
         const planSelect = document.getElementById('{{ form.plan_actual.id_for_label }}');
-        const saldoDisplay = document.getElementById('saldo_display');
+        const precioInfo = document.getElementById('precio-plan-info');
+        const precioValor = document.getElementById('precio-plan-valor');
 
-        planSelect.addEventListener('change', function() {
-            const planId = this.value;
+        function actualizarPrecio() {
+            const planId = planSelect.value;
             if (planId && planesPrecios[planId]) {
                 const precio = parseFloat(planesPrecios[planId]);
-                saldoDisplay.value = precio.toFixed(2);
-                setSaldoSign('deuda');
-                actualizarSaldoOculto();
+                precioValor.textContent = '$' + precio.toLocaleString('es-AR', { minimumFractionDigits: 0 });
+                precioInfo.classList.remove('hidden');
             } else {
-                saldoDisplay.value = '';
-                actualizarSaldoOculto();
+                precioInfo.classList.add('hidden');
             }
-        });
+        }
+
+        planSelect.addEventListener('change', actualizarPrecio);
+        actualizarPrecio();
     });
 
-    // ── Ajuste de deuda especial ──
+    // ── Modal: Ajuste de deuda ──
     const ajusteUrlBase = "{% url 'gravity:admin_ajustar_deuda_especial' 0 %}";
 
     function abrirModalAjuste(btn) {
-        const deudaId = btn.dataset.deudaId;
-        const mes = btn.dataset.mes;
-        const monto = parseFloat(btn.dataset.monto);
-
-        document.getElementById('modal-mes').textContent = mes;
-        document.getElementById('modal-monto-original').textContent = '$' + monto.toLocaleString('es-AR');
+        document.getElementById('modal-mes').textContent = btn.dataset.mes;
+        document.getElementById('modal-monto-original').textContent = '$' + parseFloat(btn.dataset.monto).toLocaleString('es-AR');
         document.getElementById('modal-monto-ajustado').value = '';
         document.getElementById('modal-motivo').value = '';
-        document.getElementById('form-ajuste').action = ajusteUrlBase.replace('/0/', '/' + deudaId + '/');
-
+        document.getElementById('form-ajuste').action = ajusteUrlBase.replace('/0/', '/' + btn.dataset.deudaId + '/');
         const modal = document.getElementById('modal-ajuste');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -454,8 +463,25 @@
         modal.classList.remove('flex');
     }
 
-    document.getElementById('modal-ajuste')?.addEventListener('click', function(e) {
+    document.getElementById('modal-ajuste')?.addEventListener('click', function (e) {
         if (e.target === this) cerrarModalAjuste();
+    });
+
+    // ── Modal: Nueva deuda ──
+    function abrirModalNuevaDeuda() {
+        const modal = document.getElementById('modal-nueva-deuda');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function cerrarModalNuevaDeuda() {
+        const modal = document.getElementById('modal-nueva-deuda');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.getElementById('modal-nueva-deuda')?.addEventListener('click', function (e) {
+        if (e.target === this) cerrarModalNuevaDeuda();
     });
 </script>
 {% endblock %}

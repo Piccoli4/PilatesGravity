@@ -11,12 +11,13 @@ from .views import (
     admin_dashboard, admin_marcar_notificaciones_leidas, admin_clases_lista, admin_clase_crear, 
     admin_clase_editar, admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
     admin_reservas_lista, admin_reservar_para_usuario, admin_reserva_cancelar, admin_reserva_modificar, 
-    admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note, admin_agregar_usuario,
-    admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido, admin_eliminar_admin_restringido,
+    admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note, 
+    admin_agregar_usuario, admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido, 
+    admin_eliminar_admin_restringido, 
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
-    admin_pagos_historial_cliente, admin_pagos_configurar_planes, 
-    admin_pagos_editar_estado_cliente, admin_ajustar_deuda_especial, admin_cancelar_plan_usuario,
+    admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
+    admin_ajustar_deuda_especial, admin_generar_deuda_manual, admin_cancelar_plan_usuario,
     # IMPORTACIONES PARA PLANES DE PAGO
     mis_planes, seleccionar_plan, cancelar_plan,
     # IMPORTACIONES PARA TESTIMONIOS
@@ -117,6 +118,7 @@ urlpatterns = [
     path('admin-panel/pagos/configurar-planes/', admin_pagos_configurar_planes, name='admin_pagos_configurar_planes'),
     path('admin-panel/pagos/editar-estado/<int:cliente_id>/', admin_pagos_editar_estado_cliente, name='admin_pagos_editar_estado_cliente'),
     path('admin-panel/pagos/ajustar-deuda/<int:deuda_id>/', admin_ajustar_deuda_especial, name='admin_ajustar_deuda_especial'),
+    path('admin-panel/pagos/cliente/<int:cliente_id>/generar-deuda/', admin_generar_deuda_manual, name='admin_generar_deuda_manual'),
     path('admin-panel/planes/<int:plan_id>/cancelar/', admin_cancelar_plan_usuario, name='admin_cancelar_plan_usuario'),
 
     # Gestión de planes de pago

@@ -373,10 +373,13 @@
                         </td>
 
                         <td class="py-4 px-1">
-                            {% if cliente_estado.plan_actual %}
+                            {% if cliente_estado.costo_mensual_total %}
                             <span class="font-semibold text-gray-900 money">
-                                ${{ cliente_estado.plan_actual.precio_mensual|floatformat:0 }}
+                                ${{ cliente_estado.costo_mensual_total|floatformat:0 }}
                             </span>
+                            {% if cliente_estado.planes_activos_lista|length > 1 %}
+                            <div class="text-xs text-gray-400">{{ cliente_estado.planes_activos_lista|length }} planes</div>
+                            {% endif %}
                             {% else %}
                             <span class="text-gray-400">-</span>
                             {% endif %}
@@ -514,131 +517,136 @@
         </div>
 
         <!-- Mobile Cards -->
-        <div class="lg:hidden space-y-4">
+        <div class="lg:hidden space-y-3">
             {% for cliente_estado in page_obj.object_list %}
-            <div class="bg-blanco rounded-lg border border-gray-200 p-4 shadow-sm">
-                <div class="flex">
-                    <div class="w-16 flex flex-col items-center justify-center gap-2">
-                        <div
-                            class="size-16 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-r from-principal to-secundario">
-                            {% if cliente_estado.usuario.profile.avatar %}
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+                <!-- Fila 1: avatar + nombre + estado -->
+                <div class="flex items-center gap-3 px-4 pt-4 pb-3">
+                    <!-- Avatar -->
+                    <div class="shrink-0 size-11 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-r from-principal to-secundario">
+                        {% if cliente_estado.usuario.profile.avatar %}
                             <img src="{{ cliente_estado.usuario.profile.avatar.url }}"
-                                alt="Avatar de {{ cliente_estado.usuario.get_full_name|default:cliente_estado.usuario.username }}"
-                                class="w-full h-full object-cover">
-                            {% else %}
-                            <span class="text-2xl font-semibold text-blanco">
+                                 alt="Avatar" class="w-full h-full object-cover">
+                        {% else %}
+                            <span class="text-base font-bold text-white">
                                 {% if cliente_estado.usuario.first_name and cliente_estado.usuario.last_name %}
-                                {{ cliente_estado.usuario.first_name|first|upper }}
-                                {{ cliente_estado.usuario.last_name|first|upper }}
+                                    {{ cliente_estado.usuario.first_name|first|upper }}{{ cliente_estado.usuario.last_name|first|upper }}
                                 {% elif cliente_estado.usuario.first_name %}
-                                {{ cliente_estado.usuario.first_name|first|upper }}
-                                {{ cliente_estado.usuario.first_name|slice:"1:2"|upper }}
+                                    {{ cliente_estado.usuario.first_name|first|upper }}{{ cliente_estado.usuario.first_name|slice:"1:2"|upper }}
                                 {% else %}
-                                {{ cliente_estado.usuario.username|first|upper }}
-                                {{ cliente_estado.usuario.username|slice:"1:2"|upper }}
+                                    {{ cliente_estado.usuario.username|first|upper }}{{ cliente_estado.usuario.username|slice:"1:2"|upper }}
                                 {% endif %}
                             </span>
-                            {% endif %}
-                        </div>
-
-                        {% if not cliente_estado.plan_actual %}
-                        <span
-                            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">Sin
-                            plan</span>
-                        {% else %}
-                        {% with saldo=cliente_estado.saldo_actual hoy=cliente_estado.fecha_actualizacion|date:"d" %}
-                        {% if saldo > 0 %}
-                        <span
-                            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">A
-                            favor</span>
-                        {% elif saldo == 0 %}
-                        <span
-                            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">Al
-                            día</span>
-                        {% if hoy > 10 and not cliente_estado.ultimo_pago_obj %}
-                        <small class="text-orange-600 text-xs text-center">Sin pago este mes</small>
-                        {% endif %}
-                        {% else %}
-                        <span
-                            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-100 text-red-800">
-                            {% if hoy > 10 %}Moroso{% else %}Debe{% endif %}
-                        </span>
-                        {% endif %}
-                        {% endwith %}
                         {% endif %}
                     </div>
 
-                    <div class="flex-1 ml-4">
-                        <h6 class="font-semibold text-gray-900 mb-1">
+                    <!-- Nombre y email -->
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-gray-900 truncate">
                             {% if cliente_estado.usuario.first_name %}
-                            {{ cliente_estado.usuario.first_name }} {{ cliente_estado.usuario.last_name }}
+                                {{ cliente_estado.usuario.first_name }} {{ cliente_estado.usuario.last_name }}
                             {% else %}
-                            {{ cliente_estado.usuario.username }}
+                                {{ cliente_estado.usuario.username }}
                             {% endif %}
-                        </h6>
-                        <p class="text-sm text-gray-500 mb-3">{{ cliente_estado.usuario.email|default:"Sin email" }}</p>
+                        </p>
+                        <p class="text-xs text-gray-500 truncate">{{ cliente_estado.usuario.email|default:"Sin email" }}</p>
+                    </div>
 
-                        <div class="grid grid-cols-2 gap-4 text-center mb-3">
-                            <div>
-                                <div class="text-xs text-gray-500">Plan{{ cliente_estado.planes_activos_lista|length|pluralize }}</div>
-                                {% if cliente_estado.planes_activos_lista %}
-                                    {% for plan_u in cliente_estado.planes_activos_lista %}
-                                        <div class="font-bold text-gray-900 text-sm {% if not forloop.last %}mb-1{% endif %}">
-                                            {{ plan_u.plan.nombre }}
-                                        </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="font-bold text-gray-900">Sin plan</div>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <div class="text-xs text-gray-500">Saldo</div>
-                                {% if puede_ver_pagos %}
-                                    {% with saldo_redondeado=cliente_estado.saldo_actual|floatformat:0 %}
-                                        <div class="font-bold money {% if saldo_redondeado|add:'0' > 0 %}text-green-600{% elif saldo_redondeado|add:'0' == 0 %}text-gray-400{% else %}text-red-600{% endif %}">
-                                            {% if saldo_redondeado|add:'0' > 0 %}+{% endif %}${{ saldo_redondeado }}
-                                        </div>
-                                    {% endwith %}
-                                {% else %}
-                                    <div class="font-bold text-gray-300">—</div>
-                                {% endif %}
-                            </div>
-                        </div>
+                    <!-- Badge de estado -->
+                    {% if not cliente_estado.planes_activos_lista %}
+                        <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">Sin plan</span>
+                    {% else %}
+                        {% with saldo=cliente_estado.saldo_actual %}
+                            {% if saldo > 0 %}
+                                <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">A favor</span>
+                            {% elif saldo == 0 %}
+                                <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">Al día</span>
+                            {% else %}
+                                <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-100 text-red-800">Debe</span>
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                </div>
 
-                        <div class="flex items-center justify-evenly gap-2">
-                            <a href="{% url 'gravity:admin_pagos_historial_cliente' cliente_estado.usuario.id %}"
-                                class="flex items-center justify-center p-4 text-sm border border-principal text-principal rounded-lg hover:bg-principal hover:text-fondo transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    class="size-8">
-                                    <path fill-rule="evenodd"
-                                        d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z"
-                                        clip-rule="evenodd" />
-                                    <path fill-rule="evenodd"
-                                        d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375ZM6 12a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V12Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 15a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V15Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 18a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V18Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </a>
-                            <a href="{% url 'gravity:admin_pagos_registrar_pago' cliente_estado.usuario.id %}"
-                                class="flex items-center justify-center p-4 text-sm border border-green-700 text-green-700 rounded-lg hover:bg-green-700 hover:text-blanco transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"
-                                    class="size-8">
-                                    <path
-                                        d="M320 32C373 32 416 75 416 128C416 181 373 224 320 224C267 224 224 181 224 128C224 75 267 32 320 32zM80 368C80 297.9 127 236.6 197.1 203.1C222.4 244.4 268 272 320 272C375.7 272 424.1 240.3 448 194C463.8 182.7 483.1 176 504 176L523.5 176C533.9 176 541.5 185.8 539 195.9L521.9 264.2C531.8 276.6 540.1 289.9 546.3 304L568 304C581.3 304 592 314.7 592 328L592 440C592 453.3 581.3 464 568 464L528 464C511.5 486 489.5 503.6 464 514.7L464 544C464 561.7 449.7 576 432 576L399 576C384.7 576 372.2 566.5 368.2 552.8L361.1 528L278.8 528L271.7 552.8C267.8 566.5 255.3 576 241 576L208 576C190.3 576 176 561.7 176 544L176 514.7C119.5 490 80 433.6 80 368zM456 384C469.3 384 480 373.3 480 360C480 346.7 469.3 336 456 336C442.7 336 432 346.7 432 360C432 373.3 442.7 384 456 384z" />
-                                </svg>
-                            </a>
-                            <a href="{% url 'gravity:admin_pagos_editar_estado_cliente' cliente_estado.usuario.id %}"
-                                class="flex items-center justify-center p-4 text-sm border border-secundario-dark text-secundario-dark rounded-lg hover:bg-secundario-dark hover:text-principal transition-colors duration-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    class="size-8">
-                                    <path
-                                        d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
-                                    <path
-                                        d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z" />
-                                </svg>
-                            </a>
-                        </div>
+                <!-- Fila 2: datos en grilla -->
+                <div class="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100 bg-gray-50">
+                    <!-- Planes -->
+                    <div class="px-3 py-2">
+                        <p class="text-xs text-gray-500 mb-1">Plan{{ cliente_estado.planes_activos_lista|length|pluralize:"es" }}</p>
+                        {% if cliente_estado.planes_activos_lista %}
+                            {% for plan_u in cliente_estado.planes_activos_lista %}
+                                <p class="text-xs font-semibold text-gray-900 leading-tight">{{ plan_u.plan.nombre }}</p>
+                            {% endfor %}
+                            {% if cliente_estado.planes_activos_lista|length > 1 %}
+                                <p class="text-xs text-amber-600 font-medium mt-0.5">{{ cliente_estado.planes_activos_lista|length }} planes</p>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-xs text-gray-400">—</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Costo mensual -->
+                    <div class="px-3 py-2">
+                        <p class="text-xs text-gray-500 mb-1">Costo/mes</p>
+                        {% if puede_ver_pagos %}
+                            {% if cliente_estado.costo_mensual_total %}
+                                <p class="text-xs font-semibold text-gray-900 money">${{ cliente_estado.costo_mensual_total|floatformat:0 }}</p>
+                            {% else %}
+                                <p class="text-xs text-gray-400">—</p>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-xs text-gray-300">—</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Saldo -->
+                    <div class="px-3 py-2">
+                        <p class="text-xs text-gray-500 mb-1">Saldo</p>
+                        {% if puede_ver_pagos %}
+                            {% with s=cliente_estado.saldo_actual %}
+                                {% if s > 0 %}
+                                    <p class="text-xs font-semibold text-green-600 money">+${{ s|floatformat:0 }}</p>
+                                {% elif s == 0 %}
+                                    <p class="text-xs text-gray-400">$ 0</p>
+                                {% else %}
+                                    <p class="text-xs font-semibold text-red-600 money">${{ s|floatformat:0 }}</p>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <p class="text-xs text-gray-300">—</p>
+                        {% endif %}
                     </div>
                 </div>
+
+                <!-- Fila 3: acciones -->
+                <div class="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100">
+                    <a href="{% url 'gravity:admin_pagos_historial_cliente' cliente_estado.usuario.id %}"
+                       class="flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-principal hover:bg-principal/5 transition-colors">
+                        <svg class="size-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z" clip-rule="evenodd"/>
+                            <path fill-rule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375ZM6 12a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V12Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 15a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V15Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75ZM6 18a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75V18Zm2.25 0a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd"/>
+                        </svg>
+                        Historial
+                    </a>
+                    <a href="{% url 'gravity:admin_pagos_registrar_pago' cliente_estado.usuario.id %}"
+                       class="flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors">
+                        <svg class="size-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Pago
+                    </a>
+                    <a href="{% url 'gravity:admin_pagos_editar_estado_cliente' cliente_estado.usuario.id %}"
+                       title="Editar estado"
+                       class="flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-secundario-dark hover:bg-secundario/10 transition-colors">
+                        <svg class="size-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z"/>
+                            <path d="M5.25 5.25a3 3 0 0 0-3 3v10.5a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3V13.5a.75.75 0 0 0-1.5 0v5.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5V8.25a1.5 1.5 0 0 1 1.5-1.5h5.25a.75.75 0 0 0 0-1.5H5.25Z"/>
+                        </svg>
+                        Editar
+                    </a>
+                </div>
+
             </div>
             {% endfor %}
         </div>
