@@ -619,9 +619,9 @@
                     {% if planes_activos_usuario %}
                         {% for plan_u in planes_activos_usuario %}
                             <div class="reserva-item" style="border-left-color: var(--secundario);">
-                                <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
-                                    <div class="md:col-span-8">
-                                        <h6 class="font-semibold text-gray-900 mb-1">
+                                <div class="flex items-center justify-between gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <h6 class="font-semibold text-gray-900 mb-1 truncate">
                                             {{ plan_u.plan.nombre }}
                                         </h6>
                                         <div class="text-sm text-gray-600">
@@ -638,19 +638,20 @@
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <div class="md:col-span-4 flex justify-end items-center gap-2">
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
                                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                             </svg>
                                             Activo
                                         </span>
                                         <button onclick="confirmarCancelarPlan('{{ plan_u.id }}', '{{ plan_u.plan.nombre|escapejs }}')"
-                                                class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-white hover:bg-red-50 transition-colors"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 border border-red-300 rounded-md text-xs font-medium text-red-700 bg-white hover:bg-red-50 transition-colors whitespace-nowrap"
                                                 title="Cancelar este plan">
-                                            <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
                                             </svg>
+                                            Cancelar
                                         </button>
                                     </div>
                                 </div>
@@ -1004,9 +1005,10 @@
                 explanationElement.innerHTML = `
                     <strong>Desactivar usuario:</strong><br>
                     • El usuario NO podrá iniciar sesión<br>
-                    • NO podrá hacer nuevas reservas<br>
-                    • Sus reservas actuales permanecen activas<br>
-                    • No se eliminan sus datos del sistema
+                    • Sus reservas activas serán canceladas y recibirá un email por cada una<br>
+                    • Se le quitará el plan asignado<br>
+                    • No se le generarán nuevas deudas mensuales<br>
+                    • Sus deudas y créditos actuales se conservan
                 `;
             }
             

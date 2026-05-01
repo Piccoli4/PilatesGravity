@@ -2223,33 +2223,66 @@ def admin_usuario_detalle(request, usuario_id):
 @admin_required
 def admin_usuario_toggle_status(request, usuario_id):
     """
-    Activa o desactiva un usuario (AJAX)
+    Activa o desactiva un usuario (AJAX).
+    Al desactivar: cancela reservas, quita plan, desactiva estado de pago.
+    Al activar: solo reactiva el login (el plan se asigna manualmente después).
     """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
-    
+
     usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
-    
+
     try:
-        import json
         data = json.loads(request.body)
         activate = data.get('activate', False)
-        
-        # Cambiar el estado del usuario
+
         usuario.is_active = activate
         usuario.save()
-        
+
+        if not activate:
+            with transaction.atomic():
+                # 1. Cancelar reservas activas y enviar emails
+                reservas_activas = Reserva.objects.filter(usuario=usuario, activa=True)
+                for reserva in reservas_activas:
+                    reserva.activa = False
+                    reserva.save()
+                    if usuario.email:
+                        try:
+                            enviar_email_cancelacion_reserva(
+                                reserva=reserva,
+                                motivo='Baja del estudio',
+                                motivo_detalle='Tu reserva fue cancelada porque tu cuenta fue desactivada.',
+                                ofrecer_reemplazo=False,
+                                ofrecer_otras_sedes=False
+                            )
+                        except Exception as e:
+                            logger.error(f"Error enviando email de cancelación a {usuario.email}: {str(e)}")
+
+                # 2. Desactivar planes activos
+                PlanUsuario.objects.filter(usuario=usuario, activo=True).update(activo=False)
+
+                # 3. Actualizar EstadoPagoCliente (conserva deudas/créditos)
+                try:
+                    estado = usuario.estado_pago
+                    estado.plan_actual = None
+                    estado.activo = False
+                    estado.save()
+                except EstadoPagoCliente.DoesNotExist:
+                    pass
+
         action = 'activado' if activate else 'desactivado'
-        
+        nombre = usuario.get_full_name() or usuario.username
+
         return JsonResponse({
             'success': True,
-            'message': f'Usuario {usuario.get_full_name() or usuario.username} {action} exitosamente.',
+            'message': f'Usuario {nombre} {action} exitosamente.',
             'new_status': usuario.is_active
         })
-        
+
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
     except Exception as e:
+        logger.error(f"Error en toggle_status usuario {usuario_id}: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @admin_required
