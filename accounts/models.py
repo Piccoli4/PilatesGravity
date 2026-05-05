@@ -328,18 +328,22 @@ class UserProfile(models.Model):
         ordering = ['-fecha_creacion']
 
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
+def create_user_profile(sender, instance, created, raw=False, **kwargs):
     """
     Señal que crea automáticamente un perfil cuando se crea un usuario.
     """
+    if raw:
+        return
     if created:
         UserProfile.objects.create(user=instance)
 
 @receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
+def save_user_profile(sender, instance, raw=False, **kwargs):
     """
     Señal que guarda el perfil cuando se guarda el usuario.
     """
+    if raw:
+        return
     if hasattr(instance, 'profile'):
         instance.profile.save()
 
