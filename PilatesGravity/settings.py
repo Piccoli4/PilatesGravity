@@ -90,6 +90,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,  # Espera hasta 20 segundos antes de fallar
+        }
     }
 }
 
@@ -184,12 +187,22 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
         },
+        'django_file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'django_errors.log',
+        },
     },
     'loggers': {
         'gravity.email_service': {
             'handlers': ['file', 'console'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'django': {
+            'handlers': ['django_file', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
         },
     },
 }

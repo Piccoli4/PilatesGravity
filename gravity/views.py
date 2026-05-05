@@ -2866,54 +2866,52 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
     if request.method == 'POST':
         form = EstadoPagoClienteForm(request.POST, instance=estado_pago)
         if form.is_valid():
-            plan_anterior = estado_pago.plan_actual
             estado_actualizado = form.save()
 
-            # Si se asignó un plan nuevo
-            tiene_plan_usuario_activo = PlanUsuario.objects.filter(
-                usuario=cliente,
-                activo=True,
-            ).exists()
-
-            if estado_actualizado.plan_actual and (
-                estado_actualizado.plan_actual != plan_anterior or not tiene_plan_usuario_activo
-            ):
-                
-                # Crear PlanUsuario para que el cliente pueda reservar
-                hoy = timezone.now().date()
-                fecha_fin = date(2099, 12, 31)
-
-                # Desactivar planes anteriores activos
-                PlanUsuario.objects.filter(
+            # Sincronizar PlanUsuario con plan_actual si es necesario.
+            # Se usa comparación directa con PlanUsuario activo en lugar de
+            # plan_anterior para cubrir re-ediciones y estados inconsistentes.
+            if estado_actualizado.plan_actual:
+                plan_usuario_sincronizado = PlanUsuario.objects.filter(
                     usuario=cliente,
                     activo=True,
-                ).update(activo=False)
+                    plan=estado_actualizado.plan_actual
+                ).exists()
 
-                PlanUsuario.objects.create(
-                    usuario=cliente,
-                    plan=estado_actualizado.plan_actual,
-                    fecha_inicio=hoy,
-                    fecha_fin=fecha_fin,
-                    activo=True,
-                    tipo_plan='permanente',
-                    renovacion_automatica=True,
-                    creado_por=request.user,
-                    observaciones='Asignado por administrador desde panel de pagos'
-                )
+                if not plan_usuario_sincronizado:
+                    hoy = timezone.now().date()
+                    fecha_fin = date(2099, 12, 31)
 
-                # Generar deuda del mes si no existe
-                estado_actualizado.generar_deuda_mes_actual()
+                    # Desactivar todos los planes activos del cliente
+                    PlanUsuario.objects.filter(
+                        usuario=cliente,
+                        activo=True,
+                    ).update(activo=False)
 
-                # Recalcular saldo desde cero para evitar que el valor del
-                # formulario + la deuda generada se dupliquen
-                total_pagado = RegistroPago.objects.filter(
-                    cliente=cliente, estado='confirmado'
-                ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-                total_deudas = DeudaMensual.objects.filter(
-                    usuario=cliente
-                ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-                estado_actualizado.saldo_actual = total_pagado - total_deudas
-                estado_actualizado.save(update_fields=['saldo_actual'])
+                    PlanUsuario.objects.create(
+                        usuario=cliente,
+                        plan=estado_actualizado.plan_actual,
+                        fecha_inicio=hoy,
+                        fecha_fin=fecha_fin,
+                        activo=True,
+                        tipo_plan='permanente',
+                        renovacion_automatica=True,
+                        creado_por=request.user,
+                        observaciones='Asignado por administrador desde panel de pagos'
+                    )
+
+                    # Actualizar deuda del mes actual con el nuevo plan
+                    estado_actualizado.generar_deuda_mes_actual()
+
+                    # Recalcular saldo desde cero
+                    total_pagado = RegistroPago.objects.filter(
+                        cliente=cliente, estado='confirmado'
+                    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+                    total_deudas = DeudaMensual.objects.filter(
+                        usuario=cliente
+                    ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+                    estado_actualizado.saldo_actual = total_pagado - total_deudas
+                    estado_actualizado.save(update_fields=['saldo_actual'])
 
             messages.success(
                 request,
