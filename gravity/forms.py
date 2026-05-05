@@ -163,8 +163,19 @@ class ReservaForm(forms.Form):
                 if not puede_reservar:
                     raise ValidationError(mensaje)
                 
-                # Verificar cupos disponibles
-                if clase.cupos_disponibles() <= 0:
+                # Verificar cupos disponibles para la próxima fecha real de la clase
+                hoy_form = timezone.now().date()
+                dias_map_form = {
+                    'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+                    'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+                }
+                dia_num_form = dias_map_form.get(clase.dia, 0)
+                dias_hasta_form = (dia_num_form - hoy_form.weekday()) % 7
+                if dias_hasta_form == 0:
+                    dias_hasta_form = 7
+                proxima_fecha_form = hoy_form + timedelta(days=dias_hasta_form)
+
+                if clase.cupos_disponibles(fecha=proxima_fecha_form) <= 0:
                     raise ValidationError(
                         f'La clase de {clase.get_nombre_display()} los {dia} a las {horario_str} '
                         f'en {clase.get_direccion_corta()} está completa. No hay cupos disponibles.'
