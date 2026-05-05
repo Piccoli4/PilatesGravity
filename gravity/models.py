@@ -1477,7 +1477,9 @@ class RegistroPago(models.Model):
 
 # Señales para actualizar automáticamente el estado de pagos cuando cambian las reservas
 @receiver(post_save, sender=Reserva)
-def actualizar_estado_pago_por_reserva(sender, instance, created, **kwargs):
+def actualizar_estado_pago_por_reserva(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     """
     Actualiza el estado de pago cuando se crea o modifica una reserva.
     Genera deuda automática al asignar un plan nuevo.
