@@ -1989,6 +1989,8 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
     if usuario_id:
         usuario_preseleccionado = get_object_or_404(User, id=usuario_id, is_staff=False)
 
+    hoy_iso = timezone.now().date().isoformat()
+
     # Datos para los selectores
     clases_disponibles = Clase.objects.filter(activa=True).order_by(
         'direccion', 'tipo', 'dia', 'horario'
@@ -2011,6 +2013,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 'todos_los_usuarios': todos_los_usuarios,
                 'clase_preseleccionada': clase_preseleccionada,
                 'usuario_preseleccionado': usuario_preseleccionado,
+                'hoy_iso': hoy_iso,
             })
 
         clase = get_object_or_404(Clase, id=clase_id_post, activa=True)
@@ -2029,6 +2032,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 'todos_los_usuarios': todos_los_usuarios,
                 'clase_preseleccionada': clase_preseleccionada,
                 'usuario_preseleccionado': usuario_preseleccionado,
+                'hoy_iso': hoy_iso,
             })
 
         # Validar cupo disponible
@@ -2043,6 +2047,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 'todos_los_usuarios': todos_los_usuarios,
                 'clase_preseleccionada': clase_preseleccionada,
                 'usuario_preseleccionado': usuario_preseleccionado,
+                'hoy_iso': hoy_iso,
             })
 
         # Reemplazar con:
@@ -2116,6 +2121,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
         'todos_los_usuarios': todos_los_usuarios,
         'clase_preseleccionada': clase_preseleccionada,
         'usuario_preseleccionado': usuario_preseleccionado,
+        'hoy_iso': hoy_iso,
     })
 
 # ==============================================================================

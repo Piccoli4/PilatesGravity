@@ -311,7 +311,7 @@
             'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
             'Jueves': 4, 'Viernes': 5, 'Sábado': 6
         };
-        const hoy = new Date();
+        const hoy = new Date('{{ hoy_iso }}T12:00:00');
         const diaHoyJS = hoy.getDay();
         const diaObjetivo = diasMap[diaClase];
         if (diaObjetivo === undefined) return;
