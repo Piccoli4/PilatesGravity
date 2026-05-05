@@ -1364,7 +1364,7 @@ class RegistroPago(models.Model):
             })
         
         # Validar fecha de pago
-        if self.fecha_pago > timezone.now().date():
+        if self.fecha_pago and self.fecha_pago > timezone.now().date():
             raise ValidationError({
                 'fecha_pago': 'La fecha del pago no puede ser futura.'
             })
