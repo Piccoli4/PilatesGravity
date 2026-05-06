@@ -1358,13 +1358,13 @@ class RegistroPago(models.Model):
         super().clean()
         
         # Validar que el monto sea positivo
-        if self.monto <= 0:
+        if self.monto is not None and self.monto <= 0:
             raise ValidationError({
                 'monto': 'El monto debe ser mayor a cero.'
             })
         
         # Validar fecha de pago
-        if self.fecha_pago and self.fecha_pago > timezone.now().date():
+        if self.fecha_pago is not None and self.fecha_pago > timezone.now().date():
             raise ValidationError({
                 'fecha_pago': 'La fecha del pago no puede ser futura.'
             })
