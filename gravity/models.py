@@ -1940,6 +1940,55 @@ class NotificacionPlanAdicional(models.Model):
         plan_nombre = self.plan.nombre if self.plan else 'Plan eliminado'
         return f"[Plan Adicional] {nombre} — {plan_nombre}"
 
+class CancelacionAdmin(models.Model):
+    """
+    Registra cada cancelación de reserva realizada por un administrador,
+    para historial y auditoría.
+    """
+    reserva = models.ForeignKey(
+        Reserva,
+        on_delete=models.CASCADE,
+        related_name='cancelaciones_admin',
+        verbose_name="Reserva"
+    )
+    admin_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='cancelaciones_realizadas',
+        verbose_name="Administrador"
+    )
+    motivo = models.CharField(
+        max_length=100,
+        verbose_name="Motivo"
+    )
+    motivo_detalle = models.TextField(
+        blank=True,
+        verbose_name="Detalle del motivo"
+    )
+    email_enviado = models.BooleanField(
+        default=False,
+        verbose_name="Email enviado al usuario"
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de cancelación"
+    )
+
+    class Meta:
+        verbose_name = "Cancelación por Administrador"
+        verbose_name_plural = "Cancelaciones por Administrador"
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        admin_nombre = self.admin_user.username if self.admin_user else 'Admin eliminado'
+        return (
+            f"[Admin: {admin_nombre}] "
+            f"{self.reserva.get_nombre_completo_usuario()} — "
+            f"{self.reserva.clase.get_nombre_display()} "
+            f"{self.reserva.clase.dia} {self.reserva.clase.horario.strftime('%H:%M')}"
+        )
+
 class AjusteDeudaEspecial(models.Model):
     """
     Registro de auditoría de ajustes de deuda acordados con el cliente.

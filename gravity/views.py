@@ -12,7 +12,8 @@ from .models import (
     NotificacionCancelacion, 
     NotificacionCancelacionPlan, 
     AjusteDeudaEspecial,
-    NotificacionPlanAdicional, 
+    NotificacionPlanAdicional,
+    CancelacionAdmin,
     DIAS_SEMANA, 
     DIAS_SEMANA_COMPLETOS
 )
@@ -1581,6 +1582,18 @@ def admin_reserva_cancelar(request, reserva_id):
                 # Cancelar la reserva
                 reserva.activa = False
                 reserva.save()
+
+                # Registrar cancelación por admin en historial
+                try:
+                    CancelacionAdmin.objects.create(
+                        reserva=reserva,
+                        admin_user=request.user,
+                        motivo=motivo,
+                        motivo_detalle=motivo_detalle,
+                        email_enviado=False,  # se actualiza abajo si corresponde
+                    )
+                except Exception as e:
+                    logger.error(f"Error registrando CancelacionAdmin: {e}")
                 
                 # Registrar incidencia si se solicitó
                 if registrar_incidencia:
@@ -3700,6 +3713,252 @@ def admin_testimonio_eliminar(request, testimonio_id):
     testimonio.delete()
     messages.success(request, f'Testimonio de {nombre} eliminado correctamente.')
     return redirect('gravity:admin_testimonios_lista')
+
+# ==============================================================================
+# VISTAS ADMIN — HISTORIAL DE ACTIVIDAD
+# ==============================================================================
+
+@admin_required
+def admin_historial_actividad(request):
+    """
+    Vista de historial completo de actividad: cancelaciones de reservas,
+    ausencias temporales, cancelaciones de planes, recuperos, cupos temporales
+    y cancelaciones realizadas por administradores. Con filtros y paginación.
+    """
+    from datetime import datetime
+
+    tipo_filtro   = request.GET.get('tipo', '')
+    usuario_filtro = request.GET.get('usuario', '').strip()
+    sede_filtro   = request.GET.get('sede', '')
+    fecha_desde   = request.GET.get('fecha_desde', '')
+    fecha_hasta   = request.GET.get('fecha_hasta', '')
+    fecha_unica_desde = request.GET.get('fecha_unica_desde', '')
+
+    def parse_date(s):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            return None
+
+    fecha_desde_obj = parse_date(fecha_desde)
+    fecha_hasta_obj = parse_date(fecha_hasta)
+
+    eventos = []
+
+    # ------------------------------------------------------------------ #
+    # 1. Cancelaciones de reservas por usuario (permanentes y temporales) #
+    # ------------------------------------------------------------------ #
+    if not tipo_filtro or tipo_filtro in ('cancelacion_permanente', 'ausencia_temporal'):
+        qs = NotificacionCancelacion.objects.select_related(
+            'reserva', 'reserva__clase', 'reserva__usuario'
+        )
+        if tipo_filtro == 'cancelacion_permanente':
+            qs = qs.filter(tipo='permanente')
+        elif tipo_filtro == 'ausencia_temporal':
+            qs = qs.filter(tipo='temporal')
+        if usuario_filtro:
+            qs = qs.filter(
+                Q(reserva__usuario__username__icontains=usuario_filtro) |
+                Q(reserva__usuario__first_name__icontains=usuario_filtro) |
+                Q(reserva__usuario__last_name__icontains=usuario_filtro)
+            )
+        if sede_filtro:
+            qs = qs.filter(reserva__clase__direccion=sede_filtro)
+        if fecha_desde_obj:
+            qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
+        if fecha_hasta_obj:
+            qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
+
+        for n in qs:
+            eventos.append({
+                'tipo_evento':    'cancelacion_permanente' if n.tipo == 'permanente' else 'ausencia_temporal',
+                'fecha':          n.fecha_creacion,
+                'usuario':        n.reserva.usuario,
+                'clase':          n.reserva.clase,
+                'sede':           n.reserva.clase.get_direccion_corta(),
+                'fecha_ausencia': n.fecha_ausencia,
+                'iniciado_por':   'usuario',
+                'admin_user':     None,
+                'estado_reserva': 'activa' if n.reserva.activa else 'cancelada',
+                'reserva':        n.reserva,
+                'plan':           None,
+                'motivo':         None,
+                'motivo_detalle': None,
+            })
+
+    # --------------------------------- #
+    # 2. Cancelaciones de plan          #
+    # --------------------------------- #
+    if not tipo_filtro or tipo_filtro == 'cancelacion_plan':
+        if not sede_filtro:  # los planes no tienen sede
+            qs = NotificacionCancelacionPlan.objects.select_related('usuario', 'plan')
+            if usuario_filtro:
+                qs = qs.filter(
+                    Q(usuario__username__icontains=usuario_filtro) |
+                    Q(usuario__first_name__icontains=usuario_filtro) |
+                    Q(usuario__last_name__icontains=usuario_filtro)
+                )
+            if fecha_desde_obj:
+                qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
+            if fecha_hasta_obj:
+                qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
+
+            for n in qs:
+                eventos.append({
+                    'tipo_evento':    'cancelacion_plan',
+                    'fecha':          n.fecha_creacion,
+                    'usuario':        n.usuario,
+                    'clase':          None,
+                    'sede':           None,
+                    'fecha_ausencia': None,
+                    'iniciado_por':   'usuario',
+                    'admin_user':     None,
+                    'estado_reserva': None,
+                    'reserva':        None,
+                    'plan':           n.plan,
+                    'motivo':         None,
+                    'motivo_detalle': None,
+                })
+
+    # --------------------------------- #
+    # 3. Planes adicionales             #
+    # --------------------------------- #
+    if not tipo_filtro or tipo_filtro == 'plan_adicional':
+        if not sede_filtro:  # los planes no tienen sede
+            qs = NotificacionPlanAdicional.objects.select_related('usuario', 'plan')
+            if usuario_filtro:
+                qs = qs.filter(
+                    Q(usuario__username__icontains=usuario_filtro) |
+                    Q(usuario__first_name__icontains=usuario_filtro) |
+                    Q(usuario__last_name__icontains=usuario_filtro)
+                )
+            if fecha_desde_obj:
+                qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
+            if fecha_hasta_obj:
+                qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
+
+            for n in qs:
+                eventos.append({
+                    'tipo_evento':    'plan_adicional',
+                    'fecha':          n.fecha_creacion,
+                    'usuario':        n.usuario,
+                    'clase':          None,
+                    'sede':           None,
+                    'fecha_ausencia': None,
+                    'iniciado_por':   'usuario',
+                    'admin_user':     None,
+                    'estado_reserva': None,
+                    'reserva':        None,
+                    'plan':           n.plan,
+                    'motivo':         None,
+                    'motivo_detalle': None,
+                })
+
+    # -------------------------------------------------- #
+    # 4. Recuperos y cupos temporales (Reserva.fecha_unica) #
+    # -------------------------------------------------- #
+    if not tipo_filtro or tipo_filtro in ('recupero', 'clase_unica'):
+        qs = Reserva.objects.filter(
+            fecha_unica__isnull=False
+        ).select_related('usuario', 'clase')
+
+        if tipo_filtro == 'recupero':
+            qs = qs.filter(es_recupero=True)
+        elif tipo_filtro == 'clase_unica':
+            qs = qs.filter(es_recupero=False)
+
+        if usuario_filtro:
+            qs = qs.filter(
+                Q(usuario__username__icontains=usuario_filtro) |
+                Q(usuario__first_name__icontains=usuario_filtro) |
+                Q(usuario__last_name__icontains=usuario_filtro)
+            )
+        if sede_filtro:
+            qs = qs.filter(clase__direccion=sede_filtro)
+        if fecha_desde_obj:
+            qs = qs.filter(fecha_reserva__date__gte=fecha_desde_obj)
+        if fecha_hasta_obj:
+            qs = qs.filter(fecha_reserva__date__lte=fecha_hasta_obj)
+        if fecha_unica_desde:
+            fecha_unica_desde_obj = parse_date(fecha_unica_desde)
+            if fecha_unica_desde_obj:
+                qs = qs.filter(fecha_unica__gte=fecha_unica_desde_obj, activa=True)
+
+        for r in qs:
+            eventos.append({
+                'tipo_evento':    'recupero' if r.es_recupero else 'clase_unica',
+                'fecha':          r.fecha_reserva,
+                'usuario':        r.usuario,
+                'clase':          r.clase,
+                'sede':           r.clase.get_direccion_corta(),
+                'fecha_ausencia': None,
+                'fecha_unica':    r.fecha_unica,
+                'iniciado_por':   'usuario',
+                'admin_user':     None,
+                'estado_reserva': 'activa' if r.activa else 'cancelada',
+                'reserva':        r,
+                'plan':           None,
+                'motivo':         None,
+                'motivo_detalle': None,
+            })
+
+    # ------------------------------------------ #
+    # 5. Cancelaciones realizadas por admin       #
+    # ------------------------------------------ #
+    if not tipo_filtro or tipo_filtro == 'cancelacion_admin':
+        qs = CancelacionAdmin.objects.select_related(
+            'reserva', 'reserva__clase', 'reserva__usuario', 'admin_user'
+        )
+        if usuario_filtro:
+            qs = qs.filter(
+                Q(reserva__usuario__username__icontains=usuario_filtro) |
+                Q(reserva__usuario__first_name__icontains=usuario_filtro) |
+                Q(reserva__usuario__last_name__icontains=usuario_filtro)
+            )
+        if sede_filtro:
+            qs = qs.filter(reserva__clase__direccion=sede_filtro)
+        if fecha_desde_obj:
+            qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
+        if fecha_hasta_obj:
+            qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
+
+        for c in qs:
+            eventos.append({
+                'tipo_evento':    'cancelacion_admin',
+                'fecha':          c.fecha_creacion,
+                'usuario':        c.reserva.usuario,
+                'clase':          c.reserva.clase,
+                'sede':           c.reserva.clase.get_direccion_corta(),
+                'fecha_ausencia': None,
+                'iniciado_por':   'admin',
+                'admin_user':     c.admin_user,
+                'estado_reserva': 'activa' if c.reserva.activa else 'cancelada',
+                'reserva':        c.reserva,
+                'plan':           None,
+                'motivo':         c.motivo,
+                'motivo_detalle': c.motivo_detalle,
+            })
+
+    # Ordenar por fecha descendente y paginar
+    eventos.sort(key=lambda x: x['fecha'], reverse=True)
+
+    paginator = Paginator(eventos, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj':       page_obj,
+        'total_eventos':  len(eventos),
+        'tipo_filtro':    tipo_filtro,
+        'usuario_filtro': usuario_filtro,
+        'sede_filtro':    sede_filtro,
+        'fecha_desde':    fecha_desde,
+        'fecha_hasta':    fecha_hasta,
+        'sedes':          Clase.DIRECCIONES,
+        'fecha_unica_desde': fecha_unica_desde,
+    }
+
+    return render(request, 'gravity/admin/historial_actividad.html', context)
 
 # ==============================================================================
 # PWA - MANIFEST Y SERVICE WORKER

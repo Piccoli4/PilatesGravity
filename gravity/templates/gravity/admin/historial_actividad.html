@@ -1,0 +1,531 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Historial de Actividad - Pilates Gravity{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+    <span class="text-gray-400">/</span>
+    <a href="{% url 'gravity:admin_dashboard' %}" class="ml-1 text-gray-500 hover:text-principal transition-colors">Dashboard</a>
+</li>
+<li class="flex items-center">
+    <span class="text-gray-400">/</span>
+    <span class="ml-1 text-gray-500">Historial de Actividad</span>
+</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --principal:      #5D768B;
+        --principal-dark: #4A5F73;
+        --secundario:     #C8B39B;
+        --secundario-dark:#a79178;
+        --fondo:          #F8EFE5;
+        --blanco:         #FDFDFD;
+        --gris-claro:     #f0f0f0;
+        --gris-medio:     #6C757D;
+        --gris-oscuro:    #495057;
+    }
+
+    .card-header-primary {
+        background: linear-gradient(135deg, var(--principal) 0%, #7B94A9 100%);
+    }
+
+    .btn-filtrar {
+        background: linear-gradient(135deg, var(--principal) 0%, #7B94A9 100%);
+        color: white;
+        transition: all 0.2s;
+    }
+    .btn-filtrar:hover {
+        background: linear-gradient(135deg, var(--principal-dark) 0%, var(--principal) 100%);
+    }
+    .btn-limpiar {
+        background: white;
+        border: 2px solid var(--secundario);
+        color: var(--principal-dark);
+        transition: all 0.2s;
+    }
+    .btn-limpiar:hover {
+        background: var(--secundario);
+        color: white;
+    }
+
+    .filtro-input:focus {
+        outline: 2px solid var(--principal);
+        outline-offset: 0;
+        border-color: var(--principal);
+    }
+
+    /* Tarjeta */
+    .evento-card {
+        background: var(--blanco);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(74,95,115,0.08), 0 1px 2px rgba(74,95,115,0.04);
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+    .evento-card:hover {
+        box-shadow: 0 6px 20px rgba(74,95,115,0.13);
+        transform: translateY(-1px);
+    }
+
+    /* Badge tipo */
+    .badge-tipo {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        white-space: nowrap;
+        letter-spacing: 0.02em;
+    }
+
+    /* Badge pequeño */
+    .badge-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 0.63rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Leyenda */
+    .leyenda-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-right: 10px;
+        font-size: 0.71rem;
+        color: var(--gris-medio);
+    }
+    .leyenda-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    /* Píldora de detalle */
+    .detalle-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    /* Separador nombre / username */
+    .sep-usuario {
+        display: inline-block;
+        width: 1px;
+        height: 12px;
+        background: var(--secundario);
+        margin: 0 6px;
+        vertical-align: middle;
+    }
+
+    /* Colores por tipo de evento via CSS custom properties */
+    .tipo-cancelacion-permanente { --tipo-color:#C0392B; --tipo-strip:rgba(192,57,43,0.08);   --tipo-badge-bg:#FDECEA; --tipo-badge-text:#7B1B1B; }
+    .tipo-ausencia-temporal      { --tipo-color:#D4830A; --tipo-strip:rgba(212,131,10,0.08);  --tipo-badge-bg:#FEF3CD; --tipo-badge-text:#7A4500; }
+    .tipo-cancelacion-plan       { --tipo-color:#8E44AD; --tipo-strip:rgba(142,68,173,0.08);  --tipo-badge-bg:#F3E5F5; --tipo-badge-text:#5B1E7A; }
+    .tipo-plan-adicional         { --tipo-color:#27AE60; --tipo-strip:rgba(39,174,96,0.08);   --tipo-badge-bg:#D5F0E0; --tipo-badge-text:#145A32; }
+    .tipo-recupero               { --tipo-color:#2980B9; --tipo-strip:rgba(41,128,185,0.08);  --tipo-badge-bg:#D6EAF8; --tipo-badge-text:#1A5276; }
+    .tipo-clase-unica            { --tipo-color:#16A085; --tipo-strip:rgba(22,160,133,0.08);  --tipo-badge-bg:#D1F2EB; --tipo-badge-text:#0E6655; }
+    .tipo-cancelacion-admin      { --tipo-color:#2C3E50; --tipo-strip:rgba(44,62,80,0.09);    --tipo-badge-bg:#D5D8DC; --tipo-badge-text:#17202A; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- ================================================ -->
+<!-- PANEL DE FILTROS                                  -->
+<!-- ================================================ -->
+<div class="mb-5">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+
+        <!-- Header -->
+        <div class="card-header-primary text-white px-5 py-4 flex items-center justify-between gap-4">
+            <h3 class="text-lg font-semibold flex items-center gap-2 mb-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5 shrink-0">
+                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd"/>
+                </svg>
+                Historial de Actividad
+            </h3>
+            <a href="{% url 'gravity:admin_dashboard' %}"
+               class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-decoration-none transition-all"
+               style="border: 2px solid rgba(255,255,255,0.75); color: white; background: rgba(255,255,255,0.1);"
+               onmouseover="this.style.background='rgba(255,255,255,0.22)';"
+               onmouseout="this.style.background='rgba(255,255,255,0.1)';">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3.5">
+                    <path fill-rule="evenodd" d="M11.03 3.97a.75.75 0 0 1 0 1.06l-6.22 6.22H21a.75.75 0 0 1 0 1.5H4.81l6.22 6.22a.75.75 0 1 1-1.06 1.06l-7.5-7.5a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/>
+                </svg>
+                Dashboard
+            </a>
+        </div>
+
+        <!-- Filtros -->
+        <div class="px-5 py-4" style="background: var(--fondo);">
+            <form method="get">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-3">
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide" style="color: var(--gris-oscuro);">Tipo de evento</label>
+                        <select name="tipo" class="filtro-input w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                            <option value="">Todos los tipos</option>
+                            <option value="cancelacion_permanente" {% if tipo_filtro == 'cancelacion_permanente' %}selected{% endif %}>Cancelación permanente</option>
+                            <option value="ausencia_temporal"      {% if tipo_filtro == 'ausencia_temporal'      %}selected{% endif %}>Ausencia temporal</option>
+                            <option value="cancelacion_plan"       {% if tipo_filtro == 'cancelacion_plan'       %}selected{% endif %}>Cancelación de plan</option>
+                            <option value="plan_adicional"         {% if tipo_filtro == 'plan_adicional'         %}selected{% endif %}>Plan adicional</option>
+                            <option value="recupero"               {% if tipo_filtro == 'recupero'               %}selected{% endif %}>Recupero</option>
+                            <option value="clase_unica"            {% if tipo_filtro == 'clase_unica'            %}selected{% endif %}>Clase única</option>
+                            <option value="cancelacion_admin"      {% if tipo_filtro == 'cancelacion_admin'      %}selected{% endif %}>Cancelación por admin</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide" style="color: var(--gris-oscuro);">Usuario</label>
+                        <input type="text" name="usuario" value="{{ usuario_filtro }}"
+                               placeholder="Nombre, apellido o usuario..."
+                               class="filtro-input w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide" style="color: var(--gris-oscuro);">Sede</label>
+                        <select name="sede" class="filtro-input w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                            <option value="">Todas las sedes</option>
+                            {% for valor, etiqueta in sedes %}
+                            <option value="{{ valor }}" {% if sede_filtro == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide" style="color: var(--gris-oscuro);">Desde</label>
+                        <input type="date" name="fecha_desde" value="{{ fecha_desde }}"
+                               class="filtro-input w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold uppercase tracking-wide" style="color: var(--gris-oscuro);">Hasta</label>
+                        <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}"
+                               class="filtro-input w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="submit" class="btn-filtrar inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                            <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" clip-rule="evenodd"/>
+                        </svg>
+                        Filtrar
+                    </button>
+                    {% if tipo_filtro or usuario_filtro or sede_filtro or fecha_desde or fecha_hasta %}
+                    <a href="{% url 'gravity:admin_historial_actividad' %}"
+                       class="btn-limpiar inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-decoration-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                            <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/>
+                        </svg>
+                        Limpiar filtros
+                    </a>
+                    {% endif %}
+                    <span class="text-sm ml-auto" style="color: var(--gris-medio);">
+                        <strong style="color: var(--principal);">{{ total_eventos }}</strong>
+                        evento{{ total_eventos|pluralize:"s" }} encontrado{{ total_eventos|pluralize:"s" }}
+                    </span>
+                </div>
+            </form>
+
+            <!-- Accesos rápidos admin -->
+            <div class="flex flex-wrap items-center gap-2 py-3 mt-4">
+                <span class="text-xs font-semibold uppercase tracking-wide shrink-0" style="color: var(--gris-oscuro);">Acceso rápido:</span>
+
+                <a href="?tipo=recupero&fecha_unica_desde={% now 'Y-m-d' %}"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-decoration-none transition-all"
+                style="background: #DDE6ED; color: #2A4D61; border: 1.5px solid #ADC3D1;"
+                onmouseover="this.style.background='#5D768B'; this.style.color='white';"
+                onmouseout="this.style.background='#DDE6ED'; this.style.color='#2A4D61';">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3.5">
+                        <path fill-rule="evenodd" d="M4.755 10.059a7.5 7.5 0 0 1 12.548-3.364l1.903 1.903h-3.183a.75.75 0 1 0 0 1.5h4.992a.75.75 0 0 0 .75-.75V4.356a.75.75 0 0 0-1.5 0v3.18l-1.9-1.9A9 9 0 0 0 3.306 9.67a.75.75 0 1 0 1.45.388Zm15.408 3.352a.75.75 0 0 0-.919.53 7.5 7.5 0 0 1-12.548 3.364l-1.902-1.903h3.183a.75.75 0 0 0 0-1.5H2.984a.75.75 0 0 0-.75.75v4.992a.75.75 0 0 0 1.5 0v-3.18l1.9 1.9a9 9 0 0 0 15.059-4.035.75.75 0 0 0-.53-.918Z" clip-rule="evenodd"/>
+                    </svg>
+                    Recuperos
+                </a>
+
+                <a href="?tipo=clase_unica&fecha_unica_desde={% now 'Y-m-d' %}"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-decoration-none transition-all"
+                style="background: #D9E9E9; color: #1E3D3D; border: 1.5px solid #A8C9C9;"
+                onmouseover="this.style.background='#4A6B6B'; this.style.color='white';"
+                onmouseout="this.style.background='#D9E9E9'; this.style.color='#1E3D3D';">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3.5">
+                        <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/>
+                    </svg>
+                    Clases únicas
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Leyenda -->
+        <div class="px-5 py-2.5 bg-white border-t" style="border-color: var(--gris-claro);">
+            <div class="flex flex-wrap gap-x-5 gap-y-1.5">
+                <span class="leyenda-item"><span class="leyenda-dot" style="background:#C0392B;"></span>Cancelación permanente</span>
+                <span class="leyenda-item"><span class="leyenda-dot" style="background:#D4830A;"></span>Ausencia temporal</span>
+                <span class="leyenda-item"><span class="leyenda-dot" style="background:#8E44AD;"></span>Cancelación de plan</span>
+                <span class="leyenda-item"><span class="leyenda-dot" style="background:#27AE60;"></span>Plan adicional</span>
+                <span class="leyenda-item"><span class="leyenda-dot" style="background:#2980B9;"></span>Recupero</span>
+                <span class="leyenda-item"><span class="leyenda-dot" style="background:#16A085;"></span>Clase única</span>
+                <span class="leyenda-item"><span class="leyenda-dot" style="background:#2C3E50;"></span>Reserva cancelada (admin)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================ -->
+<!-- LISTA DE TARJETAS                                 -->
+<!-- ================================================ -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
+
+    {% if page_obj %}
+        {% for evento in page_obj %}
+            <div class="evento-card tipo-{% if evento.tipo_evento == 'cancelacion_permanente' %}cancelacion-permanente{% elif evento.tipo_evento == 'ausencia_temporal' %}ausencia-temporal{% elif evento.tipo_evento == 'cancelacion_plan' %}cancelacion-plan{% elif evento.tipo_evento == 'plan_adicional' %}plan-adicional{% elif evento.tipo_evento == 'recupero' %}recupero{% elif evento.tipo_evento == 'clase_unica' %}clase-unica{% elif evento.tipo_evento == 'cancelacion_admin' %}cancelacion-admin{% endif %}" style="border-left: 5px solid var(--tipo-color);">
+                <!-- Franja superior -->
+                <div class="flex flex-wrap items-center gap-2 px-4 py-2" style="background: var(--tipo-strip); border-bottom: 1px solid rgba(0,0,0,0.05);">
+
+                    <div class="flex items-center justify-between w-full">
+                        <!-- Badge tipo -->
+                        <span class="badge-tipo" style="background: var(--tipo-badge-bg); color: var(--tipo-badge-text);">
+                            {% if evento.tipo_evento == 'cancelacion_permanente' %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+                                Cancelación permanente
+                            {% elif evento.tipo_evento == 'ausencia_temporal' %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/></svg>
+                                Ausencia temporal
+                            {% elif evento.tipo_evento == 'cancelacion_plan' %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+                                Cancelación de plan
+                            {% elif evento.tipo_evento == 'plan_adicional' %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd"/></svg>
+                                Plan adicional
+                            {% elif evento.tipo_evento == 'recupero' %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M4.755 10.059a7.5 7.5 0 0 1 12.548-3.364l1.903 1.903h-3.183a.75.75 0 1 0 0 1.5h4.992a.75.75 0 0 0 .75-.75V4.356a.75.75 0 0 0-1.5 0v3.18l-1.9-1.9A9 9 0 0 0 3.306 9.67a.75.75 0 1 0 1.45.388Zm15.408 3.352a.75.75 0 0 0-.919.53 7.5 7.5 0 0 1-12.548 3.364l-1.902-1.903h3.183a.75.75 0 0 0 0-1.5H2.984a.75.75 0 0 0-.75.75v4.992a.75.75 0 0 0 1.5 0v-3.18l1.9 1.9a9 9 0 0 0 15.059-4.035.75.75 0 0 0-.53-.918Z" clip-rule="evenodd"/></svg>
+                                Recupero
+                            {% elif evento.tipo_evento == 'clase_unica' %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/></svg>
+                                Clase única
+                            {% elif evento.tipo_evento == 'cancelacion_admin' %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+                                Reserva cancelada
+                            {% endif %}
+                        </span>
+                        <!-- Fecha -->
+                        <span class="ml-auto text-xs font-medium shrink-0" style="color: var(--gris-medio);">
+                            {{ evento.fecha|date:"d/m/Y" }}
+                            <span class="font-normal ml-1">{{ evento.fecha|date:"H:i" }}</span>
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between w-full">
+                        <!-- Estado de reserva -->
+                        {% if evento.tipo_evento != 'ausencia_temporal' %}
+                            {% if evento.estado_reserva == 'activa' %}
+                                <span class="badge-sm" style="background:#D9EDE6; color:#1E4435;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-2.5"><path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/></svg>
+                                    Activa
+                                </span>
+                            {% elif evento.estado_reserva == 'cancelada' %}
+                                <span class="badge-sm" style="background: var(--gris-claro); color: var(--gris-medio);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-2.5"><path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 1 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg>
+                                    Cancelada
+                                </span>
+                            {% endif %} 
+                        {% endif %}
+
+                        <!-- Acción -->
+                        {% if evento.iniciado_por == 'admin' %}
+                            <span class="badge-sm" style="background:#D8DFE8; color:#1C2E40;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-2.5"><path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0Z" clip-rule="evenodd"/></svg>
+                                Acción de admin
+                            </span>
+                        {% else %}
+                            <span class="badge-sm" style="background: var(--gris-claro); color: var(--gris-oscuro);">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-2.5"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd"/></svg>
+                                Acción del usuario
+                            </span>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <!-- Cuerpo de la tarjeta -->
+                <div class="px-3 py-2.5 bg-white flex flex-col gap-2">
+
+                    <div class="flex-1 min-w-0">
+
+                        <!-- Nombre y username -->
+                        <div class="flex flex-wrap items-center mb-1">
+                            <span class="font-semibold text-sm" style="color: var(--gris-oscuro);">
+                                {{ evento.usuario.get_full_name|default:evento.usuario.username }}
+                            </span>
+                            <span class="sep-usuario"></span>
+                            <span class="text-xs" style="color: var(--gris-medio);">@{{ evento.usuario.username }}</span>
+                        </div>
+
+                        <!-- Clase + sede -->
+                        {% if evento.clase %}
+                        <div class="flex flex-col items-start gap-1 mt-1">
+                            <span class="flex items-center gap-1.5 text-sm" style="color: var(--gris-oscuro);">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3.5 shrink-0" style="color: var(--principal);">
+                                    <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/>
+                                </svg>
+                                <strong>{{ evento.clase.get_nombre_display }}</strong>
+                                &mdash; {{ evento.clase.dia }} {{ evento.clase.horario|time:"H:i" }}
+                            </span>
+                            <span class="flex items-center gap-1.5 text-sm" style="color: var(--gris-medio);">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3.5 shrink-0" style="color: var(--secundario);">
+                                    <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd"/>
+                                </svg>
+                                {{ evento.sede }}
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Plan -->
+                        {% if evento.plan %}
+                        <div class="flex items-center gap-1.5 mt-1 text-sm" style="color: var(--gris-oscuro);">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3.5 shrink-0" style="color: var(--principal);">
+                                <path fill-rule="evenodd" d="M11.99 2.243a4.49 4.49 0 0 0-3.398 1.55 4.49 4.49 0 0 0-3.497 1.306 4.491 4.491 0 0 0-1.307 3.498 4.491 4.491 0 0 0-1.548 3.397c0 1.357.6 2.573 1.548 3.397a4.491 4.491 0 0 0 1.307 3.498 4.49 4.49 0 0 0 3.498 1.307 4.49 4.49 0 0 0 3.397 1.549 4.49 4.49 0 0 0 3.397-1.549 4.49 4.49 0 0 0 3.497-1.307 4.491 4.491 0 0 0 1.306-3.497 4.491 4.491 0 0 0 1.55-3.398c0-1.357-.601-2.573-1.549-3.397a4.491 4.491 0 0 0-1.307-3.498 4.49 4.49 0 0 0-3.498-1.307 4.49 4.49 0 0 0-3.396-1.549Zm3.53 7.28a.75.75 0 0 0-1.06-1.06l-6 6a.75.75 0 1 0 1.06 1.06l6-6Zm-5.78-.905a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25Zm4.5 4.5a1.125 1.125 0 1 0 0 2.25 1.125 1.125 0 0 0 0-2.25Z" clip-rule="evenodd"/>
+                            </svg>
+                            Plan: <strong>{{ evento.plan.nombre }}</strong>
+                        </div>
+                        {% endif %}
+
+                        <!-- Píldoras de fechas extra -->
+                        {% if evento.fecha_ausencia or evento.fecha_unica %}
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            {% if evento.fecha_ausencia %}
+                            <span class="detalle-pill" style="background:#F5EDCD; color:#5C4400;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd"/></svg>
+                                <span class="font-semibold">Faltará el:</span> {{ evento.fecha_ausencia|date:"d/m/Y" }}
+                            </span>
+                            {% endif %}
+                            {% if evento.fecha_unica %}
+                                <div class="w-full mt-1 rounded-lg px-3 py-2 flex items-center gap-2"
+                                    style="background: #DDE6ED; border: 1px solid #ADC3D1;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 shrink-0" style="color: #2A4D61;">
+                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <div>
+                                        <span class="text-xs font-semibold uppercase tracking-wide" style="color: #2A4D61;">{% if evento.tipo_evento == 'recupero' %}Recupero el{% else %}Asiste el{% endif %}</span>
+                                        <span class="ml-1.5 text-sm font-bold" style="color: #1a3a4a;">
+                                            {{ evento.fecha_unica|date:"l d/m/Y" }}
+                                        </span>
+                                        {% if evento.clase %}
+                                        <span class="ml-1 text-sm font-medium" style="color: #2A4D61;">
+                                            a las {{ evento.clase.horario|time:"H:i" }}
+                                        </span>
+                                        {% endif %} 
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Bloque admin (solo en cancelaciones por admin) -->
+                    {% if evento.tipo_evento == 'cancelacion_admin' %}
+                    <div class="w-full">
+                        <div class="rounded-lg p-3 text-xs" style="background:#EEF1F5; border: 1px solid #C8D0DB;">
+                            <p class="font-semibold mb-1" style="color: var(--principal-dark);">Cancelado por</p>
+                            <p class="font-medium mb-0" style="color: var(--gris-oscuro);">
+                                {% if evento.admin_user %}
+                                    {{ evento.admin_user.get_full_name|default:evento.admin_user.username }}
+                                {% else %}
+                                    Admin eliminado
+                                {% endif %}
+                            </p>
+                            {% if evento.motivo %}
+                            <div class="mt-2 pt-2" style="border-top: 1px solid #C8D0DB;">
+                                <p class="mb-0" style="color: var(--gris-medio);">
+                                    <span class="font-semibold" style="color: var(--gris-oscuro);">Motivo:</span>
+                                    {{ evento.motivo }}
+                                </p>
+                                {% if evento.motivo_detalle %}
+                                <p class="mt-1 mb-0" style="color: var(--gris-medio);">{{ evento.motivo_detalle }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        {% endfor %}
+
+    {% else %}
+        <div class="rounded-xl p-12 text-center" style="background: var(--blanco); border: 1px solid var(--gris-claro);">
+            <div class="mx-auto mb-4 size-16 rounded-full flex items-center justify-center" style="background: var(--fondo);">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8" style="color: var(--secundario);">
+                    <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <h4 class="font-semibold mb-1" style="color: var(--gris-oscuro);">Sin resultados</h4>
+            <p class="text-sm mb-0" style="color: var(--gris-medio);">No se encontraron eventos con los filtros aplicados.</p>
+            {% if tipo_filtro or usuario_filtro or sede_filtro or fecha_desde or fecha_hasta %}
+            <a href="{% url 'gravity:admin_historial_actividad' %}"
+               class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-decoration-none"
+               style="background: var(--fondo); border: 2px solid var(--secundario); color: var(--principal);"
+               onmouseover="this.style.background='var(--secundario)'; this.style.color='white';"
+               onmouseout="this.style.background='var(--fondo)'; this.style.color='var(--principal)';">
+                Limpiar filtros y ver todo
+            </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- ================================================ -->
+<!-- PAGINACIÓN                                        -->
+<!-- ================================================ -->
+{% if page_obj.has_other_pages %}
+<div class="flex items-center justify-center gap-2 mb-8">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&tipo={{ tipo_filtro }}&usuario={{ usuario_filtro }}&sede={{ sede_filtro }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
+       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all text-decoration-none"
+       style="border-color: var(--principal); color: var(--principal); background: transparent;"
+       onmouseover="this.style.background='var(--principal)'; this.style.color='white';"
+       onmouseout="this.style.background='transparent'; this.style.color='var(--principal)';">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+            <path fill-rule="evenodd" d="M11.03 3.97a.75.75 0 0 1 0 1.06l-6.22 6.22H21a.75.75 0 0 1 0 1.5H4.81l6.22 6.22a.75.75 0 1 1-1.06 1.06l-7.5-7.5a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/>
+        </svg>
+        Anterior
+    </a>
+    {% endif %}
+    <span class="px-4 py-2 text-sm rounded-lg" style="background: var(--blanco); border: 1px solid var(--gris-claro); color: var(--gris-medio);">
+        Página <strong style="color: var(--gris-oscuro);">{{ page_obj.number }}</strong>
+        de <strong style="color: var(--gris-oscuro);">{{ page_obj.paginator.num_pages }}</strong>
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&tipo={{ tipo_filtro }}&usuario={{ usuario_filtro }}&sede={{ sede_filtro }}&fecha_desde={{ fecha_desde }}&fecha_hasta={{ fecha_hasta }}"
+       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all text-decoration-none"
+       style="border-color: var(--principal); color: var(--principal); background: transparent;"
+       onmouseover="this.style.background='var(--principal)'; this.style.color='white';"
+       onmouseout="this.style.background='transparent'; this.style.color='var(--principal)';">
+        Siguiente
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+            <path fill-rule="evenodd" d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/>
+        </svg>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

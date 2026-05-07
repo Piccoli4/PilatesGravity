@@ -13,7 +13,7 @@ from .views import (
     admin_reservas_lista, admin_reservar_para_usuario, admin_reserva_cancelar, admin_reserva_modificar, 
     admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note, 
     admin_agregar_usuario, admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido, 
-    admin_eliminar_admin_restringido, 
+    admin_eliminar_admin_restringido, admin_historial_actividad,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
@@ -99,6 +99,9 @@ urlpatterns = [
     path('admin-panel/admins/crear/', admin_crear_admin_restringido, name='admin_crear_admin_restringido'),
     path('admin-panel/admins/<int:admin_id>/eliminar/', admin_eliminar_admin_restringido, name='admin_eliminar_admin_restringido'),
     
+    # Historial de actividad
+    path('admin-panel/historial/', admin_historial_actividad, name='admin_historial_actividad'),
+
     # Reportes y estadísticas
     path('admin-panel/reportes/', admin_reportes, name='admin_reportes'),
 
