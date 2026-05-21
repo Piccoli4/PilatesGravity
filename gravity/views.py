@@ -1775,7 +1775,7 @@ def reservar_recupero(request):
         messages.error(request, 'No tenés ausencias disponibles para recuperar esta semana.')
         return redirect('accounts:mis_reservas')
 
-    hoy = timezone.now().date()
+    hoy = timezone.localtime(timezone.now()).date()
     # El plazo máximo es la fecha_limite_recupero más lejana entre las ausencias vigentes
     fin_ventana = max((a.fecha_limite_recupero for a in ausencias), default=hoy)
 
@@ -2070,7 +2070,8 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 fecha_unica = None
                 es_recupero = False
                 if tipo_reserva in ('temporal', 'recupero'):
-                    hoy = timezone.now().date()
+                    ahora = timezone.localtime(timezone.now())
+                    hoy = ahora.date()
                     dias_map = {
                         'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
                         'Jueves': 3, 'Viernes': 4, 'Sábado': 5
@@ -2078,7 +2079,13 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                     dia_num = dias_map.get(clase.dia, 0)
                     dias_hasta = (dia_num - hoy.weekday()) % 7
                     if dias_hasta == 0:
-                        dias_hasta = 7
+                        clase_hoy = ahora.replace(
+                            hour=clase.horario.hour,
+                            minute=clase.horario.minute,
+                            second=0, microsecond=0
+                        )
+                        if clase_hoy <= ahora:
+                            dias_hasta = 7
                     fecha_unica = hoy + timedelta(days=dias_hasta)
                     es_recupero = (tipo_reserva == 'recupero')
 

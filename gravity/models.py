@@ -633,7 +633,7 @@ class Reserva(models.Model):
 
     @staticmethod
     def usuario_puede_hacer_recupero(usuario):
-        hoy = timezone.now().date()
+        hoy = timezone.localtime(timezone.now()).date()
 
         # Ausencias vigentes: cuya ventana de recupero no venció (fecha + 6 días >= hoy)
         ausencias = AusenciaTemporal.objects.filter(
