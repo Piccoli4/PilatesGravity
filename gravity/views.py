@@ -1996,11 +1996,29 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
     # Preselecciones opcionales
     clase_preseleccionada = None
     usuario_preseleccionado = None
-
     if clase_id:
         clase_preseleccionada = get_object_or_404(Clase, id=clase_id, activa=True)
     if usuario_id:
         usuario_preseleccionado = get_object_or_404(User, id=usuario_id, is_staff=False)
+
+    # Cupos reales de la clase preseleccionada (considera ausencias del día)
+    cupos_proxima_preseleccionada = None
+    if clase_preseleccionada:
+        _ahora = timezone.localtime(timezone.now())
+        _hoy = _ahora.date()
+        _dias_map = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
+        _dia_num = _dias_map.get(clase_preseleccionada.dia, 0)
+        _dias_hasta = (_dia_num - _hoy.weekday()) % 7
+        if _dias_hasta == 0:
+            _clase_hoy = _ahora.replace(
+                hour=clase_preseleccionada.horario.hour,
+                minute=clase_preseleccionada.horario.minute,
+                second=0, microsecond=0
+            )
+            if _clase_hoy <= _ahora:
+                _dias_hasta = 7
+        _fecha_proxima = _hoy + timedelta(days=_dias_hasta)
+        cupos_proxima_preseleccionada = clase_preseleccionada.cupos_disponibles(fecha=_fecha_proxima)
 
     hoy_iso = timezone.now().date().isoformat()
 
@@ -2027,6 +2045,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 'clase_preseleccionada': clase_preseleccionada,
                 'usuario_preseleccionado': usuario_preseleccionado,
                 'hoy_iso': hoy_iso,
+                'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
             })
 
         clase = get_object_or_404(Clase, id=clase_id_post, activa=True)
@@ -2046,6 +2065,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 'clase_preseleccionada': clase_preseleccionada,
                 'usuario_preseleccionado': usuario_preseleccionado,
                 'hoy_iso': hoy_iso,
+                'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
             })
 
         # Validar cupo disponible (para temporal/recupero se usa la fecha real de la clase)
@@ -2070,21 +2090,6 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 f'La clase {clase.get_nombre_display()} - {clase.dia} {clase.horario.strftime("%H:%M")} '
                 f'no tiene cupos disponibles.'
             )
-            # Calcular cupos reales con fecha para la clase preseleccionada
-            cupos_proxima_preseleccionada = None
-            if clase_preseleccionada:
-                _ahora = timezone.localtime(timezone.now())
-                _hoy = _ahora.date()
-                _dias_map = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
-                _dia_num = _dias_map.get(clase_preseleccionada.dia, 0)
-                _dias_hasta = (_dia_num - _hoy.weekday()) % 7
-                if _dias_hasta == 0:
-                    _clase_hoy = _ahora.replace(hour=clase_preseleccionada.horario.hour, minute=clase_preseleccionada.horario.minute, second=0, microsecond=0)
-                    if _clase_hoy <= _ahora:
-                        _dias_hasta = 7
-                _fecha_proxima = _hoy + timedelta(days=_dias_hasta)
-                cupos_proxima_preseleccionada = clase_preseleccionada.cupos_disponibles(fecha=_fecha_proxima)
-
             return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
                 'clases_disponibles': clases_disponibles,
                 'todos_los_usuarios': todos_los_usuarios,
@@ -2094,7 +2099,6 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                 'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
             })
 
-        # Reemplazar con:
         try:
             with transaction.atomic():
                 # Calcular fecha_unica y es_recupero según tipo
@@ -2173,6 +2177,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
         'clase_preseleccionada': clase_preseleccionada,
         'usuario_preseleccionado': usuario_preseleccionado,
         'hoy_iso': hoy_iso,
+        'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
     })
 
 # ==============================================================================
