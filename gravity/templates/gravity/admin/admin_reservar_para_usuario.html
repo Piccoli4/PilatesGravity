@@ -101,8 +101,8 @@
                             <!-- Info de cupos -->
                             <p class="text-sm text-gris-medio">
                                 Cupos disponibles:
-                                <span class="font-semibold {% if clase_preseleccionada.cupos_disponibles == 0 %}text-error{% else %}text-principal{% endif %}">
-                                    {{ clase_preseleccionada.cupos_disponibles }}/{{ clase_preseleccionada.cupo_maximo }}
+                                <span class="font-semibold {% if cupos_proxima_preseleccionada == 0 %}text-error{% else %}text-principal{% endif %}">
+                                    {{ cupos_proxima_preseleccionada }}/{{ clase_preseleccionada.cupo_maximo }}
                                 </span>
                             </p>
                         {% else %}
@@ -113,7 +113,8 @@
                                     <option value="{{ clase.id }}"
                                             data-cupos="{{ clase.cupos_disponibles }}"
                                             data-maximo="{{ clase.cupo_maximo }}"
-                                            data-dia="{{ clase.dia }}">
+                                            data-dia="{{ clase.dia }}"
+                                            data-horario="{{ clase.horario|time:'H:i' }}">
                                         {{ clase.get_nombre_display }} — {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }} ({{ clase.cupos_disponibles }}/{{ clase.cupo_maximo }} cupos)
                                     </option>
                                 {% endfor %}
@@ -311,13 +312,33 @@
             'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
             'Jueves': 4, 'Viernes': 5, 'Sábado': 6
         };
-        const hoy = new Date('{{ hoy_iso }}T12:00:00');
+        const ahora = new Date();
+        const hoy = new Date('{{ hoy_iso }}T00:00:00');
         const diaHoyJS = hoy.getDay();
         const diaObjetivo = diasMap[diaClase];
         if (diaObjetivo === undefined) return;
 
+        let horarioClase = null;
+        {% if clase_preseleccionada %}
+            horarioClase = '{{ clase_preseleccionada.horario|time:"H:i" }}';
+        {% else %}
+            const _sel = document.getElementById('id_clase');
+            if (_sel && _sel.value) {
+                horarioClase = _sel.options[_sel.selectedIndex]?.dataset.horario || null;
+            }
+        {% endif %}
+
         let diasHasta = (diaObjetivo - diaHoyJS + 7) % 7;
-        if (diasHasta === 0) diasHasta = 7;
+        if (diasHasta === 0) {
+            if (horarioClase) {
+                const [hh, mm] = horarioClase.split(':').map(Number);
+                const claseHoy = new Date(ahora);
+                claseHoy.setHours(hh, mm, 0, 0);
+                if (ahora >= claseHoy) diasHasta = 7;
+            } else {
+                diasHasta = 7;
+            }
+        }
 
         const fechaProxima = new Date(hoy);
         fechaProxima.setDate(hoy.getDate() + diasHasta);
