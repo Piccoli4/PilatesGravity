@@ -2944,9 +2944,7 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
         if form.is_valid():
             estado_actualizado = form.save()
 
-            # Sincronizar PlanUsuario con plan_actual si es necesario.
-            # Se usa comparación directa con PlanUsuario activo en lugar de
-            # plan_anterior para cubrir re-ediciones y estados inconsistentes.
+            # Sincronizar PlanUsuario con plan_actual si el plan cambió.
             if estado_actualizado.plan_actual:
                 plan_usuario_sincronizado = PlanUsuario.objects.filter(
                     usuario=cliente,
@@ -2979,15 +2977,15 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
                     # Actualizar deuda del mes actual con el nuevo plan
                     estado_actualizado.generar_deuda_mes_actual()
 
-                    # Recalcular saldo desde cero
-                    total_pagado = RegistroPago.objects.filter(
-                        cliente=cliente, estado='confirmado'
-                    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-                    total_deudas = DeudaMensual.objects.filter(
-                        usuario=cliente
-                    ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-                    estado_actualizado.saldo_actual = total_pagado - total_deudas
-                    estado_actualizado.save(update_fields=['saldo_actual'])
+            # Recalcular saldo siempre, sin importar si cambió el plan
+            total_pagado = RegistroPago.objects.filter(
+                cliente=cliente, estado='confirmado'
+            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+            total_deudas = DeudaMensual.objects.filter(
+                usuario=cliente
+            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+            estado_actualizado.saldo_actual = total_pagado - total_deudas
+            estado_actualizado.save(update_fields=['saldo_actual'])
 
             messages.success(
                 request,
