@@ -2977,6 +2977,32 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
                     # Actualizar deuda del mes actual con el nuevo plan
                     estado_actualizado.generar_deuda_mes_actual()
 
+            else:
+                # El admin quitó el plan → ajustar o eliminar deuda del mes actual
+                hoy = timezone.now().date()
+                primer_dia_mes = date(hoy.year, hoy.month, 1)
+                deuda_mes = DeudaMensual.objects.filter(
+                    usuario=cliente,
+                    mes_año=primer_dia_mes
+                ).exclude(estado='pagado').first()
+
+                if deuda_mes:
+                    if hoy.day <= 4:
+                        # Baja temprana: eliminar deuda completa
+                        deuda_mes.delete()
+                    elif hoy.day <= 9:
+                        # Baja a mitad de mes: dejar solo medio mes
+                        medio_mes = deuda_mes.plan_aplicado.precio_mensual / 2
+                        if deuda_mes.monto_pendiente > medio_mes:
+                            deuda_mes.monto_original = medio_mes
+                            deuda_mes.monto_pendiente = medio_mes
+                            deuda_mes.es_medio_mes = True
+                            deuda_mes.save()
+                    # día >= 10: no tocar la deuda
+
+                # Desactivar PlanUsuario activos
+                PlanUsuario.objects.filter(usuario=cliente, activo=True).update(activo=False)
+
             # Recalcular saldo siempre, sin importar si cambió el plan
             total_pagado = RegistroPago.objects.filter(
                 cliente=cliente, estado='confirmado'
