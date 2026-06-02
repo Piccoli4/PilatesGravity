@@ -3074,13 +3074,48 @@ def admin_cancelar_plan_usuario(request, plan_id):
     plan.reservas_canceladas = True
     plan.save()
 
-    # Recalcular plan_actual en EstadoPagoCliente
+    # Recalcular plan_actual en EstadoPagoCliente y ajustar deuda si corresponde
     try:
         estado = usuario.estado_pago
+        precio_mensual_plan = plan.plan.precio_mensual  # Capturar ANTES de desactivar
+
         nuevo_plan = estado.actualizar_plan_automatico()
         if not PlanUsuario.objects.filter(usuario=usuario, activo=True).exists():
             estado.plan_actual = None
             estado.save(update_fields=['plan_actual'])
+
+            # Ajustar deuda del mes actual según el día en que se cancela el plan
+            hoy = timezone.now().date()
+            primer_dia_mes = date(hoy.year, hoy.month, 1)
+            deuda_mes = DeudaMensual.objects.filter(
+                usuario=usuario,
+                mes_año=primer_dia_mes
+            ).exclude(estado='pagado').first()
+
+            if deuda_mes:
+                if hoy.day <= 4:
+                    # Baja temprana: eliminar deuda del mes
+                    deuda_mes.delete()
+                elif hoy.day <= 9:
+                    # Baja a mitad de mes: dejar solo la mitad del plan
+                    medio_mes = precio_mensual_plan / 2
+                    if deuda_mes.monto_pendiente > medio_mes:
+                        deuda_mes.monto_original = medio_mes
+                        deuda_mes.monto_pendiente = medio_mes
+                        deuda_mes.es_medio_mes = True
+                        deuda_mes.save()
+                # día >= 10: no tocar la deuda
+
+            # Recalcular saldo desde cero
+            total_pagado = RegistroPago.objects.filter(
+                cliente=usuario, estado='confirmado'
+            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+            total_deudas = DeudaMensual.objects.filter(
+                usuario=usuario
+            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+            estado.saldo_actual = total_pagado - total_deudas
+            estado.save(update_fields=['saldo_actual'])
+
     except EstadoPagoCliente.DoesNotExist:
         pass
 
