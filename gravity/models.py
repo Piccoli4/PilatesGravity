@@ -188,10 +188,19 @@ class Clase(models.Model):
         if dia_objetivo is None:
             return None
 
-        # Próxima ocurrencia de este día (nunca hoy mismo, siempre hacia adelante)
+        # Próxima ocurrencia: hoy si la clase todavía no pasó, si no la semana siguiente
+        from django.utils import timezone as tz_local
+        ahora = tz_local.localtime(tz_local.now())
         dias_hasta = (dia_objetivo - hoy.weekday()) % 7
         if dias_hasta == 0:
-            dias_hasta = 7
+            clase_hoy = ahora.replace(
+                hour=self.horario.hour,
+                minute=self.horario.minute,
+                second=0,
+                microsecond=0
+            )
+            if clase_hoy <= ahora:
+                dias_hasta = 7
 
         fecha_clase = hoy + timedelta(days=dias_hasta)
 

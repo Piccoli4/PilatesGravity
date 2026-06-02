@@ -1910,11 +1910,24 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
         messages.error(request, 'Fecha inválida.')
         return redirect('gravity:clases_disponibles')
 
-    hoy = timezone.now().date()
+    ahora = timezone.localtime(timezone.now())
+    hoy = ahora.date()
 
     if fecha < hoy:
         messages.error(request, 'El cupo temporal ya no está disponible.')
         return redirect('gravity:clases_disponibles')
+
+    # Si la clase es hoy, verificar que falten al menos 3 horas
+    if fecha == hoy:
+        clase_datetime = ahora.replace(
+            hour=clase.horario.hour,
+            minute=clase.horario.minute,
+            second=0,
+            microsecond=0
+        )
+        if ahora >= clase_datetime - timedelta(hours=3):
+            messages.error(request, 'El cupo temporal ya no está disponible (menos de 3 horas para la clase).')
+            return redirect('gravity:clases_disponibles')
 
     cupos = clase.cupos_disponibles(fecha=fecha)
     if cupos <= 0:
@@ -2081,6 +2094,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
                     _dias_hasta = 7
             _fecha_validacion = _hoy + timedelta(days=_dias_hasta)
             _cupos_check = clase.cupos_disponibles(fecha=_fecha_validacion)
+        # Nota: el admin no tiene restricción de 3 horas — puede crear reservas retroactivas
         else:
             _cupos_check = clase.cupos_disponibles()
 
