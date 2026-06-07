@@ -22,6 +22,8 @@ from .views import (
     mis_planes, seleccionar_plan, cancelar_plan,
     # IMPORTACIONES PARA TESTIMONIOS
     admin_testimonios_lista, admin_testimonio_aprobar, admin_testimonio_rechazar, admin_testimonio_eliminar,
+    # IMPORTACIONES PARA LINKS DE REDES SOCIALES
+    links,
 )
 from django.views.generic import TemplateView
 
@@ -128,4 +130,9 @@ urlpatterns = [
     path('planes/', mis_planes, name='mis_planes'),
     path('seleccionar-plan/', seleccionar_plan, name='seleccionar_plan'),
     path('planes/<int:plan_id>/cancelar/', cancelar_plan, name='cancelar_plan'),
+
+    # ==============================================================================
+    # LINKS PARA REDES SOCIALES 
+    # ==============================================================================
+    path('links/', links, name='links'),
 ]

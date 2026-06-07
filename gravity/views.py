@@ -4161,3 +4161,10 @@ def service_worker_js(request):
     """
     return HttpResponse(sw_content, content_type='application/javascript')
 
+# ==============================================================================
+# VISTAS PÚBLICAS DE LINKS PARA REDES SOCIALES
+# ==============================================================================
+
+def links(request):
+    """Página pública de links para bio de redes sociales"""
+    return render(request, 'gravity/links.html')
