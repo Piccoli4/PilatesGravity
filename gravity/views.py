@@ -3342,9 +3342,24 @@ def admin_ajustar_deuda_especial(request, deuda_id):
                 motivo=motivo,
             )
 
+            # Cuánto se pagó realmente sobre esta deuda hasta ahora
+            # (el pendiente solo baja cuando se aplica un pago real, no por ajustes)
+            monto_ya_pagado_real = deuda.monto_original - deuda.monto_pendiente
+
             deuda.monto_original = monto_ajustado
-            deuda.monto_pendiente = Decimal('0')
-            deuda.estado = 'pagado'
+            nuevo_pendiente = max(Decimal('0'), monto_ajustado - monto_ya_pagado_real)
+            deuda.monto_pendiente = nuevo_pendiente
+
+            hoy = timezone.localtime(timezone.now()).date()
+            if nuevo_pendiente <= Decimal('0'):
+                deuda.estado = 'pagado'
+            elif nuevo_pendiente < monto_ajustado:
+                deuda.estado = 'parcial'
+            elif hoy > deuda.fecha_vencimiento:
+                deuda.estado = 'vencido'
+            else:
+                deuda.estado = 'pendiente'
+
             deuda.save(update_fields=['monto_original', 'monto_pendiente', 'estado'])
 
             total_pagado = RegistroPago.objects.filter(
@@ -3357,8 +3372,15 @@ def admin_ajustar_deuda_especial(request, deuda_id):
 
             estado_pago, _ = EstadoPagoCliente.objects.get_or_create(usuario=cliente)
             estado_pago.saldo_actual = nuevo_saldo
-            if nuevo_saldo >= Decimal('0'):
+
+            tiene_deudas_vencidas = DeudaMensual.objects.filter(
+                usuario=cliente, estado='vencido', monto_pendiente__gt=0
+            ).exists()
+            if tiene_deudas_vencidas:
+                estado_pago.puede_reservar = False
+            elif nuevo_saldo >= Decimal('0'):
                 estado_pago.puede_reservar = True
+
             estado_pago.save(update_fields=['saldo_actual', 'puede_reservar'])
 
         nombre_cliente = cliente.get_full_name() or cliente.username

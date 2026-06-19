@@ -326,8 +326,9 @@
                 <p class="text-gris-medio">Monto original: <span id="modal-monto-original" class="font-medium text-gris-oscuro"></span></p>
             </div>
             <p class="text-xs text-gris-medio mb-4">
-                Ingresá el monto acordado. La deuda quedará marcada como <strong>pagada</strong> y el saldo se recalculará.
-                Podés ingresar 0 para condonarla completamente.
+                Ingresá el monto correcto de la deuda (por un error, descuento o acuerdo especial). El estado se recalculará
+                según los pagos ya registrados: si el cliente ya pagó ese monto, quedará <strong>pagada</strong>; si no, seguirá
+                pendiente con el nuevo monto. Podés ingresar 0 para dejar el usuario <strong>'Al día'</strong>.
             </p>
             <form id="form-ajuste" method="post" action="">
                 {% csrf_token %}

@@ -1438,7 +1438,7 @@ class AjusteDeudaForm(forms.Form):
             'min': '0',
             'placeholder': '0.00',
         }),
-        help_text="Monto real acordado. La deuda quedará marcada como pagada con este valor."
+        help_text="Nuevo monto correcto de la deuda. El estado se recalculará según lo que el cliente ya haya pagado."
     )
     motivo = forms.CharField(
         label="Motivo del ajuste",
