@@ -4,17 +4,18 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
-from .models import ( 
-    Reserva, 
-    Clase, 
-    PlanUsuario, 
-    AusenciaTemporal, 
-    NotificacionCancelacion, 
-    NotificacionCancelacionPlan, 
+from .models import (
+    Reserva,
+    Clase,
+    PlanUsuario,
+    AusenciaTemporal,
+    Inasistencia,
+    NotificacionCancelacion,
+    NotificacionCancelacionPlan,
     AjusteDeudaEspecial,
     NotificacionPlanAdicional,
     CancelacionAdmin,
-    DIAS_SEMANA, 
+    DIAS_SEMANA,
     DIAS_SEMANA_COMPLETOS
 )
 from .forms import ( 
@@ -1495,6 +1496,178 @@ def admin_clase_toggle_status(request, clase_id):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 # ==============================================================================
+# REGISTRO DE ASISTENCIAS
+# ==============================================================================
+
+@admin_required
+def admin_asistencia(request):
+    """
+    Vista principal de registro de asistencia.
+    Muestra la nómina de alumnos por fecha y sede,
+    permitiendo marcar/revertir inasistencias sin aviso (sin límite de días).
+    """
+    hoy = timezone.localtime(timezone.now()).date()
+
+    # Obtener fecha seleccionada del GET, sin restricción histórica
+    fecha_str = request.GET.get('fecha', hoy.isoformat())
+    try:
+        from datetime import date as date_type
+        fecha_seleccionada = date_type.fromisoformat(fecha_str)
+    except ValueError:
+        fecha_seleccionada = hoy
+    if fecha_seleccionada > hoy:
+        fecha_seleccionada = hoy
+
+    # Obtener sede seleccionada
+    sede_seleccionada = request.GET.get('sede', '')
+    sedes = Clase.objects.filter(activa=True).values_list('direccion', flat=True).distinct()
+
+    # Día de la semana para la fecha seleccionada
+    dias_semana_nombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    dia_nombre = dias_semana_nombres[fecha_seleccionada.weekday()]
+
+    # Clases del día seleccionado
+    clases_qs = Clase.objects.filter(activa=True, dia=dia_nombre).order_by('direccion', 'horario')
+    if sede_seleccionada:
+        clases_qs = clases_qs.filter(direccion=sede_seleccionada)
+
+    # Precargar inasistencias y ausencias temporales de esa fecha de una sola vez
+    ids_clases = list(clases_qs.values_list('id', flat=True))
+    inasistencias_fecha = set(
+        Inasistencia.objects.filter(
+            reserva__clase_id__in=ids_clases,
+            reserva__activa=True,
+            fecha=fecha_seleccionada,
+        ).values_list('reserva_id', flat=True)
+    )
+    ausencias_fecha = set(
+        AusenciaTemporal.objects.filter(
+            reserva__clase_id__in=ids_clases,
+            reserva__activa=True,
+            fecha=fecha_seleccionada,
+        ).values_list('reserva_id', flat=True)
+    )
+
+    clases_con_nomina = []
+    from itertools import chain
+    for clase in clases_qs:
+        reservas_permanentes = clase.reserva_set.filter(
+            activa=True,
+            fecha_unica__isnull=True,
+        ).select_related('usuario', 'usuario__profile')
+
+        reservas_fecha_unica = clase.reserva_set.filter(
+            activa=True,
+            fecha_unica=fecha_seleccionada,
+        ).select_related('usuario', 'usuario__profile')
+
+        reservas = sorted(
+            chain(reservas_permanentes, reservas_fecha_unica),
+            key=lambda r: (r.usuario.first_name or '', r.usuario.last_name or '')
+        )
+
+        alumnos = []
+        for reserva in reservas:
+            if reserva.id in ausencias_fecha:
+                estado = 'ausencia_avisada'
+            elif reserva.id in inasistencias_fecha:
+                estado = 'inasistente'
+            else:
+                estado = 'presente'
+            alumnos.append({'reserva': reserva, 'estado': estado})
+
+        clases_con_nomina.append({
+            'clase': clase,
+            'alumnos': alumnos,
+            'total': len(alumnos),
+        })
+
+    total_alumnos = sum(item['total'] for item in clases_con_nomina)
+    total_inasistentes = sum(
+        1 for item in clases_con_nomina
+        for alumno in item['alumnos']
+        if alumno['estado'] == 'inasistente'
+    )
+
+    context = {
+        'fecha_seleccionada': fecha_seleccionada,
+        'sede_seleccionada': sede_seleccionada,
+        'sedes': sedes,
+        'clases_con_nomina': clases_con_nomina,
+        'dia_nombre': dia_nombre,
+        'hoy': hoy,
+        'es_historico': fecha_seleccionada < hoy,
+        'total_alumnos': total_alumnos,
+        'total_inasistentes': total_inasistentes,
+    }
+    return render(request, 'gravity/admin/asistencia.html', context)
+
+
+@admin_required
+def admin_asistencia_marcar(request):
+    """
+    AJAX: marca o revierte una inasistencia para una reserva+fecha.
+    Acepta POST con JSON: { "reserva_id": int, "fecha": "YYYY-MM-DD", "marcar": true/false }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        reserva_id = data.get('reserva_id')
+        fecha_str = data.get('fecha')
+        marcar = data.get('marcar', True)
+
+        if not reserva_id or not fecha_str:
+            return JsonResponse({'success': False, 'error': 'Faltan parámetros'}, status=400)
+
+        from datetime import date as date_type
+        try:
+            fecha = date_type.fromisoformat(fecha_str)
+        except ValueError:
+            return JsonResponse({'success': False, 'error': 'Fecha inválida'}, status=400)
+
+        hoy = timezone.localtime(timezone.now()).date()
+        fecha_minima = hoy - timedelta(days=7)
+        if fecha > hoy or fecha < fecha_minima:
+            return JsonResponse(
+                {'success': False, 'error': 'La fecha está fuera de la ventana permitida (hoy y hasta 7 días atrás)'},
+                status=400
+            )
+
+        reserva = get_object_or_404(Reserva, id=reserva_id, activa=True)
+
+        # No permitir marcar si ya hay una AusenciaTemporal para esa reserva+fecha
+        if AusenciaTemporal.objects.filter(reserva=reserva, fecha=fecha).exists():
+            return JsonResponse(
+                {'success': False, 'error': 'El alumno ya avisó su ausencia para esa fecha'},
+                status=400
+            )
+
+        if marcar:
+            _, creada = Inasistencia.objects.get_or_create(
+                reserva=reserva,
+                fecha=fecha,
+                defaults={'registrado_por': request.user},
+            )
+            nombre = reserva.usuario.get_full_name() or reserva.usuario.username
+            mensaje = f'Inasistencia de {nombre} registrada.' if creada else 'Ya estaba marcado como ausente.'
+            return JsonResponse({'success': True, 'message': mensaje, 'estado': 'inasistente'})
+        else:
+            eliminadas, _ = Inasistencia.objects.filter(reserva=reserva, fecha=fecha).delete()
+            nombre = reserva.usuario.get_full_name() or reserva.usuario.username
+            if eliminadas:
+                mensaje = f'Inasistencia de {nombre} revertida.'
+            else:
+                mensaje = 'No había inasistencia registrada.'
+            return JsonResponse({'success': True, 'message': mensaje, 'estado': 'presente'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+# ==============================================================================
 # GESTIÓN DE RESERVAS
 # ==============================================================================
 
@@ -2289,11 +2462,45 @@ def admin_usuario_detalle(request, usuario_id):
     reservas_canceladas = usuario.reservas_pilates.filter(activa=False).select_related(
         'clase'
     ).order_by('-fecha_modificacion')[:10]  # Últimas 10 canceladas
-    
+
     planes_activos_usuario = PlanUsuario.objects.filter(
         usuario=usuario,
         activo=True
     ).select_related('plan').order_by('fecha_inicio')
+
+    # Historial unificado de ausencias (avisadas + inasistencias sin aviso)
+    ids_reservas_usuario = usuario.reservas_pilates.values_list('id', flat=True)
+
+    ausencias_avisadas = list(
+        AusenciaTemporal.objects.filter(reserva_id__in=ids_reservas_usuario)
+        .select_related('reserva__clase')
+        .order_by('-fecha')[:50]
+    )
+    inasistencias_sin_aviso = list(
+        Inasistencia.objects.filter(reserva_id__in=ids_reservas_usuario)
+        .select_related('reserva__clase', 'registrado_por')
+        .order_by('-fecha')[:50]
+    )
+
+    # Combinar y ordenar por fecha desc
+    historial_ausencias = sorted(
+        [{'tipo': 'avisada', 'fecha': a.fecha, 'obj': a} for a in ausencias_avisadas] +
+        [{'tipo': 'inasistencia', 'fecha': i.fecha, 'obj': i} for i in inasistencias_sin_aviso],
+        key=lambda x: x['fecha'],
+        reverse=True
+    )[:50]
+
+    # Contador de ausencias (cualquier tipo) en los últimos 30 días
+    hace_30_dias = timezone.localtime(timezone.now()).date() - timedelta(days=30)
+    ausencias_30d = AusenciaTemporal.objects.filter(
+        reserva_id__in=ids_reservas_usuario,
+        fecha__gte=hace_30_dias,
+    ).count()
+    inasistencias_30d = Inasistencia.objects.filter(
+        reserva_id__in=ids_reservas_usuario,
+        fecha__gte=hace_30_dias,
+    ).count()
+    total_ausencias_30d = ausencias_30d + inasistencias_30d
 
     context = {
         'usuario': usuario,
@@ -2303,8 +2510,10 @@ def admin_usuario_detalle(request, usuario_id):
         'total_reservas_activas': reservas_activas.count(),
         'total_reservas_historicas': usuario.reservas_pilates.count(),
         'planes_activos_usuario': planes_activos_usuario,
+        'historial_ausencias': historial_ausencias,
+        'total_ausencias_30d': total_ausencias_30d,
     }
-    
+
     return render(request, 'gravity/admin/usuario_detalle.html', context)
 
 @admin_required

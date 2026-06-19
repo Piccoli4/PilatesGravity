@@ -8,12 +8,13 @@ from .views import (
     clases_disponibles_api, clases_disponibles, detalle_reserva,
     sedes_disponibles, cerrar_modal_reserva_exitosa, cerrar_modal_ausencia_registrada, 
     # IMPORTACIONES PARA ADMINISTRADOR
-    admin_dashboard, admin_marcar_notificaciones_leidas, admin_clases_lista, admin_clase_crear, 
+    admin_dashboard, admin_marcar_notificaciones_leidas, admin_clases_lista, admin_clase_crear,
     admin_clase_editar, admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
-    admin_reservas_lista, admin_reservar_para_usuario, admin_reserva_cancelar, admin_reserva_modificar, 
-    admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note, 
-    admin_agregar_usuario, admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido, 
+    admin_reservas_lista, admin_reservar_para_usuario, admin_reserva_cancelar, admin_reserva_modificar,
+    admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note,
+    admin_agregar_usuario, admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido,
     admin_eliminar_admin_restringido, admin_historial_actividad,
+    admin_asistencia, admin_asistencia_marcar,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
@@ -104,6 +105,10 @@ urlpatterns = [
     
     # Historial de actividad
     path('admin-panel/historial/', admin_historial_actividad, name='admin_historial_actividad'),
+
+    # Registro de asistencias
+    path('admin-panel/asistencia/', admin_asistencia, name='admin_asistencia'),
+    path('admin-panel/asistencia/marcar/', admin_asistencia_marcar, name='admin_asistencia_marcar'),
 
     # Reportes y estadísticas
     path('admin-panel/reportes/', admin_reportes, name='admin_reportes'),

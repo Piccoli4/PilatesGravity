@@ -719,6 +719,56 @@ class AusenciaTemporal(models.Model):
             f"el {self.fecha.strftime('%d/%m/%Y')}"
         )
 
+class Inasistencia(models.Model):
+    """
+    Registra que un cliente NO asistió a su clase sin haber avisado previamente.
+    A diferencia de AusenciaTemporal (ausencia avisada por el cliente),
+    esta la carga el admin después de que ocurrió la clase.
+    La asistencia se asume por defecto: solo existe registro cuando el admin
+    marca explícitamente que alguien no vino.
+    """
+    reserva = models.ForeignKey(
+        Reserva,
+        on_delete=models.CASCADE,
+        related_name='inasistencias',
+        verbose_name="Reserva"
+    )
+    fecha = models.DateField(
+        verbose_name="Fecha de la clase",
+        help_text="Fecha específica en que el cliente no asistió sin avisar"
+    )
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inasistencias_registradas',
+        verbose_name="Registrado por"
+    )
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de registro"
+    )
+    observacion = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Observación"
+    )
+
+    class Meta:
+        verbose_name = "Inasistencia"
+        verbose_name_plural = "Inasistencias"
+        unique_together = ['reserva', 'fecha']
+        ordering = ['-fecha']
+
+    def __str__(self):
+        nombre = self.reserva.usuario.get_full_name() or self.reserva.usuario.username
+        return (
+            f"Inasistencia de {nombre} "
+            f"— {self.reserva.clase.get_nombre_display()} "
+            f"el {self.fecha.strftime('%d/%m/%Y')}"
+        )
+
 class NotificacionCancelacion(models.Model):
     """
     Registra cada cancelación (permanente o temporal) para mostrar
