@@ -1182,6 +1182,13 @@ class EstadoPagoCliente(models.Model):
             # No sobreescribir deudas ya pagadas (pueden ser ajustes especiales acordados)
             if deuda_existente.estado == 'pagado':
                 return deuda_existente
+            # Solo sobreescribir si el plan realmente cambió (ej. el admin le asignó
+            # un plan distinto al cliente a mitad de mes). Si el plan es el mismo,
+            # la deuda ya fue generada correctamente (por el cron del día 1 u otro
+            # proceso) y no debe recalcularse en base a la fecha en que se llama
+            # a este método (por ejemplo, al registrar un pago tardío).
+            if deuda_existente.plan_aplicado_id == self.plan_actual_id:
+                return deuda_existente
             # El admin cambió el plan: sobreescribir la deuda del mes actual
             deuda_existente.plan_aplicado = self.plan_actual
             deuda_existente.monto_original = monto_a_cobrar
