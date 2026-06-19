@@ -612,6 +612,17 @@ def conoce_mas(request):
     testimonios = Testimonio.objects.filter(aprobado=True).select_related('usuario').order_by('-fecha_actualizacion')
     return render(request, 'gravity/conoce_mas.html', {'testimonios': testimonios})
 
+# Vista para mostrar planes y precios (pública)
+def precios_publicos(request):
+    """
+    Vista pública para mostrar los planes y precios sin necesidad de login.
+    """
+    planes_disponibles = PlanPago.objects.filter(activo=True).order_by('clases_por_semana')
+    context = {
+        'planes_disponibles': planes_disponibles,
+    }
+    return render(request, 'gravity/precios_publicos.html', context)
+
 # API Endpoints para funcionalidad AJAX
 @require_http_methods(["POST"])
 def sedes_disponibles(request):

@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    home, reservar_clase, conoce_mas,
+    home, reservar_clase, conoce_mas, precios_publicos,
     dias_disponibles, horarios_disponibles,
     verificar_disponibilidad, modificar_reserva,
     reservar_recupero, reservar_cupo_temporal, marcar_vencimiento_visto,
@@ -34,6 +34,7 @@ urlpatterns = [
     path('', home, name='home'),
     path('reservar_clase/', reservar_clase, name='reservar_clase'),
     path('conoce-mas/', conoce_mas, name='conoce_mas'),
+    path('precios/', precios_publicos, name='precios_publicos'),
     path('clases-disponibles/', clases_disponibles, name='clases_disponibles'),
     
     # Gestión de reservas

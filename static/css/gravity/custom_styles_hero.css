@@ -74,14 +74,40 @@
     color: white;
 }
 
+.hero-btn-precios {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #5D768B;
+    color: white;
+    border: 2px solid #FFF;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: bold;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(93, 118, 139, 0.35);
+}
+
+.hero-btn-precios:hover {
+    background-color: #FFF;
+    color: #5D768B;
+    border: 2px solid #5D768B;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(93, 118, 139, 0.45);
+}
+
 /* Responsive específico del hero */
 @media (max-width: 768px) {
     #Inicio {
-        min-height: 100vh; /* En móvil permitir scroll si es necesario */
+        min-height: 100vh;
     }
     
     .hero-btn-primary,
-    .hero-btn-secondary {
+    .hero-btn-secondary,
+    .hero-btn-precios {
         padding: 10px 20px; 
         font-size: 0.9rem; 
     }
@@ -89,7 +115,8 @@
 
 @media (max-width: 640px) {
     .hero-btn-primary,
-    .hero-btn-secondary {
+    .hero-btn-secondary,
+    .hero-btn-precios {
         padding: 10px 20px; 
         font-size: 0.9rem; 
     }
@@ -97,7 +124,8 @@
 
 @media (max-width: 480px) {
     .hero-btn-primary,
-    .hero-btn-secondary {
+    .hero-btn-secondary,
+    .hero-btn-precios {
         padding: 9px 18px;
         font-size: 0.85rem;
     }
