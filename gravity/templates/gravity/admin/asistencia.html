@@ -12,6 +12,18 @@
 {% block content %}
 {% load static %}
 
+<!-- Tabs Asistencia / Ausencias -->
+<div class="mb-4 flex gap-2">
+    <a href="{% url 'gravity:admin_asistencia' %}"
+        class="px-4 py-2 rounded-lg text-sm font-medium bg-principal text-white">
+        Diaria
+    </a>
+    <a href="{% url 'gravity:admin_asistencia_ausencias' %}"
+        class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
+        Ausencias
+    </a>
+</div>
+
 <!-- Header -->
 <div class="mb-4">
     <div class="p-4 bg-blanco rounded-lg shadow-sm">

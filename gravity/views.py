@@ -1742,6 +1742,93 @@ def admin_asistencia_historial_alumno(request, usuario_id):
         'historial': historial,
     })
 
+@admin_required
+def admin_asistencia_ausencias(request):
+    """
+    Vista standalone (sub-tab de Asistencia) que lista TODAS las ausencias
+    (AusenciaTemporal + Inasistencia) en un rango de fechas, con filtros
+    opcionales por sede, clase y día de la semana. Orden fijo: fecha desc.
+    """
+    hoy = timezone.localtime(timezone.now()).date()
+
+    # Rango de fechas: default últimos 7 días
+    desde_str = request.GET.get('desde', (hoy - timedelta(days=7)).isoformat())
+    hasta_str = request.GET.get('hasta', hoy.isoformat())
+    try:
+        desde = date.fromisoformat(desde_str)
+    except ValueError:
+        desde = hoy - timedelta(days=7)
+    try:
+        hasta = date.fromisoformat(hasta_str)
+    except ValueError:
+        hasta = hoy
+    if desde > hasta:
+        desde, hasta = hasta, desde
+
+    sede_seleccionada = request.GET.get('sede', '')
+    clase_seleccionada = request.GET.get('clase', '')
+    dia_seleccionado = request.GET.get('dia_semana', '')
+
+    sedes = Clase.DIRECCIONES
+    clases_choices = Clase.objects.filter(activa=True).order_by('direccion', 'dia', 'horario')
+
+    ausencias_qs = AusenciaTemporal.objects.filter(
+        fecha__gte=desde, fecha__lte=hasta
+    ).select_related('reserva__usuario', 'reserva__clase')
+
+    inasistencias_qs = Inasistencia.objects.filter(
+        fecha__gte=desde, fecha__lte=hasta
+    ).select_related('reserva__usuario', 'reserva__clase')
+
+    if sede_seleccionada:
+        ausencias_qs = ausencias_qs.filter(reserva__clase__direccion=sede_seleccionada)
+        inasistencias_qs = inasistencias_qs.filter(reserva__clase__direccion=sede_seleccionada)
+
+    if clase_seleccionada:
+        ausencias_qs = ausencias_qs.filter(reserva__clase_id=clase_seleccionada)
+        inasistencias_qs = inasistencias_qs.filter(reserva__clase_id=clase_seleccionada)
+
+    if dia_seleccionado:
+        ausencias_qs = ausencias_qs.filter(reserva__clase__dia=dia_seleccionado)
+        inasistencias_qs = inasistencias_qs.filter(reserva__clase__dia=dia_seleccionado)
+
+    filas = []
+    for a in ausencias_qs:
+        filas.append({
+            'fecha': a.fecha,
+            'alumno': a.reserva.usuario.get_full_name() or a.reserva.usuario.username,
+            'clase': a.reserva.clase.get_nombre_display(),
+            'sede': a.reserva.clase.get_direccion_corta(),
+            'horario': a.reserva.clase.horario,
+            'tipo': 'avisada',
+        })
+    for i in inasistencias_qs:
+        filas.append({
+            'fecha': i.fecha,
+            'alumno': i.reserva.usuario.get_full_name() or i.reserva.usuario.username,
+            'clase': i.reserva.clase.get_nombre_display(),
+            'sede': i.reserva.clase.get_direccion_corta(),
+            'horario': i.reserva.clase.horario,
+            'tipo': 'sin_aviso',
+        })
+
+    filas.sort(key=lambda x: x['fecha'], reverse=True)
+
+    context = {
+        'desde': desde,
+        'hasta': hasta,
+        'sede_seleccionada': sede_seleccionada,
+        'clase_seleccionada': clase_seleccionada,
+        'dia_seleccionado': dia_seleccionado,
+        'sedes': sedes,
+        'clases_choices': clases_choices,
+        'dias_semana': DIAS_SEMANA_COMPLETOS,
+        'filas': filas,
+        'total_filas': len(filas),
+        'hoy': hoy,
+    }
+    return render(request, 'gravity/admin/asistencia_ausencias.html', context)
+
 # ==============================================================================
 # GESTIÓN DE RESERVAS
 # ==============================================================================

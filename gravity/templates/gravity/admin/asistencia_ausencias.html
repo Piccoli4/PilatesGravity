@@ -1,0 +1,164 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Ausencias - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+    <span class="text-gray-400">/</span>
+    <span class="ml-1 text-gray-500">Asistencia</span>
+</li>
+<li class="flex items-center">
+    <span class="text-gray-400">/</span>
+    <span class="ml-1 text-gray-500">Ausencias</span>
+</li>
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Tabs Asistencia / Ausencias -->
+<div class="mb-4 flex gap-2">
+    <a href="{% url 'gravity:admin_asistencia' %}"
+        class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
+        Diaria
+    </a>
+    <a href="{% url 'gravity:admin_asistencia_ausencias' %}"
+        class="px-4 py-2 rounded-lg text-sm font-medium bg-principal text-white">
+        Ausencias
+    </a>
+</div>
+
+<!-- Header -->
+<div class="mb-4">
+    <div class="p-4 bg-blanco rounded-lg shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-principal mb-2">Ausencias</h2>
+                <p class="text-gray-500 text-sm mb-0">
+                    {{ desde|date:"d/m/Y" }} — {{ hasta|date:"d/m/Y" }}
+                </p>
+            </div>
+            <div class="text-center shrink-0">
+                <div class="text-2xl font-bold text-principal leading-none">{{ total_filas }}</div>
+                <div class="text-xs text-gray-400 mt-0.5">ausencia{{ total_filas|pluralize }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="mb-4">
+    <div class="bg-blanco rounded-lg shadow-sm p-4">
+        <form method="get">
+            <div class="flex flex-col sm:flex-row gap-3 items-end flex-wrap">
+                <div class="flex-1 min-w-[140px]">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Desde</label>
+                    <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
+                </div>
+                <div class="flex-1 min-w-[140px]">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Hasta</label>
+                    <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
+                </div>
+                <div class="flex-1 min-w-[160px]">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Sede</label>
+                    <select name="sede" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
+                        <option value="">Todas</option>
+                        {% for valor, etiqueta in sedes %}
+                        <option value="{{ valor }}" {% if valor == sede_seleccionada %}selected{% endif %}>{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[160px]">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Clase</label>
+                    <select name="clase" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
+                        <option value="">Todas</option>
+                        {% for c in clases_choices %}
+                        <option value="{{ c.id }}" {% if clase_seleccionada == c.id|stringformat:"s" %}selected{% endif %}>
+                            {{ c.get_nombre_display }} — {{ c.dia }} {{ c.horario|time:"H:i" }} ({{ c.get_direccion_corta }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[140px]">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Día</label>
+                    <select name="dia_semana" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
+                        <option value="">Todos</option>
+                        {% for valor, etiqueta in dias_semana %}
+                        <option value="{{ valor }}" {% if valor == dia_seleccionado %}selected{% endif %}>{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="shrink-0">
+                    <button type="submit"
+                        class="h-9 px-5 rounded-lg bg-principal text-white text-sm font-medium hover:bg-principal/90 transition-colors">
+                        Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de resultados -->
+<div class="bg-blanco rounded-lg shadow-sm overflow-hidden">
+    {% if filas %}
+    <!-- Desktop -->
+    <table class="w-full text-sm hidden sm:table">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+            <tr>
+                <th class="px-4 py-3 text-left">Fecha</th>
+                <th class="px-4 py-3 text-left">Alumno</th>
+                <th class="px-4 py-3 text-left">Clase</th>
+                <th class="px-4 py-3 text-left">Sede</th>
+                <th class="px-4 py-3 text-left">Horario</th>
+                <th class="px-4 py-3 text-left">Tipo</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for f in filas %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">{{ f.fecha|date:"d/m/Y" }}</td>
+                <td class="px-4 py-3 font-medium text-gray-800">{{ f.alumno }}</td>
+                <td class="px-4 py-3">{{ f.clase }}</td>
+                <td class="px-4 py-3">{{ f.sede }}</td>
+                <td class="px-4 py-3">{{ f.horario|time:"H:i" }}</td>
+                <td class="px-4 py-3">
+                    {% if f.tipo == 'avisada' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">Avisada</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600">Sin aviso</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Mobile -->
+    <div class="sm:hidden divide-y divide-gray-100">
+        {% for f in filas %}
+        <div class="p-4">
+            <div class="flex items-center justify-between mb-1">
+                <span class="font-medium text-gray-800 text-sm">{{ f.alumno }}</span>
+                {% if f.tipo == 'avisada' %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">Avisada</span>
+                {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600">Sin aviso</span>
+                {% endif %}
+            </div>
+            <div class="text-xs text-gray-400">
+                {{ f.fecha|date:"d/m/Y" }} · {{ f.clase }} · {{ f.sede }} · {{ f.horario|time:"H:i" }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="p-8 text-center text-gray-400 text-sm">
+        No hay ausencias registradas en el rango y filtros seleccionados.
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

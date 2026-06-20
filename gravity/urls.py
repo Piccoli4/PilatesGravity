@@ -14,7 +14,8 @@ from .views import (
     admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note,
     admin_agregar_usuario, admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido,
     admin_eliminar_admin_restringido, admin_historial_actividad,
-    admin_asistencia, admin_asistencia_marcar, admin_asistencia_buscar_alumno, admin_asistencia_historial_alumno,
+    admin_asistencia, admin_asistencia_marcar, admin_asistencia_buscar_alumno, 
+    admin_asistencia_historial_alumno, admin_asistencia_ausencias,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
@@ -111,6 +112,7 @@ urlpatterns = [
     path('admin-panel/asistencia/marcar/', admin_asistencia_marcar, name='admin_asistencia_marcar'),
     path('admin-panel/asistencia/buscar-alumno/', admin_asistencia_buscar_alumno, name='admin_asistencia_buscar_alumno'),
     path('admin-panel/asistencia/historial/<int:usuario_id>/', admin_asistencia_historial_alumno, name='admin_asistencia_historial_alumno'),
+    path('admin-panel/asistencia/ausencias/', admin_asistencia_ausencias, name='admin_asistencia_ausencias'),
 
     # Reportes y estadísticas
     path('admin-panel/reportes/', admin_reportes, name='admin_reportes'),
