@@ -123,7 +123,8 @@ def reservar_clase(request):
                 fecha_unica = None
 
                 if es_temporal:
-                    hoy = timezone.now().date()
+                    ahora = timezone.localtime(timezone.now())
+                    hoy = ahora.date()
                     dias_map = {
                         'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
                         'Jueves': 3, 'Viernes': 4, 'Sábado': 5
@@ -131,7 +132,6 @@ def reservar_clase(request):
                     dia_clase = dias_map.get(clase.dia, 0)
                     dias_hasta = (dia_clase - hoy.weekday()) % 7
                     if dias_hasta == 0:
-                        ahora = timezone.localtime(timezone.now())
                         clase_hoy = ahora.replace(
                             hour=clase.horario.hour,
                             minute=clase.horario.minute,
@@ -1520,7 +1520,7 @@ def admin_asistencia(request):
 
     # Obtener sede seleccionada
     sede_seleccionada = request.GET.get('sede', '')
-    sedes = Clase.objects.filter(activa=True).values_list('direccion', flat=True).distinct()
+    sedes = Clase.DIRECCIONES
 
     # Día de la semana para la fecha seleccionada
     dias_semana_nombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
@@ -1576,10 +1576,13 @@ def admin_asistencia(request):
                 estado = 'presente'
             alumnos.append({'reserva': reserva, 'estado': estado})
 
+        ausentes_clase = sum(1 for alumno in alumnos if alumno['estado'] == 'inasistente')
+
         clases_con_nomina.append({
             'clase': clase,
             'alumnos': alumnos,
             'total': len(alumnos),
+            'ausentes': ausentes_clase,   # <-- nuevo
         })
 
     total_alumnos = sum(item['total'] for item in clases_con_nomina)
@@ -1666,6 +1669,78 @@ def admin_asistencia_marcar(request):
         return JsonResponse({'success': False, 'error': 'JSON inválido'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@admin_required
+def admin_asistencia_buscar_alumno(request):
+    """
+    Búsqueda AJAX de alumnos por nombre, username o email.
+    Usado por el buscador en la pantalla de asistencia.
+    """
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'resultados': []})
+
+    usuarios = User.objects.filter(
+        is_active=True, is_staff=False
+    ).filter(
+        Q(first_name__icontains=q) |
+        Q(last_name__icontains=q) |
+        Q(username__icontains=q) |
+        Q(email__icontains=q)
+    ).order_by('last_name', 'first_name')[:10]
+
+    resultados = [{
+        'id': u.id,
+        'nombre': u.get_full_name() or u.username,
+        'username': u.username,
+        'email': u.email,
+    } for u in usuarios]
+
+    return JsonResponse({'resultados': resultados})
+
+@admin_required
+def admin_asistencia_historial_alumno(request, usuario_id):
+    """
+    Historial combinado de AusenciaTemporal + Inasistencia de un alumno,
+    ordenado por fecha descendente. Usado por el buscador en asistencia.
+    """
+    usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
+
+    ausencias = AusenciaTemporal.objects.filter(
+        reserva__usuario=usuario
+    ).select_related('reserva__clase')
+
+    inasistencias = Inasistencia.objects.filter(
+        reserva__usuario=usuario
+    ).select_related('reserva__clase')
+
+    historial = []
+    for a in ausencias:
+        historial.append({
+            'fecha': a.fecha,
+            'clase': a.reserva.clase.get_nombre_display(),
+            'sede': a.reserva.clase.get_direccion_display(),
+            'horario': a.reserva.clase.horario.strftime('%H:%M'),
+            'tipo': 'avisada',
+        })
+    for i in inasistencias:
+        historial.append({
+            'fecha': i.fecha,
+            'clase': i.reserva.clase.get_nombre_display(),
+            'sede': i.reserva.clase.get_direccion_display(),
+            'horario': i.reserva.clase.horario.strftime('%H:%M'),
+            'tipo': 'sin_aviso',
+        })
+
+    historial.sort(key=lambda x: x['fecha'], reverse=True)
+
+    for h in historial:
+        h['fecha'] = h['fecha'].strftime('%d/%m/%Y')
+
+    return JsonResponse({
+        'usuario': usuario.get_full_name() or usuario.username,
+        'historial': historial,
+    })
 
 # ==============================================================================
 # GESTIÓN DE RESERVAS

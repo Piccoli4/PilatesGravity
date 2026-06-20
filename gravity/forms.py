@@ -164,7 +164,8 @@ class ReservaForm(forms.Form):
                     raise ValidationError(mensaje)
                 
                 # Verificar cupos disponibles para la próxima fecha real de la clase
-                hoy_form = timezone.now().date()
+                ahora_form = timezone.localtime(timezone.now())
+                hoy_form = ahora_form.date()
                 dias_map_form = {
                     'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
                     'Jueves': 3, 'Viernes': 4, 'Sábado': 5
@@ -172,7 +173,13 @@ class ReservaForm(forms.Form):
                 dia_num_form = dias_map_form.get(clase.dia, 0)
                 dias_hasta_form = (dia_num_form - hoy_form.weekday()) % 7
                 if dias_hasta_form == 0:
-                    dias_hasta_form = 7
+                    clase_hoy_form = ahora_form.replace(
+                        hour=clase.horario.hour,
+                        minute=clase.horario.minute,
+                        second=0, microsecond=0
+                    )
+                    if ahora_form >= clase_hoy_form - timedelta(hours=3):
+                        dias_hasta_form = 7
                 proxima_fecha_form = hoy_form + timedelta(days=dias_hasta_form)
 
                 if clase.cupos_disponibles(fecha=proxima_fecha_form) <= 0:
