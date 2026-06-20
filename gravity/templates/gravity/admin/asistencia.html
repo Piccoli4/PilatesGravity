@@ -528,7 +528,7 @@
     }
 
     const BUSCAR_ALUMNO_URL = "{% url 'gravity:admin_asistencia_buscar_alumno' %}";
-    const HISTORIAL_ALUMNO_BASE_URL = "{% url 'gravity:admin_asistencia_historial_alumno' usuario_id=999999 %}".replace('999999', '');
+    const HISTORIAL_ALUMNO_BASE_URL = "{% url 'gravity:admin_asistencia_historial_alumno' usuario_id=999999 %}".replace('999999/', '');
 
     let buscadorTimeout = null;
     const buscadorInput = document.getElementById('buscador-alumno-input');
