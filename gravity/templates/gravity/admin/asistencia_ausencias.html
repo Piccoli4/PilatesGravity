@@ -101,6 +101,38 @@
     </div>
 </div>
 
+<!-- Buscador de alumno -->
+<div class="mb-4">
+    <div class="bg-blanco rounded-lg shadow-sm p-4">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Buscar alumno (historial de asistencia)
+        </label>
+        <div class="relative">
+            <input type="text"
+                id="buscador-alumno-input"
+                placeholder="Nombre, usuario o email..."
+                autocomplete="off"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
+            <div id="buscador-alumno-resultados"
+                class="hidden absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            </div>
+        </div>
+
+        <div id="historial-alumno-container" class="hidden mt-4">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-semibold text-gray-700">
+                    Historial de <span id="historial-alumno-nombre" class="text-principal"></span>
+                </h4>
+                <button type="button" onclick="cerrarHistorialAlumno()"
+                    class="text-xs text-gray-400 hover:text-gray-600">Cerrar ✕</button>
+            </div>
+            <div id="historial-alumno-tabla" class="border border-gray-100 rounded-lg overflow-hidden">
+                <!-- Se llena por JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Tabla de resultados -->
 <div class="bg-blanco rounded-lg shadow-sm overflow-hidden">
     {% if filas %}
@@ -161,4 +193,134 @@
     {% endif %}
 </div>
 
+<!-- Toast de feedback -->
+<div id="toast"
+    class="fixed bottom-6 right-6 z-50 hidden max-w-xs w-full bg-white rounded-xl shadow-lg border px-4 py-3 flex items-center gap-3 transition-all duration-300">
+    <div id="toast-icon" class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center"></div>
+    <p id="toast-msg" class="text-sm text-gray-700 flex-1"></p>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showToast(tipo, mensaje) {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toast-icon');
+        const msg = document.getElementById('toast-msg');
+
+        if (tipo === 'exito') {
+            icon.className = 'shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-green-100';
+            icon.innerHTML = '<svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+            toast.className = toast.className.replace(/border-\S+/g, '') + ' border-green-200';
+        } else {
+            icon.className = 'shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-100';
+            icon.innerHTML = '<svg class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            toast.className = toast.className.replace(/border-\S+/g, '') + ' border-red-200';
+        }
+
+        msg.textContent = mensaje;
+        toast.classList.remove('hidden');
+        toast.classList.add('flex');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(function () {
+            toast.classList.add('hidden');
+            toast.classList.remove('flex');
+        }, 3500);
+    }
+
+    const BUSCAR_ALUMNO_URL = "{% url 'gravity:admin_asistencia_buscar_alumno' %}";
+    const HISTORIAL_ALUMNO_BASE_URL = "{% url 'gravity:admin_asistencia_historial_alumno' usuario_id=999999 %}".replace('999999/', '');
+
+    let buscadorTimeout = null;
+    const buscadorInput = document.getElementById('buscador-alumno-input');
+    const buscadorResultados = document.getElementById('buscador-alumno-resultados');
+
+    buscadorInput.addEventListener('input', function () {
+        const q = this.value.trim();
+        clearTimeout(buscadorTimeout);
+
+        if (q.length < 2) {
+            buscadorResultados.classList.add('hidden');
+            buscadorResultados.innerHTML = '';
+            return;
+        }
+
+        buscadorTimeout = setTimeout(function () {
+            fetch(BUSCAR_ALUMNO_URL + '?q=' + encodeURIComponent(q))
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    renderResultadosBuscador(data.resultados);
+                })
+                .catch(function () {
+                    buscadorResultados.classList.add('hidden');
+                });
+        }, 300);
+    });
+
+    function renderResultadosBuscador(resultados) {
+        if (!resultados || resultados.length === 0) {
+            buscadorResultados.innerHTML = '<div class="p-3 text-sm text-gray-400">Sin resultados.</div>';
+            buscadorResultados.classList.remove('hidden');
+            return;
+        }
+
+        buscadorResultados.innerHTML = resultados.map(function (u) {
+            return '<div class="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0" ' +
+                'onclick="seleccionarAlumnoBuscador(' + u.id + ', \'' + u.nombre.replace(/'/g, "\\'") + '\')">' +
+                '<div class="font-medium text-gray-800 text-sm">' + u.nombre + '</div>' +
+                '<div class="text-xs text-gray-400">@' + u.username + (u.email ? ' · ' + u.email : '') + '</div>' +
+                '</div>';
+        }).join('');
+        buscadorResultados.classList.remove('hidden');
+    }
+
+    function seleccionarAlumnoBuscador(usuarioId, nombre) {
+        buscadorResultados.classList.add('hidden');
+        buscadorInput.value = nombre;
+
+        fetch(HISTORIAL_ALUMNO_BASE_URL + usuarioId + '/')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                mostrarHistorialAlumno(data);
+            })
+            .catch(function () {
+                showToast('error', 'No se pudo cargar el historial.');
+            });
+    }
+
+    function mostrarHistorialAlumno(data) {
+        document.getElementById('historial-alumno-nombre').textContent = data.usuario;
+        const tablaDiv = document.getElementById('historial-alumno-tabla');
+
+        if (!data.historial || data.historial.length === 0) {
+            tablaDiv.innerHTML = '<div class="p-4 text-center text-gray-400 text-sm">Sin ausencias registradas.</div>';
+        } else {
+            tablaDiv.innerHTML = '<table class="table w-full text-sm">' +
+                '<thead><tr class="bg-gray-50">' +
+                '<th class="py-2 px-3 text-left text-xs font-semibold text-gray-500 uppercase">Fecha</th>' +
+                '<th class="py-2 px-3 text-left text-xs font-semibold text-gray-500 uppercase">Clase</th>' +
+                '<th class="py-2 px-3 text-left text-xs font-semibold text-gray-500 uppercase">Sede</th>' +
+                '<th class="py-2 px-3 text-center text-xs font-semibold text-gray-500 uppercase">Tipo</th>' +
+                '</tr></thead><tbody class="divide-y divide-gray-50">' +
+                data.historial.map(function (h) {
+                    const badge = h.tipo === 'avisada'
+                        ? '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Avisó ausencia</span>'
+                        : '<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Sin aviso</span>';
+                    return '<tr><td class="py-2 px-3">' + h.fecha + '</td>' +
+                        '<td class="py-2 px-3">' + h.clase + ' · ' + h.horario + '</td>' +
+                        '<td class="py-2 px-3">' + h.sede + '</td>' +
+                        '<td class="py-2 px-3 text-center">' + badge + '</td></tr>';
+                }).join('') +
+                '</tbody></table>';
+        }
+
+        document.getElementById('historial-alumno-container').classList.remove('hidden');
+    }
+
+    function cerrarHistorialAlumno() {
+        document.getElementById('historial-alumno-container').classList.add('hidden');
+        buscadorInput.value = '';
+    }
+</script>
 {% endblock %}
