@@ -330,6 +330,19 @@
 
             .top-bar {
                 padding: 1rem;
+                flex-wrap: wrap;
+                row-gap: 0.75rem;
+            }
+
+            /* el bloque botón+breadcrumb ocupa todo el ancho */
+            .top-bar > div:first-child {
+                width: 100%;
+            }
+
+            /* el bloque de usuario pasa a su propia fila, alineado a la derecha */
+            .user-info {
+                width: 100%;
+                justify-content: flex-end;
             }
         }
 

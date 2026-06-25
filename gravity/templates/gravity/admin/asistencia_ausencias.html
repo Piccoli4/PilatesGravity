@@ -50,18 +50,18 @@
 <div class="mb-4">
     <div class="bg-blanco rounded-lg shadow-sm p-4">
         <form method="get">
-            <div class="flex flex-col sm:flex-row gap-3 items-end flex-wrap">
-                <div class="flex-1 min-w-[140px]">
+            <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-end sm:flex-wrap">
+                <div class="min-w-0 sm:flex-1 sm:min-w-[140px]">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Desde</label>
                     <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
                 </div>
-                <div class="flex-1 min-w-[140px]">
+                <div class="min-w-0 sm:flex-1 sm:min-w-[140px]">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Hasta</label>
                     <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
                 </div>
-                <div class="flex-1 min-w-[160px]">
+                <div class="min-w-0 sm:flex-1 sm:min-w-[160px]">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Sede</label>
                     <select name="sede" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
                         <option value="">Todas</option>
@@ -70,7 +70,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="flex-1 min-w-[160px]">
+                <div class="min-w-0 sm:flex-1 sm:min-w-[160px]">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Clase</label>
                     <select name="clase" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
                         <option value="">Todas</option>
@@ -81,7 +81,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="flex-1 min-w-[140px]">
+                <div class="min-w-0 sm:flex-1 sm:min-w-[140px]">
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Día</label>
                     <select name="dia_semana" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white">
                         <option value="">Todos</option>
@@ -90,9 +90,9 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="shrink-0">
+                <div class="col-span-2 sm:shrink-0">
                     <button type="submit"
-                        class="h-9 px-5 rounded-lg bg-principal text-white text-sm font-medium hover:bg-principal/90 transition-colors">
+                        class="w-full sm:w-auto h-10 sm:h-9 px-5 rounded-lg bg-principal text-white text-sm font-medium hover:bg-principal/90 transition-colors">
                         Filtrar
                     </button>
                 </div>
