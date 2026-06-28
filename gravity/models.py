@@ -898,17 +898,6 @@ class PlanPago(models.Model):
                 'precio_mensual': 'El precio debe ser mayor a cero.'
             })
         
-        # Validar que no haya duplicados activos
-        if self.activo:
-            existing = PlanPago.objects.filter(
-                clases_por_semana=self.clases_por_semana,
-                activo=True
-            ).exclude(pk=self.pk)
-            
-            if existing.exists():
-                raise ValidationError({
-                    'clases_por_semana': f'Ya existe un plan activo para {self.clases_por_semana} clases por semana.'
-                })
         # Validaciones para planes por clase
         if self.tipo_plan == 'por_clase':
             if not self.precio_por_clase or self.precio_por_clase <= 0:
