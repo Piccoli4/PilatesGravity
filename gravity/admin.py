@@ -1,6 +1,6 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from .models import AjusteDeudaEspecial
+from .models import AjusteDeudaEspecial, SolicitudCambioPlan
 
 
 @admin.register(AjusteDeudaEspecial)
@@ -15,3 +15,11 @@ class AjusteDeudaEspecialAdmin(ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(SolicitudCambioPlan)
+class SolicitudCambioPlanAdmin(ModelAdmin):
+    list_display = ['usuario', 'plan_actual', 'plan_solicitado', 'estado', 'fecha_solicitud']
+    list_filter = ['estado']
+    search_fields = ['usuario__first_name', 'usuario__last_name', 'usuario__email', 'usuario__username']
+    readonly_fields = ['fecha_solicitud']

@@ -42,9 +42,10 @@ from .email_service import (
     enviar_email_confirmacion_pago_completo,
     enviar_email_bienvenida_completo,
     enviar_email_bienvenida,
-    enviar_email_modificacion_reserva
+    enviar_email_modificacion_reserva,
+    enviar_email_cambio_plan_aprobado
 )
-from .models import PlanPago, EstadoPagoCliente, RegistroPago, DeudaMensual
+from .models import PlanPago, EstadoPagoCliente, RegistroPago, DeudaMensual, SolicitudCambioPlan
 from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
 from django.db.models import Sum, Count, Q
 from decimal import Decimal
@@ -98,7 +99,7 @@ def reservar_clase(request):
     planes_activos = PlanUsuario.objects.filter(
         usuario=request.user,
         activo=True,
-        fecha_fin__gte=timezone.now().date()
+        fecha_fin__gte=timezone.localtime(timezone.now()).date()
     ).select_related('plan')
     
     # Calcular clases disponibles según planes
@@ -984,6 +985,11 @@ def admin_dashboard(request):
     except Exception:
         notificaciones_plan_adicional = NotificacionPlanAdicional.objects.none()
 
+    # Solicitudes de cambio de plan pendientes de aprobación
+    solicitudes_plan_pendientes = SolicitudCambioPlan.objects.filter(
+        estado='pendiente'
+    ).select_related('usuario', 'plan_actual', 'plan_solicitado').order_by('-fecha_solicitud')
+
     # Reservas de cupos temporales recientes (últimos 7 días, no vistas en sesión)
     recuperos_vistos = request.session.get('recuperos_vistos', [])
     reservas_temporales_recientes = Reserva.objects.filter(
@@ -1013,11 +1019,14 @@ def admin_dashboard(request):
         'hay_reservas_temporales': hay_reservas_temporales,
         'notificaciones_plan_adicional': notificaciones_plan_adicional,
         'hay_notificaciones_plan_adicional': notificaciones_plan_adicional.exists(),
+        'solicitudes_plan_pendientes': solicitudes_plan_pendientes,
+        'hay_solicitudes_plan_pendientes': solicitudes_plan_pendientes.exists(),
         'total_notificaciones': (
             notificaciones_cancelacion.count() +
             notificaciones_cancelacion_plan.count() +
             reservas_temporales_recientes.count() +
-            notificaciones_plan_adicional.count()
+            notificaciones_plan_adicional.count() +
+            solicitudes_plan_pendientes.count()
         ),
         'puede_ver_pagos': get_puede_ver_pagos(request.user),
     }
@@ -3111,7 +3120,7 @@ def admin_pagos_vista_principal(request):
     clientes_procesados.sort(key=lambda x: (x.saldo_actual, x.usuario.last_name or x.usuario.username))
     
     # ===== RESUMEN GENERAL =====
-    mes_actual = timezone.now().date().replace(day=1)
+    mes_actual = timezone.localtime(timezone.now()).date().replace(day=1)
     
     total_clientes = len(clientes_procesados)
     clientes_al_dia = len([c for c in clientes_procesados if c.saldo_actual >= 0 and c.plan_actual])
@@ -3197,8 +3206,8 @@ def admin_pagos_registrar_pago(request, cliente_id):
     else:
         # Prellenar con datos sugeridos
         form = RegistroPagoForm(initial={
-            'fecha_pago': timezone.now().date(),
-            'concepto': f'Pago mensual {timezone.now().strftime("%B %Y")}',
+            'fecha_pago': timezone.localtime(timezone.now()).date(),
+            'concepto': f'Pago mensual {timezone.localtime(timezone.now()).strftime("%B %Y")}',
             'monto': estado_pago.plan_actual.precio_mensual if estado_pago.plan_actual else None
         })
 
@@ -3335,7 +3344,7 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
                 ).exists()
 
                 if not plan_usuario_sincronizado:
-                    hoy = timezone.now().date()
+                    hoy = timezone.localtime(timezone.now()).date()
                     fecha_fin = date(2099, 12, 31)
 
                     # Desactivar todos los planes activos del cliente
@@ -3361,7 +3370,7 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
 
             else:
                 # El admin quitó el plan → ajustar o eliminar deuda del mes actual
-                hoy = timezone.now().date()
+                hoy = timezone.localtime(timezone.now()).date()
                 primer_dia_mes = date(hoy.year, hoy.month, 1)
                 deuda_mes = DeudaMensual.objects.filter(
                     usuario=cliente,
@@ -3435,7 +3444,8 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
 def admin_cancelar_plan_usuario(request, plan_id):
     """
     Permite al administrador cancelar un plan específico de un usuario.
-    Cancela el plan inmediatamente y todas sus reservas permanentes activas.
+    Cancela el plan inmediatamente y todas sus reservas activas
+    (permanentes y recuperos/cupos temporales).
     """
     if request.method != 'POST':
         return redirect('gravity:admin_usuarios_lista')
@@ -3443,11 +3453,8 @@ def admin_cancelar_plan_usuario(request, plan_id):
     plan = get_object_or_404(PlanUsuario, id=plan_id, activo=True)
     usuario = plan.usuario
 
-    # Cancelar todas las reservas permanentes activas del usuario
-    reservas_canceladas = usuario.reservas_pilates.filter(
-        activa=True,
-        fecha_unica__isnull=True
-    )
+    # Cancelar todas las reservas activas del usuario
+    reservas_canceladas = usuario.reservas_pilates.filter(activa=True)
     cantidad_canceladas = reservas_canceladas.count()
     reservas_canceladas.update(activa=False)
 
@@ -3467,7 +3474,7 @@ def admin_cancelar_plan_usuario(request, plan_id):
             estado.save(update_fields=['plan_actual'])
 
             # Ajustar deuda del mes actual según el día en que se cancela el plan
-            hoy = timezone.now().date()
+            hoy = timezone.localtime(timezone.now()).date()
             primer_dia_mes = date(hoy.year, hoy.month, 1)
             deuda_mes = DeudaMensual.objects.filter(
                 usuario=usuario,
@@ -3783,112 +3790,204 @@ def admin_ajustar_deuda_especial(request, deuda_id):
 @login_required
 def seleccionar_plan(request):
     """
-    Vista para que el usuario seleccione su primer plan o agregue planes adicionales
+    Vista para que un usuario sin plan activo solicite su primer plan.
+    La solicitud queda pendiente hasta que un superadministrador la apruebe.
     """
-    # Verificar si ya tiene planes activos - CORREGIR 'activa' por 'activo'
-    planes_actuales = PlanUsuario.objects.filter(
+    tiene_plan_activo = PlanUsuario.objects.filter(
         usuario=request.user,
-        activo=True,  # Cambiar 'activa' por 'activo'
-        fecha_fin__gte=timezone.now().date()
-    )
-    
+        activo=True,
+        fecha_fin__gte=timezone.localtime(timezone.now()).date()
+    ).exists()
+
+    if tiene_plan_activo:
+        messages.info(
+            request,
+            'Ya tenés un plan activo. Si querés cambiarlo, usá la opción "Cambiar de plan".'
+        )
+        return redirect('gravity:mis_planes')
+
+    solicitud_pendiente = SolicitudCambioPlan.objects.filter(
+        usuario=request.user, estado='pendiente'
+    ).select_related('plan_solicitado').first()
+
+    if solicitud_pendiente:
+        messages.info(
+            request,
+            f'Ya tenés una solicitud pendiente de aprobación para el plan '
+            f'"{solicitud_pendiente.plan_solicitado.nombre}".'
+        )
+        return redirect('gravity:mis_planes')
+
     # Obtener planes disponibles
     planes_disponibles = PlanPago.objects.filter(activo=True).order_by('clases_por_semana')
-    
+
     if request.method == 'POST':
         plan_id = request.POST.get('plan_id')
-        tipo_plan = request.POST.get('tipo_plan', 'permanente')
-        
+
         try:
             plan_seleccionado = PlanPago.objects.get(id=plan_id, activo=True)
 
-            # Verificar que no exista ya un PlanUsuario activo con el mismo plan
-            if PlanUsuario.objects.filter(
+            SolicitudCambioPlan.objects.create(
                 usuario=request.user,
-                plan=plan_seleccionado,
-                activo=True
-            ).exists():
-                messages.error(
-                    request,
-                    f'Ya tenés un plan activo de "{plan_seleccionado.nombre}". '
-                    f'Si querés cambiarlo, primero cancelá el actual.'
-                )
-                return redirect('gravity:mis_planes')
-
-            # Calcular fechas (inicio hoy, fin en un mes)
-            fecha_inicio = timezone.now().date()
-            fecha_fin = date(2099, 12, 31)
-            
-            # Crear el plan del usuario
-            plan_usuario = PlanUsuario.objects.create(
-                usuario=request.user,
-                plan=plan_seleccionado,
-                fecha_inicio=fecha_inicio,
-                fecha_fin=fecha_fin,
-                tipo_plan=tipo_plan,
-                renovacion_automatica=True if tipo_plan == 'permanente' else False
+                plan_actual=None,
+                plan_solicitado=plan_seleccionado,
+                estado='pendiente'
             )
 
-            # Actualizar EstadoPagoCliente y generar deuda del mes actual
-            try:
-                estado_cliente, _ = EstadoPagoCliente.objects.get_or_create(
-                    usuario=request.user,
-                    defaults={'activo': True}
-                )
-                estado_cliente.actualizar_plan_automatico()
-                estado_cliente.refresh_from_db()
-                estado_cliente.generar_deuda_mes_actual()
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).error(
-                    f"Error generando deuda al seleccionar plan para "
-                    f"{request.user.username}: {e}"
-                )
+            messages.success(
+                request,
+                f'Tu solicitud para el plan "{plan_seleccionado.nombre}" fue enviada y '
+                f'está pendiente de aprobación. Te avisaremos cuando sea aprobada.'
+            )
+            return redirect('gravity:mis_planes')
 
-            if planes_actuales.exists():
-                NotificacionPlanAdicional.objects.create(
-                    usuario=request.user,
-                    plan=plan_seleccionado,
-                )
-                messages.success(
-                    request,
-                    f'¡Plan adicional agregado exitosamente! '
-                    f'Ahora tienes "{plan_seleccionado.nombre}" válido hasta que decidas cancelarlo.'
-                )
-            else:
-                messages.success(
-                    request,
-                    f'¡Plan seleccionado exitosamente! '
-                    f'Tienes "{plan_seleccionado.nombre}" válido hasta que decidas cancelarlo. '
-                    f'Ya puedes empezar a reservar tus clases.'
-                )
-            
-            # Redirigir según el contexto
-            next_url = request.GET.get('next')
-            if next_url == 'reservar':
-                return redirect('gravity:reservar_clase')
-            else:
-                return redirect('gravity:mis_planes')
-                
         except PlanPago.DoesNotExist:
             messages.error(request, 'Plan inválido. Por favor selecciona un plan válido.')
         except Exception as e:
-            messages.error(request, f'Error al asignar el plan: {str(e)}')
-    
-    # Calcular clases disponibles actualmente
-    clases_disponibles, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
-    
+            messages.error(request, f'Error al enviar la solicitud: {str(e)}')
+
     context = {
         'planes_disponibles': planes_disponibles,
-        'planes_actuales': planes_actuales,
-        'tiene_planes': planes_actuales.exists(),
-        'clases_disponibles': clases_disponibles,
-        'reservas_actuales': reservas_actuales,
-        'es_primer_plan': not planes_actuales.exists()
+        'es_primer_plan': True,
     }
-    
+
     return render(request, 'gravity/seleccionar_plan.html', context)
+
+@login_required
+def modificar_plan(request):
+    """
+    Vista para que un usuario con plan activo solicite cambiar a otro plan
+    (más o menos clases por semana). Requiere aprobación de un superadministrador.
+    """
+    plan_usuario_actual = PlanUsuario.objects.filter(
+        usuario=request.user,
+        activo=True,
+        fecha_fin__gte=timezone.localtime(timezone.now()).date()
+    ).select_related('plan').first()
+
+    if not plan_usuario_actual:
+        messages.info(request, 'No tenés un plan activo todavía. Elegí uno para empezar.')
+        return redirect('gravity:seleccionar_plan')
+
+    solicitud_pendiente = SolicitudCambioPlan.objects.filter(
+        usuario=request.user, estado='pendiente'
+    ).exists()
+
+    if solicitud_pendiente:
+        messages.info(request, 'Ya tenés una solicitud de cambio de plan pendiente de aprobación.')
+        return redirect('gravity:mis_planes')
+
+    plan_actual = plan_usuario_actual.plan
+    planes_disponibles = PlanPago.objects.filter(activo=True).exclude(id=plan_actual.id).order_by('clases_por_semana')
+
+    if request.method == 'POST':
+        plan_id = request.POST.get('plan_id')
+
+        try:
+            plan_solicitado = PlanPago.objects.get(id=plan_id, activo=True)
+        except PlanPago.DoesNotExist:
+            messages.error(request, 'Plan inválido. Por favor selecciona un plan válido.')
+            return redirect('gravity:modificar_plan')
+
+        if plan_solicitado.clases_por_semana < plan_actual.clases_por_semana:
+            # Downgrade: primero debe elegir qué reservas ceder
+            request.session['downgrade_plan_solicitado_id'] = plan_solicitado.id
+            return redirect('gravity:elegir_reservas_downgrade')
+
+        # Upgrade o igual cantidad de clases: se crea la solicitud directamente
+        SolicitudCambioPlan.objects.create(
+            usuario=request.user,
+            plan_actual=plan_actual,
+            plan_solicitado=plan_solicitado,
+            estado='pendiente'
+        )
+
+        messages.success(
+            request,
+            f'Tu solicitud para cambiar al plan "{plan_solicitado.nombre}" fue enviada y '
+            f'está pendiente de aprobación. Mientras tanto seguís con tu plan actual.'
+        )
+        return redirect('gravity:mis_planes')
+
+    context = {
+        'plan_actual': plan_actual,
+        'planes_disponibles': planes_disponibles,
+    }
+    return render(request, 'gravity/modificar_plan.html', context)
+
+@login_required
+def elegir_reservas_downgrade(request):
+    """
+    Paso intermedio para bajar a un plan con menos clases por semana:
+    el usuario elige qué reservas está dispuesto a ceder.
+    Las reservas no se cancelan hasta que el admin apruebe la solicitud.
+    """
+    plan_solicitado_id = request.session.get('downgrade_plan_solicitado_id')
+    if not plan_solicitado_id:
+        return redirect('gravity:modificar_plan')
+
+    plan_usuario_actual = PlanUsuario.objects.filter(
+        usuario=request.user,
+        activo=True,
+        fecha_fin__gte=timezone.localtime(timezone.now()).date()
+    ).select_related('plan').first()
+
+    if not plan_usuario_actual:
+        request.session.pop('downgrade_plan_solicitado_id', None)
+        return redirect('gravity:seleccionar_plan')
+
+    try:
+        plan_solicitado = PlanPago.objects.get(id=plan_solicitado_id, activo=True)
+    except PlanPago.DoesNotExist:
+        request.session.pop('downgrade_plan_solicitado_id', None)
+        messages.error(request, 'El plan solicitado ya no está disponible.')
+        return redirect('gravity:modificar_plan')
+
+    plan_actual = plan_usuario_actual.plan
+    minimo_a_ceder = plan_actual.clases_por_semana - plan_solicitado.clases_por_semana
+
+    reservas_activas = request.user.reservas_pilates.filter(
+        activa=True, fecha_unica__isnull=True
+    ).select_related('clase').order_by('clase__dia', 'clase__horario')
+
+    if request.method == 'POST':
+        if request.POST.get('cancelar') == '1':
+            request.session.pop('downgrade_plan_solicitado_id', None)
+            return redirect('gravity:modificar_plan')
+
+        reservas_ids = request.POST.getlist('reservas')
+        reservas_elegidas = reservas_activas.filter(id__in=reservas_ids)
+
+        if reservas_elegidas.count() < minimo_a_ceder:
+            messages.error(
+                request,
+                f'Para pasar al plan "{plan_solicitado.nombre}" necesitás ceder al menos '
+                f'{minimo_a_ceder} clase{"s" if minimo_a_ceder != 1 else ""}.'
+            )
+        else:
+            solicitud = SolicitudCambioPlan.objects.create(
+                usuario=request.user,
+                plan_actual=plan_actual,
+                plan_solicitado=plan_solicitado,
+                estado='pendiente'
+            )
+            solicitud.reservas_a_cancelar.set(reservas_elegidas)
+
+            request.session.pop('downgrade_plan_solicitado_id', None)
+            messages.success(
+                request,
+                f'Tu solicitud para cambiar al plan "{plan_solicitado.nombre}" fue enviada y '
+                f'está pendiente de aprobación. Las reservas elegidas seguirán activas hasta que se apruebe.'
+            )
+            return redirect('gravity:mis_planes')
+
+    context = {
+        'plan_actual': plan_actual,
+        'plan_solicitado': plan_solicitado,
+        'minimo_a_ceder': minimo_a_ceder,
+        'reservas_activas': reservas_activas,
+    }
+    return render(request, 'gravity/elegir_reservas_downgrade.html', context)
 
 @login_required
 def mis_planes(request):
@@ -3913,7 +4012,13 @@ def mis_planes(request):
     
     # Obtener reservas activas
     reservas_activas = request.user.reservas_pilates.filter(activa=True).select_related('clase')
-    
+
+    solicitud_pendiente = SolicitudCambioPlan.objects.filter(
+        usuario=request.user, estado='pendiente'
+    ).select_related('plan_actual', 'plan_solicitado').prefetch_related(
+        'reservas_a_cancelar__clase'
+    ).first()
+
     context = {
         'planes_activos': planes_activos,
         'planes_vencidos': planes_vencidos,
@@ -3921,9 +4026,11 @@ def mis_planes(request):
         'reservas_actuales': reservas_actuales,
         'clases_restantes': max(0, clases_disponibles - reservas_actuales),
         'reservas_activas': reservas_activas,
-        'tiene_planes_activos': planes_activos.exists()
+        'tiene_planes_activos': planes_activos.exists(),
+        'solicitud_pendiente': solicitud_pendiente,
+        'puede_cambiar_plan': planes_activos.exists() and not solicitud_pendiente,
     }
-    
+
     return render(request, 'gravity/mis_planes.html', context)
 
 @login_required
@@ -3941,10 +4048,9 @@ def cancelar_plan(request, plan_id):
     if request.method == 'POST':
         confirmacion = request.POST.get('confirmar_cancelacion')
         if confirmacion == 'confirmar':
-            hoy = timezone.now().date()
+            hoy = timezone.localtime(timezone.now()).date()
             dia_actual = hoy.day
             primer_dia_mes = date(hoy.year, hoy.month, 1)
-            clases_a_cancelar = plan.plan.clases_por_semana
 
             # --- Verificar si puede cancelar ---
 
@@ -4033,47 +4139,13 @@ def cancelar_plan(request, plan_id):
             except DeudaMensual.DoesNotExist:
                 pass
 
-            # --- Política de reservas ---
-            reservas_activas = list(
-                request.user.reservas_pilates.filter(activa=True).select_related('clase')
-            )
-
-            if dia_actual <= 4:
-                # Cancelar X reservas inmediatamente
-                canceladas = 0
-                for reserva in reservas_activas:
-                    if canceladas >= clases_a_cancelar:
-                        break
-                    reserva.activa = False
-                    reserva.save()
-                    canceladas += 1
-                plan.reservas_canceladas = True
-
-            elif dia_actual <= 9:
-                # Calcular la fecha de la X-ésima próxima ocurrencia
-                ocurrencias = []
-                for reserva in reservas_activas:
-                    proxima = reserva.get_proxima_fecha()
-                    if proxima:
-                        for semana in range(clases_a_cancelar + 4):
-                            ocurrencias.append(proxima + timedelta(weeks=semana))
-
-                ocurrencias.sort()
-
-                if len(ocurrencias) >= clases_a_cancelar:
-                    plan.fecha_cancelacion_reservas = ocurrencias[clases_a_cancelar - 1]
-                else:
-                    # Si no hay suficientes ocurrencias, cancelar al fin de mes
-                    import calendar
-                    ultimo_dia = calendar.monthrange(hoy.year, hoy.month)[1]
-                    plan.fecha_cancelacion_reservas = date(hoy.year, hoy.month, ultimo_dia)
-
-            else:
-                # Día 10+: cancelar el 1º del mes siguiente
-                if hoy.month == 12:
-                    plan.fecha_cancelacion_reservas = date(hoy.year + 1, 1, 1)
-                else:
-                    plan.fecha_cancelacion_reservas = date(hoy.year, hoy.month + 1, 1)
+            # --- Cancelar todas las reservas de inmediato (permanentes y recuperos/cupos temporales) ---
+            # La política según el día del mes solo afecta cuánto se le cobra (arriba),
+            # no cuándo se cancelan las reservas: al confirmar la baja se cancelan todas ya mismo.
+            reservas_activas = request.user.reservas_pilates.filter(activa=True)
+            canceladas = reservas_activas.count()
+            reservas_activas.update(activa=False)
+            plan.reservas_canceladas = True
 
             # Cancelar el plan
             plan.activo = False
@@ -4094,19 +4166,25 @@ def cancelar_plan(request, plan_id):
                 plan=plan.plan,
             )
 
-            # Mensaje según política aplicada
+            # Si tenía una solicitud de cambio de plan pendiente, ya no aplica
+            # porque el plan_actual que referenciaba dejó de existir
+            SolicitudCambioPlan.objects.filter(
+                usuario=request.user, estado='pendiente'
+            ).update(
+                estado='rechazada',
+                fecha_resolucion=timezone.localtime(timezone.now()),
+                observaciones='Rechazada automáticamente: el usuario canceló su plan actual.'
+            )
+
+            # Mensaje según política de cobro aplicada (las reservas ya se cancelaron todas)
             if dia_actual <= 4:
                 msg_cobro = 'No se te cobrará el mes actual.'
-                msg_reservas = f'Tus {canceladas} reserva{"s" if canceladas != 1 else ""} fueron canceladas.'
             elif dia_actual <= 9:
                 msg_cobro = 'Se te cobrará la mitad del mes actual.'
-                msg_reservas = (
-                    f'Podrás asistir a tus próximas {clases_a_cancelar} '
-                    f'clase{"s" if clases_a_cancelar != 1 else ""} y luego se cancelarán automáticamente.'
-                )
             else:
                 msg_cobro = 'Se te cobrará el mes completo.'
-                msg_reservas = 'Podrás asistir a tus clases hasta fin de mes. El 1º del mes siguiente se cancelarán.'
+
+            msg_reservas = f'Se cancelaron {canceladas} reserva{"s" if canceladas != 1 else ""}.'
 
             messages.success(
                 request,
@@ -4119,45 +4197,38 @@ def cancelar_plan(request, plan_id):
 
     # --- GET: preparar contexto ---
     clases_disponibles_sin_plan, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    plan.activo = False
-    clases_despues_cancelacion, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    plan.activo = True
-
     reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
+    total_reservas_activas = request.user.reservas_pilates.filter(activa=True).count()
 
-    hoy = timezone.now().date()
+    hoy = timezone.localtime(timezone.now()).date()
     dia_actual = hoy.day
     if dia_actual <= 4:
         politica_cancelacion = 'sin_cargo'
         mensaje_politica = 'Como cancelás antes del día 5, no se te cobrará el mes actual.'
-        mensaje_reservas = (
-            f'Tus {plan.plan.clases_por_semana} reserva{"s" if plan.plan.clases_por_semana != 1 else ""} '
-            f'se cancelarán inmediatamente.'
-        )
     elif dia_actual <= 9:
         politica_cancelacion = 'medio_mes'
         mensaje_politica = 'Como cancelás entre el día 5 y 9, se te cobrará la mitad del mes actual.'
-        mensaje_reservas = (
-            f'Podrás asistir a tus próximas {plan.plan.clases_por_semana} '
-            f'clase{"s" if plan.plan.clases_por_semana != 1 else ""} y luego se cancelarán automáticamente.'
-        )
     else:
         politica_cancelacion = 'mes_completo'
         mensaje_politica = 'Como cancelás a partir del día 10, se te cobrará el mes completo.'
-        mensaje_reservas = 'Podrás asistir a tus clases hasta fin de mes. El 1º del mes siguiente se cancelarán.'
+
+    mensaje_reservas = (
+        f'Se cancelarán inmediatamente tus {total_reservas_activas} '
+        f'reserva{"s" if total_reservas_activas != 1 else ""} activa{"s" if total_reservas_activas != 1 else ""} '
+        f'(incluyendo recuperos o cupos temporales, si tenés).'
+    )
 
     context = {
         'plan': plan,
         'clases_actuales': clases_disponibles_sin_plan,
-        'clases_despues_cancelacion': clases_despues_cancelacion,
         'reservas_actuales': reservas_actuales,
-        'podria_afectar_reservas': clases_despues_cancelacion < reservas_actuales,
+        'total_reservas_activas': total_reservas_activas,
         'politica_cancelacion': politica_cancelacion,
         'mensaje_politica': mensaje_politica,
         'mensaje_reservas': mensaje_reservas,
         'dia_actual': dia_actual,
     }
-    
+
     return render(request, 'gravity/cancelar_plan.html', context)
 
 # ==============================================================================
@@ -4233,6 +4304,130 @@ def admin_testimonio_eliminar(request, testimonio_id):
     testimonio.delete()
     messages.success(request, f'Testimonio de {nombre} eliminado correctamente.')
     return redirect('gravity:admin_testimonios_lista')
+
+# ==============================================================================
+# VISTAS ADMIN — SOLICITUDES DE CAMBIO DE PLAN
+# ==============================================================================
+
+@superadmin_required
+def admin_solicitudes_plan_lista(request):
+    """Lista todas las solicitudes de cambio de plan con filtros y permite aprobar/rechazar"""
+    solicitudes = SolicitudCambioPlan.objects.select_related(
+        'usuario', 'plan_actual', 'plan_solicitado', 'resuelto_por'
+    ).prefetch_related('reservas_a_cancelar__clase').all()
+
+    estado_filtro = request.GET.get('estado', '')
+    if estado_filtro in ('pendiente', 'aprobada', 'rechazada'):
+        solicitudes = solicitudes.filter(estado=estado_filtro)
+
+    busqueda_filtro = request.GET.get('busqueda', '')
+    if busqueda_filtro:
+        solicitudes = solicitudes.filter(
+            Q(usuario__first_name__icontains=busqueda_filtro) |
+            Q(usuario__last_name__icontains=busqueda_filtro) |
+            Q(usuario__email__icontains=busqueda_filtro)
+        )
+
+    context = {
+        'solicitudes': solicitudes,
+        'total_pendientes': SolicitudCambioPlan.objects.filter(estado='pendiente').count(),
+        'total_aprobadas': SolicitudCambioPlan.objects.filter(estado='aprobada').count(),
+        'estado_filtro': estado_filtro,
+        'busqueda_filtro': busqueda_filtro,
+    }
+    return render(request, 'gravity/admin/solicitudes_plan_lista.html', context)
+
+@superadmin_required
+def admin_solicitud_plan_aprobar(request, solicitud_id):
+    """Aprueba una solicitud de cambio de plan: asigna el nuevo plan y cancela las reservas cedidas"""
+    if request.method != 'POST':
+        return redirect('gravity:admin_solicitudes_plan_lista')
+
+    solicitud = get_object_or_404(SolicitudCambioPlan, id=solicitud_id)
+
+    if solicitud.estado != 'pendiente':
+        messages.error(request, 'Esta solicitud ya fue resuelta.')
+        return redirect('gravity:admin_solicitudes_plan_lista')
+
+    usuario = solicitud.usuario
+
+    with transaction.atomic():
+        PlanUsuario.objects.filter(usuario=usuario, activo=True).update(activo=False)
+
+        PlanUsuario.objects.create(
+            usuario=usuario,
+            plan=solicitud.plan_solicitado,
+            fecha_inicio=timezone.localtime(timezone.now()).date(),
+            fecha_fin=date(2099, 12, 31),
+            tipo_plan='permanente',
+            renovacion_automatica=True,
+            creado_por=request.user,
+            observaciones=f'Creado por aprobación de solicitud de cambio de plan #{solicitud.id}'
+        )
+
+        estado_cliente, _ = EstadoPagoCliente.objects.get_or_create(
+            usuario=usuario,
+            defaults={'activo': True}
+        )
+        estado_cliente.plan_actual = solicitud.plan_solicitado
+        estado_cliente.save(update_fields=['plan_actual'])
+
+        # Ajustar la facturación del mes actual según corresponda
+        if solicitud.plan_actual:
+            # Cambio de plan existente: reemplazar el monto del mes por el nuevo precio,
+            # respetando lo ya pagado (ver EstadoPagoCliente.ajustar_deuda_por_cambio_plan)
+            estado_cliente.ajustar_deuda_por_cambio_plan(solicitud.plan_solicitado)
+        else:
+            # Primer plan del usuario: generar la deuda del mes con la política habitual
+            # (mes completo o medio mes según el día de aprobación)
+            estado_cliente.generar_deuda_mes_actual()
+
+        if solicitud.reservas_a_cancelar.exists():
+            solicitud.reservas_a_cancelar.update(activa=False)
+
+        solicitud.estado = 'aprobada'
+        solicitud.fecha_resolucion = timezone.localtime(timezone.now())
+        solicitud.resuelto_por = request.user
+        solicitud.save(update_fields=['estado', 'fecha_resolucion', 'resuelto_por'])
+
+    try:
+        enviar_email_cambio_plan_aprobado(solicitud)
+    except Exception as e:
+        logger.error(f"Error enviando email de cambio de plan aprobado (solicitud {solicitud.id}): {str(e)}")
+
+    messages.success(
+        request,
+        f'Solicitud aprobada. {usuario.get_full_name() or usuario.username} ahora tiene el plan '
+        f'"{solicitud.plan_solicitado.nombre}".'
+    )
+    return redirect('gravity:admin_solicitudes_plan_lista')
+
+@superadmin_required
+def admin_solicitud_plan_rechazar(request, solicitud_id):
+    """Rechaza una solicitud de cambio de plan. No se modifica el plan ni las reservas del usuario."""
+    if request.method != 'POST':
+        return redirect('gravity:admin_solicitudes_plan_lista')
+
+    solicitud = get_object_or_404(SolicitudCambioPlan, id=solicitud_id)
+
+    if solicitud.estado != 'pendiente':
+        messages.error(request, 'Esta solicitud ya fue resuelta.')
+        return redirect('gravity:admin_solicitudes_plan_lista')
+
+    motivo = request.POST.get('motivo_rechazo', '').strip()
+
+    solicitud.estado = 'rechazada'
+    solicitud.fecha_resolucion = timezone.localtime(timezone.now())
+    solicitud.resuelto_por = request.user
+    if motivo:
+        solicitud.observaciones = motivo
+    solicitud.save(update_fields=['estado', 'fecha_resolucion', 'resuelto_por', 'observaciones'])
+
+    messages.success(
+        request,
+        f'Solicitud de {solicitud.usuario.get_full_name() or solicitud.usuario.username} rechazada.'
+    )
+    return redirect('gravity:admin_solicitudes_plan_lista')
 
 # ==============================================================================
 # VISTAS ADMIN — HISTORIAL DE ACTIVIDAD

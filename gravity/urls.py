@@ -21,9 +21,11 @@ from .views import (
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
     admin_ajustar_deuda_especial, admin_generar_deuda_manual, admin_cancelar_plan_usuario,
     # IMPORTACIONES PARA PLANES DE PAGO
-    mis_planes, seleccionar_plan, cancelar_plan,
+    mis_planes, seleccionar_plan, cancelar_plan, modificar_plan, elegir_reservas_downgrade,
     # IMPORTACIONES PARA TESTIMONIOS
     admin_testimonios_lista, admin_testimonio_aprobar, admin_testimonio_rechazar, admin_testimonio_eliminar,
+    # IMPORTACIONES PARA SOLICITUDES DE CAMBIO DE PLAN
+    admin_solicitudes_plan_lista, admin_solicitud_plan_aprobar, admin_solicitud_plan_rechazar,
     # IMPORTACIONES PARA LINKS DE REDES SOCIALES
     links,
 )
@@ -123,6 +125,11 @@ urlpatterns = [
     path('admin-panel/testimonios/<int:testimonio_id>/rechazar/', admin_testimonio_rechazar, name='admin_testimonio_rechazar'),
     path('admin-panel/testimonios/<int:testimonio_id>/eliminar/', admin_testimonio_eliminar, name='admin_testimonio_eliminar'),
 
+    # Gestión de solicitudes de cambio de plan
+    path('admin-panel/solicitudes-plan/', admin_solicitudes_plan_lista, name='admin_solicitudes_plan_lista'),
+    path('admin-panel/solicitudes-plan/<int:solicitud_id>/aprobar/', admin_solicitud_plan_aprobar, name='admin_solicitud_plan_aprobar'),
+    path('admin-panel/solicitudes-plan/<int:solicitud_id>/rechazar/', admin_solicitud_plan_rechazar, name='admin_solicitud_plan_rechazar'),
+
     # ==============================================================================
     # URLS DEL SISTEMA DE PAGOS
     # ==============================================================================
@@ -140,6 +147,8 @@ urlpatterns = [
     path('planes/', mis_planes, name='mis_planes'),
     path('seleccionar-plan/', seleccionar_plan, name='seleccionar_plan'),
     path('planes/<int:plan_id>/cancelar/', cancelar_plan, name='cancelar_plan'),
+    path('planes/modificar/', modificar_plan, name='modificar_plan'),
+    path('planes/modificar/elegir-reservas/', elegir_reservas_downgrade, name='elegir_reservas_downgrade'),
 
     # ==============================================================================
     # LINKS PARA REDES SOCIALES 

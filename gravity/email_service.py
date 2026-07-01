@@ -2260,3 +2260,82 @@ def enviar_email_modificacion_reserva(reserva, clase_anterior):
     except Exception as e:
         logger.error(f"Error enviando email de modificación para reserva {reserva.numero_reserva}: {str(e)}")
         return False
+
+# ==============================================================================
+# EMAIL DE CAMBIO DE PLAN APROBADO
+# ==============================================================================
+
+def enviar_email_cambio_plan_aprobado(solicitud):
+    """
+    Envía un email al usuario notificando que su solicitud de cambio de plan fue aprobada.
+
+    Args:
+        solicitud: Objeto SolicitudCambioPlan ya marcado como 'aprobada'
+
+    Returns:
+        Boolean: True si el email se envió exitosamente, False en caso contrario
+    """
+    try:
+        usuario = solicitud.usuario
+        if not usuario.email:
+            logger.warning(f"Usuario {usuario.username} no tiene email configurado")
+            return False
+
+        nombre = usuario.first_name or usuario.username
+        plan_nuevo = solicitud.plan_solicitado
+        plan_anterior = solicitud.plan_actual
+
+        if plan_anterior:
+            cambio_texto = f"Tu plan cambió de \"{plan_anterior.nombre}\" a \"{plan_nuevo.nombre}\"."
+        else:
+            cambio_texto = f"Tu plan \"{plan_nuevo.nombre}\" ya está activo."
+
+        text_message = (
+            f"¡Tu solicitud de cambio de plan fue aprobada!\n\n"
+            f"Hola {nombre},\n\n"
+            f"{cambio_texto}\n\n"
+            f"Nuevo plan: {plan_nuevo.nombre}\n"
+            f"Clases por semana: {plan_nuevo.clases_por_semana}\n"
+            f"Precio mensual: ${plan_nuevo.precio_mensual}\n\n"
+            f"Ya podés reservar tus clases según tu nuevo plan.\n\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"pilatesgravity@gmail.com · +54 342 511 4448"
+        )
+
+        html_message = f"""
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #5D768B;">¡Tu solicitud de cambio de plan fue aprobada!</h2>
+            <p>Hola {nombre},</p>
+            <p>{cambio_texto}</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr><td style="padding: 6px 0;"><strong>Nuevo plan:</strong></td><td>{plan_nuevo.nombre}</td></tr>
+                <tr><td style="padding: 6px 0;"><strong>Clases por semana:</strong></td><td>{plan_nuevo.clases_por_semana}</td></tr>
+                <tr><td style="padding: 6px 0;"><strong>Precio mensual:</strong></td><td>${plan_nuevo.precio_mensual}</td></tr>
+            </table>
+            <p>Ya podés reservar tus clases según tu nuevo plan.</p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;">
+            <p style="font-size: 12px; color: #888;">
+                Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe<br>
+                pilatesgravity@gmail.com · +54 342 511 4448
+            </p>
+        </div>
+        """
+
+        email = EmailMultiAlternatives(
+            subject='Tu cambio de plan fue aprobado - Pilates Gravity',
+            body=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[usuario.email],
+        )
+        email.attach_alternative(html_message, 'text/html')
+        email.send(fail_silently=False)
+
+        logger.info(
+            f"Email de cambio de plan aprobado enviado a {usuario.email} "
+            f"(solicitud {solicitud.id})"
+        )
+        return True
+
+    except Exception as e:
+        logger.error(f"Error enviando email de cambio de plan aprobado (solicitud {solicitud.id}): {str(e)}")
+        return False

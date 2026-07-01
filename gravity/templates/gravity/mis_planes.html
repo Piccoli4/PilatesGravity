@@ -49,6 +49,39 @@
             </div>
         </div>
 
+        <!-- Solicitud de cambio de plan pendiente -->
+        {% if solicitud_pendiente %}
+        <div class="bg-blanco rounded-2xl shadow-lg border-2 border-advertencia/40 p-6 mb-8">
+            <h2 class="text-lg font-bold text-principal mb-3 font-cinzel flex items-center">
+                <svg class="w-6 h-6 text-advertencia mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Solicitud de cambio de plan pendiente
+            </h2>
+            <p class="text-gris-oscuro mb-3">
+                {% if solicitud_pendiente.plan_actual %}
+                    Solicitaste cambiar de <strong>{{ solicitud_pendiente.plan_actual.nombre }}</strong> a
+                    <strong>{{ solicitud_pendiente.plan_solicitado.nombre }}</strong>.
+                {% else %}
+                    Solicitaste el plan <strong>{{ solicitud_pendiente.plan_solicitado.nombre }}</strong>.
+                {% endif %}
+                Mientras se aprueba, seguís con tu situación actual sin cambios.
+            </p>
+            {% if solicitud_pendiente.reservas_a_cancelar.exists %}
+            <div class="bg-error/5 border border-error/20 rounded-lg p-4">
+                <p class="text-sm font-semibold text-gris-oscuro mb-2">
+                    Si se aprueba, se cancelarán estas reservas:
+                </p>
+                <ul class="text-sm text-gris-medio space-y-1">
+                    {% for reserva in solicitud_pendiente.reservas_a_cancelar.all %}
+                    <li>{{ reserva.clase.get_nombre_display }} — {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <!-- Contenido principal en dos columnas -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Columna izquierda: Planes Activos -->
@@ -61,12 +94,14 @@
                             </svg>
                             Planes Activos
                         </h2>
-                        <a href="{% url 'gravity:seleccionar_plan' %}" class="inline-flex items-center justify-center bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-semibold hover:bg-principal-dark transition-colors duration-200 shadow-md w-full sm:w-auto">
+                        {% if puede_cambiar_plan %}
+                        <a href="{% url 'gravity:modificar_plan' %}" class="inline-flex items-center justify-center bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-semibold hover:bg-principal-dark transition-colors duration-200 shadow-md w-full sm:w-auto">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"></path>
                             </svg>
-                            Agregar Plan
+                            Cambiar de Plan
                         </a>
+                        {% endif %}
                     </div>
 
                     {% if planes_activos %}
@@ -285,12 +320,21 @@
                 </svg>
                 Reservar Clase
             </a>
-            <a href="{% url 'gravity:seleccionar_plan' %}" class="flex items-center justify-center bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
+            {% if puede_cambiar_plan %}
+            <a href="{% url 'gravity:modificar_plan' %}" class="flex items-center justify-center bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"></path>
                 </svg>
                 Cambiar Plan
             </a>
+            {% elif not tiene_planes_activos %}
+            <a href="{% url 'gravity:seleccionar_plan' %}" class="flex items-center justify-center bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                Seleccionar Plan
+            </a>
+            {% endif %}
         </div>
     </div>
 </div>

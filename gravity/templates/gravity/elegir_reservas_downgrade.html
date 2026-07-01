@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Elegir Reservas a Ceder - Pilates Gravity{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-fondo via-white to-fondo/50 py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Encabezado -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-cinzel font-semibold text-principal mb-2">
+                Elegí qué reservas ceder
+            </h1>
+            <div class="w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto rounded-full"></div>
+            <p class="text-gris-oscuro mt-4 text-lg">
+                Vas a pasar de <strong>{{ plan_actual.nombre }}</strong> ({{ plan_actual.clases_por_semana }} clase{{ plan_actual.clases_por_semana|pluralize:"s" }}/semana)
+                a <strong>{{ plan_solicitado.nombre }}</strong> ({{ plan_solicitado.clases_por_semana }} clase{{ plan_solicitado.clases_por_semana|pluralize:"s" }}/semana).
+            </p>
+        </div>
+
+        <div class="bg-advertencia/10 border border-advertencia/30 rounded-xl p-4 mb-8 text-center">
+            <p class="text-gris-oscuro text-sm">
+                Necesitás ceder al menos <strong>{{ minimo_a_ceder }}</strong> reserva{{ minimo_a_ceder|pluralize:"s" }}.
+                Estas reservas seguirán activas hasta que un administrador apruebe tu solicitud.
+            </p>
+        </div>
+
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div class="bg-error/10 border border-error/30 text-error rounded-xl p-4 text-sm">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gris-claro/30 overflow-hidden">
+            <form method="post" id="form-downgrade">
+                {% csrf_token %}
+                <div class="p-6">
+                    {% if reservas_activas %}
+                    <div class="space-y-3">
+                        {% for reserva in reservas_activas %}
+                        <label class="flex items-center gap-4 p-4 border border-secundario/30 rounded-xl cursor-pointer hover:border-principal/50 hover:shadow-md transition-all duration-200">
+                            <input type="checkbox" name="reservas" value="{{ reserva.id }}"
+                                   class="w-5 h-5 text-principal border-gris-medio rounded focus:ring-principal/20 reserva-checkbox">
+                            <div class="flex-1">
+                                <div class="font-semibold text-principal">{{ reserva.clase.get_nombre_display }}</div>
+                                <div class="text-sm text-gris-medio">
+                                    {{ reserva.clase.dia }} - {{ reserva.clase.horario|time:"H:i" }} · {{ reserva.clase.get_direccion_corta }}
+                                </div>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-6 p-3 bg-fondo/50 rounded-lg text-center text-sm text-gris-oscuro">
+                        Seleccionadas: <span id="contador-seleccionadas" class="font-bold text-principal">0</span> / mínimo {{ minimo_a_ceder }}
+                    </div>
+                    {% else %}
+                    <p class="text-gris-medio text-center py-8">No tenés reservas activas para ceder.</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center p-6 border-t border-gris-claro/30">
+                    <button type="submit" name="cancelar" value="1"
+                            class="px-8 py-3 border-2 border-gris-medio text-gris-oscuro rounded-xl font-medium
+                                   hover:bg-gris-claro hover:border-gris-oscuro transform hover:scale-105
+                                   transition-all duration-200 text-center">
+                        Volver a elegir plan
+                    </button>
+                    <button type="submit" data-loading-text="Enviando solicitud..."
+                            class="px-8 py-3 bg-gradient-to-r from-principal to-principal-dark text-blanco rounded-xl font-medium
+                                   hover:from-principal-dark hover:to-principal transform hover:scale-105
+                                   transition-all duration-200 shadow-lg">
+                        Confirmar y Enviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.reserva-checkbox');
+    const contador = document.getElementById('contador-seleccionadas');
+
+    function actualizarContador() {
+        if (!contador) return;
+        const seleccionadas = document.querySelectorAll('.reserva-checkbox:checked').length;
+        contador.textContent = seleccionadas;
+    }
+
+    checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', actualizarContador);
+    });
+    actualizarContador();
+});
+</script>
+{% endblock %}

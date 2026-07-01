@@ -77,16 +77,15 @@
                         </div>
                         
                         <div class="flex items-center justify-between p-3 bg-fondo/30 rounded-lg">
-                            <span class="text-gris-medio">Clases después de cancelar:</span>
-                            <span class="font-bold text-lg {% if clases_despues_cancelacion > 0 %}text-exito{% else %}text-error{% endif %}">
-                                {{ clases_despues_cancelacion }}
+                            <span class="text-gris-medio">Reservas activas:</span>
+                            <span class="font-bold text-lg text-principal">
+                                {{ total_reservas_activas }}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Advertencia si podría afectar reservas -->
-                {% if podria_afectar_reservas %}
+                <!-- Advertencia: todas las reservas se cancelan de inmediato -->
                 <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 mb-6">
                     <div class="flex items-start space-x-3">
                         <div class="flex-shrink-0">
@@ -97,13 +96,11 @@
                         <div>
                             <h4 class="text-amber-800 font-semibold mb-1">¡Atención!</h4>
                             <p class="text-amber-700 text-sm">
-                                Al cancelar este plan, podrías tener menos clases disponibles que reservas confirmadas para esta semana. 
-                                <strong>Las reservas existentes no se cancelarán automáticamente</strong>, pero podrías exceder tu límite semanal.
+                                {{ mensaje_reservas }}
                             </p>
                         </div>
                     </div>
                 </div>
-                {% endif %}
 
                 <!-- Información sobre política aplicada -->
                 {% if politica_cancelacion == 'sin_cargo' %}
@@ -115,7 +112,6 @@
                             <div>
                                 <h4 class="text-exito font-semibold mb-1">Sin cargo</h4>
                                 <p class="text-gris-oscuro text-sm">{{ mensaje_politica }}</p>
-                                <p class="text-gris-oscuro text-sm mt-1">{{ mensaje_reservas }}</p>
                             </div>
                         </div>
                     </div>
@@ -128,7 +124,6 @@
                             <div>
                                 <h4 class="text-advertencia font-semibold mb-1">Medio mes</h4>
                                 <p class="text-gris-oscuro text-sm">{{ mensaje_politica }}</p>
-                                <p class="text-gris-oscuro text-sm mt-1">{{ mensaje_reservas }}</p>
                             </div>
                         </div>
                     </div>
@@ -141,7 +136,6 @@
                             <div>
                                 <h4 class="text-error font-semibold mb-1">Mes completo</h4>
                                 <p class="text-gris-oscuro text-sm">{{ mensaje_politica }}</p>
-                                <p class="text-gris-oscuro text-sm mt-1">{{ mensaje_reservas }}</p>
                             </div>
                         </div>
                     </div>
@@ -166,14 +160,12 @@
                                     <li>• El plan será cancelado inmediatamente</li>
                                     {% if politica_cancelacion == 'sin_cargo' %}
                                         <li>• No se me cobrará el mes en curso</li>
-                                        <li>• Mis reservas se cancelarán de inmediato</li>
                                     {% elif politica_cancelacion == 'medio_mes' %}
                                         <li>• Se me cobrará la mitad del mes en curso</li>
-                                        <li>• {{ mensaje_reservas }}</li>
                                     {% else %}
                                         <li>• Se me cobrará el mes completo</li>
-                                        <li>• {{ mensaje_reservas }}</li>
                                     {% endif %}
+                                    <li>• {{ mensaje_reservas }}</li>
                                     <li>• Podré seleccionar un nuevo plan cuando desee</li>
                                 </ul>
                             </div>

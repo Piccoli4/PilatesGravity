@@ -361,6 +361,19 @@
                     </svg>
                     <span class="font-medium">Testimonios</span>
                 </a>
+                <a href="{% url 'gravity:admin_solicitudes_plan_lista' %}"
+                    class="w-full btn-pilates-primary text-fondo rounded-lg p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-decoration-none relative">
+                    {% if hay_solicitudes_plan_pendientes %}
+                    <span class="absolute -top-2 -right-2 bg-error text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {{ solicitudes_plan_pendientes|length }}
+                    </span>
+                    {% endif %}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-10">
+                        <path fill-rule="evenodd" d="M10.5 3A1.501 1.501 0 0 0 9 4.5h6A1.5 1.5 0 0 0 13.5 3h-3Z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd" d="M8.25 4.5A1.5 1.5 0 0 0 6.75 6v.75H6A2.25 2.25 0 0 0 3.75 9v10.5A2.25 2.25 0 0 0 6 21.75h12a2.25 2.25 0 0 0 2.25-2.25V9A2.25 2.25 0 0 0 18 6.75h-.75V6a1.5 1.5 0 0 0-1.5-1.5h-.75a3 3 0 0 1-3 3h-1.5a3 3 0 0 1-3-3h-.75Zm0 9a.75.75 0 0 1 1.06 0l1.72 1.72 3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0l-2.25-2.25a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="font-medium">Solicitudes de Plan</span>
+                </a>
                 {% endif %}
             </div>
         </div>
@@ -521,6 +534,59 @@
         </div>
     </div>
 </div>
+
+<!-- Solicitudes de Cambio de Plan Pendientes -->
+{% if hay_solicitudes_plan_pendientes %}
+    <div class="mb-6">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 flex items-center justify-between" style="background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);">
+                <h5 class="text-lg font-semibold text-white flex items-center gap-2 mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                    </svg>
+                    Solicitudes de Cambio de Plan Pendientes
+                    <span class="bg-white text-purple-700 text-xs font-bold px-2 py-0.5 rounded-full ml-1">
+                        {{ solicitudes_plan_pendientes|length }}
+                    </span>
+                </h5>
+                <a href="{% url 'gravity:admin_solicitudes_plan_lista' %}"
+                    class="text-white text-sm underline hover:no-underline opacity-80 hover:opacity-100 transition-opacity">
+                    Ver todas
+                </a>
+            </div>
+            <div class="divide-y divide-gray-100">
+                {% for solicitud in solicitudes_plan_pendientes|slice:":5" %}
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                            style="background-color: #ede9fe;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                                class="size-5" style="color: #6d28d9;">
+                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800 mb-0">
+                                {{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}
+                            </p>
+                            <p class="text-sm text-gray-500 mb-0">
+                                {% if solicitud.plan_actual %}
+                                    {{ solicitud.plan_actual.nombre }} → <span class="font-medium text-gray-700">{{ solicitud.plan_solicitado.nombre }}</span>
+                                {% else %}
+                                    Solicita <span class="font-medium text-gray-700">{{ solicitud.plan_solicitado.nombre }}</span> (primer plan)
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-gray-400 flex-shrink-0">
+                        {{ solicitud.fecha_solicitud|date:"d/m H:i" }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endif %}
 
 <!-- Notificaciones de Cancelación de Planes -->
 {% if hay_notificaciones_plan %}

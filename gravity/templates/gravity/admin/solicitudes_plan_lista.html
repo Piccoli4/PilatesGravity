@@ -1,0 +1,405 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Solicitudes de Cambio de Plan - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center gap-1">
+    <span class="text-gray-400">/</span>
+    <span class="text-gray-500">Solicitudes de Cambio de Plan</span>
+</li>
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Header -->
+<div class="flex flex-col lg:flex-row gap-4 mb-6">
+    <div class="w-full">
+        <div class="card">
+            <div class="card-body">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-3">
+                    <div class="flex-1">
+                        <h2 class="text-3xl text-principal mb-2 flex items-center gap-2">
+                            <svg class="size-8" fill="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                            </svg>
+                            Solicitudes de Cambio de Plan
+                        </h2>
+                        <p class="text-gris-medio mb-0">Aprobá o rechazá las altas y cambios de plan solicitados por los alumnos</p>
+                    </div>
+                    <!-- Contadores rápidos -->
+                    <div class="flex gap-4">
+                        <div class="text-center px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="text-xl font-bold text-yellow-700">{{ total_pendientes }}</div>
+                            <small class="text-yellow-600">Pendientes</small>
+                        </div>
+                        <div class="text-center px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="text-xl font-bold text-green-700">{{ total_aprobadas }}</div>
+                            <small class="text-green-600">Aprobadas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtro -->
+<div class="flex flex-col gap-4 mb-6">
+    <div class="w-full">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="text-lg font-medium flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                    Filtros
+                </h5>
+            </div>
+            <div class="card-body p-3">
+                <form method="get" id="filterForm">
+                    <div class="flex flex-col md:flex-row items-center gap-4">
+                        <div class="flex flex-col">
+                            <label for="estado" class="text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select name="estado" id="estado"
+                                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent">
+                                <option value="">Todos</option>
+                                <option value="pendiente" {% if estado_filtro == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                                <option value="aprobada" {% if estado_filtro == 'aprobada' %}selected{% endif %}>Aprobadas</option>
+                                <option value="rechazada" {% if estado_filtro == 'rechazada' %}selected{% endif %}>Rechazadas</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="busqueda" class="text-sm font-medium text-gray-700 mb-1">Buscar alumno</label>
+                            <input type="text" name="busqueda" id="busqueda"
+                                class="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent"
+                                placeholder="Nombre o email..." value="{{ busqueda_filtro }}">
+                        </div>
+                        <div class="flex items-end gap-2 mt-4 md:mt-0">
+                            <button type="submit" data-loading-text="Buscando..."
+                                class="flex items-center gap-1 bg-blue-600 text-white hover:bg-blue-900 font-medium py-2 px-4 rounded transition-colors duration-200">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                Buscar
+                            </button>
+                            <a href="{% url 'gravity:admin_solicitudes_plan_lista' %}"
+                                class="flex items-center gap-1 border border-gray-400 text-gray-700 hover:bg-gray-300 font-medium py-2 px-4 rounded transition-colors duration-200">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                Limpiar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla -->
+<div class="flex flex-col">
+    <div class="w-full">
+        <div class="card">
+            <div class="card-body p-4">
+                {% if solicitudes %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs uppercase bg-fondo text-gris-oscuro">
+                            <tr>
+                                <th class="px-3 py-3">Alumno</th>
+                                <th class="px-3 py-3">Cambio de plan</th>
+                                <th class="px-3 py-3">Reservas a ceder</th>
+                                <th class="px-3 py-3">Estado</th>
+                                <th class="px-3 py-3">Fecha</th>
+                                <th class="px-3 py-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for solicitud in solicitudes %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-150 {% if solicitud.estado == 'pendiente' %}bg-yellow-50/40{% endif %}">
+                                <!-- Alumno -->
+                                <td class="px-3 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                                            style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                                            {{ solicitud.usuario.first_name.0|upper }}{{ solicitud.usuario.last_name.0|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-gray-900">
+                                                {{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}
+                                            </div>
+                                            <small class="text-gray-500">{{ solicitud.usuario.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <!-- Cambio de plan -->
+                                <td class="px-3 py-3">
+                                    {% if solicitud.plan_actual %}
+                                        <span class="text-gray-500">{{ solicitud.plan_actual.nombre }}</span>
+                                        <span class="text-gray-400">→</span>
+                                        <span class="font-medium text-gray-800">{{ solicitud.plan_solicitado.nombre }}</span>
+                                    {% else %}
+                                        <span class="font-medium text-gray-800">{{ solicitud.plan_solicitado.nombre }}</span>
+                                        <span class="text-xs text-gray-400">(primer plan)</span>
+                                    {% endif %}
+                                </td>
+                                <!-- Reservas a ceder -->
+                                <td class="px-3 py-3 max-w-xs">
+                                    {% if solicitud.reservas_a_cancelar.exists %}
+                                        <ul class="text-xs text-gray-600 space-y-0.5">
+                                            {% for reserva in solicitud.reservas_a_cancelar.all %}
+                                            <li>{{ reserva.clase.get_nombre_display }} — {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="text-xs text-gray-400">—</span>
+                                    {% endif %}
+                                </td>
+                                <!-- Estado -->
+                                <td class="px-3 py-3">
+                                    {% if solicitud.estado == 'pendiente' %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-400 text-white rounded-md">
+                                        Pendiente
+                                    </span>
+                                    {% elif solicitud.estado == 'aprobada' %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-exito text-white rounded-md">
+                                        Aprobada
+                                    </span>
+                                    {% else %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-error text-white rounded-md">
+                                        Rechazada
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <!-- Fecha -->
+                                <td class="px-3 py-3">
+                                    <div class="font-medium text-gray-900">{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</div>
+                                    <small class="text-gray-500">{{ solicitud.fecha_solicitud|date:"H:i" }}</small>
+                                </td>
+                                <!-- Acciones -->
+                                <td class="px-3 py-3 text-center">
+                                    {% if solicitud.estado == 'pendiente' %}
+                                    <div class="flex gap-1 justify-center">
+                                        <form method="post" action="{% url 'gravity:admin_solicitud_plan_aprobar' solicitud.id %}" class="solicitud-plan-form">
+                                            {% csrf_token %}
+                                            <button type="button"
+                                                onclick="abrirModalSolicitudPlan(this.closest('form'), 'aprobar', '{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username|escapejs }}', '{{ solicitud.plan_solicitado.nombre|escapejs }}')"
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-white text-green-600 border border-green-500 rounded hover:bg-green-500 hover:text-white transition-colors duration-200"
+                                                title="Aprobar solicitud">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                                Aprobar
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{% url 'gravity:admin_solicitud_plan_rechazar' solicitud.id %}" class="solicitud-plan-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="motivo_rechazo" class="motivo-rechazo-input">
+                                            <button type="button"
+                                                onclick="abrirModalSolicitudPlan(this.closest('form'), 'rechazar', '{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username|escapejs }}', '{{ solicitud.plan_solicitado.nombre|escapejs }}')"
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-white text-error border border-error rounded hover:bg-error hover:text-white transition-colors duration-200"
+                                                title="Rechazar solicitud">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd"
+                                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                                        clip-rule="evenodd"></path>
+                                                </svg>
+                                                Rechazar
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-xs text-gray-400">
+                                        {% if solicitud.resuelto_por %}por {{ solicitud.resuelto_por.get_full_name|default:solicitud.resuelto_por.username }}{% endif %}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12 text-gris-medio">
+                    <svg class="w-12 h-12 mx-auto mb-4 opacity-40" fill="currentColor" viewBox="0 0 24 24">
+                        <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                    </svg>
+                    <p class="text-lg font-medium">No hay solicitudes para mostrar</p>
+                    <small>Las solicitudes de alta o cambio de plan de los alumnos aparecerán aquí.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación (aprobar / rechazar) -->
+<div id="solicitudPlanModal" class="fixed inset-0 z-[9999] hidden" role="dialog" aria-modal="true" aria-labelledby="solicitud-plan-modal-title">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    <div class="fixed inset-0 z-[10000] overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full transform transition-all">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div id="solicitud-plan-modal-icon-wrap" class="flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                                <svg id="solicitud-plan-modal-icon" class="size-8 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-2xl leading-6 font-medium text-gray-900" id="solicitud-plan-modal-title">
+                                    Confirmar Aprobación
+                                </h3>
+                            </div>
+                        </div>
+                        <button type="button" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors" id="closeSolicitudPlanModal">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="mt-3">
+                        <div id="solicitud-plan-modal-mensaje" class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                            <p class="text-md text-blue-700 font-medium" id="solicitud-plan-modal-texto"></p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <h4 class="font-medium text-gray-700 mb-1">Alumno:</h4>
+                                    <p class="text-gray-600 text-sm" id="solicitud-plan-modal-alumno"></p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <h4 class="font-medium text-gray-700 mb-1">Plan solicitado:</h4>
+                                    <p class="text-gray-600 text-sm" id="solicitud-plan-modal-plan"></p>
+                                </div>
+                            </div>
+
+                            <div id="solicitud-plan-modal-motivo-wrap" class="hidden">
+                                <label for="solicitud-plan-modal-motivo" class="block font-medium text-gray-700 mb-1 text-sm">
+                                    Motivo del rechazo <span class="text-gray-400 font-normal">(opcional)</span>
+                                </label>
+                                <textarea id="solicitud-plan-modal-motivo" rows="2"
+                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal focus:border-transparent"
+                                    placeholder="Contale al alumno por qué se rechazó..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button type="button" id="solicitudPlanModalConfirmar"
+                        class="w-full sm:w-auto inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                        <span id="solicitudPlanModalConfirmarTexto">Sí, Aprobar</span>
+                    </button>
+                    <button type="button" id="solicitudPlanModalCancelar"
+                        class="w-full sm:w-auto inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let solicitudPlanFormActivo = null;
+
+    function abrirModalSolicitudPlan(form, accion, alumno, plan) {
+        solicitudPlanFormActivo = form;
+
+        const iconWrap = document.getElementById('solicitud-plan-modal-icon-wrap');
+        const icon = document.getElementById('solicitud-plan-modal-icon');
+        const mensajeWrap = document.getElementById('solicitud-plan-modal-mensaje');
+        const texto = document.getElementById('solicitud-plan-modal-texto');
+        const titulo = document.getElementById('solicitud-plan-modal-title');
+        const motivoWrap = document.getElementById('solicitud-plan-modal-motivo-wrap');
+        const motivoInput = document.getElementById('solicitud-plan-modal-motivo');
+        const confirmarBtn = document.getElementById('solicitudPlanModalConfirmar');
+        const confirmarTexto = document.getElementById('solicitudPlanModalConfirmarTexto');
+
+        document.getElementById('solicitud-plan-modal-alumno').textContent = alumno;
+        document.getElementById('solicitud-plan-modal-plan').textContent = plan;
+        motivoInput.value = '';
+
+        if (accion === 'aprobar') {
+            titulo.textContent = 'Confirmar Aprobación';
+            texto.textContent = '¿Aprobar el cambio de plan de ' + alumno + ' a "' + plan + '"?';
+            mensajeWrap.className = 'bg-blue-50 border-l-4 border-blue-400 p-4 mb-4';
+            texto.className = 'text-md text-blue-700 font-medium';
+            iconWrap.className = 'flex items-center justify-center h-12 w-12 rounded-full bg-green-100';
+            icon.setAttribute('class', 'size-8 text-green-600');
+            icon.innerHTML = '<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>';
+            motivoWrap.classList.add('hidden');
+            confirmarBtn.className = 'w-full sm:w-auto inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors';
+            confirmarTexto.textContent = 'Sí, Aprobar';
+        } else {
+            titulo.textContent = 'Confirmar Rechazo';
+            texto.textContent = '¿Rechazar el cambio de plan de ' + alumno + ' a "' + plan + '"? El alumno seguirá con su situación actual.';
+            mensajeWrap.className = 'bg-red-50 border-l-4 border-red-400 p-4 mb-4';
+            texto.className = 'text-md text-red-700 font-medium';
+            iconWrap.className = 'flex items-center justify-center h-12 w-12 rounded-full bg-red-100';
+            icon.setAttribute('class', 'size-8 text-red-600');
+            icon.innerHTML = '<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>';
+            motivoWrap.classList.remove('hidden');
+            confirmarBtn.className = 'w-full sm:w-auto inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors';
+            confirmarTexto.textContent = 'Sí, Rechazar';
+        }
+
+        document.getElementById('solicitudPlanModal').classList.remove('hidden');
+    }
+
+    function cerrarModalSolicitudPlan() {
+        document.getElementById('solicitudPlanModal').classList.add('hidden');
+        solicitudPlanFormActivo = null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('closeSolicitudPlanModal').addEventListener('click', cerrarModalSolicitudPlan);
+        document.getElementById('solicitudPlanModalCancelar').addEventListener('click', cerrarModalSolicitudPlan);
+
+        document.getElementById('solicitudPlanModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                cerrarModalSolicitudPlan();
+            }
+        });
+
+        document.getElementById('solicitudPlanModalConfirmar').addEventListener('click', function() {
+            if (!solicitudPlanFormActivo) return;
+
+            const motivoInput = document.getElementById('solicitud-plan-modal-motivo');
+            const motivoHidden = solicitudPlanFormActivo.querySelector('.motivo-rechazo-input');
+            if (motivoHidden) {
+                motivoHidden.value = motivoInput.value;
+            }
+
+            const confirmarBtn = this;
+            confirmarBtn.disabled = true;
+            confirmarBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Procesando...';
+
+            solicitudPlanFormActivo.submit();
+        });
+    });
+</script>
+{% endblock %}

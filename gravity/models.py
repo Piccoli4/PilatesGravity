@@ -567,7 +567,7 @@ class Reserva(models.Model):
         Cuenta las reservas activas de un usuario en una semana específica
         """
         if fecha_inicio_semana is None:
-            hoy = timezone.now().date()
+            hoy = timezone.localtime(timezone.now()).date()
             fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
 
         fecha_fin_semana = fecha_inicio_semana + timedelta(days=5)
@@ -1044,42 +1044,32 @@ class EstadoPagoCliente(models.Model):
         super().clean()
         
         # Validar fecha de último pago
-        if self.ultimo_pago and self.ultimo_pago > timezone.now().date():
+        if self.ultimo_pago and self.ultimo_pago > timezone.localtime(timezone.now()).date():
             raise ValidationError({
                 'ultimo_pago': 'La fecha del último pago no puede ser futura.'
             })
 
     def calcular_plan_segun_reservas(self):
         """
-        Calcula qué plan de pago debería tener según los PlanUsuario activos
-        que el cliente seleccionó, independientemente de cuántas reservas haya hecho.
-        Si tiene múltiples planes activos, suma las clases para buscar el PlanPago.
+        Calcula qué plan de pago debería tener según el único PlanUsuario
+        activo y vigente que el cliente seleccionó.
         Retorna el PlanPago correspondiente o None.
         """
         try:
-            hoy = timezone.now().date()
+            hoy = timezone.localtime(timezone.now()).date()
 
-            # Obtener los PlanUsuario activos y vigentes del cliente
-            planes_usuario = PlanUsuario.objects.filter(
+            # Obtener el PlanUsuario activo y vigente del cliente (solo puede haber uno)
+            plan_usuario = PlanUsuario.objects.filter(
                 usuario=self.usuario,
                 activo=True,
                 fecha_inicio__lte=hoy,
                 fecha_fin__gte=hoy
-            ).select_related('plan')
+            ).select_related('plan').first()
 
-            if not planes_usuario.exists():
+            if not plan_usuario:
                 return None
 
-            # Sumar las clases por semana de todos los planes activos
-            total_clases = sum(pu.plan.clases_por_semana for pu in planes_usuario)
-
-            # Buscar el PlanPago que corresponde a ese total de clases
-            plan = PlanPago.objects.filter(
-                clases_por_semana=total_clases,
-                activo=True
-            ).first()
-
-            return plan
+            return plan_usuario.plan
 
         except Exception:
             return None
@@ -1156,8 +1146,8 @@ class EstadoPagoCliente(models.Model):
         
         # Si no hay pagos, usar fecha de creación del estado de pago
         fecha_inicio = primer_pago.fecha_pago if primer_pago else self.fecha_creacion.date()
-        
-        hoy = timezone.now().date()
+
+        hoy = timezone.localtime(timezone.now()).date()
         
         # Calcular meses transcurridos
         meses_transcurridos = (hoy.year - fecha_inicio.year) * 12 + (hoy.month - fecha_inicio.month)
@@ -1187,11 +1177,11 @@ class EstadoPagoCliente(models.Model):
         """
         if not self.plan_actual:
             return None
-        
+
         from datetime import date
-        hoy = timezone.now().date()
+        hoy = timezone.localtime(timezone.now()).date()
         primer_dia_mes = date(hoy.year, hoy.month, 1)
-        
+
         # Calcular fecha de vencimiento
         # Si ya pasó el día 10, el vencimiento es el 10 del mes siguiente
         if hoy.day > 10:
@@ -1255,8 +1245,89 @@ class EstadoPagoCliente(models.Model):
         self.fecha_limite_pago = fecha_vencimiento
         
         self.save()
-        
+
         return nueva_deuda
+
+    def ajustar_deuda_por_cambio_plan(self, nuevo_plan):
+        """
+        Ajusta la deuda del mes actual cuando se aprueba un cambio de plan (upgrade o downgrade).
+        A diferencia de generar_deuda_mes_actual(), acá el monto del mes se reemplaza directamente
+        por el precio completo del nuevo plan sin importar el día, pero conservando lo que el
+        cliente ya haya pagado de la deuda de este mes:
+        - Si ya pagó más de lo que cuesta el nuevo plan, el excedente queda como crédito a favor.
+        - Si pagó menos que el nuevo plan (o nada), la diferencia queda como deuda pendiente.
+        """
+        from datetime import date
+        hoy = timezone.localtime(timezone.now()).date()
+        primer_dia_mes = date(hoy.year, hoy.month, 1)
+        nuevo_precio = nuevo_plan.precio_mensual
+
+        deuda_actual = DeudaMensual.objects.filter(
+            usuario=self.usuario,
+            mes_año=primer_dia_mes
+        ).first()
+
+        if deuda_actual:
+            monto_ya_pagado = deuda_actual.monto_original - deuda_actual.monto_pendiente
+            plan_anterior = deuda_actual.plan_aplicado
+            deuda_actual.plan_aplicado = nuevo_plan
+            deuda_actual.monto_original = nuevo_precio
+            nuevo_pendiente = nuevo_precio - monto_ya_pagado
+
+            if nuevo_pendiente <= 0:
+                deuda_actual.monto_pendiente = Decimal('0')
+                deuda_actual.estado = 'pagado'
+            elif monto_ya_pagado > 0:
+                deuda_actual.monto_pendiente = nuevo_pendiente
+                deuda_actual.estado = 'parcial'
+            else:
+                deuda_actual.monto_pendiente = nuevo_pendiente
+                deuda_actual.estado = 'pendiente'
+
+            deuda_actual.es_medio_mes = False
+            nota = (
+                f'Ajustado por cambio de plan aprobado el {timezone.localtime(timezone.now()).strftime("%d/%m/%Y")}: '
+                f'de "{plan_anterior.nombre if plan_anterior else "(sin plan)"}" a "{nuevo_plan.nombre}".'
+            )
+            deuda_actual.observaciones = (
+                f'{deuda_actual.observaciones}\n{nota}' if deuda_actual.observaciones else nota
+            )
+            deuda_actual.save()
+        else:
+            # No había deuda generada este mes todavía: crear una con el precio completo del nuevo plan
+            if hoy.day > 10:
+                if hoy.month == 12:
+                    fecha_vencimiento = date(hoy.year + 1, 1, 10)
+                else:
+                    fecha_vencimiento = date(hoy.year, hoy.month + 1, 10)
+            else:
+                fecha_vencimiento = date(hoy.year, hoy.month, 10)
+
+            deuda_actual = DeudaMensual.objects.create(
+                usuario=self.usuario,
+                mes_año=primer_dia_mes,
+                plan_aplicado=nuevo_plan,
+                monto_original=nuevo_precio,
+                monto_pendiente=nuevo_precio,
+                es_medio_mes=False,
+                estado='pendiente',
+                fecha_vencimiento=fecha_vencimiento,
+                observaciones='Deuda generada por aprobación de cambio de plan'
+            )
+
+        # Recalcular saldo desde el histórico completo (pagos confirmados - deudas generadas)
+        total_pagado = RegistroPago.objects.filter(
+            cliente=self.usuario, estado='confirmado'
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+        total_deudas = DeudaMensual.objects.filter(
+            usuario=self.usuario
+        ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+
+        self.saldo_actual = total_pagado - total_deudas
+        self.monto_deuda_mensual = deuda_actual.monto_pendiente
+        self.save(update_fields=['saldo_actual', 'monto_deuda_mensual'])
+
+        return deuda_actual
 
     def _obtener_saldo_mes_anterior(self):
         """
@@ -1279,8 +1350,8 @@ class EstadoPagoCliente(models.Model):
         """
         if not self.ultimo_pago or not self.plan_actual:
             return 0
-        
-        hoy = timezone.now().date()
+
+        hoy = timezone.localtime(timezone.now()).date()
         meses_transcurridos = (hoy.year - self.ultimo_pago.year) * 12 + (hoy.month - self.ultimo_pago.month)
         
         # Si han pasado más de 30 días desde el último pago, contar como al menos 1 mes
@@ -1419,7 +1490,7 @@ class RegistroPago(models.Model):
             })
         
         # Validar fecha de pago
-        if self.fecha_pago is not None and self.fecha_pago > timezone.now().date():
+        if self.fecha_pago is not None and self.fecha_pago > timezone.localtime(timezone.now()).date():
             raise ValidationError({
                 'fecha_pago': 'La fecha del pago no puede ser futura.'
             })
@@ -1704,14 +1775,25 @@ class PlanUsuario(models.Model):
                 'plan': 'No se puede asignar un plan inactivo.'
             })
 
+        # Un usuario solo puede tener un plan activo a la vez
+        if self.activo and self.usuario_id:
+            ya_tiene_activo = PlanUsuario.objects.filter(
+                usuario_id=self.usuario_id,
+                activo=True
+            ).exclude(pk=self.pk).exists()
+            if ya_tiene_activo:
+                raise ValidationError({
+                    'activo': 'El usuario ya tiene un plan activo. Debe desactivarse antes de activar otro.'
+                })
+
     def esta_vigente(self, fecha=None):
         """Verifica si el plan está vigente en una fecha específica"""
         if not self.activo:
             return False
         
         if fecha is None:
-            fecha = timezone.now().date()
-        
+            fecha = timezone.localtime(timezone.now()).date()
+
         return self.fecha_inicio <= fecha <= self.fecha_fin
 
     def clases_disponibles_semana(self, fecha_inicio_semana=None):
@@ -1721,23 +1803,23 @@ class PlanUsuario(models.Model):
         """
         if fecha_inicio_semana is None:
             # Obtener el lunes de la semana actual
-            hoy = timezone.now().date()
+            hoy = timezone.localtime(timezone.now()).date()
             fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
-        
+
         if not self.esta_vigente(fecha_inicio_semana):
             return 0
-        
+
         return self.plan.clases_por_semana
 
     def dias_restantes(self):
         """Calcula cuántos días faltan para que expire el plan"""
         if not self.activo:
             return 0
-        
-        hoy = timezone.now().date()
+
+        hoy = timezone.localtime(timezone.now()).date()
         if self.fecha_fin < hoy:
             return 0
-        
+
         return (self.fecha_fin - hoy).days
 
     def renovar_plan(self):
@@ -1757,8 +1839,8 @@ class PlanUsuario(models.Model):
         """Devuelve el estado actual del plan"""
         if not self.activo:
             return "Inactivo"
-        
-        hoy = timezone.now().date()
+
+        hoy = timezone.localtime(timezone.now()).date()
         if hoy < self.fecha_inicio:
             return "Pendiente"
         elif hoy > self.fecha_fin:
@@ -1786,19 +1868,125 @@ class PlanUsuario(models.Model):
         """
         if fecha_inicio_semana is None:
             # Obtener el lunes de la semana actual
-            hoy = timezone.now().date()
+            hoy = timezone.localtime(timezone.now()).date()
             fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
-        
-        # Obtener todos los planes activos y vigentes del usuario
+
+        # Obtener el plan activo y vigente del usuario (solo puede haber uno)
+        hoy_local = timezone.localtime(timezone.now()).date()
         planes_vigentes = PlanUsuario.objects.filter(
             usuario=usuario,
             activo=True,
-            fecha_inicio__lte=timezone.now().date(),
-            fecha_fin__gte=timezone.now().date()
+            fecha_inicio__lte=hoy_local,
+            fecha_fin__gte=hoy_local
         )
-        
-        total_clases = sum(plan.plan.clases_por_semana for plan in planes_vigentes)
+
+        plan_vigente = planes_vigentes.first()
+        total_clases = plan_vigente.plan.clases_por_semana if plan_vigente else 0
         return total_clases, planes_vigentes
+
+class SolicitudCambioPlan(models.Model):
+    """
+    Solicitud de un usuario para dar de alta un plan por primera vez o
+    cambiar su plan actual por otro (más o menos clases por semana).
+    Requiere aprobación de un superadministrador antes de aplicarse.
+    """
+    ESTADOS = [
+        ('pendiente', 'Pendiente'),
+        ('aprobada', 'Aprobada'),
+        ('rechazada', 'Rechazada'),
+    ]
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='solicitudes_cambio_plan',
+        verbose_name="Usuario"
+    )
+    plan_actual = models.ForeignKey(
+        PlanPago,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitudes_como_plan_actual',
+        verbose_name="Plan actual",
+        help_text="Plan que tenía el usuario al solicitar el cambio (vacío si no tenía ninguno)"
+    )
+    plan_solicitado = models.ForeignKey(
+        PlanPago,
+        on_delete=models.CASCADE,
+        related_name='solicitudes_como_plan_solicitado',
+        verbose_name="Plan solicitado"
+    )
+    reservas_a_cancelar = models.ManyToManyField(
+        Reserva,
+        blank=True,
+        related_name='solicitudes_cambio_plan',
+        verbose_name="Reservas a cancelar",
+        help_text="Reservas que el usuario eligió ceder por bajar a un plan con menos clases por semana"
+    )
+    estado = models.CharField(
+        max_length=10,
+        choices=ESTADOS,
+        default='pendiente',
+        verbose_name="Estado"
+    )
+    fecha_solicitud = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de solicitud"
+    )
+    fecha_resolucion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de resolución"
+    )
+    resuelto_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitudes_plan_resueltas',
+        verbose_name="Resuelto por"
+    )
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name="Observaciones"
+    )
+
+    def clean(self):
+        super().clean()
+        if self.plan_actual_id and self.plan_solicitado_id and self.plan_actual_id == self.plan_solicitado_id:
+            raise ValidationError({
+                'plan_solicitado': 'El plan solicitado debe ser distinto al plan actual.'
+            })
+        if self.estado == 'pendiente' and self.usuario_id:
+            ya_tiene_pendiente = SolicitudCambioPlan.objects.filter(
+                usuario_id=self.usuario_id,
+                estado='pendiente'
+            ).exclude(pk=self.pk).exists()
+            if ya_tiene_pendiente:
+                raise ValidationError(
+                    'Ya tenés una solicitud de cambio de plan pendiente de aprobación.'
+                )
+
+    def es_downgrade(self):
+        if not self.plan_actual:
+            return False
+        return self.plan_solicitado.clases_por_semana < self.plan_actual.clases_por_semana
+
+    def es_upgrade(self):
+        if not self.plan_actual:
+            return False
+        return self.plan_solicitado.clases_por_semana > self.plan_actual.clases_por_semana
+
+    def __str__(self):
+        nombre = self.usuario.get_full_name() or self.usuario.username
+        origen = self.plan_actual.nombre if self.plan_actual else 'Sin plan'
+        return f"{nombre}: {origen} → {self.plan_solicitado.nombre} ({self.get_estado_display()})"
+
+    class Meta:
+        verbose_name = "Solicitud de Cambio de Plan"
+        verbose_name_plural = "Solicitudes de Cambio de Plan"
+        ordering = ['-fecha_solicitud']
 
 class DeudaMensual(models.Model):
     """
@@ -1889,7 +2077,7 @@ class DeudaMensual(models.Model):
 
     def esta_vencida(self):
         """Verifica si la deuda está vencida"""
-        return timezone.now().date() > self.fecha_vencimiento and self.estado != 'pagado'
+        return timezone.localtime(timezone.now()).date() > self.fecha_vencimiento and self.estado != 'pagado'
     
     def marcar_como_pagado(self):
         """Marca la deuda como pagada completamente"""
