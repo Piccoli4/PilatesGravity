@@ -4106,6 +4106,7 @@ def cancelar_plan(request, plan_id):
                 )
                 if dia_actual <= 4:
                     if deuda_actual.estado in ('pendiente', 'vencido', 'parcial'):
+                        deuda_actual.monto_original = Decimal('0')
                         deuda_actual.monto_pendiente = Decimal('0')
                         deuda_actual.estado = 'pagado'
                         deuda_actual.observaciones += (
@@ -4116,8 +4117,15 @@ def cancelar_plan(request, plan_id):
                         try:
                             estado = request.user.estado_pago
                             estado.monto_deuda_mensual = Decimal('0')
-                            estado.save()
-                        except Exception:
+                            total_pagado = RegistroPago.objects.filter(
+                                cliente=request.user, estado='confirmado'
+                            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+                            total_deudas = DeudaMensual.objects.filter(
+                                usuario=request.user
+                            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+                            estado.saldo_actual = total_pagado - total_deudas
+                            estado.save(update_fields=['monto_deuda_mensual', 'saldo_actual'])
+                        except EstadoPagoCliente.DoesNotExist:
                             pass
                 elif dia_actual <= 9:
                     if deuda_actual.estado in ('pendiente', 'vencido', 'parcial'):
@@ -4131,8 +4139,14 @@ def cancelar_plan(request, plan_id):
                         deuda_actual.save()
                         try:
                             estado = request.user.estado_pago
+                            total_pagado = RegistroPago.objects.filter(
+                                cliente=request.user, estado='confirmado'
+                            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+                            total_deudas = DeudaMensual.objects.filter(
+                                usuario=request.user
+                            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
                             estado.monto_deuda_mensual = monto_medio
-                            estado.saldo_actual = -monto_medio
+                            estado.saldo_actual = total_pagado - total_deudas
                             estado.save(update_fields=['monto_deuda_mensual', 'saldo_actual'])
                         except EstadoPagoCliente.DoesNotExist:
                             pass
