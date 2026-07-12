@@ -568,7 +568,10 @@ class Reserva(models.Model):
         """
         if fecha_inicio_semana is None:
             hoy = timezone.localtime(timezone.now()).date()
-            fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
+            if hoy.weekday() == 6:  # Domingo: pertenece a la semana que arranca mañana
+                fecha_inicio_semana = hoy + timedelta(days=1)
+            else:
+                fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
 
         fecha_fin_semana = fecha_inicio_semana + timedelta(days=5)
         dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -1802,9 +1805,12 @@ class PlanUsuario(models.Model):
         considerando todos sus planes activos
         """
         if fecha_inicio_semana is None:
-            # Obtener el lunes de la semana actual
+            # Obtener el lunes de la semana actual (los domingos, la semana que arranca mañana)
             hoy = timezone.localtime(timezone.now()).date()
-            fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
+            if hoy.weekday() == 6:
+                fecha_inicio_semana = hoy + timedelta(days=1)
+            else:
+                fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
 
         if not self.esta_vigente(fecha_inicio_semana):
             return 0
@@ -1867,9 +1873,12 @@ class PlanUsuario(models.Model):
         para un usuario en una semana específica
         """
         if fecha_inicio_semana is None:
-            # Obtener el lunes de la semana actual
+            # Obtener el lunes de la semana actual (los domingos, la semana que arranca mañana)
             hoy = timezone.localtime(timezone.now()).date()
-            fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
+            if hoy.weekday() == 6:
+                fecha_inicio_semana = hoy + timedelta(days=1)
+            else:
+                fecha_inicio_semana = hoy - timedelta(days=hoy.weekday())
 
         # Obtener el plan activo y vigente del usuario (solo puede haber uno)
         hoy_local = timezone.localtime(timezone.now()).date()
