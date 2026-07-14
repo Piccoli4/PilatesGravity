@@ -273,12 +273,21 @@
                                                     data-deuda-id="{{ deuda.id }}"
                                                     data-mes="{{ deuda.mes_año|date:'F Y' }}"
                                                     data-monto="{{ deuda.monto_original }}"
+                                                    data-estado="{{ deuda.estado }}"
                                                     onclick="abrirModalAjuste(this)"
                                                     class="px-3 py-1 text-xs bg-secundario text-principal rounded-lg hover:bg-principal hover:text-blanco transition-all duration-200 font-medium">
                                                 Ajustar
                                             </button>
                                         {% else %}
-                                            <span class="text-xs text-gris-medio">—</span>
+                                            <button type="button"
+                                                    data-deuda-id="{{ deuda.id }}"
+                                                    data-mes="{{ deuda.mes_año|date:'F Y' }}"
+                                                    data-monto="{{ deuda.monto_original }}"
+                                                    data-estado="{{ deuda.estado }}"
+                                                    onclick="abrirModalAjuste(this)"
+                                                    class="text-xs text-gris-medio hover:text-principal transition-colors">
+                                                Corregir
+                                            </button>
                                         {% endif %}
                                     </td>
                                 {% endif %}
@@ -349,6 +358,16 @@
                                   placeholder="Acuerdo especial, descuento puntual, etc."></textarea>
                     </div>
                 </div>
+                <div id="modal-mantener-pagado-wrapper" class="hidden bg-fondo rounded-lg p-3">
+                        <label class="flex items-start gap-2 text-sm text-gris-oscuro cursor-pointer">
+                            <input type="checkbox" name="mantener_pagado" id="modal-mantener-pagado"
+                                   class="mt-1 rounded border-gris-claro text-principal focus:ring-principal">
+                            <span>
+                                <strong>Ya cubierto con saldo a favor</strong> — mantener este mes como
+                                <strong>Pagado</strong> (no genera deuda pendiente nueva sobre un mes vencido).
+                            </span>
+                        </label>
+                    </div>
                 <div class="flex gap-3 mt-6">
                     <button type="button" onclick="cerrarModalAjuste()"
                             class="flex-1 px-4 py-2 border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro transition-colors">
@@ -453,6 +472,17 @@
         document.getElementById('modal-monto-ajustado').value = '';
         document.getElementById('modal-motivo').value = '';
         document.getElementById('form-ajuste').action = ajusteUrlBase.replace('/0/', '/' + btn.dataset.deudaId + '/');
+
+        const wrapper = document.getElementById('modal-mantener-pagado-wrapper');
+        const checkbox = document.getElementById('modal-mantener-pagado');
+        if (btn.dataset.estado === 'pagado') {
+            wrapper.classList.remove('hidden');
+            checkbox.checked = true;
+        } else {
+            wrapper.classList.add('hidden');
+            checkbox.checked = false;
+        }
+
         const modal = document.getElementById('modal-ajuste');
         modal.classList.remove('hidden');
         modal.classList.add('flex');

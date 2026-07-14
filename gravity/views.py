@@ -3733,21 +3733,32 @@ def admin_ajustar_deuda_especial(request, deuda_id):
 
             # Cuánto se pagó realmente sobre esta deuda hasta ahora
             # (el pendiente solo baja cuando se aplica un pago real, no por ajustes)
+            mantener_pagado = form.cleaned_data.get('mantener_pagado', False)
+
+            # Cuánto se pagó realmente sobre esta deuda hasta ahora
+            # (el pendiente solo baja cuando se aplica un pago real, no por ajustes)
             monto_ya_pagado_real = deuda.monto_original - deuda.monto_pendiente
 
             deuda.monto_original = monto_ajustado
-            nuevo_pendiente = max(Decimal('0'), monto_ajustado - monto_ya_pagado_real)
-            deuda.monto_pendiente = nuevo_pendiente
 
-            hoy = timezone.localtime(timezone.now()).date()
-            if nuevo_pendiente <= Decimal('0'):
+            if mantener_pagado:
+                # El ajuste ya está cubierto por saldo a favor del cliente: no generar
+                # una deuda pendiente nueva sobre un mes que ya venció hace tiempo.
+                deuda.monto_pendiente = Decimal('0')
                 deuda.estado = 'pagado'
-            elif nuevo_pendiente < monto_ajustado:
-                deuda.estado = 'parcial'
-            elif hoy > deuda.fecha_vencimiento:
-                deuda.estado = 'vencido'
             else:
-                deuda.estado = 'pendiente'
+                nuevo_pendiente = max(Decimal('0'), monto_ajustado - monto_ya_pagado_real)
+                deuda.monto_pendiente = nuevo_pendiente
+
+                hoy = timezone.localtime(timezone.now()).date()
+                if nuevo_pendiente <= Decimal('0'):
+                    deuda.estado = 'pagado'
+                elif nuevo_pendiente < monto_ajustado:
+                    deuda.estado = 'parcial'
+                elif hoy > deuda.fecha_vencimiento:
+                    deuda.estado = 'vencido'
+                else:
+                    deuda.estado = 'pendiente'
 
             deuda.save(update_fields=['monto_original', 'monto_pendiente', 'estado'])
 

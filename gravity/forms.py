@@ -1455,3 +1455,9 @@ class AjusteDeudaForm(forms.Form):
             'placeholder': 'Acuerdo especial, descuento puntual, etc. (opcional)',
         }),
     )
+    mantener_pagado = forms.BooleanField(
+        label="Ya cubierto con saldo a favor (mantener como Pagado)",
+        required=False,
+        help_text="Tildá esto cuando el ajuste ya está compensado por un crédito existente del cliente: "
+                   "el mes queda marcado 'Pagado' sin generar deuda pendiente nueva."
+    )
