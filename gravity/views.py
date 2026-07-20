@@ -138,7 +138,7 @@ def reservar_clase(request):
                             minute=clase.horario.minute,
                             second=0, microsecond=0
                         )
-                        if ahora >= clase_hoy - timedelta(hours=3):
+                        if ahora >= clase_hoy:
                             dias_hasta = 7
                     fecha_unica = hoy + timedelta(days=dias_hasta)
 
@@ -2272,7 +2272,7 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
         messages.error(request, 'El cupo temporal ya no está disponible.')
         return redirect('gravity:clases_disponibles')
 
-    # Si la clase es hoy, verificar que falten al menos 3 horas
+    # Si la clase es hoy, verificar que todavía no haya comenzado
     if fecha == hoy:
         clase_datetime = ahora.replace(
             hour=clase.horario.hour,
@@ -2280,8 +2280,8 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
             second=0,
             microsecond=0
         )
-        if ahora >= clase_datetime - timedelta(hours=3):
-            messages.error(request, 'El cupo temporal ya no está disponible (menos de 3 horas para la clase).')
+        if ahora >= clase_datetime:
+            messages.error(request, 'El cupo temporal ya no está disponible (la clase ya comenzó).')
             return redirect('gravity:clases_disponibles')
 
     cupos = clase.cupos_disponibles(fecha=fecha)

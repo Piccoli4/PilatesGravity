@@ -666,6 +666,9 @@
                     } else {
                         this.ocultarDisponibilidad();
                     }
+                    if (document.getElementById('es_temporal')?.value === 'true') {
+                        this.actualizarFechaTemporal();
+                    }
                 }
 
                 // Actualizar indicador visual de pasos
@@ -1015,7 +1018,17 @@
                     if (diaObjetivo === undefined) return;
 
                     let diasHasta = (diaObjetivo - diaHoyJS + 7) % 7;
-                    if (diasHasta === 0) diasHasta = 7; // nunca hoy, siempre próxima semana
+
+                    // Si el día es hoy, permitir reservar mientras la clase no haya comenzado
+                    if (diasHasta === 0) {
+                        const horarioVal = horario?.value; // formato "HH:MM"
+                        if (horarioVal) {
+                            const [hh, mm] = horarioVal.split(':').map(Number);
+                            const claseHoy = new Date(hoy);
+                            claseHoy.setHours(hh, mm, 0, 0);
+                            if (hoy >= claseHoy) diasHasta = 7; // la clase ya comenzó
+                        }
+                    }
 
                     const fechaProxima = new Date(hoy);
                     fechaProxima.setDate(hoy.getDate() + diasHasta);
