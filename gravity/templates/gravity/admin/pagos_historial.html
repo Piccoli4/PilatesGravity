@@ -128,6 +128,8 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gris-oscuro uppercase tracking-wider">
                                 Estado</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gris-oscuro uppercase tracking-wider">
+                                Registrado por</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gris-oscuro uppercase tracking-wider">
                                 Observaciones</th>
                         </tr>
                     </thead>
@@ -171,6 +173,16 @@
                                         Rechazado
                                     </span>
                                 {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if pago.registrado_por %}
+                                    <div class="text-sm font-medium text-gris-oscuro">
+                                        {{ pago.registrado_por.get_full_name|default:pago.registrado_por.username }}
+                                    </div>
+                                {% else %}
+                                    <div class="text-sm text-gris-medio">-</div>
+                                {% endif %}
+                                <small class="text-gris-medio">{{ pago.fecha_registro|date:"d/m/Y H:i" }}</small>
                             </td>
                             <td class="px-6 py-4 text-gris-oscuro">
                                 {% if pago.observaciones %}

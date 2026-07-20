@@ -3237,7 +3237,7 @@ def admin_pagos_historial_cliente(request, cliente_id):
     # Obtener historial de pagos
     pagos = RegistroPago.objects.filter(
         cliente=cliente
-    ).order_by('-fecha_pago', '-fecha_registro')
+    ).select_related('registrado_por').order_by('-fecha_pago', '-fecha_registro')
     
     # Estadísticas del cliente
     total_pagado = pagos.filter(estado='confirmado').aggregate(
