@@ -2388,7 +2388,7 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
         _fecha_proxima = _hoy + timedelta(days=_dias_hasta)
         cupos_proxima_preseleccionada = clase_preseleccionada.cupos_disponibles(fecha=_fecha_proxima)
 
-    hoy_iso = timezone.now().date().isoformat()
+    hoy_iso = timezone.localtime(timezone.now()).date().isoformat()
 
     # Datos para los selectores
     clases_disponibles = Clase.objects.filter(activa=True).order_by(
