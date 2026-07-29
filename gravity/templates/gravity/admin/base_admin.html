@@ -727,7 +727,7 @@
     <!-- POP-UP DE NOTIFICACIONES DE CANCELACIONES        -->
     <!-- Solo visible en el dashboard                     -->
     <!-- ================================================ -->
-    {% if hay_notificaciones or hay_notificaciones_plan or hay_reservas_temporales %}
+    {% if hay_notificaciones or hay_notificaciones_plan or hay_reservas_temporales or hay_notificaciones_plan_adicional or hay_solicitudes_plan_pendientes %}
     <div id="pgNotifOverlay"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300">
         <div id="pgNotifModal"
@@ -748,11 +748,9 @@
                         <p class="text-sm text-gray-400">Últimos 7 días</p>
                     </div>
                 </div>
-                {% with total=notificaciones_cancelacion|length|add:notificaciones_cancelacion_plan|length|add:reservas_temporales_recientes|length %}
-                    <span class="bg-red-100 text-red-700 text-md font-bold px-2.5 py-1 rounded-full">
-                        {{ total_notificaciones }} nueva{{ total_notificaciones|pluralize }}
-                    </span>
-                {% endwith %}
+                <span class="bg-red-100 text-red-700 text-md font-bold px-2.5 py-1 rounded-full">
+                    {{ total_notificaciones }} nueva{{ total_notificaciones|pluralize }}
+                </span>
             </div>
 
             <!-- Lista de notificaciones -->
@@ -869,6 +867,63 @@
                                         </span>
                                         <span class="text-gray-300">·</span>
                                         <span class="text-xs text-gray-400">{{ reserva.fecha_reserva|timesince }} atrás</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if notificaciones_plan_adicional %}
+                    {% for notif in notificaciones_plan_adicional %}
+                        <div class="px-6 py-3 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-start gap-3">
+                                <div class="mt-0.5 flex-shrink-0">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-blue-600">
+                                            <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-gray-500 mt-0.5">
+                                        <span class="font-medium text-gray-800">{{ notif.usuario.get_full_name|default:notif.usuario.username }}</span> agregó un plan adicional: {{ notif.plan.nombre|default:"Plan eliminado" }}
+                                    </p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs text-blue-600 font-medium">Plan adicional</span>
+                                        <span class="text-gray-300">·</span>
+                                        <span class="text-xs text-gray-400">{{ notif.fecha_creacion|timesince }} atrás</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if solicitudes_plan_pendientes %}
+                    {% for solicitud in solicitudes_plan_pendientes %}
+                        <div class="px-6 py-3 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-start gap-3">
+                                <div class="mt-0.5 flex-shrink-0">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
+                                            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.021c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.021ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-gray-500 mt-0.5">
+                                        <span class="font-medium text-gray-800">{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}</span> solicita
+                                        {% if solicitud.plan_actual %}
+                                            cambiar de {{ solicitud.plan_actual.nombre }} a {{ solicitud.plan_solicitado.nombre }}
+                                        {% else %}
+                                            dar de alta el plan {{ solicitud.plan_solicitado.nombre }}
+                                        {% endif %}
+                                    </p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs text-purple-600 font-medium">Solicitud pendiente</span>
+                                        <span class="text-gray-300">·</span>
+                                        <span class="text-xs text-gray-400">{{ solicitud.fecha_solicitud|timesince }} atrás</span>
                                     </div>
                                 </div>
                             </div>
