@@ -111,7 +111,7 @@
         <div class="card">
             <div class="card-body p-4">
                 {% if solicitudes %}
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto hidden md:block">
                     <table class="w-full text-sm text-left">
                         <thead class="text-xs uppercase bg-fondo text-gris-oscuro">
                             <tr>
@@ -229,6 +229,113 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Vista de tarjetas (mobile) -->
+                <div class="md:hidden space-y-3">
+                    {% for solicitud in solicitudes %}
+                    <div class="border border-gray-200 rounded-lg p-4 {% if solicitud.estado == 'pendiente' %}bg-yellow-50/40 border-yellow-200{% else %}bg-white{% endif %}">
+                        <!-- Alumno + Estado -->
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                                    style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
+                                    {{ solicitud.usuario.first_name.0|upper }}{{ solicitud.usuario.last_name.0|upper }}
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-900 text-sm">
+                                        {{ solicitud.usuario.get_full_name|default:solicitud.usuario.username }}
+                                    </div>
+                                    <small class="text-gray-500 break-all">{{ solicitud.usuario.email }}</small>
+                                </div>
+                            </div>
+                            {% if solicitud.estado == 'pendiente' %}
+                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-yellow-400 text-white rounded-md flex-shrink-0">
+                                Pendiente
+                            </span>
+                            {% elif solicitud.estado == 'aprobada' %}
+                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-exito text-white rounded-md flex-shrink-0">
+                                Aprobada
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-error text-white rounded-md flex-shrink-0">
+                                Rechazada
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Cambio de plan -->
+                        <div class="mb-2 text-sm">
+                            <span class="text-xs text-gray-400 uppercase tracking-wide block mb-0.5">Cambio de plan</span>
+                            {% if solicitud.plan_actual %}
+                                <span class="text-gray-500">{{ solicitud.plan_actual.nombre }}</span>
+                                <span class="text-gray-400">→</span>
+                                <span class="font-medium text-gray-800">{{ solicitud.plan_solicitado.nombre }}</span>
+                            {% else %}
+                                <span class="font-medium text-gray-800">{{ solicitud.plan_solicitado.nombre }}</span>
+                                <span class="text-xs text-gray-400">(primer plan)</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Reservas a ceder -->
+                        {% if solicitud.reservas_a_cancelar.exists %}
+                        <div class="mb-2 text-sm">
+                            <span class="text-xs text-gray-400 uppercase tracking-wide block mb-0.5">Reservas a ceder</span>
+                            <ul class="text-xs text-gray-600 space-y-0.5">
+                                {% for reserva in solicitud.reservas_a_cancelar.all %}
+                                <li>{{ reserva.clase.get_nombre_display }} — {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Fecha -->
+                        <div class="mb-3 text-sm">
+                            <span class="text-xs text-gray-400 uppercase tracking-wide block mb-0.5">Fecha</span>
+                            <span class="font-medium text-gray-900">{{ solicitud.fecha_solicitud|date:"d/m/Y" }}</span>
+                            <span class="text-gray-500">{{ solicitud.fecha_solicitud|date:"H:i" }}</span>
+                        </div>
+
+                        <!-- Acciones -->
+                        {% if solicitud.estado == 'pendiente' %}
+                        <div class="flex gap-2 pt-2 border-t border-gray-100">
+                            <form method="post" action="{% url 'gravity:admin_solicitud_plan_aprobar' solicitud.id %}" class="solicitud-plan-form flex-1">
+                                {% csrf_token %}
+                                <button type="button"
+                                    onclick="abrirModalSolicitudPlan(this.closest('form'), 'aprobar', '{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username|escapejs }}', '{{ solicitud.plan_solicitado.nombre|escapejs }}')"
+                                    class="w-full inline-flex items-center justify-center px-2 py-2 text-xs font-medium bg-white text-green-600 border border-green-500 rounded hover:bg-green-500 hover:text-white transition-colors duration-200"
+                                    title="Aprobar solicitud">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                    Aprobar
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'gravity:admin_solicitud_plan_rechazar' solicitud.id %}" class="solicitud-plan-form flex-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="motivo_rechazo" class="motivo-rechazo-input">
+                                <button type="button"
+                                    onclick="abrirModalSolicitudPlan(this.closest('form'), 'rechazar', '{{ solicitud.usuario.get_full_name|default:solicitud.usuario.username|escapejs }}', '{{ solicitud.plan_solicitado.nombre|escapejs }}')"
+                                    class="w-full inline-flex items-center justify-center px-2 py-2 text-xs font-medium bg-white text-error border border-error rounded hover:bg-error hover:text-white transition-colors duration-200"
+                                    title="Rechazar solicitud">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                    Rechazar
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="pt-2 border-t border-gray-100 text-xs text-gray-400">
+                            {% if solicitud.resuelto_por %}Resuelto por {{ solicitud.resuelto_por.get_full_name|default:solicitud.resuelto_por.username }}{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
                 {% else %}
                 <div class="text-center py-12 text-gris-medio">
