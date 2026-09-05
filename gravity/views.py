@@ -29,6 +29,7 @@ import calendar
 from accounts.models import UserProfile
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
+from django.utils import formats
 from datetime import datetime, timedelta, date
 from accounts.models import UserProfile, ConfiguracionEstudio, Testimonio
 from django.contrib.auth.models import User
@@ -45,8 +46,14 @@ from .email_service import (
     enviar_email_modificacion_reserva,
     enviar_email_cambio_plan_aprobado
 )
-from .models import PlanPago, EstadoPagoCliente, RegistroPago, DeudaMensual, SolicitudCambioPlan
-from .forms import ( PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm )
+from .models import (
+    PlanPago, EstadoPagoCliente, RegistroPago, DeudaMensual, SolicitudCambioPlan,
+    AjusteSaldo, recalcular_estado_pagos
+)
+from .forms import (
+    PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm,
+    CorregirSaldoForm, EditarPagoForm, AnularPagoForm
+)
 from django.db.models import Sum, Count, Q
 from decimal import Decimal
 
@@ -3192,15 +3199,12 @@ def admin_pagos_registrar_pago(request, cliente_id):
             except Exception as e:
                 logger.error(f"Error enviando email de pago: {str(e)}")
             
-            # El saldo ya fue actualizado correctamente por el método save() de RegistroPago
-            # Solo actualizar los campos de último pago
-            estado_pago.ultimo_pago = pago.fecha_pago
-            estado_pago.monto_ultimo_pago = pago.monto
-            estado_pago.save(update_fields=['ultimo_pago', 'monto_ultimo_pago'])
+            # El saldo, el estado de cada cuota y el último pago ya quedaron
+            # actualizados por el save() de RegistroPago (recalcular_estado_pagos).
             
             messages.success(
                 request,
-                f'Pago de ${pago.monto} registrado exitosamente para {cliente.get_full_name() or cliente.username}'
+                f'Pago de ${fmt_pesos(pago.monto)} registrado para {cliente.get_full_name() or cliente.username}. La cuenta quedó actualizada.'
             )
             return redirect('gravity:admin_pagos_vista_principal')
     else:
@@ -3317,7 +3321,9 @@ def admin_pagos_configurar_planes(request):
 @admin_required
 def admin_pagos_editar_estado_cliente(request, cliente_id):
     """
-    Modal/página simple para editar manualmente el estado de pago de un cliente.
+    Cuenta del cliente: saldo explicado, cuotas, pagos e historial de
+    correcciones, todo en una sola pantalla desde donde se puede arreglar
+    cualquier problema (saldo mal, pago mal cargado, cuota de más o de menos).
     """
     cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
 
@@ -3329,11 +3335,12 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
         usuario=cliente,
         defaults={'activo': True}
     )
-    
+
     if request.method == 'POST':
         form = EstadoPagoClienteForm(request.POST, instance=estado_pago)
         if form.is_valid():
             estado_actualizado = form.save()
+            puede_reservar_elegido = form.cleaned_data.get('puede_reservar')
 
             # Sincronizar PlanUsuario con plan_actual si el plan cambió.
             if estado_actualizado.plan_actual:
@@ -3369,7 +3376,7 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
                     estado_actualizado.generar_deuda_mes_actual()
 
             else:
-                # El admin quitó el plan → ajustar o eliminar deuda del mes actual
+                # El admin quitó el plan, ajustar o eliminar deuda del mes actual
                 hoy = timezone.localtime(timezone.now()).date()
                 primer_dia_mes = date(hoy.year, hoy.month, 1)
                 deuda_mes = DeudaMensual.objects.filter(
@@ -3394,51 +3401,100 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
                 # Desactivar PlanUsuario activos
                 PlanUsuario.objects.filter(usuario=cliente, activo=True).update(activo=False)
 
-            # Recalcular saldo siempre, sin importar si cambió el plan
-            total_pagado = RegistroPago.objects.filter(
-                cliente=cliente, estado='confirmado'
-            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-            total_deudas = DeudaMensual.objects.filter(
-                usuario=cliente
-            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-            estado_actualizado.saldo_actual = total_pagado - total_deudas
-            estado_actualizado.save(update_fields=['saldo_actual'])
+            # Recalcular toda la cuenta y respetar el bloqueo elegido a mano
+            recalcular_estado_pagos(cliente)
+            EstadoPagoCliente.objects.filter(usuario=cliente).update(
+                puede_reservar=puede_reservar_elegido
+            )
 
             messages.success(
                 request,
                 f'Estado de pago actualizado para {cliente.get_full_name() or cliente.username}'
             )
-            return redirect('gravity:admin_pagos_vista_principal')
+            return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
     else:
         form = EstadoPagoClienteForm(instance=estado_pago)
-    
+
     planes_precios = {
         str(p.id): str(p.precio_mensual)
         for p in PlanPago.objects.filter(activo=True)
     }
 
-    total_pagado = RegistroPago.objects.filter(
-        cliente=cliente, estado='confirmado'
-    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-    total_deudas = DeudaMensual.objects.filter(
-        usuario=cliente
-    ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-    saldo_calculado = total_pagado - total_deudas
+    resumen = resumen_cuenta_cliente(cliente)
+    hoy = timezone.localtime(timezone.now()).date()
 
     context = {
         'form': form,
         'cliente': cliente,
         'estado_pago': estado_pago,
         'planes_precios': planes_precios,
-        'saldo_calculado': saldo_calculado,
-        'deudas': DeudaMensual.objects.filter(usuario=cliente).order_by('-mes_año'),
+        'saldo_calculado': resumen['saldo'],
+        'saldo_absoluto': abs(resumen['saldo']),
+        'total_pagado': resumen['total_pagado'],
+        'total_deudas': resumen['total_deudas'],
+        'total_correcciones': resumen['total_correcciones'],
+        'total_correcciones_abs': abs(resumen['total_correcciones']),
+        'total_pendiente': resumen['total_pendiente'],
+        'deudas': DeudaMensual.objects.filter(usuario=cliente).select_related(
+            'plan_aplicado').order_by('-mes_año'),
+        'pagos': RegistroPago.objects.filter(cliente=cliente).select_related(
+            'registrado_por').order_by('-fecha_pago', '-id'),
+        'correcciones': AjusteSaldo.objects.filter(usuario=cliente).select_related(
+            'admin_que_ajusto')[:30],
         'planes_activos_usuario': PlanUsuario.objects.filter(
             usuario=cliente,
             activo=True
         ).select_related('plan').order_by('fecha_inicio'),
+        'puede_corregir': request.user.is_superuser,
+        'mes_actual_valor': hoy.strftime('%Y-%m'),
     }
 
     return render(request, 'gravity/admin/pagos_editar_estado.html', context)
+
+
+def resumen_cuenta_cliente(cliente):
+    """
+    Calcula (sin escribir nada) los totales de la cuenta de un cliente,
+    con la misma fórmula que usa recalcular_estado_pagos().
+    """
+    total_pagado = RegistroPago.objects.filter(
+        cliente=cliente, estado='confirmado'
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+
+    total_correcciones = AjusteSaldo.objects.filter(
+        usuario=cliente, tipo=AjusteSaldo.TIPO_CORRECCION_SALDO
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+
+    total_deudas = DeudaMensual.objects.filter(
+        usuario=cliente
+    ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
+
+    total_pendiente = DeudaMensual.objects.filter(
+        usuario=cliente
+    ).aggregate(total=Sum('monto_pendiente'))['total'] or Decimal('0')
+
+    return {
+        'total_pagado': total_pagado,
+        'total_correcciones': total_correcciones,
+        'total_deudas': total_deudas,
+        'total_pendiente': total_pendiente,
+        'saldo': total_pagado + total_correcciones - total_deudas,
+    }
+
+
+def registrar_correccion(cliente, admin, tipo, descripcion, motivo='', monto=Decimal('0'),
+                         saldo_anterior=Decimal('0'), saldo_nuevo=Decimal('0')):
+    """Deja constancia en el historial de correcciones de la cuenta."""
+    return AjusteSaldo.objects.create(
+        usuario=cliente,
+        tipo=tipo,
+        monto=monto,
+        descripcion=descripcion[:300],
+        motivo=motivo,
+        saldo_anterior=saldo_anterior,
+        saldo_nuevo=saldo_nuevo,
+        admin_que_ajusto=admin,
+    )
 
 @admin_required
 def admin_cancelar_plan_usuario(request, plan_id):
@@ -3495,15 +3551,8 @@ def admin_cancelar_plan_usuario(request, plan_id):
                         deuda_mes.save()
                 # día >= 10: no tocar la deuda
 
-            # Recalcular saldo desde cero
-            total_pagado = RegistroPago.objects.filter(
-                cliente=usuario, estado='confirmado'
-            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-            total_deudas = DeudaMensual.objects.filter(
-                usuario=usuario
-            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-            estado.saldo_actual = total_pagado - total_deudas
-            estado.save(update_fields=['saldo_actual'])
+            # Recalcular toda la cuenta desde cero
+            recalcular_estado_pagos(usuario)
 
     except EstadoPagoCliente.DoesNotExist:
         pass
@@ -3590,22 +3639,21 @@ def admin_generar_deuda_manual(request, cliente_id):
                 ).strip()
             )
 
-            total_pagado = RegistroPago.objects.filter(
-                cliente=cliente, estado='confirmado'
-            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-            total_deudas = DeudaMensual.objects.filter(
-                usuario=cliente
-            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-            nuevo_saldo = total_pagado - total_deudas
+            saldo_anterior = resumen_cuenta_cliente(cliente)['saldo']
+            resumen = recalcular_estado_pagos(cliente)
 
-            if estado_pago:
-                estado_pago.saldo_actual = nuevo_saldo
-                estado_pago.save(update_fields=['saldo_actual'])
+            registrar_correccion(
+                cliente, request.user, 'cuota_creada',
+                f'Cuota de {formats.date_format(primer_dia_mes, "F Y")} creada por ${fmt_pesos(monto)}',
+                motivo=motivo,
+                saldo_anterior=saldo_anterior,
+                saldo_nuevo=resumen['saldo'],
+            )
 
         mes_display = primer_dia_mes.strftime('%B %Y')
         messages.success(
             request,
-            f'Deuda de {mes_display} generada por ${monto:,.0f}. Saldo recalculado.'
+            f'Deuda de {mes_display} generada por ${fmt_pesos(monto)}. Saldo recalculado.'
         )
 
     except (ValueError, TypeError, IndexError):
@@ -3707,92 +3755,302 @@ def admin_eliminar_admin_restringido(request, admin_id):
 @superadmin_required
 def admin_ajustar_deuda_especial(request, deuda_id):
     """
-    Procesa el ajuste de una deuda a un monto especial acordado con el cliente.
-    Solo accesible por superusuarios. Solo acepta POST (accionado desde modal).
+    Cambia cuánto tiene que pagar el cliente por un mes puntual (descuento,
+    acuerdo especial, mes mal cobrado). Después se recalcula toda la cuenta.
     """
     deuda = get_object_or_404(DeudaMensual, id=deuda_id)
     cliente = deuda.usuario
 
     if request.method != 'POST':
         return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
     form = AjusteDeudaForm(request.POST)
 
-    if form.is_valid():
-        monto_ajustado = form.cleaned_data['monto_ajustado']
-        motivo = form.cleaned_data.get('motivo', '')
+    if not form.is_valid():
+        messages.error(request, 'Error al procesar el ajuste. Revisá los datos ingresados.')
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
 
-        with transaction.atomic():
-            AjusteDeudaEspecial.objects.create(
-                deuda=deuda,
-                usuario_cliente=cliente,
-                admin_que_ajusto=request.user,
-                monto_original_anterior=deuda.monto_original,
-                monto_ajustado=monto_ajustado,
-                motivo=motivo,
-            )
+    monto_ajustado = form.cleaned_data['monto_ajustado']
+    motivo = form.cleaned_data.get('motivo', '')
+    monto_anterior = deuda.monto_original
+    saldo_anterior = resumen_cuenta_cliente(cliente)['saldo']
+    mes_str = formats.date_format(deuda.mes_año, 'F Y')
 
-            # Cuánto se pagó realmente sobre esta deuda hasta ahora
-            # (el pendiente solo baja cuando se aplica un pago real, no por ajustes)
-            mantener_pagado = form.cleaned_data.get('mantener_pagado', False)
+    with transaction.atomic():
+        AjusteDeudaEspecial.objects.create(
+            deuda=deuda,
+            usuario_cliente=cliente,
+            admin_que_ajusto=request.user,
+            monto_original_anterior=monto_anterior,
+            monto_ajustado=monto_ajustado,
+            motivo=motivo,
+        )
 
-            # Cuánto se pagó realmente sobre esta deuda hasta ahora
-            # (el pendiente solo baja cuando se aplica un pago real, no por ajustes)
-            monto_ya_pagado_real = deuda.monto_original - deuda.monto_pendiente
+        nota = (
+            f'Ajustada de ${fmt_pesos(monto_anterior)} a ${fmt_pesos(monto_ajustado)} por '
+            f'{request.user.get_full_name() or request.user.username} el '
+            f'{timezone.localtime(timezone.now()).strftime("%d/%m/%Y")}.'
+        )
+        deuda.monto_original = monto_ajustado
+        deuda.observaciones = (
+            f'{deuda.observaciones}\n{nota}' if deuda.observaciones else nota
+        )
+        deuda.save(update_fields=['monto_original', 'observaciones'])
 
-            deuda.monto_original = monto_ajustado
+        resumen = recalcular_estado_pagos(cliente)
 
-            if mantener_pagado:
-                # El ajuste ya está cubierto por saldo a favor del cliente: no generar
-                # una deuda pendiente nueva sobre un mes que ya venció hace tiempo.
-                deuda.monto_pendiente = Decimal('0')
-                deuda.estado = 'pagado'
-            else:
-                nuevo_pendiente = max(Decimal('0'), monto_ajustado - monto_ya_pagado_real)
-                deuda.monto_pendiente = nuevo_pendiente
+        registrar_correccion(
+            cliente, request.user, 'cuota_ajustada',
+            f'Cuota de {mes_str}: ${fmt_pesos(monto_anterior)} → ${fmt_pesos(monto_ajustado)}',
+            motivo=motivo,
+            saldo_anterior=saldo_anterior,
+            saldo_nuevo=resumen['saldo'],
+        )
 
-                hoy = timezone.localtime(timezone.now()).date()
-                if nuevo_pendiente <= Decimal('0'):
-                    deuda.estado = 'pagado'
-                elif nuevo_pendiente < monto_ajustado:
-                    deuda.estado = 'parcial'
-                elif hoy > deuda.fecha_vencimiento:
-                    deuda.estado = 'vencido'
-                else:
-                    deuda.estado = 'pendiente'
+    messages.success(
+        request,
+        f'Cuota de {mes_str} ajustada a ${fmt_pesos(monto_ajustado)}. La cuenta se recalculó sola.'
+    )
+    return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
 
-            deuda.save(update_fields=['monto_original', 'monto_pendiente', 'estado'])
 
-            total_pagado = RegistroPago.objects.filter(
-                cliente=cliente, estado='confirmado'
-            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-            total_deudas = DeudaMensual.objects.filter(
-                usuario=cliente
-            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-            nuevo_saldo = total_pagado - total_deudas
+@superadmin_required
+def admin_corregir_saldo(request, cliente_id):
+    """
+    Corrección directa del saldo: el admin dice cómo tiene que quedar la cuenta
+    (al día / a favor / debiendo) y el sistema registra la diferencia.
+    """
+    cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
 
-            estado_pago, _ = EstadoPagoCliente.objects.get_or_create(usuario=cliente)
-            estado_pago.saldo_actual = nuevo_saldo
+    if request.method != 'POST':
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
 
-            tiene_deudas_vencidas = DeudaMensual.objects.filter(
-                usuario=cliente, estado='vencido', monto_pendiente__gt=0
-            ).exists()
-            if tiene_deudas_vencidas:
-                estado_pago.puede_reservar = False
-            elif nuevo_saldo >= Decimal('0'):
-                estado_pago.puede_reservar = True
+    form = CorregirSaldoForm(request.POST)
 
-            estado_pago.save(update_fields=['saldo_actual', 'puede_reservar'])
+    if not form.is_valid():
+        primer_error = next(iter(form.errors.values()))[0]
+        messages.error(request, f'No se pudo corregir el saldo: {primer_error}')
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
 
-        nombre_cliente = cliente.get_full_name() or cliente.username
-        mes_str = deuda.mes_año.strftime('%B %Y')
+    saldo_objetivo = form.cleaned_data['saldo_objetivo']
+    motivo = form.cleaned_data['motivo']
+    saldo_anterior = resumen_cuenta_cliente(cliente)['saldo']
+    diferencia = saldo_objetivo - saldo_anterior
+
+    if diferencia == 0:
+        messages.info(request, 'La cuenta ya estaba así, no hizo falta corregir nada.')
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+    if saldo_objetivo > 0:
+        descripcion = f'Saldo corregido a ${fmt_pesos(saldo_objetivo)} a favor'
+    elif saldo_objetivo < 0:
+        descripcion = f'Saldo corregido a ${fmt_pesos(abs(saldo_objetivo))} de deuda'
+    else:
+        descripcion = 'Cuenta puesta al día (saldo $0)'
+
+    with transaction.atomic():
+        registrar_correccion(
+            cliente, request.user, AjusteSaldo.TIPO_CORRECCION_SALDO,
+            descripcion,
+            motivo=motivo,
+            monto=diferencia,
+            saldo_anterior=saldo_anterior,
+            saldo_nuevo=saldo_objetivo,
+        )
+        recalcular_estado_pagos(cliente)
+
+    messages.success(request, f'{descripcion}. Antes: {formato_saldo(saldo_anterior)}.')
+    return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+
+@superadmin_required
+def admin_pago_editar(request, pago_id):
+    """
+    Corrige un pago ya registrado (monto mal tipeado, fecha o tipo equivocados).
+    """
+    pago = get_object_or_404(RegistroPago, id=pago_id)
+    cliente = pago.cliente
+
+    if request.method != 'POST' or cliente is None:
+        return redirect('gravity:admin_pagos_vista_principal')
+
+    form = EditarPagoForm(request.POST, instance=pago)
+
+    if not form.is_valid():
+        primer_error = next(iter(form.errors.values()))[0]
+        messages.error(request, f'No se pudo corregir el pago: {primer_error}')
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+    datos = form.cleaned_data
+    monto_anterior = RegistroPago.objects.get(id=pago.id).monto
+    saldo_anterior = resumen_cuenta_cliente(cliente)['saldo']
+    motivo = datos['motivo']
+
+    nota = (
+        f'Corregido el {timezone.localtime(timezone.now()).strftime("%d/%m/%Y")} por '
+        f'{request.user.get_full_name() or request.user.username}: '
+        f'monto ${fmt_pesos(monto_anterior)} → ${fmt_pesos(datos["monto"])}. {motivo}'.strip()
+    )
+
+    with transaction.atomic():
+        # Se actualiza sin pasar por save() para no volver a aplicar el pago
+        # sobre las cuotas: de eso se encarga el recálculo de abajo.
+        RegistroPago.objects.filter(id=pago.id).update(
+            monto=datos['monto'],
+            fecha_pago=datos['fecha_pago'],
+            tipo_pago=datos['tipo_pago'],
+            concepto=datos['concepto'],
+            observaciones=f'{pago.observaciones}\n{nota}'.strip() if pago.observaciones else nota,
+        )
+        resumen = recalcular_estado_pagos(cliente)
+
+        registrar_correccion(
+            cliente, request.user, 'pago_editado',
+            f'Pago del {datos["fecha_pago"].strftime("%d/%m/%Y")}: '
+            f'${fmt_pesos(monto_anterior)} → ${fmt_pesos(datos["monto"])}',
+            motivo=motivo,
+            saldo_anterior=saldo_anterior,
+            saldo_nuevo=resumen['saldo'],
+        )
+
+    messages.success(
+        request,
+        f'Pago corregido: ${fmt_pesos(monto_anterior)} → ${fmt_pesos(datos["monto"])}. La cuenta se recalculó sola.'
+    )
+    return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+
+@superadmin_required
+def admin_pago_anular(request, pago_id):
+    """
+    Anula un pago cargado por error. No se borra: queda marcado como anulado
+    y deja de contar en la cuenta.
+    """
+    pago = get_object_or_404(RegistroPago, id=pago_id)
+    cliente = pago.cliente
+
+    if request.method != 'POST' or cliente is None:
+        return redirect('gravity:admin_pagos_vista_principal')
+
+    form = AnularPagoForm(request.POST)
+
+    if not form.is_valid():
+        messages.error(request, 'Escribí el motivo de la anulación.')
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+    motivo = form.cleaned_data['motivo']
+    saldo_anterior = resumen_cuenta_cliente(cliente)['saldo']
+
+    nota = (
+        f'ANULADO el {timezone.localtime(timezone.now()).strftime("%d/%m/%Y")} por '
+        f'{request.user.get_full_name() or request.user.username}: {motivo}'
+    )
+
+    with transaction.atomic():
+        RegistroPago.objects.filter(id=pago.id).update(
+            estado='rechazado',
+            observaciones=f'{pago.observaciones}\n{nota}'.strip() if pago.observaciones else nota,
+        )
+        resumen = recalcular_estado_pagos(cliente)
+
+        registrar_correccion(
+            cliente, request.user, 'pago_anulado',
+            f'Pago del {pago.fecha_pago.strftime("%d/%m/%Y")} de ${fmt_pesos(pago.monto)} anulado',
+            motivo=motivo,
+            saldo_anterior=saldo_anterior,
+            saldo_nuevo=resumen['saldo'],
+        )
+
+    messages.success(
+        request,
+        f'Pago de ${fmt_pesos(pago.monto)} anulado. La cuenta se recalculó sola.'
+    )
+    return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+
+@superadmin_required
+def admin_eliminar_deuda(request, deuda_id):
+    """
+    Elimina una cuota que no correspondía cobrar (por ejemplo un mes generado
+    de más por el cron).
+    """
+    deuda = get_object_or_404(DeudaMensual, id=deuda_id)
+    cliente = deuda.usuario
+
+    if request.method != 'POST':
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+    motivo = request.POST.get('motivo', '').strip()
+    mes_str = formats.date_format(deuda.mes_año, 'F Y')
+    monto = deuda.monto_original
+    saldo_anterior = resumen_cuenta_cliente(cliente)['saldo']
+
+    with transaction.atomic():
+        deuda.delete()
+        resumen = recalcular_estado_pagos(cliente)
+
+        registrar_correccion(
+            cliente, request.user, 'cuota_eliminada',
+            f'Cuota de {mes_str} de ${fmt_pesos(monto)} eliminada',
+            motivo=motivo,
+            saldo_anterior=saldo_anterior,
+            saldo_nuevo=resumen['saldo'],
+        )
+
+    messages.success(
+        request,
+        f'Cuota de {mes_str} eliminada. La cuenta se recalculó sola.'
+    )
+    return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+
+@superadmin_required
+def admin_recalcular_cuenta(request, cliente_id):
+    """
+    Vuelve a calcular la cuenta del cliente desde cero (pagos + correcciones -
+    cuotas) y deja el estado de cada cuota coherente con ese resultado.
+    """
+    cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
+
+    if request.method != 'POST':
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+    saldo_anterior = resumen_cuenta_cliente(cliente)['saldo']
+    resumen = recalcular_estado_pagos(cliente)
+
+    if saldo_anterior != resumen['saldo']:
+        registrar_correccion(
+            cliente, request.user, 'recalculo',
+            f'Recálculo de la cuenta: {formato_saldo(saldo_anterior)} → {formato_saldo(resumen["saldo"])}',
+            saldo_anterior=saldo_anterior,
+            saldo_nuevo=resumen['saldo'],
+        )
         messages.success(
             request,
-            f'Deuda de {mes_str} de {nombre_cliente} ajustada a ${monto_ajustado:,.0f}. Saldo recalculado.'
+            f'Cuenta recalculada: {formato_saldo(saldo_anterior)} → {formato_saldo(resumen["saldo"])}.'
         )
     else:
-        messages.error(request, 'Error al procesar el ajuste. Revisá los datos ingresados.')
+        messages.success(
+            request,
+            f'Cuenta recalculada. El saldo sigue igual: {formato_saldo(resumen["saldo"])}.'
+        )
 
     return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
+
+def fmt_pesos(monto):
+    """Formatea un monto al estilo argentino: 61000 -> 61.000"""
+    return '{:,.0f}'.format(monto).replace(',', '.')
+
+
+def formato_saldo(saldo):
+    """Texto legible de un saldo: al día / a favor / debe."""
+    if saldo > 0:
+        return f'${fmt_pesos(saldo)} a favor'
+    if saldo < 0:
+        return f'debe ${fmt_pesos(abs(saldo))}'
+    return 'al día'
+
 
 # ==============================================================================
 # VISTAS DE PLANES DE PAGO
@@ -4126,16 +4384,7 @@ def cancelar_plan(request, plan_id):
                         )
                         deuda_actual.save()
                         try:
-                            estado = request.user.estado_pago
-                            estado.monto_deuda_mensual = Decimal('0')
-                            total_pagado = RegistroPago.objects.filter(
-                                cliente=request.user, estado='confirmado'
-                            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-                            total_deudas = DeudaMensual.objects.filter(
-                                usuario=request.user
-                            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-                            estado.saldo_actual = total_pagado - total_deudas
-                            estado.save(update_fields=['monto_deuda_mensual', 'saldo_actual'])
+                            recalcular_estado_pagos(request.user)
                         except EstadoPagoCliente.DoesNotExist:
                             pass
                 elif dia_actual <= 9:
@@ -4149,16 +4398,7 @@ def cancelar_plan(request, plan_id):
                         )
                         deuda_actual.save()
                         try:
-                            estado = request.user.estado_pago
-                            total_pagado = RegistroPago.objects.filter(
-                                cliente=request.user, estado='confirmado'
-                            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-                            total_deudas = DeudaMensual.objects.filter(
-                                usuario=request.user
-                            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-                            estado.monto_deuda_mensual = monto_medio
-                            estado.saldo_actual = total_pagado - total_deudas
-                            estado.save(update_fields=['monto_deuda_mensual', 'saldo_actual'])
+                            recalcular_estado_pagos(request.user)
                         except EstadoPagoCliente.DoesNotExist:
                             pass
             except DeudaMensual.DoesNotExist:

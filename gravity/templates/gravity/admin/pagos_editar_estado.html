@@ -1,6 +1,7 @@
 {% extends "gravity/admin/base_admin.html" %}
+{% load formato %}
 
-{% block title %}Editar Estado de Pago{% endblock %}
+{% block title %}Cuenta de {{ cliente.get_full_name|default:cliente.username }}{% endblock %}
 
 {% block breadcrumb %}
     <li class="flex items-center gap-1">
@@ -9,7 +10,7 @@
     </li>
     <li class="flex items-center">
         <span class="text-gris-medio">/</span>
-        <span class="ml-1 text-gris-medio">Editar estado de {{ cliente.get_full_name|default:cliente.username }}</span>
+        <span class="ml-1 text-gris-medio">Cuenta de {{ cliente.get_full_name|default:cliente.username }}</span>
     </li>
 {% endblock %}
 
@@ -17,214 +18,173 @@
     <!-- Header -->
     <div class="card p-3 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
         <div>
-            <div class="flex items-center gap-2 mb-2 text-principal">
-                <svg class="size-10" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M128.1 64C92.8 64 64.1 92.7 64.1 128L64.1 512C64.1 547.3 92.8 576 128.1 576L274.3 576L285.2 521.5C289.5 499.8 300.2 479.9 315.8 464.3L448 332.1L448 234.6C448 217.6 441.3 201.3 429.3 189.3L322.8 82.7C310.8 70.7 294.5 64 277.6 64L128.1 64zM389.6 240L296.1 240C282.8 240 272.1 229.3 272.1 216L272.1 122.5L389.6 240zM332.3 530.9L320.4 590.5C320.2 591.4 320.1 592.4 320.1 593.4C320.1 601.4 326.6 608 334.7 608C335.7 608 336.6 607.9 337.6 607.7L397.2 595.8C409.6 593.3 421 587.2 429.9 578.3L548.8 459.4L468.8 379.4L349.9 498.3C341 507.2 334.9 518.6 332.4 531zM600.1 407.9C622.2 385.8 622.2 350 600.1 327.9C578 305.8 542.2 305.8 520.1 327.9L491.3 356.7L571.3 436.7L600.1 407.9z"/>
+            <div class="flex items-center gap-2 mb-1 text-principal">
+                <svg class="size-9" fill="currentColor" viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M64 64C28.7 64 0 92.7 0 128v64c0 8.8 7.4 15.7 15.7 18.6C34.5 217.1 48 235 48 256s-13.5 38.9-32.3 45.4C7.4 304.3 0 311.2 0 320v64c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V320c0-8.8-7.4-15.7-15.7-18.6C541.5 294.9 528 277 528 256s13.5-38.9 32.3-45.4c8.3-2.9 15.7-9.8 15.7-18.6V128c0-35.3-28.7-64-64-64H64zm64 112l0 160c0 8.8 7.2 16 16 16H432c8.8 0 16-7.2 16-16V176c0-8.8-7.2-16-16-16H144c-8.8 0-16 7.2-16 16z"/>
                 </svg>
-                <h1 class="text-2xl lg:text-3xl font-bold">Editar Estado de Pago</h1>
+                <h1 class="text-2xl lg:text-3xl font-bold">Cuenta del cliente</h1>
             </div>
             <p class="text-gris-medio">
-                Cliente: <strong class="text-principal">{{ cliente.get_full_name|default:cliente.username }}</strong>
+                <strong class="text-principal">{{ cliente.get_full_name|default:cliente.username }}</strong>
+                <span class="text-gris-medio">· {{ cliente.email }}</span>
             </p>
         </div>
-        <a href="{% url 'gravity:admin_pagos_vista_principal' %}"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-fondo border border-principal text-principal rounded-lg hover:bg-principal hover:text-fondo transition-all duration-200 shadow-sm hover:shadow-md">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-            </svg>
-            Volver a Pagos
-        </a>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'gravity:admin_pagos_historial_cliente' cliente.id %}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:border-principal hover:text-principal transition-all duration-200 text-sm">
+                Ver historial
+            </a>
+            <a href="{% url 'gravity:admin_pagos_vista_principal' %}"
+               class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro transition-all duration-200 text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Volver a Pagos
+            </a>
+        </div>
     </div>
 
-    <!-- CARD 1: Formulario plan + configuración -->
+    <!-- ══════════ CARD 1: ESTADO DE LA CUENTA ══════════ -->
     <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden">
         <div class="card-header text-blanco flex items-center gap-2">
-            <svg class="size-6" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
-                <path d="M432.5 82.3L382.4 132.4L507.7 257.7L557.8 207.6C579.7 185.7 579.7 150.3 557.8 128.4L511.7 82.3C489.8 60.4 454.4 60.4 432.5 82.3zM343.3 161.2L342.8 161.3L198.7 204.5C178.8 210.5 163 225.7 156.4 245.5L67.8 509.8C64.9 518.5 65.9 528 70.3 535.8L225.7 380.4C224.6 376.4 224.1 372.3 224.1 368C224.1 341.5 245.6 320 272.1 320C298.6 320 320.1 341.5 320.1 368C320.1 394.5 298.6 416 272.1 416C267.8 416 263.6 415.4 259.7 414.4L104.3 569.7C112.1 574.1 121.5 575.1 130.3 572.2L394.6 483.6C414.3 477 429.6 461.2 435.6 441.3L478.8 297.2L478.9 296.7L343.4 161.2z"/>
+            <svg class="size-6" fill="currentColor" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
             </svg>
-            <h5 class="text-lg mb-0">Plan y Configuración del Cliente</h5>
+            <h5 class="text-lg mb-0">Estado de la cuenta</h5>
         </div>
-        <div class="card-body p-3">
-            <form method="post" class="space-y-6">
-                {% csrf_token %}
+        <div class="card-body p-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
 
-                <!-- Sección A: Plan -->
+                <!-- Saldo explicado -->
                 <div>
-                    <h6 class="text-sm font-semibold text-gris-oscuro uppercase tracking-wide mb-3">Plan asignado</h6>
-                    <div class="space-y-2">
-                        <label for="{{ form.plan_actual.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                            {{ form.plan_actual.label }}
-                        </label>
-                        <select name="{{ form.plan_actual.name }}" id="{{ form.plan_actual.id_for_label }}"
-                                class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors">
-                            {% for value, label in form.plan_actual.field.choices %}
-                                <option value="{{ value }}" {% if form.plan_actual.value == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                        <!-- Precio informativo del plan seleccionado -->
-                        <p id="precio-plan-info" class="text-sm text-gris-medio hidden">
-                            Precio mensual: <strong id="precio-plan-valor" class="text-gris-oscuro"></strong>
+                    {% if saldo_calculado > 0 %}
+                        <p class="text-sm text-gris-medio mb-1">Hoy este cliente</p>
+                        <p class="text-3xl lg:text-4xl font-bold text-green-600 mb-2">
+                            Tiene ${{ saldo_absoluto|pesos }} a favor
                         </p>
-                        {% if form.plan_actual.errors %}
-                            <p class="text-sm text-error">{{ form.plan_actual.errors.0 }}</p>
+                    {% elif saldo_calculado < 0 %}
+                        <p class="text-sm text-gris-medio mb-1">Hoy este cliente</p>
+                        <p class="text-3xl lg:text-4xl font-bold text-error mb-2">
+                            Debe ${{ saldo_absoluto|pesos }}
+                        </p>
+                    {% else %}
+                        <p class="text-sm text-gris-medio mb-1">Hoy este cliente</p>
+                        <p class="text-3xl lg:text-4xl font-bold text-green-600 mb-2">Está al día</p>
+                    {% endif %}
+
+                    <div class="bg-fondo rounded-lg p-3 text-sm space-y-1">
+                        <p class="text-gris-medio">De dónde sale ese número:</p>
+                        <div class="flex justify-between">
+                            <span class="text-gris-oscuro">Pagos confirmados</span>
+                            <span class="font-medium text-green-700">+ ${{ total_pagado|pesos }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gris-oscuro">Cuotas generadas</span>
+                            <span class="font-medium text-error">− ${{ total_deudas|pesos }}</span>
+                        </div>
+                        {% if total_correcciones != 0 %}
+                            <div class="flex justify-between">
+                                <span class="text-gris-oscuro">Correcciones manuales</span>
+                                {% if total_correcciones > 0 %}
+                                    <span class="font-medium text-green-700">+ ${{ total_correcciones|pesos }}</span>
+                                {% else %}
+                                    <span class="font-medium text-error">− ${{ total_correcciones_abs|pesos }}</span>
+                                {% endif %}
+                            </div>
                         {% endif %}
-                        {% if form.plan_actual.help_text %}
-                            <p class="text-sm text-gris-medio">{{ form.plan_actual.help_text }}</p>
-                        {% endif %}
+                        <div class="flex justify-between border-t border-gris-claro pt-1 mt-1">
+                            <span class="font-semibold text-gris-oscuro">Saldo</span>
+                            {% if saldo_calculado > 0 %}
+                                <span class="font-bold text-green-700">+ ${{ saldo_absoluto|pesos }}</span>
+                            {% elif saldo_calculado < 0 %}
+                                <span class="font-bold text-error">− ${{ saldo_absoluto|pesos }}</span>
+                            {% else %}
+                                <span class="font-bold text-gris-oscuro">$0</span>
+                            {% endif %}
+                        </div>
                     </div>
 
-                    {% if planes_activos_usuario|length > 1 %}
-                        <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p class="text-sm text-yellow-800">
-                                <strong>⚠️ Atención:</strong> Este cliente tiene {{ planes_activos_usuario|length }} planes activos simultáneos.
-                                Al guardar un nuevo plan desde aquí, se desactivarán todos los actuales y se asignará uno solo.
-                            </p>
-                        </div>
+                    {% if not estado_pago.puede_reservar %}
+                        <p class="mt-3 text-sm px-3 py-2 rounded-lg" style="background-color:#FEE2E2;color:#991B1B;">
+                            Tiene las reservas bloqueadas por deuda vencida.
+                        </p>
                     {% endif %}
                 </div>
 
-                <hr class="border-gris-claro">
-
-                <!-- Sección B: Configuración del cliente -->
+                <!-- Acciones -->
                 <div>
-                    <h6 class="text-sm font-semibold text-gris-oscuro uppercase tracking-wide mb-3">Configuración del cliente</h6>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <p class="text-sm font-semibold text-gris-oscuro uppercase tracking-wide mb-3">¿Qué querés hacer?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <a href="{% url 'gravity:admin_pagos_registrar_pago' cliente.id %}"
+                           class="flex items-center gap-3 p-3 bg-white border border-gris-claro rounded-lg hover:border-principal hover:shadow-sm transition-all duration-200">
+                            <span class="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 text-green-700 font-bold">$</span>
+                            <span>
+                                <span class="block text-sm font-semibold text-gris-oscuro">Registrar un pago</span>
+                                <span class="block text-xs text-gris-medio">El cliente pagó la cuota</span>
+                            </span>
+                        </a>
 
-                        <!-- Activo -->
-                        <div class="bg-fondo rounded-lg p-4">
-                            <div class="flex items-start gap-3">
-                                <div class="flex items-center h-5">
-                                    <input type="checkbox" name="{{ form.activo.name }}" id="{{ form.activo.id_for_label }}"
-                                           {% if form.activo.value %}checked{% endif %}
-                                           class="w-4 h-4 text-principal bg-white border-gris-claro rounded focus:ring-principal focus:ring-2">
-                                </div>
-                                <div class="flex-1">
-                                    <label for="{{ form.activo.id_for_label }}" class="text-sm font-medium text-gris-oscuro cursor-pointer">
-                                        {{ form.activo.label }}
-                                    </label>
-                                    {% if form.activo.help_text %}
-                                        <p class="text-xs text-gris-medio mt-0.5">{{ form.activo.help_text }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+                        {% if puede_corregir %}
+                            <button type="button" onclick="abrirModal('modal-corregir-saldo')"
+                                    class="flex items-center gap-3 p-3 bg-white border border-gris-claro rounded-lg hover:border-principal hover:shadow-sm transition-all duration-200 text-left">
+                                <span class="flex items-center justify-center w-9 h-9 rounded-full bg-yellow-100 text-yellow-700 font-bold">!</span>
+                                <span>
+                                    <span class="block text-sm font-semibold text-gris-oscuro">Corregir el saldo</span>
+                                    <span class="block text-xs text-gris-medio">El saldo no es el correcto</span>
+                                </span>
+                            </button>
 
-                        <!-- Puede reservar -->
-                        <div class="bg-fondo rounded-lg p-4">
-                            <div class="flex items-start gap-3">
-                                <div class="flex items-center h-5">
-                                    <input type="checkbox" name="{{ form.puede_reservar.name }}" id="{{ form.puede_reservar.id_for_label }}"
-                                           {% if form.puede_reservar.value %}checked{% endif %}
-                                           class="w-4 h-4 text-principal bg-white border-gris-claro rounded focus:ring-principal focus:ring-2">
-                                </div>
-                                <div class="flex-1">
-                                    <label for="{{ form.puede_reservar.id_for_label }}" class="text-sm font-medium text-gris-oscuro cursor-pointer">
-                                        {{ form.puede_reservar.label }}
-                                    </label>
-                                    {% if form.puede_reservar.help_text %}
-                                        <p class="text-xs text-gris-medio mt-0.5">{{ form.puede_reservar.help_text }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                            <button type="button" onclick="abrirModal('modal-nueva-cuota')"
+                                    class="flex items-center gap-3 p-3 bg-white border border-gris-claro rounded-lg hover:border-principal hover:shadow-sm transition-all duration-200 text-left">
+                                <span class="flex items-center justify-center w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold">+</span>
+                                <span>
+                                    <span class="block text-sm font-semibold text-gris-oscuro">Agregar una cuota</span>
+                                    <span class="block text-xs text-gris-medio">Falta cobrar un mes</span>
+                                </span>
+                            </button>
 
-                    <!-- Observaciones -->
-                    <div class="space-y-2">
-                        <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
-                            {{ form.observaciones.label }}
-                        </label>
-                        <textarea name="{{ form.observaciones.name }}" id="{{ form.observaciones.id_for_label }}"
-                                  class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors resize-y min-h-[80px]"
-                                  placeholder="Observaciones adicionales...">{{ form.observaciones.value|default:'' }}</textarea>
-                        {% if form.observaciones.errors %}
-                            <p class="text-sm text-error">{{ form.observaciones.errors.0 }}</p>
+                            <form method="post" action="{% url 'gravity:admin_recalcular_cuenta' cliente.id %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="w-full h-full flex items-center gap-3 p-3 bg-white border border-gris-claro rounded-lg hover:border-principal hover:shadow-sm transition-all duration-200 text-left">
+                                    <span class="flex items-center justify-center w-9 h-9 rounded-full bg-gris-claro text-gris-oscuro">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                    </span>
+                                    <span>
+                                        <span class="block text-sm font-semibold text-gris-oscuro">Recalcular la cuenta</span>
+                                        <span class="block text-xs text-gris-medio">Rehace las cuentas desde cero</span>
+                                    </span>
+                                </button>
+                            </form>
                         {% endif %}
                     </div>
-                </div>
 
-                <!-- Botones -->
-                <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gris-claro">
-                    <a href="{% url 'gravity:admin_pagos_vista_principal' %}"
-                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro transition-all duration-200">
-                        Cancelar
-                    </a>
-                    <button type="submit" data-loading-text="Guardando..."
-                            class="inline-flex items-center justify-center gap-2 px-6 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark transition-all duration-200 shadow-sm transform hover:scale-105">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        Guardar Cambios
-                    </button>
+                    {% if not puede_corregir %}
+                        <p class="text-xs text-gris-medio mt-3">
+                            Para corregir saldos, pagos o cuotas hace falta ser superadministrador.
+                        </p>
+                    {% endif %}
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <!-- CARD 2: Planes activos del cliente -->
-    <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
-        <div class="card-header text-blanco flex items-center gap-2">
-            <svg class="size-6" fill="currentColor" viewBox="0 0 24 24">
-                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
-            </svg>
-            <h5 class="text-lg mb-0">Planes Activos del Cliente</h5>
-        </div>
-        <div class="card-body p-3">
-            {% if planes_activos_usuario %}
-                <div class="space-y-3">
-                    {% for plan_u in planes_activos_usuario %}
-                        <div class="flex items-center justify-between p-3 bg-fondo rounded-lg border border-gris-claro">
-                            <div>
-                                <div class="font-semibold text-gris-oscuro">{{ plan_u.plan.nombre }}</div>
-                                <div class="text-sm text-gris-medio">
-                                    {{ plan_u.plan.clases_por_semana }} clase{{ plan_u.plan.clases_por_semana|pluralize }} por semana
-                                    &nbsp;·&nbsp;
-                                    ${{ plan_u.plan.precio_mensual|floatformat:0 }}/mes
-                                </div>
-                                <div class="text-xs text-gris-medio mt-1">
-                                    Desde {{ plan_u.fecha_inicio|date:"d/m/Y" }}
-                                    {% if plan_u.creado_por %}
-                                        · Asignado por {{ plan_u.creado_por.get_full_name|default:plan_u.creado_por.username }}
-                                    {% else %}
-                                        · Seleccionado por el usuario
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 ml-4 shrink-0">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                                Activo
-                            </span>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p class="text-gris-medio text-sm">Este cliente no tiene planes activos asignados.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- CARD 3: Deudas y saldo -->
+    <!-- ══════════ CARD 2: CUOTAS ══════════ -->
     <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
         <div class="card-header text-blanco flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <svg class="size-6" fill="currentColor" viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M64 64C28.7 64 0 92.7 0 128v64c0 8.8 7.4 15.7 15.7 18.6C34.5 217.1 48 235 48 256s-13.5 38.9-32.3 45.4C7.4 304.3 0 311.2 0 320v64c0 35.3 28.7 64 64 64H512c35.3 0 64-28.7 64-64V320c0-8.8-7.4-15.7-15.7-18.6C541.5 294.9 528 277 528 256s13.5-38.9 32.3-45.4c8.3-2.9 15.7-9.8 15.7-18.6V128c0-35.3-28.7-64-64-64H64zm64 112l0 160c0 8.8 7.2 16 16 16H432c8.8 0 16-7.2 16-16V176c0-8.8-7.2-16-16-16H144c-8.8 0-16 7.2-16 16zM96 160c0-17.7 14.3-32 32-32H448c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32H128c-17.7 0-32-14.3-32-32V160z"/>
+                <svg class="size-6" fill="currentColor" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M128 0c13.3 0 24 10.7 24 24V64H296V24c0-13.3 10.7-24 24-24s24 10.7 24 24V64h40c35.3 0 64 28.7 64 64v16 48V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V192 144 128C0 92.7 28.7 64 64 64h40V24c0-13.3 10.7-24 24-24zM400 192H48V448c0 8.8 7.2 16 16 16H384c8.8 0 16-7.2 16-16V192z"/>
                 </svg>
-                <h5 class="text-lg mb-0">Deudas y Saldo</h5>
+                <h5 class="text-lg mb-0">Cuotas del cliente</h5>
             </div>
-            <!-- Saldo calculado (solo lectura) -->
-            <div class="text-right">
-                <span class="text-xs opacity-75 block">Saldo actual</span>
-                {% if saldo_calculado > 0 %}
-                    <span class="text-lg font-bold text-green-300">+${{ saldo_calculado|floatformat:0 }}</span>
-                {% elif saldo_calculado < 0 %}
-                    <span class="text-lg font-bold text-red-300">-${{ saldo_calculado|floatformat:0|cut:"-" }}</span>
-                {% else %}
-                    <span class="text-lg font-bold text-white">Al día</span>
-                {% endif %}
-            </div>
+            {% if total_pendiente > 0 %}
+                <span class="text-sm">Sin pagar: <strong>${{ total_pendiente|pesos }}</strong></span>
+            {% else %}
+                <span class="text-sm">Todas pagadas</span>
+            {% endif %}
         </div>
         <div class="card-body p-3">
             {% if deudas %}
@@ -234,61 +194,58 @@
                             <tr class="border-b border-gris-claro text-gris-oscuro">
                                 <th class="pb-2 text-left font-medium">Mes</th>
                                 <th class="pb-2 text-left font-medium hidden sm:table-cell">Plan</th>
-                                <th class="pb-2 text-right font-medium">Original</th>
-                                <th class="pb-2 text-right font-medium">Pendiente</th>
+                                <th class="pb-2 text-right font-medium">Se cobra</th>
+                                <th class="pb-2 text-right font-medium">Sin pagar</th>
                                 <th class="pb-2 text-center font-medium">Estado</th>
-                                {% if request.user.is_superuser %}
-                                    <th class="pb-2 text-center font-medium">Acción</th>
+                                {% if puede_corregir %}
+                                    <th class="pb-2 text-right font-medium">Acciones</th>
                                 {% endif %}
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gris-claro">
                             {% for deuda in deudas %}
                             <tr>
-                                <td class="py-3 text-gris-oscuro font-medium">{{ deuda.mes_año|date:"F Y" }}</td>
+                                <td class="py-3 text-gris-oscuro font-medium capitalize">{{ deuda.mes_año|date:"F Y" }}</td>
                                 <td class="py-3 text-gris-medio hidden sm:table-cell">{{ deuda.plan_aplicado.nombre }}</td>
-                                <td class="py-3 text-right font-medium">${{ deuda.monto_original|floatformat:0 }}</td>
+                                <td class="py-3 text-right font-medium">${{ deuda.monto_original|pesos }}</td>
                                 <td class="py-3 text-right">
                                     {% if deuda.monto_pendiente > 0 %}
-                                        <span class="font-medium text-error">${{ deuda.monto_pendiente|floatformat:0 }}</span>
+                                        <span class="font-medium text-error">${{ deuda.monto_pendiente|pesos }}</span>
                                     {% else %}
                                         <span class="text-green-600">$0</span>
                                     {% endif %}
                                 </td>
                                 <td class="py-3 text-center">
                                     {% if deuda.estado == 'pagado' %}
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#D1FAE5;color:#065F46;">Pagado</span>
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#D1FAE5;color:#065F46;">Pagada</span>
                                     {% elif deuda.estado == 'vencido' %}
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#FEE2E2;color:#991B1B;">Vencido</span>
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#FEE2E2;color:#991B1B;">Vencida</span>
                                     {% elif deuda.estado == 'parcial' %}
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#DBEAFE;color:#1E40AF;">Parcial</span>
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#DBEAFE;color:#1E40AF;">Pagada a medias</span>
                                     {% else %}
                                         <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#FEF3C7;color:#92400E;">Pendiente</span>
                                     {% endif %}
                                 </td>
-                                {% if request.user.is_superuser %}
-                                    <td class="py-3 text-center">
-                                        {% if deuda.estado != 'pagado' %}
+                                {% if puede_corregir %}
+                                    <td class="py-3">
+                                        <div class="flex justify-end gap-2">
                                             <button type="button"
                                                     data-deuda-id="{{ deuda.id }}"
                                                     data-mes="{{ deuda.mes_año|date:'F Y' }}"
                                                     data-monto="{{ deuda.monto_original }}"
-                                                    data-estado="{{ deuda.estado }}"
                                                     onclick="abrirModalAjuste(this)"
                                                     class="px-3 py-1 text-xs bg-secundario text-principal rounded-lg hover:bg-principal hover:text-blanco transition-all duration-200 font-medium">
-                                                Ajustar
+                                                Cambiar monto
                                             </button>
-                                        {% else %}
                                             <button type="button"
                                                     data-deuda-id="{{ deuda.id }}"
                                                     data-mes="{{ deuda.mes_año|date:'F Y' }}"
                                                     data-monto="{{ deuda.monto_original }}"
-                                                    data-estado="{{ deuda.estado }}"
-                                                    onclick="abrirModalAjuste(this)"
-                                                    class="text-xs text-gris-medio hover:text-principal transition-colors">
-                                                Corregir
+                                                    onclick="abrirModalEliminarCuota(this)"
+                                                    class="px-3 py-1 text-xs text-gris-medio hover:text-error transition-colors">
+                                                Eliminar
                                             </button>
-                                        {% endif %}
+                                        </div>
                                     </td>
                                 {% endif %}
                             </tr>
@@ -297,139 +254,476 @@
                     </table>
                 </div>
             {% else %}
-                <p class="text-gris-medio text-sm">Este cliente no tiene deudas registradas.</p>
-            {% endif %}
-
-            {% if request.user.is_superuser %}
-                <div class="mt-4 pt-4 border-t border-gris-claro">
-                    <p class="text-xs text-gris-medio mb-2">
-                        ¿Falta un mes en la lista? Podés generarlo manualmente si el cron no lo creó automáticamente.
-                    </p>
-                    <button type="button" onclick="abrirModalNuevaDeuda()"
-                            class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-fondo border border-gris-claro text-gris-oscuro rounded-lg hover:border-principal hover:text-principal transition-all duration-200 font-medium">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                        Generar deuda para mes sin cobro
-                    </button>
-                </div>
+                <p class="text-gris-medio text-sm">Este cliente no tiene cuotas registradas.</p>
             {% endif %}
         </div>
     </div>
 
-    {% if request.user.is_superuser %}
+    <!-- ══════════ CARD 3: PAGOS ══════════ -->
+    <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
+        <div class="card-header text-blanco flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="size-6" fill="currentColor" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM192 320h96c44.2 0 80 35.8 80 80c0 8.8-7.2 16-16 16H128c-8.8 0-16-7.2-16-16c0-44.2 35.8-80 80-80zm-32-96a80 80 0 1 1 160 0 80 80 0 1 1 -160 0z"/>
+                </svg>
+                <h5 class="text-lg mb-0">Pagos registrados</h5>
+            </div>
+            <span class="text-sm">Total: <strong>${{ total_pagado|pesos }}</strong></span>
+        </div>
+        <div class="card-body p-3">
+            {% if pagos %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gris-claro text-gris-oscuro">
+                                <th class="pb-2 text-left font-medium">Fecha</th>
+                                <th class="pb-2 text-right font-medium">Monto</th>
+                                <th class="pb-2 text-left font-medium hidden sm:table-cell">Forma</th>
+                                <th class="pb-2 text-left font-medium hidden md:table-cell">Concepto</th>
+                                <th class="pb-2 text-left font-medium hidden lg:table-cell">Cargado por</th>
+                                {% if puede_corregir %}
+                                    <th class="pb-2 text-right font-medium">Acciones</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gris-claro">
+                            {% for pago in pagos %}
+                            <tr class="{% if pago.estado != 'confirmado' %}opacity-60{% endif %}">
+                                <td class="py-3 text-gris-oscuro font-medium">
+                                    {{ pago.fecha_pago|date:"d/m/Y" }}
+                                    {% if pago.estado == 'rechazado' %}
+                                        <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-medium" style="background-color:#FEE2E2;color:#991B1B;">Anulado</span>
+                                    {% elif pago.estado == 'pendiente' %}
+                                        <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-medium" style="background-color:#FEF3C7;color:#92400E;">Sin confirmar</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 text-right font-medium {% if pago.estado == 'rechazado' %}line-through text-gris-medio{% endif %}">
+                                    ${{ pago.monto|pesos }}
+                                </td>
+                                <td class="py-3 text-gris-medio hidden sm:table-cell">{{ pago.get_tipo_pago_display }}</td>
+                                <td class="py-3 text-gris-medio hidden md:table-cell">{{ pago.concepto|truncatechars:40 }}</td>
+                                <td class="py-3 text-gris-medio hidden lg:table-cell">
+                                    {% if pago.registrado_por %}{{ pago.registrado_por.get_full_name|default:pago.registrado_por.username }}{% else %}—{% endif %}
+                                </td>
+                                {% if puede_corregir %}
+                                    <td class="py-3">
+                                        <div class="flex justify-end gap-2">
+                                            {% if pago.estado != 'rechazado' %}
+                                                <button type="button"
+                                                        data-pago-id="{{ pago.id }}"
+                                                        data-monto="{{ pago.monto }}"
+                                                        data-fecha="{{ pago.fecha_pago|date:'Y-m-d' }}"
+                                                        data-tipo="{{ pago.tipo_pago }}"
+                                                        data-concepto="{{ pago.concepto }}"
+                                                        onclick="abrirModalEditarPago(this)"
+                                                        class="px-3 py-1 text-xs bg-secundario text-principal rounded-lg hover:bg-principal hover:text-blanco transition-all duration-200 font-medium">
+                                                    Corregir
+                                                </button>
+                                                <button type="button"
+                                                        data-pago-id="{{ pago.id }}"
+                                                        data-monto="{{ pago.monto }}"
+                                                        data-fecha="{{ pago.fecha_pago|date:'d/m/Y' }}"
+                                                        onclick="abrirModalAnularPago(this)"
+                                                        class="px-3 py-1 text-xs text-gris-medio hover:text-error transition-colors">
+                                                    Anular
+                                                </button>
+                                            {% else %}
+                                                <span class="text-xs text-gris-medio">Anulado</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gris-medio mt-3">
+                    Los pagos anulados quedan a la vista pero no cuentan en el saldo.
+                </p>
+            {% else %}
+                <p class="text-gris-medio text-sm">Este cliente todavía no tiene pagos registrados.</p>
+            {% endif %}
+        </div>
+    </div>
 
-    <!-- Modal: Ajuste de deuda especial -->
-    <div id="modal-ajuste" class="fixed inset-0 z-50 hidden items-center justify-center" style="background-color:rgba(0,0,0,0.5);">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-principal">Ajuste de Deuda Especial</h3>
-                <button type="button" onclick="cerrarModalAjuste()" class="text-gris-medio hover:text-gris-oscuro transition-colors">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="bg-fondo rounded-lg p-3 mb-4 text-sm">
-                <p class="text-gris-medio">Mes: <span id="modal-mes" class="font-medium text-gris-oscuro"></span></p>
-                <p class="text-gris-medio">Monto original: <span id="modal-monto-original" class="font-medium text-gris-oscuro"></span></p>
-            </div>
-            <p class="text-xs text-gris-medio mb-4">
-                Ingresá el monto correcto de la deuda (por un error, descuento o acuerdo especial). El estado se recalculará
-                según los pagos ya registrados: si el cliente ya pagó ese monto, quedará <strong>pagada</strong>; si no, seguirá
-                pendiente con el nuevo monto. Podés ingresar 0 para dejar el usuario <strong>'Al día'</strong>.
-            </p>
-            <form id="form-ajuste" method="post" action="">
+    <!-- ══════════ CARD 4: PLAN Y CONFIGURACIÓN ══════════ -->
+    <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
+        <div class="card-header text-blanco flex items-center gap-2">
+            <svg class="size-6" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+                <path d="M432.5 82.3L382.4 132.4L507.7 257.7L557.8 207.6C579.7 185.7 579.7 150.3 557.8 128.4L511.7 82.3C489.8 60.4 454.4 60.4 432.5 82.3zM343.3 161.2L198.7 204.5C178.8 210.5 163 225.7 156.4 245.5L67.8 509.8C64.9 518.5 65.9 528 70.3 535.8L225.7 380.4C224.6 376.4 224.1 372.3 224.1 368C224.1 341.5 245.6 320 272.1 320C298.6 320 320.1 341.5 320.1 368C320.1 394.5 298.6 416 272.1 416C267.8 416 263.6 415.4 259.7 414.4L104.3 569.7C112.1 574.1 121.5 575.1 130.3 572.2L394.6 483.6C414.3 477 429.6 461.2 435.6 441.3L478.8 297.2L343.4 161.2z"/>
+            </svg>
+            <h5 class="text-lg mb-0">Plan y configuración</h5>
+        </div>
+        <div class="card-body p-3">
+            {% if planes_activos_usuario %}
+                <div class="mb-4 space-y-2">
+                    {% for plan_usuario in planes_activos_usuario %}
+                        <div class="bg-fondo rounded-lg p-3 flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <p class="text-sm font-semibold text-gris-oscuro">{{ plan_usuario.plan.nombre }}</p>
+                                <p class="text-xs text-gris-medio">
+                                    ${{ plan_usuario.plan.precio_mensual|pesos }}/mes ·
+                                    en efectivo ${{ plan_usuario.plan.calcular_precio_efectivo|pesos }} ·
+                                    desde {{ plan_usuario.fecha_inicio|date:"d/m/Y" }}
+                                </p>
+                            </div>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium" style="background-color:#D1FAE5;color:#065F46;">Activo</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if planes_activos_usuario|length > 1 %}
+                <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p class="text-sm text-yellow-800">
+                        <strong>Atención:</strong> este cliente tiene {{ planes_activos_usuario|length }} planes activos a la vez.
+                        Al guardar un plan desde acá se desactivan los otros.
+                    </p>
+                </div>
+            {% endif %}
+
+            <form method="post" class="space-y-5">
                 {% csrf_token %}
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gris-oscuro mb-1">Nuevo monto acordado ($)</label>
-                        <input type="number" name="monto_ajustado" id="modal-monto-ajustado"
-                               min="0" step="0.01" required
-                               class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors"
-                               placeholder="0.00">
+
+                <div class="space-y-2">
+                    <label for="{{ form.plan_actual.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
+                        {{ form.plan_actual.label }}
+                    </label>
+                    <select name="{{ form.plan_actual.name }}" id="{{ form.plan_actual.id_for_label }}"
+                            class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors">
+                        {% for value, label in form.plan_actual.field.choices %}
+                            <option value="{{ value }}" {% if form.plan_actual.value == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <p id="precio-plan-info" class="text-sm text-gris-medio hidden">
+                        Precio mensual: <strong id="precio-plan-valor" class="text-gris-oscuro"></strong>
+                    </p>
+                    {% if form.plan_actual.errors %}
+                        <p class="text-sm text-error">{{ form.plan_actual.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-fondo rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" name="{{ form.activo.name }}" id="{{ form.activo.id_for_label }}"
+                                   {% if form.activo.value %}checked{% endif %}
+                                   class="mt-0.5 w-4 h-4 text-principal bg-white border-gris-claro rounded focus:ring-principal focus:ring-2">
+                            <div class="flex-1">
+                                <label for="{{ form.activo.id_for_label }}" class="text-sm font-medium text-gris-oscuro cursor-pointer">
+                                    {{ form.activo.label }}
+                                </label>
+                                <p class="text-xs text-gris-medio mt-0.5">{{ form.activo.help_text }}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gris-oscuro mb-1">
-                            Motivo <span class="text-gris-medio font-normal">(opcional)</span>
-                        </label>
-                        <textarea name="motivo" id="modal-motivo" rows="3"
-                                  class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors resize-y"
-                                  placeholder="Acuerdo especial, descuento puntual, etc."></textarea>
+
+                    <div class="bg-fondo rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" name="{{ form.puede_reservar.name }}" id="{{ form.puede_reservar.id_for_label }}"
+                                   {% if form.puede_reservar.value %}checked{% endif %}
+                                   class="mt-0.5 w-4 h-4 text-principal bg-white border-gris-claro rounded focus:ring-principal focus:ring-2">
+                            <div class="flex-1">
+                                <label for="{{ form.puede_reservar.id_for_label }}" class="text-sm font-medium text-gris-oscuro cursor-pointer">
+                                    {{ form.puede_reservar.label }}
+                                </label>
+                                <p class="text-xs text-gris-medio mt-0.5">{{ form.puede_reservar.help_text }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="modal-mantener-pagado-wrapper" class="hidden bg-fondo rounded-lg p-3">
-                        <label class="flex items-start gap-2 text-sm text-gris-oscuro cursor-pointer">
-                            <input type="checkbox" name="mantener_pagado" id="modal-mantener-pagado"
-                                   class="mt-1 rounded border-gris-claro text-principal focus:ring-principal">
-                            <span>
-                                <strong>Ya cubierto con saldo a favor</strong> — mantener este mes como
-                                <strong>Pagado</strong> (no genera deuda pendiente nueva sobre un mes vencido).
-                            </span>
-                        </label>
-                    </div>
-                <div class="flex gap-3 mt-6">
-                    <button type="button" onclick="cerrarModalAjuste()"
-                            class="flex-1 px-4 py-2 border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro transition-colors">
-                        Cancelar
-                    </button>
+
+                <div class="space-y-2">
+                    <label for="{{ form.observaciones.id_for_label }}" class="block text-sm font-medium text-gris-oscuro">
+                        {{ form.observaciones.label }}
+                    </label>
+                    <textarea name="{{ form.observaciones.name }}" id="{{ form.observaciones.id_for_label }}"
+                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors resize-y min-h-[80px]"
+                              placeholder="Notas internas sobre este cliente...">{{ form.observaciones.value|default:'' }}</textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3 border-t border-gris-claro">
                     <button type="submit" data-loading-text="Guardando..."
-                            class="flex-1 px-4 py-2 bg-principal text-blanco rounded-lg hover:opacity-90 transition-colors font-medium">
-                        Confirmar Ajuste
+                            class="inline-flex items-center justify-center gap-2 px-6 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark transition-all duration-200 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Guardar plan y configuración
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal: Generar deuda manual -->
-    <div id="modal-nueva-deuda" class="fixed inset-0 z-50 hidden items-center justify-center" style="background-color:rgba(0,0,0,0.5);">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+    <!-- ══════════ CARD 5: HISTORIAL DE CORRECCIONES ══════════ -->
+    {% if correcciones %}
+        <div class="card rounded-xl shadow-sm border border-gris-claro overflow-hidden mt-6">
+            <div class="card-header text-blanco flex items-center gap-2">
+                <svg class="size-6" fill="currentColor" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M75 75L41 41C25.9 25.9 0 36.6 0 58V160c0 13.3 10.7 24 24 24H126.1c21.4 0 32.1-25.9 17-41L109 109c34.4-34.1 81.7-55 133.9-55C348 54 434 140 434 246S348 438 242 438c-49.3 0-94.2-18.6-128.3-49.2c-9.9-8.8-25-8-33.9 1.9s-8 25 1.9 33.9C125.7 462.9 181.6 486 242 486c132.5 0 240-107.5 240-240S374.5 6 242 6C176.2 6 116.7 32.5 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/>
+                </svg>
+                <h5 class="text-lg mb-0">Historial de correcciones</h5>
+            </div>
+            <div class="card-body p-3">
+                <div class="space-y-2">
+                    {% for correccion in correcciones %}
+                        <div class="bg-fondo rounded-lg p-3">
+                            <div class="flex flex-wrap justify-between gap-2">
+                                <p class="text-sm font-medium text-gris-oscuro">{{ correccion.descripcion }}</p>
+                                <p class="text-xs text-gris-medio">
+                                    {{ correccion.fecha|date:"d/m/Y H:i" }} ·
+                                    {% if correccion.admin_que_ajusto %}{{ correccion.admin_que_ajusto.get_full_name|default:correccion.admin_que_ajusto.username }}{% else %}—{% endif %}
+                                </p>
+                            </div>
+                            {% if correccion.motivo %}
+                                <p class="text-xs text-gris-medio mt-1">{{ correccion.motivo }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if puede_corregir %}
+
+    <!-- ══════════ MODAL: CORREGIR SALDO ══════════ -->
+    <div id="modal-corregir-saldo" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background-color:rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-full overflow-y-auto p-6">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-principal">Generar Deuda Manual</h3>
-                <button type="button" onclick="cerrarModalNuevaDeuda()" class="text-gris-medio hover:text-gris-oscuro transition-colors">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
-                </button>
+                <h3 class="text-lg font-bold text-principal">Corregir el saldo</h3>
+                <button type="button" onclick="cerrarModal('modal-corregir-saldo')" class="text-gris-medio hover:text-gris-oscuro">✕</button>
+            </div>
+
+            <p class="text-sm text-gris-medio mb-4">
+                Hoy figura:
+                <strong class="text-gris-oscuro">
+                    {% if saldo_calculado > 0 %}${{ saldo_absoluto|pesos }} a favor
+                    {% elif saldo_calculado < 0 %}debe ${{ saldo_absoluto|pesos }}
+                    {% else %}al día{% endif %}
+                </strong>.
+                Elegí cómo tiene que quedar y el sistema arregla la diferencia solo.
+            </p>
+
+            <form method="post" action="{% url 'gravity:admin_corregir_saldo' cliente.id %}">
+                {% csrf_token %}
+                <div class="space-y-2 mb-4">
+                    <label class="flex items-center gap-3 p-3 border border-gris-claro rounded-lg cursor-pointer hover:border-principal">
+                        <input type="radio" name="situacion" value="al_dia" checked onchange="toggleMontoSaldo()" class="w-4 h-4 text-principal">
+                        <span class="text-sm font-medium text-gris-oscuro">Está al día (saldo $0)</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 border border-gris-claro rounded-lg cursor-pointer hover:border-principal">
+                        <input type="radio" name="situacion" value="a_favor" onchange="toggleMontoSaldo()" class="w-4 h-4 text-principal">
+                        <span class="text-sm font-medium text-gris-oscuro">Tiene saldo a favor de...</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 border border-gris-claro rounded-lg cursor-pointer hover:border-principal">
+                        <input type="radio" name="situacion" value="debe" onchange="toggleMontoSaldo()" class="w-4 h-4 text-principal">
+                        <span class="text-sm font-medium text-gris-oscuro">En realidad debe...</span>
+                    </label>
+                </div>
+
+                <div id="wrapper-monto-saldo" class="hidden mb-4">
+                    <label for="input-monto-saldo" class="block text-sm font-medium text-gris-oscuro mb-1">Monto ($)</label>
+                    <input type="number" step="0.01" min="0" name="monto" id="input-monto-saldo"
+                           class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal"
+                           placeholder="0">
+                </div>
+
+                <div class="mb-4">
+                    <label for="input-motivo-saldo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo de la corrección</label>
+                    <textarea name="motivo" id="input-motivo-saldo" rows="3" required
+                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal resize-y"
+                              placeholder="Ej: el cambio de plan de agosto le descontó $2.000 de más."></textarea>
+                    <p class="text-xs text-gris-medio mt-1">Queda guardado en el historial de la cuenta.</p>
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModal('modal-corregir-saldo')"
+                            class="px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark">Corregir saldo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ MODAL: CAMBIAR MONTO DE UNA CUOTA ══════════ -->
+    <div id="modal-ajuste" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background-color:rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-principal">Cambiar el monto de la cuota</h3>
+                <button type="button" onclick="cerrarModal('modal-ajuste')" class="text-gris-medio hover:text-gris-oscuro">✕</button>
+            </div>
+
+            <div class="bg-fondo rounded-lg p-3 mb-4 text-sm">
+                <p class="text-gris-medio">Mes: <span id="modal-mes" class="font-medium text-gris-oscuro capitalize"></span></p>
+                <p class="text-gris-medio">Ahora se cobra: <span id="modal-monto-original" class="font-medium text-gris-oscuro"></span></p>
+            </div>
+
+            <form id="form-ajuste" method="post" action="">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="modal-monto-ajustado" class="block text-sm font-medium text-gris-oscuro mb-1">¿Cuánto tiene que pagar por ese mes? ($)</label>
+                    <input type="number" name="monto_ajustado" id="modal-monto-ajustado" step="0.01" min="0" required
+                           class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal"
+                           placeholder="0">
+                    <p class="text-xs text-gris-medio mt-1">Poné $0 si ese mes no hay que cobrarlo.</p>
+                </div>
+                <div class="mb-4">
+                    <label for="modal-motivo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo (opcional)</label>
+                    <textarea name="motivo" id="modal-motivo" rows="3"
+                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal resize-y"
+                              placeholder="Acuerdo especial, descuento puntual, etc."></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModal('modal-ajuste')"
+                            class="px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ MODAL: ELIMINAR CUOTA ══════════ -->
+    <div id="modal-eliminar-cuota" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background-color:rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-error">Eliminar la cuota</h3>
+                <button type="button" onclick="cerrarModal('modal-eliminar-cuota')" class="text-gris-medio hover:text-gris-oscuro">✕</button>
+            </div>
+            <p class="text-sm text-gris-oscuro mb-4">
+                Se va a borrar la cuota de <strong id="eliminar-mes" class="capitalize"></strong>
+                (<span id="eliminar-monto"></span>). Usalo solo si ese mes no había que cobrarlo.
+            </p>
+            <form id="form-eliminar-cuota" method="post" action="">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="eliminar-motivo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo</label>
+                    <textarea name="motivo" id="eliminar-motivo" rows="2"
+                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal resize-y"
+                              placeholder="Ej: el mes se generó por error, la clienta estaba de baja."></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModal('modal-eliminar-cuota')"
+                            class="px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-error text-white rounded-lg hover:opacity-90" style="background-color:#DC2626;">Eliminar cuota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ MODAL: NUEVA CUOTA ══════════ -->
+    <div id="modal-nueva-cuota" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background-color:rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-principal">Agregar una cuota</h3>
+                <button type="button" onclick="cerrarModal('modal-nueva-cuota')" class="text-gris-medio hover:text-gris-oscuro">✕</button>
             </div>
             <p class="text-sm text-gris-medio mb-4">
-                Solo para meses que <strong>no aparecen en la tabla</strong> de arriba. Si el mes ya tiene deuda, usá el botón "Ajustar" sobre esa fila.
+                Para meses que quedaron sin cobrar. Se usa el plan que el cliente tiene asignado hoy.
             </p>
             <form method="post" action="{% url 'gravity:admin_generar_deuda_manual' cliente.id %}">
                 {% csrf_token %}
-                <div class="space-y-4">
+                <div class="mb-4">
+                    <label for="nueva-cuota-mes" class="block text-sm font-medium text-gris-oscuro mb-1">Mes</label>
+                    <input type="month" name="mes_año" id="nueva-cuota-mes" required value="{{ mes_actual_valor }}"
+                           class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                </div>
+                <div class="mb-4">
+                    <label for="nueva-cuota-monto" class="block text-sm font-medium text-gris-oscuro mb-1">Monto a cobrar ($)</label>
+                    <input type="number" name="monto" id="nueva-cuota-monto" step="0.01" min="0" required
+                           class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal"
+                           placeholder="0">
+                </div>
+                <div class="mb-4">
+                    <label for="nueva-cuota-motivo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo (opcional)</label>
+                    <textarea name="motivo" id="nueva-cuota-motivo" rows="2"
+                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal resize-y"
+                              placeholder="Ej: el sistema no generó la cuota de julio."></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModal('modal-nueva-cuota')"
+                            class="px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark">Agregar cuota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ MODAL: CORREGIR PAGO ══════════ -->
+    <div id="modal-editar-pago" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background-color:rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-principal">Corregir el pago</h3>
+                <button type="button" onclick="cerrarModal('modal-editar-pago')" class="text-gris-medio hover:text-gris-oscuro">✕</button>
+            </div>
+            <form id="form-editar-pago" method="post" action="">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="editar-pago-monto" class="block text-sm font-medium text-gris-oscuro mb-1">Monto ($)</label>
+                    <input type="number" name="monto" id="editar-pago-monto" step="0.01" min="0" required
+                           class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     <div>
-                        <label class="block text-sm font-medium text-gris-oscuro mb-1">Mes a cobrar</label>
-                        <input type="month" name="mes_año" required
-                               class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors">
+                        <label for="editar-pago-fecha" class="block text-sm font-medium text-gris-oscuro mb-1">Fecha</label>
+                        <input type="date" name="fecha_pago" id="editar-pago-fecha" required
+                               class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gris-oscuro mb-1">Monto a cobrar ($)</label>
-                        <input type="number" name="monto" min="1" step="0.01" required
-                               class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors"
-                               placeholder="0.00">
-                        <p class="text-xs text-gris-medio mt-1">El plan actual del cliente es: <strong>{{ estado_pago.plan_actual.nombre|default:"Sin plan" }}</strong>
-                            {% if estado_pago.plan_actual %} — ${{ estado_pago.plan_actual.precio_mensual|floatformat:0 }}/mes{% endif %}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gris-oscuro mb-1">
-                            Motivo <span class="text-gris-medio font-normal">(opcional)</span>
-                        </label>
-                        <textarea name="motivo" rows="2"
-                                  class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal transition-colors resize-y"
-                                  placeholder="Ej: mes no cobrado por el cron, ajuste retroactivo, etc."></textarea>
+                        <label for="editar-pago-tipo" class="block text-sm font-medium text-gris-oscuro mb-1">Forma de pago</label>
+                        <select name="tipo_pago" id="editar-pago-tipo"
+                                class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="otro">Otro</option>
+                        </select>
                     </div>
                 </div>
-                <div class="flex gap-3 mt-6">
-                    <button type="button" onclick="cerrarModalNuevaDeuda()"
-                            class="flex-1 px-4 py-2 border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="submit" data-loading-text="Generando..."
-                            class="flex-1 px-4 py-2 bg-principal text-blanco rounded-lg hover:opacity-90 transition-colors font-medium">
-                        Generar Deuda
-                    </button>
+                <div class="mb-4">
+                    <label for="editar-pago-concepto" class="block text-sm font-medium text-gris-oscuro mb-1">Concepto</label>
+                    <input type="text" name="concepto" id="editar-pago-concepto" required maxlength="200"
+                           class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal">
+                </div>
+                <div class="mb-4">
+                    <label for="editar-pago-motivo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo de la corrección</label>
+                    <textarea name="motivo" id="editar-pago-motivo" rows="2" required
+                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal resize-y"
+                              placeholder="Ej: se cargó $550.000 en vez de $55.000."></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModal('modal-editar-pago')"
+                            class="px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-principal text-white rounded-lg hover:bg-principal-dark">Guardar pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ MODAL: ANULAR PAGO ══════════ -->
+    <div id="modal-anular-pago" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background-color:rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md max-h-full overflow-y-auto p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-error">Anular el pago</h3>
+                <button type="button" onclick="cerrarModal('modal-anular-pago')" class="text-gris-medio hover:text-gris-oscuro">✕</button>
+            </div>
+            <p class="text-sm text-gris-oscuro mb-4">
+                El pago de <strong id="anular-monto"></strong> del <strong id="anular-fecha"></strong>
+                deja de contar en la cuenta. Queda a la vista como anulado.
+            </p>
+            <form id="form-anular-pago" method="post" action="">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="anular-motivo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo de la anulación</label>
+                    <textarea name="motivo" id="anular-motivo" rows="2" required
+                              class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal resize-y"
+                              placeholder="Ej: el pago era de otra clienta."></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModal('modal-anular-pago')"
+                            class="px-4 py-2 bg-white border border-gris-claro text-gris-oscuro rounded-lg hover:bg-gris-claro">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-white rounded-lg hover:opacity-90" style="background-color:#DC2626;">Anular pago</button>
                 </div>
             </form>
         </div>
@@ -441,7 +735,7 @@
 {% block extra_js %}
 {{ planes_precios|json_script:"planes-precios-data" }}
 <script>
-    // ── Info de precio al seleccionar plan ──
+    // ── Precio del plan seleccionado ──
     document.addEventListener('DOMContentLoaded', function () {
         const planesPrecios = JSON.parse(document.getElementById('planes-precios-data').textContent);
         const planSelect = document.getElementById('{{ form.plan_actual.id_for_label }}');
@@ -463,56 +757,100 @@
         actualizarPrecio();
     });
 
-    // ── Modal: Ajuste de deuda ──
+    // ── Modales ──
+    function abrirModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function cerrarModal(id) {
+        const modal = document.getElementById(id);
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    document.querySelectorAll('[id^="modal-"]').forEach(function (modal) {
+        modal.addEventListener('click', function (e) {
+            if (e.target === this) cerrarModal(this.id);
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('[id^="modal-"]').forEach(function (modal) {
+                if (!modal.classList.contains('hidden')) cerrarModal(modal.id);
+            });
+        }
+    });
+
+    function pesos(valor) {
+        return '$' + parseFloat(valor).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+    }
+
+    {% if puede_corregir %}
+    // ── Corregir saldo ──
+    function toggleMontoSaldo() {
+        const situacion = document.querySelector('input[name="situacion"]:checked').value;
+        const wrapper = document.getElementById('wrapper-monto-saldo');
+        const input = document.getElementById('input-monto-saldo');
+        if (situacion === 'al_dia') {
+            wrapper.classList.add('hidden');
+            input.required = false;
+            input.value = '';
+        } else {
+            wrapper.classList.remove('hidden');
+            input.required = true;
+            input.focus();
+        }
+    }
+
+    // ── Cambiar monto de una cuota ──
     const ajusteUrlBase = "{% url 'gravity:admin_ajustar_deuda_especial' 0 %}";
 
     function abrirModalAjuste(btn) {
         document.getElementById('modal-mes').textContent = btn.dataset.mes;
-        document.getElementById('modal-monto-original').textContent = '$' + parseFloat(btn.dataset.monto).toLocaleString('es-AR');
+        document.getElementById('modal-monto-original').textContent = pesos(btn.dataset.monto);
         document.getElementById('modal-monto-ajustado').value = '';
         document.getElementById('modal-motivo').value = '';
         document.getElementById('form-ajuste').action = ajusteUrlBase.replace('/0/', '/' + btn.dataset.deudaId + '/');
-
-        const wrapper = document.getElementById('modal-mantener-pagado-wrapper');
-        const checkbox = document.getElementById('modal-mantener-pagado');
-        if (btn.dataset.estado === 'pagado') {
-            wrapper.classList.remove('hidden');
-            checkbox.checked = true;
-        } else {
-            wrapper.classList.add('hidden');
-            checkbox.checked = false;
-        }
-
-        const modal = document.getElementById('modal-ajuste');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        abrirModal('modal-ajuste');
     }
 
-    function cerrarModalAjuste() {
-        const modal = document.getElementById('modal-ajuste');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+    // ── Eliminar cuota ──
+    const eliminarCuotaUrlBase = "{% url 'gravity:admin_eliminar_deuda' 0 %}";
+
+    function abrirModalEliminarCuota(btn) {
+        document.getElementById('eliminar-mes').textContent = btn.dataset.mes;
+        document.getElementById('eliminar-monto').textContent = pesos(btn.dataset.monto);
+        document.getElementById('eliminar-motivo').value = '';
+        document.getElementById('form-eliminar-cuota').action = eliminarCuotaUrlBase.replace('/0/', '/' + btn.dataset.deudaId + '/');
+        abrirModal('modal-eliminar-cuota');
     }
 
-    document.getElementById('modal-ajuste')?.addEventListener('click', function (e) {
-        if (e.target === this) cerrarModalAjuste();
-    });
+    // ── Corregir pago ──
+    const editarPagoUrlBase = "{% url 'gravity:admin_pago_editar' 0 %}";
 
-    // ── Modal: Nueva deuda ──
-    function abrirModalNuevaDeuda() {
-        const modal = document.getElementById('modal-nueva-deuda');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+    function abrirModalEditarPago(btn) {
+        document.getElementById('editar-pago-monto').value = parseFloat(btn.dataset.monto);
+        document.getElementById('editar-pago-fecha').value = btn.dataset.fecha;
+        document.getElementById('editar-pago-tipo').value = btn.dataset.tipo;
+        document.getElementById('editar-pago-concepto').value = btn.dataset.concepto;
+        document.getElementById('editar-pago-motivo').value = '';
+        document.getElementById('form-editar-pago').action = editarPagoUrlBase.replace('/0/', '/' + btn.dataset.pagoId + '/');
+        abrirModal('modal-editar-pago');
     }
 
-    function cerrarModalNuevaDeuda() {
-        const modal = document.getElementById('modal-nueva-deuda');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
+    // ── Anular pago ──
+    const anularPagoUrlBase = "{% url 'gravity:admin_pago_anular' 0 %}";
 
-    document.getElementById('modal-nueva-deuda')?.addEventListener('click', function (e) {
-        if (e.target === this) cerrarModalNuevaDeuda();
-    });
+    function abrirModalAnularPago(btn) {
+        document.getElementById('anular-monto').textContent = pesos(btn.dataset.monto);
+        document.getElementById('anular-fecha').textContent = btn.dataset.fecha;
+        document.getElementById('anular-motivo').value = '';
+        document.getElementById('form-anular-pago').action = anularPagoUrlBase.replace('/0/', '/' + btn.dataset.pagoId + '/');
+        abrirModal('modal-anular-pago');
+    }
+    {% endif %}
 </script>
 {% endblock %}

@@ -1318,17 +1318,9 @@ class EstadoPagoCliente(models.Model):
                 observaciones='Deuda generada por aprobación de cambio de plan'
             )
 
-        # Recalcular saldo desde el histórico completo (pagos confirmados - deudas generadas)
-        total_pagado = RegistroPago.objects.filter(
-            cliente=self.usuario, estado='confirmado'
-        ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-        total_deudas = DeudaMensual.objects.filter(
-            usuario=self.usuario
-        ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-
-        self.saldo_actual = total_pagado - total_deudas
-        self.monto_deuda_mensual = deuda_actual.monto_pendiente
-        self.save(update_fields=['saldo_actual', 'monto_deuda_mensual'])
+        # Recalcular toda la cuenta desde el histórico completo
+        recalcular_estado_pagos(self.usuario)
+        self.refresh_from_db()
 
         return deuda_actual
 
@@ -1521,77 +1513,48 @@ class RegistroPago(models.Model):
                 defaults={'activo': True}
             )
 
-            # Actualizar fecha y monto del último pago
-            estado_cliente.ultimo_pago = self.fecha_pago
-            estado_cliente.monto_ultimo_pago = self.monto
-
             # ⚡ PASO 0: Generar la deuda del mes actual ANTES de aplicar el pago.
             # Esto garantiza que si la deuda no fue creada aún por el cron,
             # exista al momento de aplicar el descuento por efectivo en el PASO 1.
             if estado_cliente.plan_actual:
                 estado_cliente.generar_deuda_mes_actual()
 
-            # 💰 PASO 1: Aplicar el pago a las deudas pendientes (más antiguas primero)
-            monto_restante = Decimal(str(self.monto))
-            es_pago_efectivo = self.tipo_pago == 'efectivo'
+            # 💰 PASO 1: Si el pago es en efectivo, aplicar el descuento del plan
+            # sobre las cuotas que este pago alcanza a cubrir (más viejas primero).
+            if self.tipo_pago == 'efectivo':
+                monto_restante = Decimal(str(self.monto))
 
-            deudas_pendientes = DeudaMensual.objects.filter(
-                usuario=self.cliente,
-                estado__in=['pendiente', 'vencido', 'parcial']
-            ).order_by('mes_año')
-
-            for deuda in deudas_pendientes:
-                if monto_restante <= 0:
-                    break
-
-                # Si el pago es en efectivo y la deuda no fue pagada parcialmente,
-                # ajustar el monto original al precio con descuento del plan
-                if es_pago_efectivo and deuda.estado != 'parcial':
-                    try:
-                        precio_efectivo = deuda.plan_aplicado.calcular_precio_efectivo()
-                        # Solo ajustar si el precio efectivo es menor al original
-                        # (evitar sobreescribir deudas ya ajustadas o de medio mes)
-                        if precio_efectivo < deuda.monto_original:
-                            diferencia = deuda.monto_original - precio_efectivo
-                            deuda.monto_original = precio_efectivo
-                            deuda.monto_pendiente = max(
-                                Decimal('0'),
-                                deuda.monto_pendiente - diferencia
-                            )
-                            deuda.save(update_fields=['monto_original', 'monto_pendiente'])
-                    except Exception:
-                        pass  # Si falla el ajuste, continuar con el monto original
-
-                # Aplicar pago a esta deuda
-                monto_aplicado = deuda.aplicar_pago_parcial(monto_restante)
-                monto_restante -= Decimal(str(monto_aplicado))
-
-            # 📊 PASO 2: Recalcular el saldo DESDE CERO
-            # Saldo = Total pagado - Total de deudas generadas (monto_original ajustado)
-
-            total_pagado = RegistroPago.objects.filter(
-                cliente=self.cliente,
-                estado='confirmado'
-            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-
-            total_deudas_generadas = DeudaMensual.objects.filter(
-                usuario=self.cliente
-            ).aggregate(total=Sum('monto_original'))['total'] or Decimal('0')
-
-            estado_cliente.saldo_actual = total_pagado - total_deudas_generadas
-
-            # Si no quedan deudas vencidas pendientes, desbloquear reservas
-            if not estado_cliente.puede_reservar:
-                tiene_deudas_vencidas = DeudaMensual.objects.filter(
+                deudas_pendientes = DeudaMensual.objects.filter(
                     usuario=self.cliente,
-                    estado='vencido',
-                    monto_pendiente__gt=0
-                ).exists()
-                if not tiene_deudas_vencidas:
-                    estado_cliente.puede_reservar = True
+                    estado__in=['pendiente', 'vencido', 'parcial']
+                ).order_by('mes_año')
 
-            # Guardar cambios
-            estado_cliente.save()
+                for deuda in deudas_pendientes:
+                    if monto_restante <= 0:
+                        break
+
+                    # Las cuotas pagadas parcialmente no se re-descuentan
+                    if deuda.estado != 'parcial':
+                        try:
+                            precio_efectivo = deuda.plan_aplicado.calcular_precio_efectivo()
+                            # Solo ajustar si el precio efectivo es menor al original
+                            # (evitar sobreescribir deudas ya ajustadas o de medio mes)
+                            if precio_efectivo < deuda.monto_original:
+                                diferencia = deuda.monto_original - precio_efectivo
+                                deuda.monto_original = precio_efectivo
+                                deuda.monto_pendiente = max(
+                                    Decimal('0'),
+                                    deuda.monto_pendiente - diferencia
+                                )
+                                deuda.save(update_fields=['monto_original', 'monto_pendiente'])
+                        except Exception:
+                            pass  # Si falla el ajuste, continuar con el monto original
+
+                    monto_restante -= deuda.monto_pendiente
+
+            # 📊 PASO 2: Recalcular toda la cuenta desde cero (saldo, estado de
+            # cada cuota, último pago y bloqueo de reservas).
+            recalcular_estado_pagos(self.cliente)
 
         except Exception as e:
             # Log del error pero no fallar la operación
@@ -2292,3 +2255,187 @@ class AjusteDeudaEspecial(models.Model):
         mes = self.deuda.mes_año.strftime('%B %Y')
         return f"Ajuste {mes} — {self.usuario_cliente.get_full_name() or self.usuario_cliente.username} — ${self.monto_ajustado}"
 
+
+
+# ==============================================================================
+# CORRECCIONES MANUALES DE LA CUENTA DEL CLIENTE
+# ==============================================================================
+
+class AjusteSaldo(models.Model):
+    """
+    Historial de correcciones manuales que un administrador hace sobre la cuenta
+    de un cliente (saldo, pagos mal cargados, cuotas).
+
+    Solo los movimientos de tipo 'correccion_saldo' entran en el cálculo del
+    saldo (su campo `monto` se suma). El resto son registros de auditoría de
+    acciones que ya modificaron un pago o una cuota, y llevan monto 0.
+    """
+    TIPO_CORRECCION_SALDO = 'correccion_saldo'
+
+    TIPOS = [
+        (TIPO_CORRECCION_SALDO, 'Corrección de saldo'),
+        ('pago_editado', 'Pago corregido'),
+        ('pago_anulado', 'Pago anulado'),
+        ('pago_registrado', 'Pago registrado'),
+        ('cuota_ajustada', 'Cuota ajustada'),
+        ('cuota_creada', 'Cuota generada manualmente'),
+        ('cuota_eliminada', 'Cuota eliminada'),
+        ('recalculo', 'Recálculo de la cuenta'),
+    ]
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ajustes_saldo',
+        verbose_name="Cliente"
+    )
+
+    tipo = models.CharField(
+        max_length=30,
+        choices=TIPOS,
+        default=TIPO_CORRECCION_SALDO,
+        verbose_name="Tipo de corrección"
+    )
+
+    monto = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Impacto en el saldo",
+        help_text="Positivo = suma crédito a favor. Negativo = quita crédito o agrega deuda. "
+                  "Solo se computa en el saldo si el tipo es 'Corrección de saldo'."
+    )
+
+    descripcion = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name="Qué se hizo"
+    )
+
+    motivo = models.TextField(
+        blank=True,
+        verbose_name="Motivo indicado por el administrador"
+    )
+
+    saldo_anterior = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Saldo antes"
+    )
+
+    saldo_nuevo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Saldo después"
+    )
+
+    admin_que_ajusto = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='correcciones_realizadas',
+        verbose_name="Administrador"
+    )
+
+    fecha = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de la corrección"
+    )
+
+    class Meta:
+        verbose_name = "Corrección de cuenta"
+        verbose_name_plural = "Correcciones de cuenta"
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.usuario.get_full_name() or self.usuario.username} ({self.fecha:%d/%m/%Y})"
+
+
+def recalcular_estado_pagos(usuario, redistribuir=True):
+    """
+    Única fuente de verdad del estado de cuenta de un cliente.
+
+        saldo = pagos confirmados + correcciones de saldo - cuotas generadas
+
+    Si `redistribuir` es True, además reparte el dinero disponible sobre las
+    cuotas de la más vieja a la más nueva y deja el estado de cada una
+    (pagada / parcial / pendiente / vencida) coherente con ese saldo.
+
+    Devuelve un diccionario con los totales para poder mostrarlos en pantalla.
+    """
+    from datetime import date
+
+    estado, _ = EstadoPagoCliente.objects.get_or_create(
+        usuario=usuario,
+        defaults={'activo': True}
+    )
+    hoy = timezone.localtime(timezone.now()).date()
+
+    total_pagado = RegistroPago.objects.filter(
+        cliente=usuario, estado='confirmado'
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+
+    total_correcciones = AjusteSaldo.objects.filter(
+        usuario=usuario, tipo=AjusteSaldo.TIPO_CORRECCION_SALDO
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+
+    deudas = list(DeudaMensual.objects.filter(usuario=usuario).order_by('mes_año'))
+    total_deudas = sum((d.monto_original for d in deudas), Decimal('0'))
+
+    saldo = total_pagado + total_correcciones - total_deudas
+
+    if redistribuir:
+        disponible = total_pagado + total_correcciones
+        for deuda in deudas:
+            if disponible >= deuda.monto_original:
+                nuevo_pendiente = Decimal('0')
+                nuevo_estado = 'pagado'
+                disponible -= deuda.monto_original
+            elif disponible > 0:
+                nuevo_pendiente = deuda.monto_original - disponible
+                nuevo_estado = 'parcial'
+                disponible = Decimal('0')
+            else:
+                nuevo_pendiente = deuda.monto_original
+                nuevo_estado = 'vencido' if hoy > deuda.fecha_vencimiento else 'pendiente'
+
+            if deuda.monto_pendiente != nuevo_pendiente or deuda.estado != nuevo_estado:
+                deuda.monto_pendiente = nuevo_pendiente
+                deuda.estado = nuevo_estado
+                deuda.save(update_fields=['monto_pendiente', 'estado'])
+
+    # Cuota del mes en curso (se usa en los mensajes de bloqueo de reservas)
+    primer_dia_mes = date(hoy.year, hoy.month, 1)
+    deuda_mes = next((d for d in deudas if d.mes_año == primer_dia_mes), None)
+
+    tiene_vencidas = any(
+        d.estado == 'vencido' and d.monto_pendiente > 0 for d in deudas
+    )
+
+    ultimo_pago = RegistroPago.objects.filter(
+        cliente=usuario, estado='confirmado'
+    ).order_by('-fecha_pago', '-id').first()
+
+    estado.saldo_actual = saldo
+    estado.monto_deuda_mensual = deuda_mes.monto_pendiente if deuda_mes else Decimal('0')
+    estado.ultimo_pago = ultimo_pago.fecha_pago if ultimo_pago else None
+    estado.monto_ultimo_pago = ultimo_pago.monto if ultimo_pago else Decimal('0')
+
+    if tiene_vencidas:
+        estado.puede_reservar = False
+    elif saldo >= 0:
+        estado.puede_reservar = True
+
+    estado.save()
+
+    return {
+        'estado': estado,
+        'total_pagado': total_pagado,
+        'total_correcciones': total_correcciones,
+        'total_deudas': total_deudas,
+        'saldo': saldo,
+        'tiene_vencidas': tiene_vencidas,
+    }

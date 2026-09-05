@@ -1436,16 +1436,17 @@ class AjusteDeudaForm(forms.Form):
     Formulario para que superadmins registren un monto especial acordado con un cliente.
     """
     monto_ajustado = forms.DecimalField(
-        label="Nuevo monto acordado ($)",
+        label="¿Cuánto tiene que pagar por ese mes? ($)",
         min_value=0,
         max_digits=10,
         decimal_places=2,
         widget=forms.NumberInput(attrs={
             'step': '0.01',
             'min': '0',
-            'placeholder': '0.00',
+            'placeholder': '0',
         }),
-        help_text="Nuevo monto correcto de la deuda. El estado se recalculará según lo que el cliente ya haya pagado."
+        help_text="Poné $0 si ese mes no hay que cobrarlo. El estado de la cuota se recalcula "
+                  "solo según lo que el cliente ya pagó."
     )
     motivo = forms.CharField(
         label="Motivo del ajuste",
@@ -1455,9 +1456,100 @@ class AjusteDeudaForm(forms.Form):
             'placeholder': 'Acuerdo especial, descuento puntual, etc. (opcional)',
         }),
     )
-    mantener_pagado = forms.BooleanField(
-        label="Ya cubierto con saldo a favor (mantener como Pagado)",
+
+
+class CorregirSaldoForm(forms.Form):
+    """
+    Corrección directa del saldo de un cliente: el admin dice cómo tiene que
+    quedar la cuenta y el sistema calcula la diferencia y la registra.
+    """
+    SITUACIONES = [
+        ('al_dia', 'Está al día (saldo $0)'),
+        ('a_favor', 'Tiene saldo a favor'),
+        ('debe', 'Debe plata'),
+    ]
+
+    situacion = forms.ChoiceField(
+        choices=SITUACIONES,
+        widget=forms.RadioSelect,
+        label="¿Cómo tiene que quedar la cuenta?"
+    )
+    monto = forms.DecimalField(
+        label="Monto ($)",
         required=False,
-        help_text="Tildá esto cuando el ajuste ya está compensado por un crédito existente del cliente: "
-                   "el mes queda marcado 'Pagado' sin generar deuda pendiente nueva."
+        min_value=0,
+        max_digits=10,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={'step': '0.01', 'min': '0', 'placeholder': '0'})
+    )
+    motivo = forms.CharField(
+        label="Motivo de la corrección",
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Ej: el cambio de plan de agosto le descontó $2.000 de más.',
+        }),
+        help_text="Queda registrado en el historial de la cuenta."
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        situacion = cleaned.get('situacion')
+        monto = cleaned.get('monto')
+
+        if situacion == 'al_dia':
+            cleaned['saldo_objetivo'] = Decimal('0')
+        else:
+            if monto is None:
+                raise ValidationError({'monto': 'Indicá el monto.'})
+            if monto <= 0:
+                raise ValidationError({'monto': 'El monto tiene que ser mayor a cero.'})
+            cleaned['saldo_objetivo'] = monto if situacion == 'a_favor' else -monto
+
+        return cleaned
+
+
+class EditarPagoForm(forms.ModelForm):
+    """
+    Corrección de un pago ya registrado (típicamente un monto mal tipeado).
+    """
+    motivo = forms.CharField(
+        label="Motivo de la corrección",
+        widget=forms.Textarea(attrs={
+            'rows': 2,
+            'placeholder': 'Ej: se cargó $550.000 en vez de $55.000.',
+        })
+    )
+
+    class Meta:
+        model = RegistroPago
+        fields = ['monto', 'fecha_pago', 'tipo_pago', 'concepto']
+        widgets = {
+            'monto': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+            'fecha_pago': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def clean_monto(self):
+        monto = self.cleaned_data.get('monto')
+        if monto is not None and monto <= 0:
+            raise ValidationError('El monto debe ser mayor a cero.')
+        return monto
+
+    def clean_fecha_pago(self):
+        fecha_pago = self.cleaned_data.get('fecha_pago')
+        if fecha_pago and fecha_pago > timezone.localtime(timezone.now()).date():
+            raise ValidationError('La fecha del pago no puede ser futura.')
+        return fecha_pago
+
+
+class AnularPagoForm(forms.Form):
+    """
+    Anulación de un pago cargado por error. El pago no se borra: queda como
+    rechazado y deja de contar en el saldo.
+    """
+    motivo = forms.CharField(
+        label="Motivo de la anulación",
+        widget=forms.Textarea(attrs={
+            'rows': 2,
+            'placeholder': 'Ej: el pago era de otra clienta.',
+        })
     )

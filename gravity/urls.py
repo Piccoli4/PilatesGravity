@@ -20,6 +20,8 @@ from .views import (
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
     admin_ajustar_deuda_especial, admin_generar_deuda_manual, admin_cancelar_plan_usuario,
+    admin_corregir_saldo, admin_pago_editar, admin_pago_anular, admin_eliminar_deuda,
+    admin_recalcular_cuenta,
     # IMPORTACIONES PARA PLANES DE PAGO
     mis_planes, seleccionar_plan, cancelar_plan, modificar_plan, elegir_reservas_downgrade,
     # IMPORTACIONES PARA TESTIMONIOS
@@ -141,6 +143,11 @@ urlpatterns = [
     path('admin-panel/pagos/editar-estado/<int:cliente_id>/', admin_pagos_editar_estado_cliente, name='admin_pagos_editar_estado_cliente'),
     path('admin-panel/pagos/ajustar-deuda/<int:deuda_id>/', admin_ajustar_deuda_especial, name='admin_ajustar_deuda_especial'),
     path('admin-panel/pagos/cliente/<int:cliente_id>/generar-deuda/', admin_generar_deuda_manual, name='admin_generar_deuda_manual'),
+    path('admin-panel/pagos/cliente/<int:cliente_id>/corregir-saldo/', admin_corregir_saldo, name='admin_corregir_saldo'),
+    path('admin-panel/pagos/cliente/<int:cliente_id>/recalcular/', admin_recalcular_cuenta, name='admin_recalcular_cuenta'),
+    path('admin-panel/pagos/pago/<int:pago_id>/editar/', admin_pago_editar, name='admin_pago_editar'),
+    path('admin-panel/pagos/pago/<int:pago_id>/anular/', admin_pago_anular, name='admin_pago_anular'),
+    path('admin-panel/pagos/deuda/<int:deuda_id>/eliminar/', admin_eliminar_deuda, name='admin_eliminar_deuda'),
     path('admin-panel/planes/<int:plan_id>/cancelar/', admin_cancelar_plan_usuario, name='admin_cancelar_plan_usuario'),
 
     # Gestión de planes de pago
