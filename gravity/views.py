@@ -24,6 +24,7 @@ from .forms import (
     BuscarReservaForm, 
     AjusteDeudaForm
 )
+import csv
 import json
 import calendar
 from accounts.models import UserProfile
@@ -2952,106 +2953,937 @@ def admin_agregar_usuario(request):
 # REPORTES Y ESTADÍSTICAS
 # ==============================================================================
 
+PERIODOS_REPORTE = [
+    ('7', 'Últimos 7 días'),
+    ('30', 'Últimos 30 días'),
+    ('90', 'Últimos 90 días'),
+    ('mes', 'Mes actual'),
+    ('anio', 'Año actual'),
+    ('personalizado', 'Personalizado'),
+]
+
+DIA_A_INDICE = {
+    'Lunes': 0,
+    'Martes': 1,
+    'Miércoles': 2,
+    'Jueves': 3,
+    'Viernes': 4,
+    'Sábado': 5,
+}
+
+MESES_CORTOS = [
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+]
+
+
+def _reportes_rango(request):
+    """
+    Interpreta los filtros de período del querystring.
+    Devuelve (periodo, desde, hasta, etiqueta).
+    """
+    hoy = timezone.localtime(timezone.now()).date()
+    periodo = request.GET.get('periodo', '30')
+
+    def _parse_fecha(valor):
+        try:
+            return datetime.strptime(valor, '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            return None
+
+    if periodo == 'personalizado':
+        desde = _parse_fecha(request.GET.get('desde')) or (hoy - timedelta(days=29))
+        hasta = _parse_fecha(request.GET.get('hasta')) or hoy
+        if desde > hasta:
+            desde, hasta = hasta, desde
+        etiqueta = f'{desde.strftime("%d/%m/%Y")} al {hasta.strftime("%d/%m/%Y")}'
+    elif periodo == 'mes':
+        desde, hasta = hoy.replace(day=1), hoy
+        etiqueta = 'Mes actual'
+    elif periodo == 'anio':
+        desde, hasta = hoy.replace(month=1, day=1), hoy
+        etiqueta = 'Año actual'
+    else:
+        if periodo not in ('7', '30', '90'):
+            periodo = '30'
+        dias = int(periodo)
+        desde, hasta = hoy - timedelta(days=dias - 1), hoy
+        etiqueta = f'Últimos {dias} días'
+
+    return periodo, desde, hasta, etiqueta
+
+
+def _reportes_periodo_anterior(desde, hasta):
+    """Período inmediatamente anterior, de la misma cantidad de días."""
+    dias = (hasta - desde).days + 1
+    fin = desde - timedelta(days=1)
+    return fin - timedelta(days=dias - 1), fin
+
+
+def _variacion_porcentual(actual, anterior):
+    """Variación % contra el período anterior. None si no hay base de comparación."""
+    if not anterior:
+        return None
+    return round((float(actual) - float(anterior)) / float(anterior) * 100, 1)
+
+
+def _ocurrencias_dia_semana(indice_dia, desde, hasta):
+    """Cuántas veces cae ese día de la semana entre dos fechas (inclusive)."""
+    if indice_dia is None or hasta < desde:
+        return 0
+    total_dias = (hasta - desde).days + 1
+    semanas, resto = divmod(total_dias, 7)
+    total = semanas
+    for i in range(resto):
+        if (desde + timedelta(days=i)).weekday() == indice_dia:
+            total += 1
+    return total
+
+
+def _nivel_ocupacion(porcentaje):
+    """Clasifica la ocupación para colorear la plantilla."""
+    if porcentaje >= 100:
+        return 'completo'
+    if porcentaje >= 75:
+        return 'alto'
+    if porcentaje >= 50:
+        return 'medio'
+    return 'bajo'
+
+
+def _kpi(titulo, valor, detalle, icono, sufijo='', actual=None, anterior=None,
+         subir_es_bueno=True, es_dinero=False):
+    """Arma una tarjeta de KPI con su comparación contra el período anterior."""
+    variacion = _variacion_porcentual(actual, anterior) if actual is not None else None
+    tarjeta = {
+        'titulo': titulo,
+        'valor': valor,
+        'sufijo': sufijo,
+        'detalle': detalle,
+        'icono': icono,
+        'es_dinero': es_dinero,
+        'variacion': variacion,
+        'variacion_abs': abs(variacion) if variacion is not None else None,
+        'sube': variacion > 0 if variacion is not None else None,
+        'es_bueno': None,
+    }
+    if variacion:
+        tarjeta['es_bueno'] = (variacion > 0) == subir_es_bueno
+    return tarjeta
+
+
+def _restar_meses(fecha, meses):
+    """Primer día del mes que está `meses` meses antes de `fecha`."""
+    mes = fecha.month - meses
+    anio = fecha.year
+    while mes <= 0:
+        mes += 12
+        anio -= 1
+    return date(anio, mes, 1)
+
+
+def _fin_de_mes(primer_dia):
+    """Último día del mes al que pertenece `primer_dia`."""
+    ultimo = calendar.monthrange(primer_dia.year, primer_dia.month)[1]
+    return date(primer_dia.year, primer_dia.month, ultimo)
+
+
+def _plural(cantidad, singular, plural):
+    """Devuelve la palabra que corresponde a la cantidad."""
+    return singular if cantidad == 1 else plural
+
+
+def _calcular_reportes(request):
+    """
+    Calcula todas las estadísticas del panel de reportes.
+    Se usa tanto para la vista HTML como para la exportación a CSV.
+    """
+    hoy = timezone.localtime(timezone.now()).date()
+    periodo, desde, hasta, periodo_label = _reportes_rango(request)
+    desde_prev, hasta_prev = _reportes_periodo_anterior(desde, hasta)
+    dias_periodo = (hasta - desde).days + 1
+    puede_ver_pagos = get_puede_ver_pagos(request.user)
+
+    # ===== FILTRO DE SEDE =====
+    sedes = list(Clase.DIRECCIONES)
+    sede = request.GET.get('sede', '')
+    if sede not in [clave for clave, _ in sedes]:
+        sede = ''
+    sede_label = dict(sedes).get(sede, 'Todas las sedes')
+
+    f_clase = {'direccion': sede} if sede else {}
+    f_reserva = {'clase__direccion': sede} if sede else {}
+    f_ausencia = {'reserva__clase__direccion': sede} if sede else {}
+
+    # ==========================================================================
+    # 1. OCUPACIÓN ACTUAL (foto de hoy, no depende del período)
+    # ==========================================================================
+    clases = list(
+        Clase.objects.filter(activa=True, **f_clase)
+        .annotate(
+            ocupadas=Count(
+                'reserva',
+                filter=Q(reserva__activa=True, reserva__fecha_unica__isnull=True)
+            )
+        )
+        .order_by('direccion', 'dia', 'horario')
+    )
+
+    detalle_clases = []
+    for clase in clases:
+        cupo = clase.cupo_maximo or 0
+        porcentaje = round(clase.ocupadas / cupo * 100) if cupo else 0
+        detalle_clases.append({
+            'id': clase.id,
+            'nombre': clase.get_nombre_display(),
+            'tipo': clase.tipo,
+            'sede_key': clase.direccion,
+            'sede': clase.get_direccion_corta(),
+            'dia': clase.dia,
+            'horario': clase.horario,
+            'cupo': cupo,
+            'ocupadas': clase.ocupadas,
+            'libres': max(cupo - clase.ocupadas, 0),
+            'porcentaje': porcentaje,
+            'nivel': _nivel_ocupacion(porcentaje),
+        })
+
+    total_clases = len(detalle_clases)
+    total_cupos = sum(c['cupo'] for c in detalle_clases)
+    total_ocupados = sum(c['ocupadas'] for c in detalle_clases)
+    lugares_libres = max(total_cupos - total_ocupados, 0)
+    ocupacion_general = round(total_ocupados / total_cupos * 100, 1) if total_cupos else 0
+
+    clases_completas = [c for c in detalle_clases if c['cupo'] and c['libres'] == 0]
+    clases_bajo_rendimiento = sorted(
+        [c for c in detalle_clases if c['porcentaje'] < 50],
+        key=lambda c: c['porcentaje']
+    )
+    ranking_clases = sorted(
+        detalle_clases,
+        key=lambda c: (-c['porcentaje'], -c['ocupadas'])
+    )
+
+    # ===== Agrupaciones (sede / tipo / día) =====
+    reservas_periodo_qs = Reserva.objects.filter(
+        fecha_reserva__date__gte=desde,
+        fecha_reserva__date__lte=hasta,
+        **f_reserva
+    )
+    nuevas_por_sede = dict(
+        reservas_periodo_qs.values_list('clase__direccion').annotate(total=Count('id'))
+    )
+    nuevas_por_tipo = dict(
+        reservas_periodo_qs.values_list('clase__tipo').annotate(total=Count('id'))
+    )
+    nuevas_por_dia = dict(
+        reservas_periodo_qs.values_list('clase__dia').annotate(total=Count('id'))
+    )
+
+    def _resumen_grupo(nombre, items, reservas_periodo):
+        cupos = sum(i['cupo'] for i in items)
+        ocupadas = sum(i['ocupadas'] for i in items)
+        porcentaje = round(ocupadas / cupos * 100, 1) if cupos else 0.0
+        return {
+            'nombre': nombre,
+            'total_clases': len(items),
+            'cupos': cupos,
+            'ocupadas': ocupadas,
+            'libres': max(cupos - ocupadas, 0),
+            'porcentaje': porcentaje,
+            'nivel': _nivel_ocupacion(porcentaje),
+            'reservas_periodo': reservas_periodo,
+        }
+
+    stats_por_sede = [
+        _resumen_grupo(
+            nombre,
+            [c for c in detalle_clases if c['sede_key'] == clave],
+            nuevas_por_sede.get(clave, 0)
+        )
+        for clave, nombre in sedes
+        if not sede or clave == sede
+    ]
+
+    stats_por_tipo = [
+        _resumen_grupo(
+            nombre,
+            [c for c in detalle_clases if c['tipo'] == clave],
+            nuevas_por_tipo.get(clave, 0)
+        )
+        for clave, nombre in Clase.TIPO_CLASES
+    ]
+
+    stats_por_dia = []
+    for clave, nombre in DIAS_SEMANA_COMPLETOS:
+        resumen = _resumen_grupo(
+            nombre,
+            [c for c in detalle_clases if c['dia'] == clave],
+            nuevas_por_dia.get(clave, 0)
+        )
+        resumen['promedio_por_clase'] = (
+            round(resumen['ocupadas'] / resumen['total_clases'], 1)
+            if resumen['total_clases'] else 0
+        )
+        stats_por_dia.append(resumen)
+
+    max_ocupadas_dia = max([d['ocupadas'] for d in stats_por_dia] or [0])
+    for dia in stats_por_dia:
+        dia['barra'] = round(dia['ocupadas'] / max_ocupadas_dia * 100) if max_ocupadas_dia else 0
+
+    # ===== Mapa semanal (horario x día) =====
+    horarios = sorted({c['horario'] for c in detalle_clases})
+    dias_grilla = [nombre for _, nombre in DIAS_SEMANA_COMPLETOS]
+    grilla_semanal = []
+    for horario in horarios:
+        grilla_semanal.append({
+            'horario': horario,
+            'celdas': [
+                {
+                    'dia': dia,
+                    'clases': [
+                        c for c in detalle_clases
+                        if c['horario'] == horario and c['dia'] == dia
+                    ],
+                }
+                for dia in dias_grilla
+            ],
+        })
+
+    # ==========================================================================
+    # 2. ACTIVIDAD DEL PERÍODO
+    # ==========================================================================
+    reservas_nuevas = reservas_periodo_qs.count()
+    reservas_nuevas_prev = Reserva.objects.filter(
+        fecha_reserva__date__gte=desde_prev,
+        fecha_reserva__date__lte=hasta_prev,
+        **f_reserva
+    ).count()
+
+    bajas = Reserva.objects.filter(
+        activa=False,
+        fecha_modificacion__date__gte=desde,
+        fecha_modificacion__date__lte=hasta,
+        **f_reserva
+    ).count()
+    bajas_prev = Reserva.objects.filter(
+        activa=False,
+        fecha_modificacion__date__gte=desde_prev,
+        fecha_modificacion__date__lte=hasta_prev,
+        **f_reserva
+    ).count()
+
+    recuperos = Reserva.objects.filter(
+        activa=True,
+        fecha_unica__gte=desde,
+        fecha_unica__lte=hasta,
+        **f_reserva
+    ).count()
+
+    ausencias = AusenciaTemporal.objects.filter(
+        fecha__gte=desde, fecha__lte=hasta, **f_ausencia
+    ).count()
+    ausencias_prev = AusenciaTemporal.objects.filter(
+        fecha__gte=desde_prev, fecha__lte=hasta_prev, **f_ausencia
+    ).count()
+    inasistencias = Inasistencia.objects.filter(
+        fecha__gte=desde, fecha__lte=hasta, **f_ausencia
+    ).count()
+
+    cancelaciones_admin = CancelacionAdmin.objects.filter(
+        fecha_creacion__date__gte=desde,
+        fecha_creacion__date__lte=hasta,
+        **{f'reserva__{clave}': valor for clave, valor in f_reserva.items()}
+    ).count()
+
+    # Asistencia estimada: se cuentan las veces que cada reserva activa tuvo
+    # clase dentro del período y se descuentan ausencias e inasistencias.
+    hasta_asistencia = min(hasta, hoy)
+    clases_previstas = recuperos
+    for reserva in Reserva.objects.filter(
+        activa=True, fecha_unica__isnull=True, **f_reserva
+    ).select_related('clase'):
+        inicio = max(desde, timezone.localtime(reserva.fecha_reserva).date())
+        clases_previstas += _ocurrencias_dia_semana(
+            DIA_A_INDICE.get(reserva.clase.dia), inicio, hasta_asistencia
+        )
+
+    faltas = ausencias + inasistencias
+    asistencias_estimadas = max(clases_previstas - faltas, 0)
+    tasa_asistencia = (
+        round(asistencias_estimadas / clases_previstas * 100, 1)
+        if clases_previstas else 0
+    )
+    tasa_ausentismo = round(100 - tasa_asistencia, 1) if clases_previstas else 0
+
+    # ==========================================================================
+    # 3. CLIENTES
+    # ==========================================================================
+    clientes_qs = User.objects.filter(is_staff=False)
+    q_reserva_activa = Q(reservas_pilates__activa=True)
+    if sede:
+        q_reserva_activa &= Q(reservas_pilates__clase__direccion=sede)
+
+    total_clientes = clientes_qs.filter(is_active=True).count()
+    clientes_activos = clientes_qs.filter(is_active=True).filter(
+        q_reserva_activa
+    ).distinct().count()
+    clientes_sin_reserva = max(total_clientes - clientes_activos, 0)
+    clientes_desactivados = clientes_qs.filter(is_active=False).count()
+
+    nuevos_clientes = clientes_qs.filter(
+        date_joined__date__gte=desde, date_joined__date__lte=hasta
+    ).count()
+    nuevos_clientes_prev = clientes_qs.filter(
+        date_joined__date__gte=desde_prev, date_joined__date__lte=hasta_prev
+    ).count()
+
+    # Para el ranking se cuentan solo las reservas fijas (no los recuperos puntuales)
+    q_reserva_fija = q_reserva_activa & Q(reservas_pilates__fecha_unica__isnull=True)
+    top_clientes = list(
+        clientes_qs.filter(is_active=True)
+        .annotate(total_reservas=Count('reservas_pilates', filter=q_reserva_fija, distinct=True))
+        .filter(total_reservas__gt=0)
+        .order_by('-total_reservas', 'last_name', 'username')[:8]
+    )
+
+    q_ausencia_periodo = Q(
+        reservas_pilates__ausencias_temporales__fecha__gte=desde,
+        reservas_pilates__ausencias_temporales__fecha__lte=hasta,
+    )
+    q_inasistencia_periodo = Q(
+        reservas_pilates__inasistencias__fecha__gte=desde,
+        reservas_pilates__inasistencias__fecha__lte=hasta,
+    )
+    if sede:
+        q_ausencia_periodo &= Q(reservas_pilates__clase__direccion=sede)
+        q_inasistencia_periodo &= Q(reservas_pilates__clase__direccion=sede)
+
+    clientes_faltas = []
+    for cliente in clientes_qs.annotate(
+        total_ausencias=Count('reservas_pilates__ausencias_temporales',
+                              filter=q_ausencia_periodo, distinct=True),
+        total_inasistencias=Count('reservas_pilates__inasistencias',
+                                  filter=q_inasistencia_periodo, distinct=True),
+    ):
+        total = cliente.total_ausencias + cliente.total_inasistencias
+        if total:
+            clientes_faltas.append({
+                'id': cliente.id,
+                'nombre': cliente.get_full_name() or cliente.username,
+                'ausencias': cliente.total_ausencias,
+                'inasistencias': cliente.total_inasistencias,
+                'total': total,
+            })
+    clientes_faltas.sort(key=lambda c: (-c['total'], c['nombre']))
+    clientes_faltas = clientes_faltas[:6]
+
+    # Antigüedad promedio de los clientes activos, en meses
+    fechas_alta = list(
+        clientes_qs.filter(is_active=True).values_list('date_joined', flat=True)
+    )
+    antiguedad_promedio = (
+        round(sum((hoy - timezone.localtime(fecha).date()).days for fecha in fechas_alta)
+              / len(fechas_alta) / 30, 1)
+        if fechas_alta else 0
+    )
+
+    # ==========================================================================
+    # 4. PLANES
+    # ==========================================================================
+    clientes_con_plan = set(
+        PlanUsuario.objects.filter(
+            activo=True, usuario__is_active=True, usuario__is_staff=False
+        ).values_list('usuario_id', flat=True)
+    )
+
+    distribucion_planes = []
+    for plan in PlanPago.objects.filter(activo=True).order_by('clases_por_semana'):
+        cantidad = PlanUsuario.objects.filter(
+            plan=plan, activo=True, usuario__is_active=True, usuario__is_staff=False
+        ).values('usuario').distinct().count()
+        distribucion_planes.append({
+            'nombre': plan.nombre,
+            'clases_semana': plan.clases_por_semana,
+            'precio': plan.precio_mensual,
+            'cantidad': cantidad,
+            'facturacion': plan.precio_mensual * cantidad,
+        })
+    max_plan = max([p['cantidad'] for p in distribucion_planes] or [0])
+    for plan in distribucion_planes:
+        plan['barra'] = round(plan['cantidad'] / max_plan * 100) if max_plan else 0
+
+    clientes_sin_plan = max(total_clientes - len(clientes_con_plan), 0)
+    facturacion_esperada = sum(
+        (p['facturacion'] for p in distribucion_planes), Decimal('0')
+    )
+
+    solicitudes_periodo = list(
+        SolicitudCambioPlan.objects.filter(
+            fecha_solicitud__date__gte=desde, fecha_solicitud__date__lte=hasta
+        ).select_related('plan_actual', 'plan_solicitado')
+    )
+    solicitudes = {
+        'total': len(solicitudes_periodo),
+        'pendientes': SolicitudCambioPlan.objects.filter(estado='pendiente').count(),
+        'aprobadas': len([s for s in solicitudes_periodo if s.estado == 'aprobada']),
+        'rechazadas': len([s for s in solicitudes_periodo if s.estado == 'rechazada']),
+        'upgrades': len([s for s in solicitudes_periodo if s.es_upgrade()]),
+        'downgrades': len([s for s in solicitudes_periodo if s.es_downgrade()]),
+    }
+
+    # ==========================================================================
+    # 5. FINANZAS (solo para admins con permiso)
+    # ==========================================================================
+    finanzas = None
+    if puede_ver_pagos:
+        pagos_periodo = RegistroPago.objects.filter(
+            estado='confirmado', fecha_pago__gte=desde, fecha_pago__lte=hasta
+        )
+        ingresos = pagos_periodo.aggregate(total=Sum('monto'))['total'] or Decimal('0')
+        cantidad_pagos = pagos_periodo.count()
+        ingresos_prev = RegistroPago.objects.filter(
+            estado='confirmado', fecha_pago__gte=desde_prev, fecha_pago__lte=hasta_prev
+        ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+
+        metodos_pago = []
+        for clave, nombre in RegistroPago.TIPOS_PAGO:
+            datos_metodo = pagos_periodo.filter(tipo_pago=clave).aggregate(
+                total=Sum('monto'), cantidad=Count('id')
+            )
+            total_metodo = datos_metodo['total'] or Decimal('0')
+            metodos_pago.append({
+                'nombre': nombre,
+                'total': total_metodo,
+                'cantidad': datos_metodo['cantidad'] or 0,
+                'porcentaje': (
+                    round(float(total_metodo) / float(ingresos) * 100, 1) if ingresos else 0
+                ),
+            })
+
+        # Evolución de los últimos 6 meses: facturado (deudas) vs cobrado (pagos)
+        primer_dia_mes = hoy.replace(day=1)
+        evolucion_meses = []
+        for i in range(5, -1, -1):
+            inicio_mes = _restar_meses(primer_dia_mes, i)
+            fin_mes = _fin_de_mes(inicio_mes)
+            cobrado = RegistroPago.objects.filter(
+                estado='confirmado', fecha_pago__gte=inicio_mes, fecha_pago__lte=fin_mes
+            ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+            facturado = DeudaMensual.objects.filter(mes_año=inicio_mes).aggregate(
+                total=Sum('monto_original')
+            )['total'] or Decimal('0')
+            evolucion_meses.append({
+                'label': f'{MESES_CORTOS[inicio_mes.month - 1]} {str(inicio_mes.year)[2:]}',
+                'cobrado': cobrado,
+                'facturado': facturado,
+                'es_mes_actual': inicio_mes == primer_dia_mes,
+            })
+        max_mes = max(
+            [float(m['cobrado']) for m in evolucion_meses]
+            + [float(m['facturado']) for m in evolucion_meses]
+            + [0]
+        )
+        for mes in evolucion_meses:
+            mes['barra_cobrado'] = round(float(mes['cobrado']) / max_mes * 100) if max_mes else 0
+            mes['barra_facturado'] = round(float(mes['facturado']) / max_mes * 100) if max_mes else 0
+
+        # Estado de cuentas de los clientes
+        estados = list(
+            EstadoPagoCliente.objects.select_related('usuario', 'plan_actual')
+            .filter(usuario__is_active=True, usuario__is_staff=False)
+        )
+        con_deuda = [e for e in estados if e.saldo_actual < 0]
+        deuda_total = sum((abs(e.saldo_actual) for e in con_deuda), Decimal('0'))
+        saldo_a_favor = sum(
+            (e.saldo_actual for e in estados if e.saldo_actual > 0), Decimal('0')
+        )
+        top_deudores = [
+            {
+                'id': estado.usuario_id,
+                'nombre': estado.get_nombre_completo(),
+                'deuda': abs(estado.saldo_actual),
+                'plan': estado.plan_actual.nombre if estado.plan_actual else 'Sin plan',
+                'meses_atraso': estado.get_meses_atrasado(),
+            }
+            for estado in sorted(con_deuda, key=lambda e: e.saldo_actual)[:6]
+        ]
+
+        # Cobranza del mes en curso
+        deuda_mes = DeudaMensual.objects.filter(mes_año=primer_dia_mes).aggregate(
+            facturado=Sum('monto_original'), pendiente=Sum('monto_pendiente')
+        )
+        facturado_mes = deuda_mes['facturado'] or Decimal('0')
+        pendiente_mes = deuda_mes['pendiente'] or Decimal('0')
+        cobrado_mes = facturado_mes - pendiente_mes
+        tasa_cobranza = (
+            round(float(cobrado_mes) / float(facturado_mes) * 100, 1)
+            if facturado_mes else 0
+        )
+        cuotas_vencidas = DeudaMensual.objects.filter(
+            estado__in=['pendiente', 'vencido', 'parcial'],
+            fecha_vencimiento__lt=hoy
+        ).count()
+
+        finanzas = {
+            'ingresos': ingresos,
+            'ingresos_prev': ingresos_prev,
+            'cantidad_pagos': cantidad_pagos,
+            'ticket_promedio': (ingresos / cantidad_pagos) if cantidad_pagos else Decimal('0'),
+            'metodos_pago': metodos_pago,
+            'evolucion_meses': evolucion_meses,
+            'deuda_total': deuda_total,
+            'saldo_a_favor': saldo_a_favor,
+            'clientes_con_deuda': len(con_deuda),
+            'clientes_al_dia': len([e for e in estados if e.saldo_actual >= 0 and e.plan_actual]),
+            'top_deudores': top_deudores,
+            'facturado_mes': facturado_mes,
+            'cobrado_mes': cobrado_mes,
+            'pendiente_mes': pendiente_mes,
+            'tasa_cobranza': tasa_cobranza,
+            'cuotas_vencidas': cuotas_vencidas,
+            'facturacion_esperada': facturacion_esperada,
+            'ingreso_por_cliente': (ingresos / clientes_activos) if clientes_activos else Decimal('0'),
+        }
+
+    # ==========================================================================
+    # 6. TARJETAS DE INDICADORES
+    # ==========================================================================
+    kpis = [
+        _kpi(
+            'Ocupación general', ocupacion_general,
+            f'{total_ocupados} de {total_cupos} lugares ocupados',
+            'ocupacion', sufijo='%'
+        ),
+        _kpi(
+            'Reservas nuevas', reservas_nuevas,
+            f'{bajas} {_plural(bajas, "baja", "bajas")} en el período',
+            'reservas', actual=reservas_nuevas, anterior=reservas_nuevas_prev
+        ),
+        _kpi(
+            'Clientes activos', clientes_activos,
+            f'{clientes_sin_reserva} sin reserva activa',
+            'clientes'
+        ),
+        _kpi(
+            'Clientes nuevos', nuevos_clientes,
+            f'Antigüedad promedio: {antiguedad_promedio} meses',
+            'nuevos', actual=nuevos_clientes, anterior=nuevos_clientes_prev
+        ),
+        _kpi(
+            'Asistencia estimada', tasa_asistencia,
+            f'{ausencias} con aviso · {inasistencias} sin aviso',
+            'asistencia', sufijo='%'
+        ),
+        _kpi(
+            'Recuperos usados', recuperos,
+            f'{ausencias} {_plural(ausencias, "ausencia avisada", "ausencias avisadas")}',
+            'recuperos'
+        ),
+    ]
+
+    if puede_ver_pagos:
+        kpis.append(_kpi(
+            'Ingresos del período', finanzas['ingresos'],
+            f'{finanzas["cantidad_pagos"]} {_plural(finanzas["cantidad_pagos"], "pago registrado", "pagos registrados")}',
+            'ingresos', actual=finanzas['ingresos'], anterior=finanzas['ingresos_prev'],
+            es_dinero=True
+        ))
+        kpis.append(_kpi(
+            'Deuda acumulada', finanzas['deuda_total'],
+            f'{finanzas["clientes_con_deuda"]} {_plural(finanzas["clientes_con_deuda"], "cliente", "clientes")} con saldo pendiente',
+            'deuda', es_dinero=True
+        ))
+
+    # ==========================================================================
+    # 7. ALERTAS Y RECOMENDACIONES
+    # ==========================================================================
+    alertas = []
+
+    for clase in clases_bajo_rendimiento[:3]:
+        alertas.append({
+            'nivel': 'atencion',
+            'titulo': f'{clase["nombre"]} · {clase["dia"]} {clase["horario"].strftime("%H:%M")}',
+            'detalle': (
+                f'Solo {clase["ocupadas"]} de {clase["cupo"]} lugares ocupados '
+                f'({clase["porcentaje"]}%) en {clase["sede"]}. Conviene promocionar el '
+                f'horario o reagrupar alumnas.'
+            ),
+        })
+
+    if clases_completas:
+        horarios_completos = ', '.join(
+            f'{c["dia"]} {c["horario"].strftime("%H:%M")}' for c in clases_completas[:4]
+        )
+        alertas.append({
+            'nivel': 'exito',
+            'titulo': (
+                f'{len(clases_completas)} '
+                f'{_plural(len(clases_completas), "clase con cupo completo", "clases con cupo completo")}'
+            ),
+            'detalle': f'{horarios_completos}. Hay demanda para abrir un horario nuevo o sumar cupos.',
+        })
+
+    if solicitudes['pendientes']:
+        alertas.append({
+            'nivel': 'atencion',
+            'titulo': (
+                f'{solicitudes["pendientes"]} '
+                f'{_plural(solicitudes["pendientes"], "solicitud de cambio de plan", "solicitudes de cambio de plan")} sin resolver'
+            ),
+            'detalle': 'Resolvelas para que los planes y la facturación queden al día.',
+        })
+
+    recuperos_vigentes = AusenciaTemporal.objects.filter(
+        reserva__activa=True,
+        reserva__fecha_unica__isnull=True,
+        fecha__gte=hoy - timedelta(days=6),
+        fecha__lte=hoy,
+        **f_ausencia
+    ).count()
+    if recuperos_vigentes:
+        alertas.append({
+            'nivel': 'info',
+            'titulo': (
+                f'{recuperos_vigentes} '
+                f'{_plural(recuperos_vigentes, "recupero con plazo vigente", "recuperos con plazo vigente")}'
+            ),
+            'detalle': 'Ausencias avisadas que todavía pueden recuperarse dentro de los 6 días.',
+        })
+
+    if clientes_sin_reserva:
+        alertas.append({
+            'nivel': 'atencion',
+            'titulo': (
+                f'{clientes_sin_reserva} '
+                f'{_plural(clientes_sin_reserva, "cliente sin reserva activa", "clientes sin reserva activa")}'
+            ),
+            'detalle': 'Cuentas activas que hoy no ocupan ningún cupo: buen objetivo para reactivar.',
+        })
+
+    if puede_ver_pagos and finanzas['clientes_con_deuda']:
+        alertas.append({
+            'nivel': 'critico',
+            'titulo': (
+                f'{finanzas["clientes_con_deuda"]} '
+                f'{_plural(finanzas["clientes_con_deuda"], "cliente con deuda", "clientes con deuda")}'
+            ),
+            'detalle': (
+                f'Total pendiente de cobro: ${fmt_pesos(finanzas["deuda_total"])}. '
+                f'{finanzas["cuotas_vencidas"]} '
+                f'{_plural(finanzas["cuotas_vencidas"], "cuota vencida", "cuotas vencidas")}.'
+            ),
+        })
+
+    if not alertas:
+        alertas.append({
+            'nivel': 'exito',
+            'titulo': 'Todo en orden',
+            'detalle': 'No hay clases con baja ocupación ni pendientes destacados en este período.',
+        })
+
+    # Querystring para conservar los filtros en los enlaces (exportar, imprimir)
+    filtros_qs = f'periodo={periodo}&desde={desde.isoformat()}&hasta={hasta.isoformat()}'
+    if sede:
+        filtros_qs += f'&sede={sede}'
+
+    return {
+        # Filtros
+        'periodo': periodo,
+        'periodos': PERIODOS_REPORTE,
+        'periodo_label': periodo_label,
+        'desde': desde,
+        'hasta': hasta,
+        'desde_prev': desde_prev,
+        'hasta_prev': hasta_prev,
+        'dias_periodo': dias_periodo,
+        'sede': sede,
+        'sedes': sedes,
+        'sede_label': sede_label,
+        'filtros_qs': filtros_qs,
+        'hoy': hoy,
+        'puede_ver_pagos': puede_ver_pagos,
+        # Indicadores y alertas
+        'kpis': kpis,
+        'alertas': alertas,
+        # Ocupación
+        'total_clases': total_clases,
+        'total_cupos': total_cupos,
+        'total_ocupados': total_ocupados,
+        'lugares_libres': lugares_libres,
+        'ocupacion_general': ocupacion_general,
+        'detalle_clases': detalle_clases,
+        'ranking_clases': ranking_clases,
+        'clases_completas': clases_completas,
+        'clases_bajo_rendimiento': clases_bajo_rendimiento,
+        'stats_por_sede': stats_por_sede,
+        'stats_por_tipo': stats_por_tipo,
+        'stats_por_dia': stats_por_dia,
+        'dias_grilla': dias_grilla,
+        'grilla_semanal': grilla_semanal,
+        # Actividad del período
+        'reservas_nuevas': reservas_nuevas,
+        'reservas_nuevas_prev': reservas_nuevas_prev,
+        'bajas': bajas,
+        'bajas_prev': bajas_prev,
+        'saldo_neto_reservas': reservas_nuevas - bajas,
+        'recuperos': recuperos,
+        'ausencias': ausencias,
+        'ausencias_prev': ausencias_prev,
+        'inasistencias': inasistencias,
+        'cancelaciones_admin': cancelaciones_admin,
+        'clases_previstas': clases_previstas,
+        'asistencias_estimadas': asistencias_estimadas,
+        'tasa_asistencia': tasa_asistencia,
+        'tasa_ausentismo': tasa_ausentismo,
+        # Clientes
+        'total_clientes': total_clientes,
+        'clientes_activos': clientes_activos,
+        'clientes_sin_reserva': clientes_sin_reserva,
+        'clientes_desactivados': clientes_desactivados,
+        'nuevos_clientes': nuevos_clientes,
+        'nuevos_clientes_prev': nuevos_clientes_prev,
+        'antiguedad_promedio': antiguedad_promedio,
+        'top_clientes': top_clientes,
+        'clientes_faltas': clientes_faltas,
+        # Planes
+        'distribucion_planes': distribucion_planes,
+        'clientes_sin_plan': clientes_sin_plan,
+        'facturacion_esperada': facturacion_esperada if puede_ver_pagos else None,
+        'solicitudes': solicitudes,
+        # Finanzas
+        'finanzas': finanzas,
+    }
+
+
 @admin_required
 def admin_reportes(request):
     """
-    Página de reportes y estadísticas avanzadas
-    Ahora incluye estadísticas por sede
+    Panel de estadísticas del estudio: ocupación, actividad, clientes,
+    planes y finanzas, filtrable por período y por sede.
     """
-    # Estadísticas por período
-    hoy = timezone.now().date()
-    hace_una_semana = hoy - timedelta(days=7)
-    hace_un_mes = hoy - timedelta(days=30)
-    
-    # Reservas por período
-    reservas_esta_semana = Reserva.objects.filter(
-        fecha_reserva__date__gte=hace_una_semana,
-        activa=True
-    ).count()
-    
-    reservas_este_mes = Reserva.objects.filter(
-        fecha_reserva__date__gte=hace_un_mes,
-        activa=True
-    ).count()
-    
-    # Usuarios nuevos por período
-    usuarios_esta_semana = User.objects.filter(
-        date_joined__date__gte=hace_una_semana,
-        is_staff=False
-    ).count()
-    
-    usuarios_este_mes = User.objects.filter(
-        date_joined__date__gte=hace_un_mes,
-        is_staff=False
-    ).count()
-    
-    # Estadísticas por tipo de clase
-    stats_por_tipo = []
-    for tipo, nombre in Clase.TIPO_CLASES:
-        clases_tipo = Clase.objects.filter(tipo=tipo, activa=True)
-        total_clases = clases_tipo.count()
-        total_reservas = Reserva.objects.filter(
-            clase__tipo=tipo,
-            activa=True
-        ).count()
-        total_cupos = sum(clase.cupo_maximo for clase in clases_tipo)
-        
-        stats_por_tipo.append({
-            'tipo': tipo,
-            'nombre': nombre,
-            'total_clases': total_clases,
-            'total_reservas': total_reservas,
-            'total_cupos': total_cupos,
-            'porcentaje_ocupacion': round((total_reservas / total_cupos * 100), 2) if total_cupos > 0 else 0
-        })
-    
-    # Estadísticas por sede
-    stats_por_sede = []
-    for sede_key, sede_nombre in Clase.DIRECCIONES:
-        clases_sede = Clase.objects.filter(direccion=sede_key, activa=True)
-        total_clases = clases_sede.count()
-        total_reservas = Reserva.objects.filter(
-            clase__direccion=sede_key,
-            activa=True
-        ).count()
-        total_cupos = sum(clase.cupo_maximo for clase in clases_sede)
-        
-        stats_por_sede.append({
-            'sede': sede_nombre,
-            'total_clases': total_clases,
-            'total_reservas': total_reservas,
-            'total_cupos': total_cupos,
-            'porcentaje_ocupacion': round((total_reservas / total_cupos * 100), 2) if total_cupos > 0 else 0
-        })
-    
-    # Estadísticas por día de la semana
-    stats_por_dia = []
-    for dia, nombre in DIAS_SEMANA_COMPLETOS:
-        clases_dia = Clase.objects.filter(dia=dia, activa=True)
-        total_clases = clases_dia.count()
-        total_reservas = Reserva.objects.filter(
-            clase__dia=dia,
-            activa=True
-        ).count()
-        
-        stats_por_dia.append({
-            'dia': dia,
-            'total_clases': total_clases,
-            'total_reservas': total_reservas,
-            'promedio_reservas_por_clase': round(total_reservas / total_clases, 2) if total_clases > 0 else 0
-        })
-    
-    context = {
-        'reservas_esta_semana': reservas_esta_semana,
-        'reservas_este_mes': reservas_este_mes,
-        'usuarios_esta_semana': usuarios_esta_semana,
-        'usuarios_este_mes': usuarios_este_mes,
-        'stats_por_tipo': stats_por_tipo,
-        'stats_por_sede': stats_por_sede,
-        'stats_por_dia': stats_por_dia,
-    }
-    
-    return render(request, 'gravity/admin/reportes.html', context)
+    return render(request, 'gravity/admin/reportes.html', _calcular_reportes(request))
+
+
+@admin_required
+def admin_reportes_exportar(request):
+    """
+    Exporta a CSV las estadísticas del período y la sede seleccionados.
+    """
+    datos = _calcular_reportes(request)
+
+    respuesta = HttpResponse(content_type='text/csv; charset=utf-8')
+    nombre_archivo = f'estadisticas_gravity_{datos["desde"]}_{datos["hasta"]}.csv'
+    respuesta['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+    # BOM para que Excel abra bien los acentos
+    respuesta.write('﻿')
+
+    escritor = csv.writer(respuesta, delimiter=';')
+
+    def seccion(titulo, cabeceras):
+        escritor.writerow([])
+        escritor.writerow([titulo.upper()])
+        escritor.writerow(cabeceras)
+
+    escritor.writerow(['Estadísticas Pilates Gravity'])
+    escritor.writerow(['Período', datos['periodo_label']])
+    escritor.writerow(['Desde', datos['desde'].strftime('%d/%m/%Y'),
+                       'Hasta', datos['hasta'].strftime('%d/%m/%Y')])
+    escritor.writerow(['Sede', datos['sede_label']])
+    escritor.writerow(['Generado', timezone.localtime(timezone.now()).strftime('%d/%m/%Y %H:%M')])
+
+    seccion('Resumen general', ['Indicador', 'Valor'])
+    resumen = [
+        ('Clases activas', datos['total_clases']),
+        ('Cupos totales', datos['total_cupos']),
+        ('Lugares ocupados', datos['total_ocupados']),
+        ('Lugares libres', datos['lugares_libres']),
+        ('Ocupación general (%)', datos['ocupacion_general']),
+        ('Reservas nuevas', datos['reservas_nuevas']),
+        ('Reservas dadas de baja', datos['bajas']),
+        ('Recuperos usados', datos['recuperos']),
+        ('Ausencias avisadas', datos['ausencias']),
+        ('Inasistencias sin aviso', datos['inasistencias']),
+        ('Asistencia estimada (%)', datos['tasa_asistencia']),
+        ('Clientes activos', datos['clientes_activos']),
+        ('Clientes sin reserva activa', datos['clientes_sin_reserva']),
+        ('Clientes nuevos', datos['nuevos_clientes']),
+        ('Clientes sin plan', datos['clientes_sin_plan']),
+    ]
+    if datos['puede_ver_pagos']:
+        finanzas = datos['finanzas']
+        resumen += [
+            ('Ingresos del período', finanzas['ingresos']),
+            ('Cantidad de pagos', finanzas['cantidad_pagos']),
+            ('Ticket promedio', round(finanzas['ticket_promedio'])),
+            ('Deuda acumulada', finanzas['deuda_total']),
+            ('Clientes con deuda', finanzas['clientes_con_deuda']),
+            ('Cobranza del mes (%)', finanzas['tasa_cobranza']),
+            ('Facturación mensual esperada', finanzas['facturacion_esperada']),
+        ]
+    for etiqueta, valor in resumen:
+        escritor.writerow([etiqueta, valor])
+
+    seccion('Ocupación por clase',
+            ['Clase', 'Sede', 'Día', 'Horario', 'Cupo', 'Ocupados', 'Libres', 'Ocupación (%)'])
+    for clase in datos['ranking_clases']:
+        escritor.writerow([
+            clase['nombre'], clase['sede'], clase['dia'],
+            clase['horario'].strftime('%H:%M'), clase['cupo'],
+            clase['ocupadas'], clase['libres'], clase['porcentaje'],
+        ])
+
+    seccion('Ocupación por sede',
+            ['Sede', 'Clases', 'Cupos', 'Ocupados', 'Ocupación (%)', 'Reservas del período'])
+    for item in datos['stats_por_sede']:
+        escritor.writerow([item['nombre'], item['total_clases'], item['cupos'],
+                           item['ocupadas'], item['porcentaje'], item['reservas_periodo']])
+
+    seccion('Ocupación por tipo de clase',
+            ['Tipo', 'Clases', 'Cupos', 'Ocupados', 'Ocupación (%)', 'Reservas del período'])
+    for item in datos['stats_por_tipo']:
+        escritor.writerow([item['nombre'], item['total_clases'], item['cupos'],
+                           item['ocupadas'], item['porcentaje'], item['reservas_periodo']])
+
+    seccion('Actividad por día',
+            ['Día', 'Clases', 'Cupos', 'Ocupados', 'Promedio por clase', 'Reservas del período'])
+    for item in datos['stats_por_dia']:
+        escritor.writerow([item['nombre'], item['total_clases'], item['cupos'],
+                           item['ocupadas'], item['promedio_por_clase'], item['reservas_periodo']])
+
+    seccion('Clientes con más reservas', ['Cliente', 'Reservas activas'])
+    for cliente in datos['top_clientes']:
+        escritor.writerow([cliente.get_full_name() or cliente.username, cliente.total_reservas])
+
+    seccion('Clientes con más faltas', ['Cliente', 'Con aviso', 'Sin aviso', 'Total'])
+    for cliente in datos['clientes_faltas']:
+        escritor.writerow([cliente['nombre'], cliente['ausencias'],
+                           cliente['inasistencias'], cliente['total']])
+
+    seccion('Distribución de planes',
+            ['Plan', 'Clases por semana', 'Clientes', 'Precio mensual', 'Facturación esperada'])
+    for plan in datos['distribucion_planes']:
+        escritor.writerow([plan['nombre'], plan['clases_semana'], plan['cantidad'],
+                           plan['precio'], plan['facturacion']])
+    escritor.writerow(['Sin plan asignado', '', datos['clientes_sin_plan'], '', ''])
+
+    if datos['puede_ver_pagos']:
+        finanzas = datos['finanzas']
+        seccion('Ingresos por método de pago', ['Método', 'Pagos', 'Total', '% del período'])
+        for metodo in finanzas['metodos_pago']:
+            escritor.writerow([metodo['nombre'], metodo['cantidad'],
+                               metodo['total'], metodo['porcentaje']])
+
+        seccion('Evolución mensual', ['Mes', 'Facturado', 'Cobrado'])
+        for mes in finanzas['evolucion_meses']:
+            escritor.writerow([mes['label'], mes['facturado'], mes['cobrado']])
+
+        seccion('Principales deudores', ['Cliente', 'Plan', 'Deuda', 'Meses de atraso'])
+        for deudor in finanzas['top_deudores']:
+            escritor.writerow([deudor['nombre'], deudor['plan'],
+                               deudor['deuda'], deudor['meses_atraso']])
+
+    return respuesta
 
 # ==============================================================================
 # VISTAS DEL SISTEMA DE PAGOS

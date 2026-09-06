@@ -12,7 +12,7 @@ from .views import (
     admin_clase_editar, admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
     admin_reservas_lista, admin_reservar_para_usuario, admin_reserva_cancelar, admin_reserva_modificar,
     admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note,
-    admin_agregar_usuario, admin_reportes, admin_gestionar_admins, admin_crear_admin_restringido,
+    admin_agregar_usuario, admin_reportes, admin_reportes_exportar, admin_gestionar_admins, admin_crear_admin_restringido,
     admin_eliminar_admin_restringido, admin_historial_actividad,
     admin_asistencia, admin_asistencia_marcar, admin_asistencia_buscar_alumno, 
     admin_asistencia_historial_alumno, admin_asistencia_ausencias,
@@ -120,6 +120,7 @@ urlpatterns = [
 
     # Reportes y estadísticas
     path('admin-panel/reportes/', admin_reportes, name='admin_reportes'),
+    path('admin-panel/reportes/exportar/', admin_reportes_exportar, name='admin_reportes_exportar'),
 
     # Gestión de testimonios
     path('admin-panel/testimonios/', admin_testimonios_lista, name='admin_testimonios_lista'),

@@ -1,412 +1,975 @@
 {% extends 'gravity/admin/base_admin.html' %}
+{% load static %}
+{% load formato %}
 
-{% block title %}Reportes y Estadísticas - Panel de Administración{% endblock %}
+{% block title %}Estadísticas - Panel de Administración{% endblock %}
 
 {% block breadcrumb %}
     <li class="flex items-center space-x-2 text-gris-medio">
         <span class="text-gray-400">/</span>
-        <span class="text-principal">Reportes</span>
+        <span class="text-principal">Estadísticas</span>
     </li>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Colores según nivel de ocupación */
+    .nivel-completo { background-color: #5D768B; }
+    .nivel-alto     { background-color: #28A745; }
+    .nivel-medio    { background-color: #FFC107; }
+    .nivel-bajo     { background-color: #DC3545; }
+
+    .texto-completo { color: #5D768B; }
+    .texto-alto     { color: #28A745; }
+    .texto-medio    { color: #B98900; }
+    .texto-bajo     { color: #DC3545; }
+
+    .chip-completo { background-color: rgba(93, 118, 139, .12); color: #40566a; }
+    .chip-alto     { background-color: rgba(40, 167, 69, .12);  color: #1e7e34; }
+    .chip-medio    { background-color: rgba(255, 193, 7, .18);  color: #8a6d00; }
+    .chip-bajo     { background-color: rgba(220, 53, 69, .12);  color: #b02a37; }
+
+    /* Alertas del panel */
+    .alerta { border-left: 4px solid; border-radius: .5rem; padding: .875rem 1rem; }
+    .alerta-critico  { border-color: #DC3545; background-color: rgba(220, 53, 69, .07); }
+    .alerta-atencion { border-color: #FFC107; background-color: rgba(255, 193, 7, .1); }
+    .alerta-info     { border-color: #17A2B8; background-color: rgba(23, 162, 184, .08); }
+    .alerta-exito    { border-color: #28A745; background-color: rgba(40, 167, 69, .08); }
+
+    .barra-fondo { background-color: #ebe6e0; border-radius: 9999px; overflow: hidden; }
+    .barra-valor { height: 100%; border-radius: 9999px; transition: width .4s ease; }
+
+    /* Mapa semanal */
+    .mapa-celda { min-width: 92px; }
+
+    @media print {
+        .sidebar, .top-bar, .no-imprimir { display: none !important; }
+        .main-content { margin-left: 0 !important; }
+        .content-area { padding: 0 !important; }
+        .card { box-shadow: none !important; border: 1px solid #e5e5e5; break-inside: avoid; }
+        .card:hover { transform: none !important; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-    {% load static %}
-    <!-- Header Section -->
-    <div class="grid grid-cols-1 gap-6 mb-6">
-        <div class="card">
-            <div class="card-body p-3">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                    <div class="flex-1">
-                        <h2 class="flex items-center gap-2 text-2xl text-principal mb-2">
-                            <svg class="size-8" fill="currentColor" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M32 32c17.7 0 32 14.3 32 32l0 336c0 8.8 7.2 16 16 16l400 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L80 480c-44.2 0-80-35.8-80-80L0 64C0 46.3 14.3 32 32 32zm96 64c0-17.7 14.3-32 32-32l192 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-192 0c-17.7 0-32-14.3-32-32zm32 80l128 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-128 0c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 112l256 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-256 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
-                            </svg>
-                            Reportes y Estadísticas
-                        </h2>
-                        <p class="text-gris-medio mb-0">
-                            Análisis detallado del rendimiento del estudio
-                        </p>
-                    </div>
-                    <button 
-                        type="button" 
-                        class="flex items-center gap-1 border border-principal bg-principal text-fondo hover:bg-fondo hover:text-principal font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" 
-                        onclick="actualizarDatos()"
-                    >
-                        <svg class="size-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-                        </svg>
-                        <span>Actualizar</span>
-                    </button>
-                </div>
+
+<!-- Sprite de íconos usados en las tarjetas de indicadores -->
+<svg class="hidden" aria-hidden="true">
+    <defs>
+        <symbol id="ico-ocupacion" viewBox="0 0 20 20">
+            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1v-6zM7 6a1 1 0 011-1h2a1 1 0 011 1v11a1 1 0 01-1 1H8a1 1 0 01-1-1V6zM12 3a1 1 0 011-1h2a1 1 0 011 1v14a1 1 0 01-1 1h-2a1 1 0 01-1-1V3z"/>
+        </symbol>
+        <symbol id="ico-reservas" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+        </symbol>
+        <symbol id="ico-clientes" viewBox="0 0 20 20">
+            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+        </symbol>
+        <symbol id="ico-nuevos" viewBox="0 0 20 20">
+            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
+        </symbol>
+        <symbol id="ico-asistencia" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </symbol>
+        <symbol id="ico-recuperos" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+        </symbol>
+        <symbol id="ico-ingresos" viewBox="0 0 20 20">
+            <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+        </symbol>
+        <symbol id="ico-deuda" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+        </symbol>
+    </defs>
+</svg>
+
+<!-- ====================== ENCABEZADO Y FILTROS ====================== -->
+<div class="card mb-6">
+    <div class="card-body p-4">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div>
+                <h2 class="flex items-center gap-2 text-2xl text-principal mb-1">
+                    <svg class="size-7" fill="currentColor" viewBox="0 0 20 20">
+                        <use href="#ico-ocupacion"></use>
+                    </svg>
+                    Estadísticas del estudio
+                </h2>
+                <p class="text-gris-medio mb-0">
+                    {{ periodo_label }} ({{ desde|date:"d/m/Y" }} al {{ hasta|date:"d/m/Y" }}) ·
+                    {{ sede_label }} ·
+                    <span class="text-gris-medio">comparado con {{ desde_prev|date:"d/m/Y" }} al {{ hasta_prev|date:"d/m/Y" }}</span>
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2 no-imprimir">
+                <a href="{% url 'gravity:admin_reportes_exportar' %}?{{ filtros_qs }}"
+                   class="flex items-center gap-1 border border-principal bg-principal text-fondo hover:bg-fondo hover:text-principal font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Exportar CSV</span>
+                </a>
+                <button type="button" onclick="window.print()"
+                        class="flex items-center gap-1 border border-secundario bg-secundario text-gris-oscuro hover:bg-fondo hover:text-principal font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Imprimir</span>
+                </button>
             </div>
         </div>
+
+        <!-- Filtros -->
+        <form method="get" id="form-filtros" class="mt-4 pt-4 border-t border-gris-claro grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 no-imprimir">
+            <div>
+                <label for="periodo" class="block text-xs font-semibold text-gris-oscuro mb-1">Período</label>
+                <select name="periodo" id="periodo"
+                        class="w-full border border-gris-claro rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40">
+                    {% for valor, etiqueta in periodos %}
+                        <option value="{{ valor }}" {% if periodo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div id="campo-desde" {% if periodo != 'personalizado' %}class="hidden"{% endif %}>
+                <label for="desde" class="block text-xs font-semibold text-gris-oscuro mb-1">Desde</label>
+                <input type="date" name="desde" id="desde" value="{{ desde|date:'Y-m-d' }}"
+                       class="w-full border border-gris-claro rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40">
+            </div>
+            <div id="campo-hasta" {% if periodo != 'personalizado' %}class="hidden"{% endif %}>
+                <label for="hasta" class="block text-xs font-semibold text-gris-oscuro mb-1">Hasta</label>
+                <input type="date" name="hasta" id="hasta" value="{{ hasta|date:'Y-m-d' }}"
+                       class="w-full border border-gris-claro rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40">
+            </div>
+            <div>
+                <label for="sede" class="block text-xs font-semibold text-gris-oscuro mb-1">Sede</label>
+                <select name="sede" id="sede"
+                        class="w-full border border-gris-claro rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40">
+                    <option value="">Todas las sedes</option>
+                    {% for valor, etiqueta in sedes %}
+                        <option value="{{ valor }}" {% if sede == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit"
+                        class="flex-1 border border-principal bg-principal text-fondo hover:bg-fondo hover:text-principal font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                    Aplicar
+                </button>
+                <a href="{% url 'gravity:admin_reportes' %}"
+                   class="flex items-center justify-center border border-gris-claro text-gris-medio hover:text-principal py-2 px-3 rounded-lg transition-colors duration-200"
+                   title="Limpiar filtros">
+                    <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Quick Stats Cards -->
-    <div class="flex flex-col md:flex-row justify-evenly gap-4 mb-6">
-        <div class="card bg-principal text-blanco w-full">
-            <div class="card-body p-3">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h6 class="text-blanco/80 text-sm mb-2">Reservas Esta Semana</h6>
-                        <h2 class="text-2xl font-bold mb-0">{{ reservas_esta_semana|default:0 }}</h2>
-                    </div>
-                    <div>
-                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
+<!-- ====================== INDICADORES PRINCIPALES ====================== -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+    {% for kpi in kpis %}
+        <div class="card bg-blanco">
+            <div class="card-body p-4">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <h6 class="text-xs font-semibold uppercase tracking-wide text-gris-medio mb-0">{{ kpi.titulo }}</h6>
+                    <svg class="size-5 text-principal/60 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <use href="#ico-{{ kpi.icono }}"></use>
+                    </svg>
                 </div>
-            </div>
-        </div>
-
-        <div class="card bg-secundario text-blanco w-full">
-            <div class="card-body p-3">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h6 class="text-blanco/80 text-sm mb-2">Reservas Este Mes</h6>
-                        <h2 class="text-2xl font-bold mb-0">{{ reservas_este_mes|default:0 }}</h2>
-                    </div>
-                    <div>
-                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card bg-principal-dark text-blanco w-full">
-            <div class="card-body p-3">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h6 class="text-blanco/80 text-sm mb-2">Usuarios Esta Semana</h6>
-                        <h2 class="text-2xl font-bold mb-0">{{ usuarios_esta_semana|default:0 }}</h2>
-                    </div>
-                    <div>
-                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card bg-fondo border border-secundario text-principal w-full">
-            <div class="card-body p-3">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h6 class="text-principal text-sm mb-2">Usuarios Este Mes</h6>
-                        <h2 class="text-2xl font-bold mb-0">{{ usuarios_este_mes|default:0 }}</h2>
-                    </div>
-                    <div>
-                        <svg class="w-12 h-12 opacity-75" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Estadísticas por tipo de clase -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-        <div class="lg:col-span-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="flex items-center gap-2 text-lg font-semibold">
-                        <svg class="size-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 100 2h4a1 1 0 100-2H3zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" clip-rule="evenodd"/>
-                        </svg>
-                        Estadísticas por Tipo de Clase
-                    </h5>
-                </div>
-                <div class="card-body p-3">
-                    {% if stats_por_tipo %}
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-separate border-spacing-0">
-                                <thead>
-                                    <tr class="bg-principal/10">
-                                        <th class="text-left py-3 px-4 font-semibold text-gris-oscuro rounded-tl-lg">Tipo de Clase</th>
-                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro">Total Clases</th>
-                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro">Total Reservas</th>
-                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro">Cupos Totales</th>
-                                        <th class="text-center py-3 px-4 font-semibold text-gris-oscuro rounded-tr-lg">% Ocupación</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for stat in stats_por_tipo %}
-                                        <tr class="hover:bg-gris-claro/50 transition-colors duration-200">
-                                            <td class="py-3 px-4">
-                                                <div class="flex items-center space-x-3">
-                                                    {% if stat.tipo == 'Reformer' %}
-                                                        <img src="{% static 'icons/reformer.png' %}" alt="Icono de Reformer" class="w-6 h-6 object-contain">
-                                                    {% elif stat.tipo == 'Cadillac' %}
-                                                        <img src="{% static 'icons/cadillac.png' %}" alt="Icono de Cadillac" class="w-6 h-6 object-contain">
-                                                    {% elif stat.tipo == 'Especial' %}
-                                                        <img src="{% static 'icons/especial.png' %}" alt="Icono de Clase Especial" class="w-6 h-6 object-contain">
-                                                    {% else %}
-                                                        <!-- Icono por defecto si no coincide ningún tipo -->
-                                                        <div class="w-6 h-6 bg-gris-claro rounded flex items-center justify-center">
-                                                            <span class="text-xs font-bold text-gris-medio">?</span>
-                                                        </div>
-                                                    {% endif %}
-                                                    <strong>{{ stat.nombre }}</strong>
-                                                </div>
-                                            </td>
-                                            <td class="text-center py-3 px-4">
-                                                <span class="px-2 py-1 text-xs font-medium bg-principal text-fondo rounded-md">{{ stat.total_clases|default:0 }}</span>
-                                            </td>
-                                            <td class="text-center py-3 px-4">
-                                                <span class="px-2 py-1 text-xs font-medium bg-secundario text-gris-oscuro rounded-md">{{ stat.total_reservas|default:0 }}</span>
-                                            </td>
-                                            <td class="text-center py-3 px-4">
-                                                <span class="px-2 py-1 text-xs font-medium bg-fondo text-principal rounded-md">{{ stat.total_cupos|default:0 }}</span>
-                                            </td>
-                                            <td class="text-center py-3 px-4">
-                                                <span class="px-2 py-1 text-xs font-medium rounded-md
-                                                    {% if stat.porcentaje_ocupacion >= 80 %}bg-exito text-blanco
-                                                    {% elif stat.porcentaje_ocupacion >= 60 %}bg-advertencia text-blanco
-                                                    {% else %}bg-error text-blanco{% endif %}">
-                                                    {{ stat.porcentaje_ocupacion|default:0 }}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-8">
-                            <svg class="w-12 h-12 text-gris-medio mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 001.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z"/>
-                            </svg>
-                            <h6 class="text-gris-medio font-medium mb-2">No hay estadísticas disponibles</h6>
-                            <p class="text-gris-medio">Crea algunas clases para ver estadísticas</p>
-                        </div>
+                <div class="flex items-end gap-2 flex-wrap">
+                    <span class="text-3xl font-bold text-principal leading-none">
+                        {% if kpi.es_dinero %}${{ kpi.valor|pesos }}{% else %}{{ kpi.valor }}{{ kpi.sufijo }}{% endif %}
+                    </span>
+                    {% if kpi.variacion %}
+                        <span class="px-2 py-0.5 rounded-md text-xs font-semibold {% if kpi.es_bueno %}chip-alto{% else %}chip-bajo{% endif %}">
+                            {% if kpi.sube %}▲{% else %}▼{% endif %} {{ kpi.variacion_abs }}%
+                        </span>
+                    {% elif kpi.variacion == 0 %}
+                        <span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-gris-claro text-gris-medio">= sin cambios</span>
                     {% endif %}
                 </div>
+                <p class="text-xs text-gris-medio mt-2 mb-0">{{ kpi.detalle }}</p>
             </div>
         </div>
+    {% endfor %}
+</div>
 
-        <!-- Resumen rápido -->
-        <div class="lg:col-span-4">
-            <div class="card">
-                <div class="card-header text-blanco">
-                    <h5 class="flex items-center gap-1">
-                        <svg class="size-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.477.859h4z"/>
-                        </svg>
-                        Resumen Rápido
-                    </h5>
+<!-- ====================== ALERTAS Y RECOMENDACIONES ====================== -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h5 class="flex items-center gap-2 text-lg font-semibold">
+            <svg class="size-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.477.859h4z"/>
+            </svg>
+            Qué mirar hoy
+        </h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {% for alerta in alertas %}
+                <div class="alerta alerta-{{ alerta.nivel }}">
+                    <p class="font-semibold text-gris-oscuro text-sm mb-1">{{ alerta.titulo }}</p>
+                    <p class="text-sm text-gris-medio mb-0">{{ alerta.detalle }}</p>
                 </div>
-                <div class="card-body p-3">
-                    <!-- Mejor Día -->
-                    <div class="mb-6">
-                        <h6 class="text-principal font-medium mb-2">Día Más Popular</h6>
-                        {% if stats_por_dia %}
-                            {% for stat in stats_por_dia %}
-                                {% if forloop.first %}
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-bold">{{ stat.dia }}</span>
-                                        <span class="px-2 py-1 text-xs font-medium bg-principal text-fondo rounded-md">{{ stat.total_reservas|default:0 }}</span>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <small class="text-gris-medio">Sin datos disponibles</small>
-                        {% endif %}
-                    </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 
-                    <!-- Mejor tipo de clase -->
-                    <div class="mb-6">
-                        <h6 class="text-principal font-medium mb-2">Mejor Rendimiento</h6>
-                        {% if stats_por_tipo %}
-                            {% for stat in stats_por_tipo %}
-                                {% if forloop.first %}
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-bold">{{ stat.nombre }}</span>
-                                        <span class="px-2 py-1 text-xs font-medium bg-principal text-fondo rounded-md">{{ stat.porcentaje_ocupacion|default:0 }}%</span>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <small class="text-gris-medio">Sin datos disponibles</small>
-                        {% endif %}
+<!-- ====================== OCUPACIÓN ====================== -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+    <!-- Resumen de ocupación -->
+    <div class="lg:col-span-4">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Ocupación general</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="text-4xl font-bold text-principal">{{ ocupacion_general }}%</div>
+                    <p class="text-sm text-gris-medio mb-0">{{ total_ocupados }} de {{ total_cupos }} lugares ocupados</p>
+                </div>
+                <div class="barra-fondo h-3 mb-4">
+                    <div class="barra-valor" style="width: {{ ocupacion_general }}%; background-color:#5D768B;"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-gris-claro rounded-lg p-3">
+                        <div class="text-xl font-bold text-principal">{{ total_clases }}</div>
+                        <small class="text-gris-medio">Clases</small>
                     </div>
-
-                    <!-- Recomendaciones -->
-                    <div class="mb-6">
-                        <h6 class="text-secundario font-medium mb-2">Recomendaciones</h6>
-                        {% if stats_por_tipo %}
-                            <ul class="list-none space-y-2">
-                                {% for stat in stats_por_tipo %}
-                                    {% if stat.porcentaje_ocupacion < 50 %}
-                                        <li class="flex items-center gap-1">
-                                            <svg class="w-4 h-4 text-secundario" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                            </svg>
-                                            <small>Promocionar {{ stat.nombre }}</small>
-                                        </li>
-                                    {% elif stat.porcentaje_ocupacion > 90 %}
-                                        <li class="flex items-center">
-                                            <svg class="w-4 h-4 text-exito mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
-                                            </svg>
-                                            <small>Más clases de {{ stat.nombre }}</small>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-                            </ul>
-                        {% else %}
-                            <small class="text-gris-medio">Sin recomendaciones disponibles</small>
-                        {% endif %}
+                    <div class="bg-gris-claro rounded-lg p-3">
+                        <div class="text-xl font-bold text-principal">{{ total_cupos }}</div>
+                        <small class="text-gris-medio">Cupos</small>
                     </div>
+                    <div class="bg-gris-claro rounded-lg p-3">
+                        <div class="text-xl font-bold text-principal">{{ lugares_libres }}</div>
+                        <small class="text-gris-medio">Libres</small>
+                    </div>
+                </div>
 
-                    <!-- Resumen General -->
-                    <div class="bg-gris-claro p-4 rounded-lg">
-                        <h6 class="text-gris-oscuro font-medium mb-3">Resumen General</h6>
-                        <div class="grid grid-cols-2 text-center">
-                            <div>
-                                <div class="text-lg font-bold text-principal">{{ reservas_este_mes|default:0 }}</div>
-                                <small class="text-gris-medio">Reservas/Mes</small>
-                            </div>
-                            <div>
-                                <div class="text-lg font-bold text-exito">
-                                    {% if stats_por_tipo %}
-                                        {{ stats_por_tipo.0.porcentaje_ocupacion|default:0 }}%
-                                    {% else %}
-                                        0%
-                                    {% endif %}
-                                </div>
-                                <small class="text-gris-medio">Ocupación Avg.</small>
-                            </div>
+                <h6 class="text-sm font-semibold text-gris-oscuro mt-5 mb-2">Por sede</h6>
+                {% for item in stats_por_sede %}
+                    <div class="mb-3">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gris-oscuro">{{ item.nombre }}</span>
+                            <span class="font-semibold texto-{{ item.nivel }}">{{ item.porcentaje }}%</span>
                         </div>
+                        <div class="barra-fondo h-2">
+                            <div class="barra-valor nivel-{{ item.nivel }}" style="width: {{ item.porcentaje }}%;"></div>
+                        </div>
+                        <small class="text-gris-medio">
+                            {{ item.ocupadas }}/{{ item.cupos }} lugares · {{ item.total_clases }} clase{{ item.total_clases|pluralize }} ·
+                            {{ item.reservas_periodo }} reserva{{ item.reservas_periodo|pluralize }} en el período
+                        </small>
                     </div>
-                </div>
+                {% empty %}
+                    <p class="text-sm text-gris-medio">Sin datos de sedes.</p>
+                {% endfor %}
+
+                <h6 class="text-sm font-semibold text-gris-oscuro mt-5 mb-2">Por tipo de clase</h6>
+                {% for item in stats_por_tipo %}
+                    <div class="mb-3">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gris-oscuro">{{ item.nombre }}</span>
+                            <span class="font-semibold texto-{{ item.nivel }}">{{ item.porcentaje }}%</span>
+                        </div>
+                        <div class="barra-fondo h-2">
+                            <div class="barra-valor nivel-{{ item.nivel }}" style="width: {{ item.porcentaje }}%;"></div>
+                        </div>
+                        <small class="text-gris-medio">
+                            {{ item.ocupadas }}/{{ item.cupos }} lugares · {{ item.total_clases }} clase{{ item.total_clases|pluralize }}
+                        </small>
+                    </div>
+                {% empty %}
+                    <p class="text-sm text-gris-medio">Sin clases cargadas.</p>
+                {% endfor %}
             </div>
         </div>
     </div>
 
-    <!-- Actividad por día -->
-    <div class="grid grid-cols-1 gap-6 mb-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="flex items-center gap-2 text-lg font-semibold">
-                    <svg class="size-6 mb-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-                    </svg>
-                    Actividad por Día de la Semana
-                </h5>
+    <!-- Detalle por clase -->
+    <div class="lg:col-span-8">
+        <div class="card h-full">
+            <div class="card-header flex items-center justify-between">
+                <h5 class="text-lg font-semibold">Ocupación clase por clase</h5>
+                <span class="text-xs bg-white/20 px-2 py-1 rounded-md">Foto de hoy</span>
             </div>
             <div class="card-body p-3">
-                {% if stats_por_dia %}
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
-                        {% for stat in stats_por_dia %}
-                            <div class="bg-gris-claro rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
-                                <h4 class="text-2xl font-bold text-principal">{{ stat.total_reservas|default:0 }}</h4>
-                                <h4 class="text-sm text-gris-medio mb-1">Reservas</h4>
-                                <h6 class="text-2xl text-principal font-bold mb-1">{{ stat.dia }}</h6>
-                                <small class="text-sm text-gris-medio mb-1">
-                                    {{ stat.total_clases|default:0 }} clase{{ stat.total_clases|pluralize }}
-                                </small>
-                            </div>
-                        {% endfor %}
+                {% if ranking_clases %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-principal/10 text-gris-oscuro">
+                                    <th class="text-left py-2 px-3 font-semibold rounded-tl-lg">Clase</th>
+                                    <th class="text-left py-2 px-3 font-semibold">Día y hora</th>
+                                    <th class="text-left py-2 px-3 font-semibold">Sede</th>
+                                    <th class="text-center py-2 px-3 font-semibold">Lugares</th>
+                                    <th class="text-left py-2 px-3 font-semibold rounded-tr-lg">Ocupación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for clase in ranking_clases %}
+                                    <tr class="border-b border-gris-claro hover:bg-gris-claro/40 transition-colors">
+                                        <td class="py-2 px-3">
+                                            <a href="{% url 'gravity:admin_clase_detalle' clase.id %}"
+                                               class="font-semibold text-principal hover:underline">{{ clase.nombre }}</a>
+                                        </td>
+                                        <td class="py-2 px-3 text-gris-oscuro">{{ clase.dia }} {{ clase.horario|time:"H:i" }}</td>
+                                        <td class="py-2 px-3 text-gris-medio">{{ clase.sede }}</td>
+                                        <td class="py-2 px-3 text-center whitespace-nowrap">
+                                            <span class="font-semibold text-gris-oscuro">{{ clase.ocupadas }}/{{ clase.cupo }}</span>
+                                            {% if clase.libres %}
+                                                <small class="block text-gris-medio">{{ clase.libres }} libre{{ clase.libres|pluralize }}</small>
+                                            {% else %}
+                                                <small class="block texto-completo font-medium">completa</small>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-2 px-3">
+                                            <div class="flex items-center gap-2">
+                                                <div class="barra-fondo h-2 flex-1 min-w-24">
+                                                    <div class="barra-valor nivel-{{ clase.nivel }}" style="width: {{ clase.porcentaje }}%;"></div>
+                                                </div>
+                                                <span class="text-xs font-semibold w-10 text-right texto-{{ clase.nivel }}">{{ clase.porcentaje }}%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex flex-wrap gap-3 mt-3 text-xs text-gris-medio">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded nivel-completo inline-block"></span>Completa</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded nivel-alto inline-block"></span>75% o más</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded nivel-medio inline-block"></span>50% a 74%</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded nivel-bajo inline-block"></span>Menos de 50%</span>
                     </div>
                 {% else %}
                     <div class="text-center py-8">
-                        <svg class="w-12 h-12 text-gris-medio mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
-                        </svg>
-                        <h6 class="text-gris-medio font-medium mb-2">No hay datos de actividad</h6>
-                        <p class="text-gris-medio">Los datos aparecerán cuando tengas clases y reservas</p>
+                        <h6 class="text-gris-medio font-medium mb-2">No hay clases activas</h6>
+                        <p class="text-gris-medio text-sm">Creá clases para ver la ocupación acá.</p>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
+</div>
+
+<!-- ====================== MAPA SEMANAL ====================== -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h5 class="text-lg font-semibold">Mapa semanal de ocupación</h5>
+    </div>
+    <div class="card-body p-3">
+        {% if grilla_semanal %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm border-separate border-spacing-1">
+                    <thead>
+                        <tr>
+                            <th class="text-left py-2 px-3 text-xs font-semibold text-gris-medio uppercase">Hora</th>
+                            {% for dia in dias_grilla %}
+                                <th class="py-2 px-3 text-xs font-semibold text-gris-oscuro uppercase mapa-celda">{{ dia }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in grilla_semanal %}
+                            <tr>
+                                <td class="py-2 px-3 font-semibold text-principal whitespace-nowrap">{{ fila.horario|time:"H:i" }}</td>
+                                {% for celda in fila.celdas %}
+                                    <td class="p-1 align-top mapa-celda">
+                                        {% for clase in celda.clases %}
+                                            <a href="{% url 'gravity:admin_clase_detalle' clase.id %}"
+                                               class="block rounded-lg px-2 py-1 mb-1 text-xs chip-{{ clase.nivel }} hover:opacity-80 transition-opacity"
+                                               title="{{ clase.nombre }} · {{ clase.sede }} · {{ clase.porcentaje }}% de ocupación">
+                                                <span class="font-semibold">{{ clase.ocupadas }}/{{ clase.cupo }}</span>
+                                                <span class="block truncate">{{ clase.nombre }}</span>
+                                                <span class="block truncate opacity-75">{{ clase.sede }}</span>
+                                            </a>
+                                        {% empty %}
+                                            <div class="rounded-lg px-2 py-1 text-xs text-gray-300 text-center">—</div>
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-xs text-gris-medio mt-2 mb-0">
+                Cada casillero muestra lugares ocupados sobre el cupo. El color indica el nivel de ocupación.
+            </p>
+        {% else %}
+            <p class="text-sm text-gris-medio text-center py-6 mb-0">No hay clases activas para armar el mapa semanal.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ====================== ACTIVIDAD Y ASISTENCIA ====================== -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+    <!-- Actividad por día -->
+    <div class="lg:col-span-7">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Actividad por día de la semana</h5>
+            </div>
+            <div class="card-body p-4">
+                {% for dia in stats_por_dia %}
+                    <div class="mb-3">
+                        <div class="flex justify-between items-baseline text-sm mb-1 gap-2">
+                            <span class="font-semibold text-gris-oscuro">{{ dia.nombre }}</span>
+                            <span class="text-gris-medio text-right">
+                                {{ dia.ocupadas }} lugar{{ dia.ocupadas|pluralize:"es" }} ·
+                                {{ dia.total_clases }} clase{{ dia.total_clases|pluralize }}
+                                <span class="px-2 py-0.5 ml-1 rounded-md text-xs font-semibold chip-{{ dia.nivel }}">{{ dia.porcentaje }}% ocupado</span>
+                            </span>
+                        </div>
+                        <div class="barra-fondo h-3">
+                            <div class="barra-valor" style="width: {{ dia.barra }}%; background-color:#5D768B;"></div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-sm text-gris-medio mb-0">Sin datos de actividad.</p>
+                {% endfor %}
+                <p class="text-xs text-gris-medio mt-4 mb-0">
+                    La barra compara los días entre sí según lugares ocupados; el porcentaje es la ocupación real de ese día.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asistencia y movimiento -->
+    <div class="lg:col-span-5">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Asistencia y movimiento</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="text-4xl font-bold texto-{% if tasa_asistencia >= 90 %}alto{% elif tasa_asistencia >= 75 %}medio{% else %}bajo{% endif %}">
+                        {{ tasa_asistencia }}%
+                    </div>
+                    <p class="text-sm text-gris-medio mb-0">
+                        asistencia estimada sobre {{ clases_previstas }} clase{{ clases_previstas|pluralize }} previstas
+                    </p>
+                </div>
+                <div class="barra-fondo h-3 mb-4">
+                    <div class="barra-valor nivel-{% if tasa_asistencia >= 90 %}alto{% elif tasa_asistencia >= 75 %}medio{% else %}bajo{% endif %}"
+                         style="width: {{ tasa_asistencia }}%;"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gris-claro rounded-lg p-3">
+                        <div class="text-xl font-bold text-principal">{{ ausencias }}</div>
+                        <small class="text-gris-medio">Ausencias con aviso</small>
+                    </div>
+                    <div class="bg-gris-claro rounded-lg p-3">
+                        <div class="text-xl font-bold text-principal">{{ inasistencias }}</div>
+                        <small class="text-gris-medio">Faltas sin aviso</small>
+                    </div>
+                    <div class="bg-gris-claro rounded-lg p-3">
+                        <div class="text-xl font-bold text-principal">{{ recuperos }}</div>
+                        <small class="text-gris-medio">Recuperos usados</small>
+                    </div>
+                    <div class="bg-gris-claro rounded-lg p-3">
+                        <div class="text-xl font-bold text-principal">{{ asistencias_estimadas }}</div>
+                        <small class="text-gris-medio">Asistencias estimadas</small>
+                    </div>
+                </div>
+
+                <h6 class="text-sm font-semibold text-gris-oscuro mt-5 mb-2">Movimiento de reservas</h6>
+                <ul class="text-sm space-y-2">
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Reservas nuevas</span>
+                        <span class="font-semibold text-gris-oscuro">{{ reservas_nuevas }} <small class="text-gris-medio">(antes {{ reservas_nuevas_prev }})</small></span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Reservas dadas de baja</span>
+                        <span class="font-semibold text-gris-oscuro">{{ bajas }} <small class="text-gris-medio">(antes {{ bajas_prev }})</small></span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Canceladas por el estudio</span>
+                        <span class="font-semibold text-gris-oscuro">{{ cancelaciones_admin }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Saldo neto de reservas</span>
+                        <span class="font-semibold {% if saldo_neto_reservas >= 0 %}texto-alto{% else %}texto-bajo{% endif %}">
+                            {% if saldo_neto_reservas > 0 %}+{% endif %}{{ saldo_neto_reservas }}
+                        </span>
+                    </li>
+                </ul>
+                <a href="{% url 'gravity:admin_asistencia_ausencias' %}"
+                   class="inline-flex items-center gap-1 text-sm text-principal hover:underline mt-3 no-imprimir">
+                    Ver detalle de ausencias
+                    <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== CLIENTES ====================== -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+    <!-- Resumen de clientes -->
+    <div class="lg:col-span-4">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Clientes</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-gris-claro rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-principal">{{ clientes_activos }}</div>
+                        <small class="text-gris-medio">Con reserva activa</small>
+                    </div>
+                    <div class="bg-gris-claro rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-principal">{{ total_clientes }}</div>
+                        <small class="text-gris-medio">Cuentas activas</small>
+                    </div>
+                    <div class="bg-gris-claro rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold {% if clientes_sin_reserva %}texto-medio{% else %}texto-alto{% endif %}">{{ clientes_sin_reserva }}</div>
+                        <small class="text-gris-medio">Sin reserva</small>
+                    </div>
+                    <div class="bg-gris-claro rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-principal">{{ nuevos_clientes }}</div>
+                        <small class="text-gris-medio">Altas del período</small>
+                    </div>
+                </div>
+                <ul class="text-sm space-y-2">
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Antigüedad promedio</span>
+                        <span class="font-semibold text-gris-oscuro">{{ antiguedad_promedio }} meses</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Cuentas desactivadas</span>
+                        <span class="font-semibold text-gris-oscuro">{{ clientes_desactivados }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Altas período anterior</span>
+                        <span class="font-semibold text-gris-oscuro">{{ nuevos_clientes_prev }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Sin plan asignado</span>
+                        <span class="font-semibold {% if clientes_sin_plan %}texto-medio{% else %}texto-alto{% endif %}">{{ clientes_sin_plan }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top clientes -->
+    <div class="lg:col-span-4">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Clientes con más reservas</h5>
+            </div>
+            <div class="card-body p-4">
+                {% if top_clientes %}
+                    <ul class="space-y-3">
+                        {% for cliente in top_clientes %}
+                            <li class="flex items-center justify-between gap-2">
+                                <a href="{% url 'gravity:admin_usuario_detalle' cliente.id %}"
+                                   class="text-sm text-principal hover:underline truncate">
+                                    {{ cliente.get_full_name|default:cliente.username }}
+                                </a>
+                                <span class="px-2 py-0.5 text-xs font-semibold bg-principal text-fondo rounded-md shrink-0">
+                                    {{ cliente.total_reservas }} clase{{ cliente.total_reservas|pluralize }}/sem
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-sm text-gris-medio mb-0">Todavía no hay reservas activas.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Faltas por cliente -->
+    <div class="lg:col-span-4">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Clientes con más faltas</h5>
+            </div>
+            <div class="card-body p-4">
+                {% if clientes_faltas %}
+                    <ul class="space-y-3">
+                        {% for cliente in clientes_faltas %}
+                            <li>
+                                <div class="flex items-center justify-between gap-2">
+                                    <a href="{% url 'gravity:admin_usuario_detalle' cliente.id %}"
+                                       class="text-sm text-principal hover:underline truncate">{{ cliente.nombre }}</a>
+                                    <span class="px-2 py-0.5 text-xs font-semibold chip-medio rounded-md shrink-0">
+                                        {{ cliente.total }} falta{{ cliente.total|pluralize }}
+                                    </span>
+                                </div>
+                                <small class="text-gris-medio">
+                                    {{ cliente.ausencias }} con aviso · {{ cliente.inasistencias }} sin aviso
+                                </small>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-sm text-gris-medio mb-0">Sin faltas registradas en el período. 🎉</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== PLANES ====================== -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+    <div class="lg:col-span-8">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Distribución de planes</h5>
+            </div>
+            <div class="card-body p-4">
+                {% if distribucion_planes %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-principal/10 text-gris-oscuro">
+                                    <th class="text-left py-2 px-3 font-semibold rounded-tl-lg">Plan</th>
+                                    <th class="text-center py-2 px-3 font-semibold">Clases/sem</th>
+                                    <th class="text-center py-2 px-3 font-semibold">Clientes</th>
+                                    {% if puede_ver_pagos %}
+                                        <th class="text-right py-2 px-3 font-semibold">Precio</th>
+                                        <th class="text-right py-2 px-3 font-semibold rounded-tr-lg">Facturación esperada</th>
+                                    {% else %}
+                                        <th class="text-left py-2 px-3 font-semibold rounded-tr-lg">Participación</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plan in distribucion_planes %}
+                                    <tr class="border-b border-gris-claro">
+                                        <td class="py-2 px-3">
+                                            <span class="font-semibold text-gris-oscuro">{{ plan.nombre }}</span>
+                                            <div class="barra-fondo h-2 mt-1">
+                                                <div class="barra-valor" style="width: {{ plan.barra }}%; background-color:#5D768B;"></div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center py-2 px-3 text-gris-oscuro">{{ plan.clases_semana }}</td>
+                                        <td class="text-center py-2 px-3">
+                                            <span class="px-2 py-0.5 text-xs font-semibold bg-principal text-fondo rounded-md">{{ plan.cantidad }}</span>
+                                        </td>
+                                        {% if puede_ver_pagos %}
+                                            <td class="text-right py-2 px-3 text-gris-oscuro">${{ plan.precio|pesos }}</td>
+                                            <td class="text-right py-2 px-3 font-semibold text-principal">${{ plan.facturacion|pesos }}</td>
+                                        {% else %}
+                                            <td class="py-2 px-3 text-gris-medio">{{ plan.barra }}% del plan más elegido</td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                                <tr>
+                                    <td class="py-2 px-3 text-gris-medio">Sin plan asignado</td>
+                                    <td class="text-center py-2 px-3 text-gris-medio">—</td>
+                                    <td class="text-center py-2 px-3">
+                                        <span class="px-2 py-0.5 text-xs font-semibold chip-medio rounded-md">{{ clientes_sin_plan }}</span>
+                                    </td>
+                                    {% if puede_ver_pagos %}
+                                        <td class="text-right py-2 px-3 text-gris-medio">—</td>
+                                        <td class="text-right py-2 px-3 text-gris-medio">—</td>
+                                    {% else %}
+                                        <td class="py-2 px-3 text-gris-medio">—</td>
+                                    {% endif %}
+                                </tr>
+                            </tbody>
+                            {% if puede_ver_pagos %}
+                                <tfoot>
+                                    <tr class="bg-fondo">
+                                        <td class="py-2 px-3 font-semibold text-principal rounded-bl-lg" colspan="4">Facturación mensual esperada</td>
+                                        <td class="text-right py-2 px-3 font-bold text-principal rounded-br-lg">${{ facturacion_esperada|pesos }}</td>
+                                    </tr>
+                                </tfoot>
+                            {% endif %}
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-gris-medio mb-0">No hay planes activos cargados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="lg:col-span-4">
+        <div class="card h-full">
+            <div class="card-header">
+                <h5 class="text-lg font-semibold">Cambios de plan</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div class="bg-gris-claro rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold {% if solicitudes.pendientes %}texto-medio{% else %}texto-alto{% endif %}">{{ solicitudes.pendientes }}</div>
+                        <small class="text-gris-medio">Pendientes hoy</small>
+                    </div>
+                    <div class="bg-gris-claro rounded-lg p-3 text-center">
+                        <div class="text-2xl font-bold text-principal">{{ solicitudes.total }}</div>
+                        <small class="text-gris-medio">Solicitudes del período</small>
+                    </div>
+                </div>
+                <ul class="text-sm space-y-2">
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Aprobadas</span>
+                        <span class="font-semibold texto-alto">{{ solicitudes.aprobadas }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Rechazadas</span>
+                        <span class="font-semibold texto-bajo">{{ solicitudes.rechazadas }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Suben de plan</span>
+                        <span class="font-semibold text-gris-oscuro">{{ solicitudes.upgrades }}</span>
+                    </li>
+                    <li class="flex justify-between">
+                        <span class="text-gris-medio">Bajan de plan</span>
+                        <span class="font-semibold text-gris-oscuro">{{ solicitudes.downgrades }}</span>
+                    </li>
+                </ul>
+                <a href="{% url 'gravity:admin_solicitudes_plan_lista' %}"
+                   class="inline-flex items-center gap-1 text-sm text-principal hover:underline mt-3 no-imprimir">
+                    Ver solicitudes
+                    <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================== FINANZAS ====================== -->
+{% if puede_ver_pagos %}
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        <!-- Cobranza -->
+        <div class="lg:col-span-4">
+            <div class="card h-full">
+                <div class="card-header">
+                    <h5 class="text-lg font-semibold">Cobranza del mes</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if finanzas.facturado_mes %}
+                        <div class="text-center mb-3">
+                            <div class="text-4xl font-bold texto-{% if finanzas.tasa_cobranza >= 90 %}alto{% elif finanzas.tasa_cobranza >= 60 %}medio{% else %}bajo{% endif %}">
+                                {{ finanzas.tasa_cobranza }}%
+                            </div>
+                            <p class="text-sm text-gris-medio mb-0">de lo facturado este mes ya está cobrado</p>
+                        </div>
+                        <div class="barra-fondo h-3 mb-4">
+                            <div class="barra-valor nivel-{% if finanzas.tasa_cobranza >= 90 %}alto{% elif finanzas.tasa_cobranza >= 60 %}medio{% else %}bajo{% endif %}"
+                                 style="width: {{ finanzas.tasa_cobranza }}%;"></div>
+                        </div>
+                    {% else %}
+                        <div class="text-center mb-4 py-3 bg-gris-claro rounded-lg">
+                            <p class="text-sm text-gris-medio mb-0">Todavía no se generaron las cuotas de este mes.</p>
+                        </div>
+                    {% endif %}
+                    <ul class="text-sm space-y-2">
+                        <li class="flex justify-between">
+                            <span class="text-gris-medio">Facturado del mes</span>
+                            <span class="font-semibold text-gris-oscuro">${{ finanzas.facturado_mes|pesos }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-gris-medio">Cobrado del mes</span>
+                            <span class="font-semibold texto-alto">${{ finanzas.cobrado_mes|pesos }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-gris-medio">Pendiente del mes</span>
+                            <span class="font-semibold texto-bajo">${{ finanzas.pendiente_mes|pesos }}</span>
+                        </li>
+                        <li class="flex justify-between border-t border-gris-claro pt-2">
+                            <span class="text-gris-medio">Deuda acumulada</span>
+                            <span class="font-semibold texto-bajo">${{ finanzas.deuda_total|pesos }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-gris-medio">Saldos a favor</span>
+                            <span class="font-semibold texto-alto">${{ finanzas.saldo_a_favor|pesos }}</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span class="text-gris-medio">Cuotas vencidas</span>
+                            <span class="font-semibold text-gris-oscuro">{{ finanzas.cuotas_vencidas }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evolución mensual -->
+        <div class="lg:col-span-8">
+            <div class="card h-full">
+                <div class="card-header flex items-center justify-between">
+                    <h5 class="text-lg font-semibold">Facturado vs. cobrado (últimos 6 meses)</h5>
+                    <span class="text-xs bg-white/20 px-2 py-1 rounded-md">No depende del período</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="flex items-end justify-between gap-3 h-56">
+                        {% for mes in finanzas.evolucion_meses %}
+                            <div class="flex-1 flex flex-col items-center justify-end h-full">
+                                <div class="flex items-end justify-center gap-1 w-full h-full">
+                                    <div class="w-1/3 rounded-t-md bg-secundario relative group"
+                                         style="height: {{ mes.barra_facturado }}%;"
+                                         title="Facturado: ${{ mes.facturado|pesos }}"></div>
+                                    <div class="w-1/3 rounded-t-md bg-principal relative group"
+                                         style="height: {{ mes.barra_cobrado }}%;"
+                                         title="Cobrado: ${{ mes.cobrado|pesos }}"></div>
+                                </div>
+                                <span class="text-xs mt-2 {% if mes.es_mes_actual %}font-bold text-principal{% else %}text-gris-medio{% endif %}">{{ mes.label }}</span>
+                                <span class="text-[11px] text-gris-medio">${{ mes.cobrado|pesos }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="flex flex-wrap gap-4 mt-4 text-xs text-gris-medio">
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-secundario inline-block"></span>Facturado (deuda generada)</span>
+                        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-principal inline-block"></span>Cobrado (pagos confirmados)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        <!-- Métodos de pago -->
+        <div class="lg:col-span-5">
+            <div class="card h-full">
+                <div class="card-header">
+                    <h5 class="text-lg font-semibold">Cómo pagan</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="flex justify-between text-sm mb-4">
+                        <div>
+                            <div class="text-2xl font-bold text-principal">${{ finanzas.ingresos|pesos }}</div>
+                            <small class="text-gris-medio">Ingresos del período</small>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-principal">${{ finanzas.ticket_promedio|pesos }}</div>
+                            <small class="text-gris-medio">Pago promedio</small>
+                        </div>
+                    </div>
+                    {% for metodo in finanzas.metodos_pago %}
+                        <div class="mb-3">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gris-oscuro">{{ metodo.nombre }}</span>
+                                <span class="text-gris-medio">
+                                    ${{ metodo.total|pesos }} · {{ metodo.cantidad }} pago{{ metodo.cantidad|pluralize }}
+                                </span>
+                            </div>
+                            <div class="barra-fondo h-2">
+                                <div class="barra-valor" style="width: {{ metodo.porcentaje }}%; background-color:#5D768B;"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <p class="text-xs text-gris-medio mt-4 mb-0">
+                        Ingreso promedio por cliente activo: ${{ finanzas.ingreso_por_cliente|pesos }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deudores -->
+        <div class="lg:col-span-7">
+            <div class="card h-full">
+                <div class="card-header flex items-center justify-between">
+                    <h5 class="text-lg font-semibold">Principales deudores</h5>
+                    <span class="text-xs bg-white/20 px-2 py-1 rounded-md">
+                        {{ finanzas.clientes_al_dia }} al día · {{ finanzas.clientes_con_deuda }} con deuda
+                    </span>
+                </div>
+                <div class="card-body p-3">
+                    {% if finanzas.top_deudores %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="bg-principal/10 text-gris-oscuro">
+                                        <th class="text-left py-2 px-3 font-semibold rounded-tl-lg">Cliente</th>
+                                        <th class="text-left py-2 px-3 font-semibold">Plan</th>
+                                        <th class="text-center py-2 px-3 font-semibold">Meses de atraso</th>
+                                        <th class="text-right py-2 px-3 font-semibold rounded-tr-lg">Deuda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for deudor in finanzas.top_deudores %}
+                                        <tr class="border-b border-gris-claro hover:bg-gris-claro/40 transition-colors">
+                                            <td class="py-2 px-3">
+                                                <a href="{% url 'gravity:admin_usuario_detalle' deudor.id %}"
+                                                   class="text-principal hover:underline">{{ deudor.nombre }}</a>
+                                            </td>
+                                            <td class="py-2 px-3 text-gris-medio">{{ deudor.plan }}</td>
+                                            <td class="text-center py-2 px-3">
+                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-md {% if deudor.meses_atraso >= 2 %}chip-bajo{% else %}chip-medio{% endif %}">
+                                                    {{ deudor.meses_atraso }}
+                                                </span>
+                                            </td>
+                                            <td class="text-right py-2 px-3 font-semibold texto-bajo">${{ deudor.deuda|pesos }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <a href="{% url 'gravity:admin_pagos_vista_principal' %}?estado=debe"
+                           class="inline-flex items-center gap-1 text-sm text-principal hover:underline mt-3 no-imprimir">
+                            Ir a la gestión de pagos
+                            <svg class="size-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </a>
+                    {% else %}
+                        <p class="text-sm text-gris-medio text-center py-6 mb-0">Ningún cliente tiene deuda. 🎉</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- ====================== NOTA METODOLÓGICA ====================== -->
+<div class="card mb-6">
+    <div class="card-body p-4">
+        <h6 class="text-sm font-semibold text-gris-oscuro mb-2">Cómo se calculan estos números</h6>
+        <ul class="text-xs text-gris-medio space-y-1 list-disc list-inside mb-0">
+            <li><strong>Ocupación:</strong> reservas fijas activas sobre el cupo de cada clase. Es una foto de hoy y no cambia con el período elegido.</li>
+            <li><strong>Reservas nuevas y bajas:</strong> reservas creadas o dadas de baja dentro del período seleccionado.</li>
+            <li><strong>Asistencia estimada:</strong> se cuentan las clases que le tocaban a cada reserva activa dentro del período y se descuentan las ausencias avisadas y las faltas sin aviso registradas por el estudio.</li>
+            <li><strong>Recuperos:</strong> reservas de fecha única tomadas dentro del período.</li>
+            {% if puede_ver_pagos %}
+                <li><strong>Ingresos:</strong> pagos confirmados con fecha dentro del período. La comparación es contra los {{ dias_periodo }} día{{ dias_periodo|pluralize }} anteriores.</li>
+                <li><strong>Facturado:</strong> deudas mensuales generadas por el sistema según el plan de cada cliente.</li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Reportes cargados correctamente');
+<script>
+    // Mostrar las fechas solo cuando el período es personalizado y enviar al cambiar
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectPeriodo = document.getElementById('periodo');
+        const selectSede = document.getElementById('sede');
+        const campoDesde = document.getElementById('campo-desde');
+        const campoHasta = document.getElementById('campo-hasta');
+        const formulario = document.getElementById('form-filtros');
+
+        function actualizarCampos() {
+            const personalizado = selectPeriodo.value === 'personalizado';
+            campoDesde.classList.toggle('hidden', !personalizado);
+            campoHasta.classList.toggle('hidden', !personalizado);
+            return personalizado;
+        }
+
+        selectPeriodo.addEventListener('change', function () {
+            if (!actualizarCampos()) {
+                formulario.submit();
+            }
         });
 
-        // Update data function
-        function actualizarDatos() {
-            const button = document.querySelector('[onclick="actualizarDatos()"]');
-            if (!button) return;
-            
-            const originalText = button.innerHTML;
-            button.innerHTML = '<div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Actualizando...';
-            button.disabled = true;
-            
-            // Simulate refresh
-            setTimeout(function() {
-                button.innerHTML = originalText;
-                button.disabled = false;
-                showNotification('Datos actualizados correctamente', 'success');
-                location.reload();
-            }, 2000);
-        }
-
-        // Show notification
-        function showNotification(message, type) {
-            const alertClasses = {
-                'success': 'bg-exito border-exito text-blanco',
-                'info': 'bg-info border-info text-blanco',
-                'warning': 'bg-advertencia border-advertencia text-blanco',
-                'error': 'bg-error border-error text-blanco'
-            };
-            
-            const iconClasses = {
-                'success': 'text-blanco',
-                'info': 'text-blanco',
-                'warning': 'text-blanco',
-                'error': 'text-blanco'
-            };
-            
-            const icons = {
-                'success': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>',
-                'info': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>',
-                'warning': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>',
-                'error': '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>'
-            };
-            
-            const notification = document.createElement('div');
-            notification.className = `fixed top-5 right-5 z-50 min-w-80 border rounded-lg shadow-lg p-4 transform transition-all duration-300 ease-in-out ${alertClasses[type] || alertClasses.info}`;
-            notification.style.transform = 'translateX(100%)';
-            
-            notification.innerHTML = 
-                '<div class="flex items-start space-x-3">' +
-                    '<div class="flex-shrink-0 ' + iconClasses[type] + '">' + icons[type] + '</div>' +
-                    '<div class="flex-1 text-sm font-medium">' + message + '</div>' +
-                    '<button type="button" class="flex-shrink-0 ml-4" onclick="this.parentElement.parentElement.remove()">' +
-                        '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">' +
-                            '<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>' +
-                        '</svg>' +
-                    '</button>' +
-                '</div>';
-            
-            document.body.appendChild(notification);
-            
-            // Animate in
-            setTimeout(() => {
-                notification.style.transform = 'translateX(0)';
-            }, 100);
-            
-            // Auto remove after 5 seconds
-            setTimeout(function() {
-                if (notification.parentNode) {
-                    notification.style.transform = 'translateX(100%)';
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.remove();
-                        }
-                    }, 300);
-                }
-            }, 5000);
-        }
-    </script>
+        selectSede.addEventListener('change', function () {
+            formulario.submit();
+        });
+    });
+</script>
 {% endblock %}
