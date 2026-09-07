@@ -10,7 +10,7 @@
 </li>
 <li class="flex items-center">
     <span class="text-gray-400">/</span>
-    <span class="ml-1 text-gray-500">{{ profesora.get_full_name|default:profesora.username }}</span>
+    <span class="ml-1 text-gray-500 truncate">{{ profesora.get_full_name|default:profesora.username }}</span>
 </li>
 {% endblock %}
 
@@ -19,12 +19,12 @@
 <!-- Header -->
 <div class="mb-4">
     <div class="p-4 bg-blanco rounded-lg shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-2xl font-bold text-principal mb-1">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="min-w-0">
+                <h2 class="text-xl md:text-2xl font-bold text-principal mb-1">
                     {{ profesora.get_full_name|default:profesora.username }}
                 </h2>
-                <p class="text-gray-500 text-sm mb-0">
+                <p class="text-gray-500 text-sm mb-0 break-words">
                     Usuario <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">{{ profesora.username }}</code>
                     {% if profesora.email %} · {{ profesora.email }}{% endif %}
                     {% if not profesora.is_active %}
@@ -33,21 +33,21 @@
                 </p>
             </div>
             <a href="{% url 'gravity:admin_profesoras_lista' %}"
-                class="text-sm text-gray-500 hover:text-principal whitespace-nowrap">← Volver al listado</a>
+                class="text-sm text-gray-500 hover:text-principal whitespace-nowrap shrink-0">← Volver al listado</a>
         </div>
     </div>
 </div>
 
 <!-- Tarjetas de resumen -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
     <div class="bg-blanco rounded-lg shadow-sm p-4">
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Hoy</div>
-        <div class="text-2xl font-bold text-principal">{{ resumen_hoy.horas|horas }} h</div>
+        <div class="text-xl md:text-2xl font-bold text-principal">{{ resumen_hoy.horas|horas }} h</div>
         <div class="text-xs text-gray-500 mt-1">{{ hoy|date:"l d/m" }}</div>
     </div>
     <div class="bg-blanco rounded-lg shadow-sm p-4">
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Esta semana</div>
-        <div class="text-2xl font-bold text-principal">{{ resumen_semana.horas|horas }} h</div>
+        <div class="text-xl md:text-2xl font-bold text-principal">{{ resumen_semana.horas|horas }} h</div>
         <div class="text-xs text-gray-500 mt-1">
             {{ desde_semana|date:"d/m" }} al {{ hasta_semana|date:"d/m" }} · ${{ resumen_semana.monto|pesos }}
         </div>
@@ -56,12 +56,12 @@
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">
             {{ mes_seleccionado|date:"F Y"|capfirst }}
         </div>
-        <div class="text-2xl font-bold text-principal">{{ resumen_mes.horas|horas }} h</div>
+        <div class="text-xl md:text-2xl font-bold text-principal">{{ resumen_mes.horas|horas }} h</div>
         <div class="text-xs text-gray-500 mt-1">${{ resumen_mes.monto|pesos }} a pagar</div>
     </div>
     <div class="bg-blanco rounded-lg shadow-sm p-4">
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Horario semanal</div>
-        <div class="text-2xl font-bold text-principal">{{ horas_semanales|horas }} h</div>
+        <div class="text-xl md:text-2xl font-bold text-principal">{{ horas_semanales|horas }} h</div>
         <div class="text-xs text-gray-500 mt-1">
             {% if valor_actual %}${{ valor_actual.valor_hora|pesos }} por hora{% else %}
             <span class="text-amber-600">sin valor hora cargado</span>{% endif %}
@@ -71,7 +71,7 @@
 
 <!-- Horario semanal -->
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
-    <h3 class="font-cinzel text-xl text-principal mb-1">Horario semanal</h3>
+    <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">Horario semanal</h3>
     <p class="text-gray-500 text-sm mb-4">
         Es el horario que la profesora cumple todas las semanas. Los cambios rigen desde la fecha que
         indiques, así los meses ya trabajados no se modifican.
@@ -86,7 +86,7 @@
             </div>
             {% for bloque in dia.bloques %}
             <div class="flex items-start justify-between gap-2 py-1.5 border-t border-gray-100">
-                <div>
+                <div class="min-w-0">
                     <div class="text-sm text-gray-800">
                         {{ bloque.hora_inicio|time:"H:i" }} a {{ bloque.hora_fin|time:"H:i" }}
                     </div>
@@ -96,7 +96,7 @@
                 </div>
                 <button type="button"
                     onclick="darDeBajaHorario({{ bloque.id }}, '{{ bloque.dia|escapejs }} de {{ bloque.hora_inicio|time:'H:i'|escapejs }} a {{ bloque.hora_fin|time:'H:i'|escapejs }}')"
-                    class="text-red-500 hover:text-red-700 text-xs whitespace-nowrap">
+                    class="text-red-500 hover:text-red-700 text-xs whitespace-nowrap shrink-0">
                     Dar de baja
                 </button>
             </div>
@@ -159,28 +159,46 @@
     <div class="border-t border-secundario/30 pt-4 mt-4">
         <details>
             <summary class="text-sm text-gray-500 cursor-pointer">Horarios que ya no rigen ({{ bloques_historicos|length }})</summary>
-            <div class="mt-3 overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-secundario/30">
-                            <th class="text-left font-semibold text-gray-600 py-2 pr-4">Día</th>
-                            <th class="text-left font-semibold text-gray-600 py-2 pr-4">Horario</th>
-                            <th class="text-left font-semibold text-gray-600 py-2 pr-4">Sede</th>
-                            <th class="text-left font-semibold text-gray-600 py-2">Rigió</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for bloque in bloques_historicos %}
-                        <tr class="border-b border-gray-100 text-gray-500">
-                            <td class="py-2 pr-4">{{ bloque.dia }}</td>
-                            <td class="py-2 pr-4">{{ bloque.hora_inicio|time:"H:i" }} a {{ bloque.hora_fin|time:"H:i" }}</td>
-                            <td class="py-2 pr-4">{{ bloque.get_sede_display }}</td>
-                            <td class="py-2">{{ bloque.vigente_desde|date:"d/m/Y" }} — {{ bloque.vigente_hasta|date:"d/m/Y" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+            <!-- Móvil -->
+            <div class="lg:hidden space-y-2 mt-3">
+                {% for bloque in bloques_historicos %}
+                <div class="border border-gray-200 rounded-lg px-3 py-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-sm text-gray-700">{{ bloque.dia }}</span>
+                        <span class="text-sm text-gray-600">{{ bloque.hora_inicio|time:"H:i" }} a {{ bloque.hora_fin|time:"H:i" }}</span>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        {{ bloque.get_sede_display }} · rigió del {{ bloque.vigente_desde|date:"d/m/Y" }}
+                        al {{ bloque.vigente_hasta|date:"d/m/Y" }}
+                    </div>
+                </div>
+                {% endfor %}
             </div>
+
+            <!-- Escritorio -->
+            <div class="hidden lg:block">
+<table class="w-full text-sm mt-3">
+                <thead>
+                    <tr class="border-b border-secundario/30">
+                        <th class="text-left font-semibold text-gray-600 py-2 pr-4">Día</th>
+                        <th class="text-left font-semibold text-gray-600 py-2 pr-4">Horario</th>
+                        <th class="text-left font-semibold text-gray-600 py-2 pr-4">Sede</th>
+                        <th class="text-left font-semibold text-gray-600 py-2">Rigió</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bloque in bloques_historicos %}
+                    <tr class="border-b border-gray-100 text-gray-500">
+                        <td class="py-2 pr-4">{{ bloque.dia }}</td>
+                        <td class="py-2 pr-4">{{ bloque.hora_inicio|time:"H:i" }} a {{ bloque.hora_fin|time:"H:i" }}</td>
+                        <td class="py-2 pr-4">{{ bloque.get_sede_display }}</td>
+                        <td class="py-2">{{ bloque.vigente_desde|date:"d/m/Y" }} — {{ bloque.vigente_hasta|date:"d/m/Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+</div>
         </details>
     </div>
     {% endif %}
@@ -188,7 +206,7 @@
 
 <!-- Valor hora -->
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
-    <h3 class="font-cinzel text-xl text-principal mb-1">Valor por hora</h3>
+    <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">Valor por hora</h3>
     <p class="text-gray-500 text-sm mb-4">
         Cada valor rige desde la fecha indicada. Al cargar uno nuevo, el anterior se cierra el día previo y
         los meses viejos se siguen calculando con el valor que regía entonces.
@@ -221,37 +239,61 @@
     </form>
 
     {% if historial_valores %}
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Valor</th>
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Período</th>
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Observaciones</th>
-                    <th class="text-left font-semibold text-gray-600 py-2">Cargado por</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for valor in historial_valores %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 font-medium text-gray-800">${{ valor.valor_hora|pesos }}</td>
-                    <td class="py-2 pr-4 text-gray-600">
-                        Desde {{ valor.vigente_desde|date:"d/m/Y" }}
-                        {% if valor.vigente_hasta %}
-                        hasta {{ valor.vigente_hasta|date:"d/m/Y" }}
-                        {% else %}
-                        <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">vigente</span>
-                        {% endif %}
-                    </td>
-                    <td class="py-2 pr-4 text-gray-500">{{ valor.observaciones|default:"—" }}</td>
-                    <td class="py-2 text-gray-500">
-                        {% if valor.registrado_por %}{{ valor.registrado_por.get_full_name|default:valor.registrado_por.username }}{% else %}—{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <!-- Móvil -->
+    <div class="lg:hidden space-y-2">
+        {% for valor in historial_valores %}
+        <div class="border border-gray-200 rounded-lg px-3 py-2">
+            <div class="flex items-center justify-between gap-2">
+                <span class="font-semibold text-gray-800">${{ valor.valor_hora|pesos }}</span>
+                {% if not valor.vigente_hasta %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">vigente</span>
+                {% endif %}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+                Desde {{ valor.vigente_desde|date:"d/m/Y" }}
+                {% if valor.vigente_hasta %}hasta {{ valor.vigente_hasta|date:"d/m/Y" }}{% endif %}
+            </div>
+            {% if valor.observaciones %}
+            <div class="text-xs text-gray-400 mt-1">{{ valor.observaciones }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
     </div>
+
+    <!-- Escritorio -->
+    <div class="hidden lg:block">
+<table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Valor</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Período</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Observaciones</th>
+                <th class="text-left font-semibold text-gray-600 py-2">Cargado por</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for valor in historial_valores %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4 font-medium text-gray-800">${{ valor.valor_hora|pesos }}</td>
+                <td class="py-2 pr-4 text-gray-600">
+                    Desde {{ valor.vigente_desde|date:"d/m/Y" }}
+                    {% if valor.vigente_hasta %}
+                    hasta {{ valor.vigente_hasta|date:"d/m/Y" }}
+                    {% else %}
+                    <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">vigente</span>
+                    {% endif %}
+                </td>
+                <td class="py-2 pr-4 text-gray-500">{{ valor.observaciones|default:"—" }}</td>
+                <td class="py-2 text-gray-500">
+                    {% if valor.registrado_por %}{{ valor.registrado_por.get_full_name|default:valor.registrado_por.username }}{% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
     {% else %}
     <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-0">
         Todavía no cargaste un valor por hora. Hasta que lo hagas, el costo de sus horas figura en $0.
@@ -263,21 +305,21 @@
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-            <h3 class="font-cinzel text-xl text-principal mb-1">
+            <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">
                 Horas trabajadas — {{ mes_seleccionado|date:"F Y"|capfirst }}
             </h3>
             <p class="text-gray-500 text-sm mb-0">
                 {{ resumen_mes.horas|horas }} horas · ${{ resumen_mes.monto|pesos }}
             </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0">
             <a href="?mes={{ mes_anterior|date:'Y-m' }}"
-                class="px-3 py-2 rounded-lg text-sm bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
+                class="px-3 py-2 rounded-lg text-sm text-center bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
                 ← {{ mes_anterior|date:"F"|capfirst }}
             </a>
             {% if hay_mes_siguiente %}
             <a href="?mes={{ mes_siguiente|date:'Y-m' }}"
-                class="px-3 py-2 rounded-lg text-sm bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
+                class="px-3 py-2 rounded-lg text-sm text-center bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
                 {{ mes_siguiente|date:"F"|capfirst }} →
             </a>
             {% endif %}
@@ -285,98 +327,124 @@
     </div>
 
     {% if resumen_mes.por_sede %}
-    <div class="flex flex-wrap gap-3 mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
         {% for sede in resumen_mes.por_sede %}
-        <div class="border border-gray-200 rounded-lg px-4 py-2">
-            <div class="text-xs text-gray-400">{{ sede.nombre }}</div>
-            <div class="text-sm font-semibold text-gray-800">
+        <div class="border border-gray-200 rounded-lg px-4 py-2 flex items-center justify-between gap-2">
+            <span class="text-xs text-gray-400">{{ sede.nombre }}</span>
+            <span class="text-sm font-semibold text-gray-800 whitespace-nowrap">
                 {{ sede.horas|horas }} h · ${{ sede.monto|pesos }}
-            </div>
+            </span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
     {% if resumen_mes.semanas %}
-    <div class="overflow-x-auto mb-4">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Semana</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
-                    <th class="text-right font-semibold text-gray-600 py-2">Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for semana in resumen_mes.semanas %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 text-gray-600">
-                        {{ semana.desde|date:"d/m" }} al {{ semana.hasta|date:"d/m" }}
-                    </td>
-                    <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ semana.horas|horas }} h</td>
-                    <td class="py-2 text-right text-gray-600">${{ semana.monto|pesos }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="mb-4">
+        <h4 class="font-semibold text-gray-700 text-sm mb-2">Por semana</h4>
+        <div class="divide-y divide-gray-100 border border-gray-200 rounded-lg">
+            {% for semana in resumen_mes.semanas %}
+            <div class="flex items-center justify-between gap-2 px-3 py-2">
+                <span class="text-sm text-gray-600">{{ semana.desde|date:"d/m" }} al {{ semana.hasta|date:"d/m" }}</span>
+                <span class="text-sm text-gray-800 whitespace-nowrap">
+                    <span class="font-medium">{{ semana.horas|horas }} h</span>
+                    <span class="text-gray-500">· ${{ semana.monto|pesos }}</span>
+                </span>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 
     {% if resumen_mes.dias %}
     <details open>
         <summary class="text-sm text-gray-500 cursor-pointer mb-2">Detalle día por día</summary>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-secundario/30">
-                        <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
-                        <th class="text-left font-semibold text-gray-600 py-2 pr-4">Turnos</th>
-                        <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
-                        <th class="text-right font-semibold text-gray-600 py-2 pr-4">Valor hora</th>
-                        <th class="text-right font-semibold text-gray-600 py-2">Monto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for dia in resumen_mes.dias %}
-                    <tr class="border-b border-gray-100">
-                        <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">
-                            {{ dia.fecha|date:"D d/m" }}
-                        </td>
-                        <td class="py-2 pr-4">
-                            {% for turno in dia.turnos %}
-                            <div class="text-gray-800">
-                                {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }}
-                                <span class="text-xs text-gray-400">· {{ turno.sede_display }}</span>
-                                {% if turno.origen == 'extra' %}
-                                <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
-                                {% elif turno.origen == 'reemplazo' %}
-                                <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
-                                {% endif %}
-                                {% if turno.motivo %}
-                                <span class="text-xs text-gray-400 italic">{{ turno.motivo }}</span>
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </td>
-                        <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ dia.horas|horas }} h</td>
-                        <td class="py-2 pr-4 text-right text-gray-500">
-                            {% if dia.valor_hora %}${{ dia.valor_hora|pesos }}{% else %}—{% endif %}
-                        </td>
-                        <td class="py-2 text-right text-gray-600">${{ dia.monto|pesos }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr class="border-t-2 border-secundario/30">
-                        <td class="py-2 pr-4 font-semibold text-gray-800">Total del mes</td>
-                        <td></td>
-                        <td class="py-2 pr-4 text-right font-bold text-principal">{{ resumen_mes.horas|horas }} h</td>
-                        <td></td>
-                        <td class="py-2 text-right font-bold text-principal">${{ resumen_mes.monto|pesos }}</td>
-                    </tr>
-                </tfoot>
-            </table>
+
+        <!-- Móvil -->
+        <div class="lg:hidden space-y-2">
+            {% for dia in resumen_mes.dias %}
+            <div class="border border-gray-200 rounded-lg px-3 py-2">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="text-sm font-medium text-gray-700">{{ dia.fecha|date:"D d/m" }}</span>
+                    <span class="text-sm text-gray-800 whitespace-nowrap">
+                        <span class="font-semibold">{{ dia.horas|horas }} h</span>
+                        <span class="text-gray-500">· ${{ dia.monto|pesos }}</span>
+                    </span>
+                </div>
+                {% for turno in dia.turnos %}
+                <div class="text-xs text-gray-500 border-t border-gray-100 pt-1 mt-1">
+                    {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }} · {{ turno.sede_display }}
+                    {% if turno.origen == 'extra' %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
+                    {% elif turno.origen == 'reemplazo' %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
+                    {% endif %}
+                    {% if turno.motivo %}<span class="italic">{{ turno.motivo }}</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            <div class="border border-secundario/30 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                <span class="text-sm font-semibold text-gray-800">Total del mes</span>
+                <span class="text-sm font-bold text-principal whitespace-nowrap">
+                    {{ resumen_mes.horas|horas }} h · ${{ resumen_mes.monto|pesos }}
+                </span>
+            </div>
         </div>
+
+        <!-- Escritorio -->
+        <div class="hidden lg:block">
+<table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-secundario/30">
+                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
+                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Turnos</th>
+                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
+                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Valor hora</th>
+                    <th class="text-right font-semibold text-gray-600 py-2">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dia in resumen_mes.dias %}
+                <tr class="border-b border-gray-100">
+                    <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">
+                        {{ dia.fecha|date:"D d/m" }}
+                    </td>
+                    <td class="py-2 pr-4">
+                        {% for turno in dia.turnos %}
+                        <div class="text-gray-800">
+                            {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }}
+                            <span class="text-xs text-gray-400">· {{ turno.sede_display }}</span>
+                            {% if turno.origen == 'extra' %}
+                            <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
+                            {% elif turno.origen == 'reemplazo' %}
+                            <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
+                            {% endif %}
+                            {% if turno.motivo %}
+                            <span class="text-xs text-gray-400 italic">{{ turno.motivo }}</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </td>
+                    <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ dia.horas|horas }} h</td>
+                    <td class="py-2 pr-4 text-right text-gray-500">
+                        {% if dia.valor_hora %}${{ dia.valor_hora|pesos }}{% else %}—{% endif %}
+                    </td>
+                    <td class="py-2 text-right text-gray-600">${{ dia.monto|pesos }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="border-t-2 border-secundario/30">
+                    <td class="py-2 pr-4 font-semibold text-gray-800">Total del mes</td>
+                    <td></td>
+                    <td class="py-2 pr-4 text-right font-bold text-principal">{{ resumen_mes.horas|horas }} h</td>
+                    <td></td>
+                    <td class="py-2 text-right font-bold text-principal">${{ resumen_mes.monto|pesos }}</td>
+                </tr>
+            </tfoot>
+        </table>
+</div>
     </details>
     {% else %}
     <p class="text-sm text-gray-400 text-center py-6 mb-0">
@@ -387,7 +455,7 @@
 
 <!-- Ajustes del mes -->
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
-    <h3 class="font-cinzel text-xl text-principal mb-1">Ajustes del mes</h3>
+    <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">Ajustes del mes</h3>
     <p class="text-gray-500 text-sm mb-4">
         Para los días que se apartan del horario habitual: un turno extra, un día que no trabajó, o un día
         que trabajó en otro horario (por ejemplo si salió antes o cubrió a una compañera).
@@ -443,49 +511,83 @@
     </form>
 
     {% if ajustes_mes %}
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Tipo</th>
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Horario</th>
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Motivo</th>
-                    <th class="text-right font-semibold text-gray-600 py-2">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ajuste in ajustes_mes %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ ajuste.fecha|date:"D d/m/Y" }}</td>
-                    <td class="py-2 pr-4">
-                        {% if ajuste.tipo == 'extra' %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">Turno extra</span>
-                        {% elif ajuste.tipo == 'reemplazo' %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Otro horario</span>
-                        {% else %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-50 text-red-600">No trabajó</span>
-                        {% endif %}
-                    </td>
-                    <td class="py-2 pr-4 text-gray-600">
-                        {% if ajuste.hora_inicio %}
-                        {{ ajuste.hora_inicio|time:"H:i" }} a {{ ajuste.hora_fin|time:"H:i" }}
-                        <span class="text-xs text-gray-400">· {{ ajuste.get_sede_display }}</span>
-                        {% else %}—{% endif %}
-                    </td>
-                    <td class="py-2 pr-4 text-gray-500">{{ ajuste.motivo|default:"—" }}</td>
-                    <td class="py-2 text-right">
-                        <button type="button"
-                            onclick="confirmarAccion('{% url 'gravity:admin_profesora_ajuste_eliminar' profesora.id ajuste.id %}', 'Eliminar ajuste', 'El día {{ ajuste.fecha|date:"d/m/Y"|escapejs }} vuelve a contarse según el horario habitual.', 'Sí, eliminar')"
-                            class="text-red-500 hover:text-red-700 text-xs font-medium hover:underline">
-                            Eliminar
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <!-- Móvil -->
+    <div class="lg:hidden space-y-2">
+        {% for ajuste in ajustes_mes %}
+        <div class="border border-gray-200 rounded-lg px-3 py-2">
+            <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="text-sm font-medium text-gray-700">{{ ajuste.fecha|date:"D d/m/Y" }}</span>
+                {% if ajuste.tipo == 'extra' %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">Turno extra</span>
+                {% elif ajuste.tipo == 'reemplazo' %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Otro horario</span>
+                {% else %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-50 text-red-600">No trabajó</span>
+                {% endif %}
+            </div>
+            {% if ajuste.hora_inicio %}
+            <div class="text-xs text-gray-500">
+                {{ ajuste.hora_inicio|time:"H:i" }} a {{ ajuste.hora_fin|time:"H:i" }} · {{ ajuste.get_sede_display }}
+            </div>
+            {% endif %}
+            <div class="flex items-center justify-between gap-2 mt-1">
+                <span class="text-xs text-gray-400">{{ ajuste.motivo|default:"Sin motivo" }}</span>
+                <button type="button"
+                    onclick="confirmarAccion('{% url 'gravity:admin_profesora_ajuste_eliminar' profesora.id ajuste.id %}', 'Eliminar ajuste', 'El día {{ ajuste.fecha|date:"d/m/Y"|escapejs }} vuelve a contarse según el horario habitual.', 'Sí, eliminar')"
+                    class="text-red-500 hover:text-red-700 text-xs font-medium shrink-0">
+                    Eliminar
+                </button>
+            </div>
+        </div>
+        {% endfor %}
     </div>
+
+    <!-- Escritorio -->
+    <div class="hidden lg:block">
+<table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Tipo</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Horario</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Motivo</th>
+                <th class="text-right font-semibold text-gray-600 py-2">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ajuste in ajustes_mes %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ ajuste.fecha|date:"D d/m/Y" }}</td>
+                <td class="py-2 pr-4">
+                    {% if ajuste.tipo == 'extra' %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">Turno extra</span>
+                    {% elif ajuste.tipo == 'reemplazo' %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Otro horario</span>
+                    {% else %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-50 text-red-600">No trabajó</span>
+                    {% endif %}
+                </td>
+                <td class="py-2 pr-4 text-gray-600">
+                    {% if ajuste.hora_inicio %}
+                    {{ ajuste.hora_inicio|time:"H:i" }} a {{ ajuste.hora_fin|time:"H:i" }}
+                    <span class="text-xs text-gray-400">· {{ ajuste.get_sede_display }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="py-2 pr-4 text-gray-500">{{ ajuste.motivo|default:"—" }}</td>
+                <td class="py-2 text-right">
+                    <button type="button"
+                        onclick="confirmarAccion('{% url 'gravity:admin_profesora_ajuste_eliminar' profesora.id ajuste.id %}', 'Eliminar ajuste', 'El día {{ ajuste.fecha|date:"d/m/Y"|escapejs }} vuelve a contarse según el horario habitual.', 'Sí, eliminar')"
+                        class="text-red-500 hover:text-red-700 text-xs font-medium hover:underline">
+                        Eliminar
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
     {% else %}
     <p class="text-sm text-gray-400 text-center py-4 mb-0">Sin ajustes cargados en este mes.</p>
     {% endif %}
@@ -493,7 +595,7 @@
 
 <!-- Pago del mes -->
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
-    <h3 class="font-cinzel text-xl text-principal mb-1">
+    <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">
         Pago de {{ mes_seleccionado|date:"F Y"|capfirst }}
     </h3>
 
@@ -508,9 +610,11 @@
         {% if liquidacion.observaciones %}
         <p class="text-sm text-green-700 mb-2">{{ liquidacion.observaciones }}</p>
         {% endif %}
+        {% if liquidacion.registrado_por %}
         <p class="text-xs text-green-600 mb-2">
-            {% if liquidacion.registrado_por %}Registrado por {{ liquidacion.registrado_por.get_full_name|default:liquidacion.registrado_por.username }}{% endif %}
+            Registrado por {{ liquidacion.registrado_por.get_full_name|default:liquidacion.registrado_por.username }}
         </p>
+        {% endif %}
         <button type="button"
             onclick="confirmarAccion('{% url 'gravity:admin_profesora_liquidacion_anular' profesora.id liquidacion.id %}', 'Eliminar el pago', 'El mes de {{ mes_seleccionado|date:"F Y"|escapejs }} vuelve a figurar como pendiente.', 'Sí, eliminar el pago')"
             class="text-red-500 hover:text-red-700 text-xs font-medium hover:underline">
@@ -554,45 +658,67 @@
 
 <!-- Historial de meses -->
 <div class="bg-blanco rounded-lg shadow-sm p-4">
-    <h3 class="font-cinzel text-xl text-principal mb-4">Meses anteriores</h3>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Mes</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Monto</th>
-                    <th class="text-center font-semibold text-gray-600 py-2 pr-4">Pago</th>
-                    <th class="text-right font-semibold text-gray-600 py-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mes in historial_meses %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 text-gray-600">{{ mes.mes|date:"F Y"|capfirst }}</td>
-                    <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ mes.horas|horas }} h</td>
-                    <td class="py-2 pr-4 text-right text-gray-600">${{ mes.monto|pesos }}</td>
-                    <td class="py-2 pr-4 text-center">
-                        {% if mes.liquidacion %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">
-                            Pagado
-                        </span>
-                        {% elif mes.horas %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">
-                            Pendiente
-                        </span>
-                        {% else %}
-                        <span class="text-gray-300">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="py-2 text-right">
-                        <a href="?mes={{ mes.mes|date:'Y-m' }}" class="text-principal hover:underline text-xs">Ver mes</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <h3 class="font-cinzel text-lg md:text-xl text-principal mb-4">Meses anteriores</h3>
+
+    <!-- Móvil -->
+    <div class="lg:hidden space-y-2">
+        {% for mes in historial_meses %}
+        <a href="?mes={{ mes.mes|date:'Y-m' }}"
+            class="block border border-gray-200 rounded-lg px-3 py-2">
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-sm font-medium text-gray-700">{{ mes.mes|date:"F Y"|capfirst }}</span>
+                {% if mes.liquidacion %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">Pagado</span>
+                {% elif mes.horas %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Pendiente</span>
+                {% endif %}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+                {{ mes.horas|horas }} h · ${{ mes.monto|pesos }}
+            </div>
+        </a>
+        {% endfor %}
     </div>
+
+    <!-- Escritorio -->
+    <div class="hidden lg:block">
+<table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Mes</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Monto</th>
+                <th class="text-center font-semibold text-gray-600 py-2 pr-4">Pago</th>
+                <th class="text-right font-semibold text-gray-600 py-2"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mes in historial_meses %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4 text-gray-600">{{ mes.mes|date:"F Y"|capfirst }}</td>
+                <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ mes.horas|horas }} h</td>
+                <td class="py-2 pr-4 text-right text-gray-600">${{ mes.monto|pesos }}</td>
+                <td class="py-2 pr-4 text-center">
+                    {% if mes.liquidacion %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">
+                        Pagado
+                    </span>
+                    {% elif mes.horas %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">
+                        Pendiente
+                    </span>
+                    {% else %}
+                    <span class="text-gray-300">—</span>
+                    {% endif %}
+                </td>
+                <td class="py-2 text-right">
+                    <a href="?mes={{ mes.mes|date:'Y-m' }}" class="text-principal hover:underline text-xs">Ver mes</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 </div>
 
 <!-- Modal: dar de baja un bloque del horario -->

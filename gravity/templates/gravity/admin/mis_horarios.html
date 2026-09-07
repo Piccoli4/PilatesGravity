@@ -15,8 +15,8 @@
 <!-- Header -->
 <div class="mb-4">
     <div class="p-4 bg-blanco rounded-lg shadow-sm">
-        <h2 class="text-2xl font-bold text-principal mb-2 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mb-1">
+        <h2 class="text-xl md:text-2xl font-bold text-principal mb-2 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mb-1 shrink-0">
                 <path fill-rule="evenodd"
                     d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z"
                     clip-rule="evenodd" />
@@ -31,15 +31,15 @@
 </div>
 
 <!-- Tarjetas -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
     <div class="bg-blanco rounded-lg shadow-sm p-4">
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Hoy</div>
-        <div class="text-2xl font-bold text-principal">{{ resumen_hoy.horas|horas }} h</div>
+        <div class="text-xl md:text-2xl font-bold text-principal">{{ resumen_hoy.horas|horas }} h</div>
         <div class="text-xs text-gray-500 mt-1">{{ hoy|date:"l d/m" }}</div>
     </div>
     <div class="bg-blanco rounded-lg shadow-sm p-4">
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Esta semana</div>
-        <div class="text-2xl font-bold text-principal">{{ resumen_semana.horas|horas }} h</div>
+        <div class="text-xl md:text-2xl font-bold text-principal">{{ resumen_semana.horas|horas }} h</div>
         <div class="text-xs text-gray-500 mt-1">
             {{ desde_semana|date:"d/m" }} al {{ hasta_semana|date:"d/m" }}
         </div>
@@ -48,12 +48,12 @@
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">
             {{ mes_seleccionado|date:"F Y"|capfirst }}
         </div>
-        <div class="text-2xl font-bold text-principal">{{ resumen_mes.horas|horas }} h</div>
+        <div class="text-xl md:text-2xl font-bold text-principal">{{ resumen_mes.horas|horas }} h</div>
         <div class="text-xs text-gray-500 mt-1">${{ resumen_mes.monto|pesos }}</div>
     </div>
     <div class="bg-blanco rounded-lg shadow-sm p-4">
         <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Mi valor hora</div>
-        <div class="text-2xl font-bold text-principal">
+        <div class="text-xl md:text-2xl font-bold text-principal">
             {% if valor_actual %}${{ valor_actual.valor_hora|pesos }}{% else %}—{% endif %}
         </div>
         <div class="text-xs text-gray-500 mt-1">
@@ -69,7 +69,7 @@
 <!-- Horario semanal -->
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-        <h3 class="font-cinzel text-xl text-principal mb-0">Mi horario semanal</h3>
+        <h3 class="font-cinzel text-lg md:text-xl text-principal mb-0">Mi horario semanal</h3>
         <span class="text-sm text-gray-500">{{ horas_semanales|horas }} horas por semana</span>
     </div>
 
@@ -105,30 +105,30 @@
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-            <h3 class="font-cinzel text-xl text-principal mb-1">
+            <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">
                 Horas de {{ mes_seleccionado|date:"F Y"|capfirst }}
             </h3>
             <p class="text-gray-500 text-sm mb-0">
                 {{ resumen_mes.horas|horas }} horas trabajadas · ${{ resumen_mes.monto|pesos }}
                 {% if liquidacion %}
-                <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">
                     pagado el {{ liquidacion.fecha_pago|date:"d/m/Y" }}
                 </span>
                 {% elif resumen_mes.horas %}
-                <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">
                     pendiente de pago
                 </span>
                 {% endif %}
             </p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 shrink-0">
             <a href="?mes={{ mes_anterior|date:'Y-m' }}"
-                class="px-3 py-2 rounded-lg text-sm bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
+                class="px-3 py-2 rounded-lg text-sm text-center bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
                 ← {{ mes_anterior|date:"F"|capfirst }}
             </a>
             {% if hay_mes_siguiente %}
             <a href="?mes={{ mes_siguiente|date:'Y-m' }}"
-                class="px-3 py-2 rounded-lg text-sm bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
+                class="px-3 py-2 rounded-lg text-sm text-center bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
                 {{ mes_siguiente|date:"F"|capfirst }} →
             </a>
             {% endif %}
@@ -136,71 +136,99 @@
     </div>
 
     {% if resumen_mes.semanas %}
-    <div class="overflow-x-auto mb-4">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Semana</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
-                    <th class="text-right font-semibold text-gray-600 py-2">Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for semana in resumen_mes.semanas %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 text-gray-600">{{ semana.desde|date:"d/m" }} al {{ semana.hasta|date:"d/m" }}</td>
-                    <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ semana.horas|horas }} h</td>
-                    <td class="py-2 text-right text-gray-600">${{ semana.monto|pesos }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="mb-4">
+        <h4 class="font-semibold text-gray-700 text-sm mb-2">Por semana</h4>
+        <div class="divide-y divide-gray-100 border border-gray-200 rounded-lg">
+            {% for semana in resumen_mes.semanas %}
+            <div class="flex items-center justify-between gap-2 px-3 py-2">
+                <span class="text-sm text-gray-600">{{ semana.desde|date:"d/m" }} al {{ semana.hasta|date:"d/m" }}</span>
+                <span class="text-sm text-gray-800 whitespace-nowrap">
+                    <span class="font-medium">{{ semana.horas|horas }} h</span>
+                    <span class="text-gray-500">· ${{ semana.monto|pesos }}</span>
+                </span>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 
     {% if resumen_mes.dias %}
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Turnos</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
-                    <th class="text-right font-semibold text-gray-600 py-2">Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for dia in resumen_mes.dias %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ dia.fecha|date:"D d/m" }}</td>
-                    <td class="py-2 pr-4">
-                        {% for turno in dia.turnos %}
-                        <div class="text-gray-800">
-                            {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }}
-                            <span class="text-xs text-gray-400">· {{ turno.sede_display }}</span>
-                            {% if turno.origen == 'extra' %}
-                            <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
-                            {% elif turno.origen == 'reemplazo' %}
-                            <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </td>
-                    <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ dia.horas|horas }} h</td>
-                    <td class="py-2 text-right text-gray-600">${{ dia.monto|pesos }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr class="border-t-2 border-secundario/30">
-                    <td class="py-2 pr-4 font-semibold text-gray-800">Total del mes</td>
-                    <td></td>
-                    <td class="py-2 pr-4 text-right font-bold text-principal">{{ resumen_mes.horas|horas }} h</td>
-                    <td class="py-2 text-right font-bold text-principal">${{ resumen_mes.monto|pesos }}</td>
-                </tr>
-            </tfoot>
-        </table>
+
+    <!-- Móvil -->
+    <div class="lg:hidden space-y-2">
+        {% for dia in resumen_mes.dias %}
+        <div class="border border-gray-200 rounded-lg px-3 py-2">
+            <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="text-sm font-medium text-gray-700">{{ dia.fecha|date:"D d/m" }}</span>
+                <span class="text-sm text-gray-800 whitespace-nowrap">
+                    <span class="font-semibold">{{ dia.horas|horas }} h</span>
+                    <span class="text-gray-500">· ${{ dia.monto|pesos }}</span>
+                </span>
+            </div>
+            {% for turno in dia.turnos %}
+            <div class="text-xs text-gray-500 border-t border-gray-100 pt-1 mt-1">
+                {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }} · {{ turno.sede_display }}
+                {% if turno.origen == 'extra' %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
+                {% elif turno.origen == 'reemplazo' %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="border border-secundario/30 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+            <span class="text-sm font-semibold text-gray-800">Total del mes</span>
+            <span class="text-sm font-bold text-principal whitespace-nowrap">
+                {{ resumen_mes.horas|horas }} h · ${{ resumen_mes.monto|pesos }}
+            </span>
+        </div>
     </div>
+
+    <!-- Escritorio -->
+    <div class="hidden lg:block">
+<table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Turnos</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
+                <th class="text-right font-semibold text-gray-600 py-2">Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dia in resumen_mes.dias %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ dia.fecha|date:"D d/m" }}</td>
+                <td class="py-2 pr-4">
+                    {% for turno in dia.turnos %}
+                    <div class="text-gray-800">
+                        {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }}
+                        <span class="text-xs text-gray-400">· {{ turno.sede_display }}</span>
+                        {% if turno.origen == 'extra' %}
+                        <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
+                        {% elif turno.origen == 'reemplazo' %}
+                        <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </td>
+                <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ dia.horas|horas }} h</td>
+                <td class="py-2 text-right text-gray-600">${{ dia.monto|pesos }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="border-t-2 border-secundario/30">
+                <td class="py-2 pr-4 font-semibold text-gray-800">Total del mes</td>
+                <td></td>
+                <td class="py-2 pr-4 text-right font-bold text-principal">{{ resumen_mes.horas|horas }} h</td>
+                <td class="py-2 text-right font-bold text-principal">${{ resumen_mes.monto|pesos }}</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
     {% else %}
     <p class="text-sm text-gray-400 text-center py-6 mb-0">
         No hay horas registradas en {{ mes_seleccionado|date:"F Y" }}.
@@ -210,41 +238,61 @@
 
 <!-- Meses anteriores -->
 <div class="bg-blanco rounded-lg shadow-sm p-4">
-    <h3 class="font-cinzel text-xl text-principal mb-4">Meses anteriores</h3>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Mes</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Monto</th>
-                    <th class="text-center font-semibold text-gray-600 py-2 pr-4">Estado</th>
-                    <th class="text-right font-semibold text-gray-600 py-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mes in historial_meses %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 text-gray-600">{{ mes.mes|date:"F Y"|capfirst }}</td>
-                    <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ mes.horas|horas }} h</td>
-                    <td class="py-2 pr-4 text-right text-gray-600">${{ mes.monto|pesos }}</td>
-                    <td class="py-2 pr-4 text-center">
-                        {% if mes.liquidacion %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">Pagado</span>
-                        {% elif mes.horas %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Pendiente</span>
-                        {% else %}
-                        <span class="text-gray-300">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="py-2 text-right">
-                        <a href="?mes={{ mes.mes|date:'Y-m' }}" class="text-principal hover:underline text-xs">Ver mes</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <h3 class="font-cinzel text-lg md:text-xl text-principal mb-4">Meses anteriores</h3>
+
+    <!-- Móvil -->
+    <div class="lg:hidden space-y-2">
+        {% for mes in historial_meses %}
+        <a href="?mes={{ mes.mes|date:'Y-m' }}"
+            class="block border border-gray-200 rounded-lg px-3 py-2">
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-sm font-medium text-gray-700">{{ mes.mes|date:"F Y"|capfirst }}</span>
+                {% if mes.liquidacion %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">Pagado</span>
+                {% elif mes.horas %}
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Pendiente</span>
+                {% endif %}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">{{ mes.horas|horas }} h · ${{ mes.monto|pesos }}</div>
+        </a>
+        {% endfor %}
     </div>
+
+    <!-- Escritorio -->
+    <div class="hidden lg:block">
+<table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Mes</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Monto</th>
+                <th class="text-center font-semibold text-gray-600 py-2 pr-4">Estado</th>
+                <th class="text-right font-semibold text-gray-600 py-2"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mes in historial_meses %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2 pr-4 text-gray-600">{{ mes.mes|date:"F Y"|capfirst }}</td>
+                <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ mes.horas|horas }} h</td>
+                <td class="py-2 pr-4 text-right text-gray-600">${{ mes.monto|pesos }}</td>
+                <td class="py-2 pr-4 text-center">
+                    {% if mes.liquidacion %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">Pagado</span>
+                    {% elif mes.horas %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Pendiente</span>
+                    {% else %}
+                    <span class="text-gray-300">—</span>
+                    {% endif %}
+                </td>
+                <td class="py-2 text-right">
+                    <a href="?mes={{ mes.mes|date:'Y-m' }}" class="text-principal hover:underline text-xs">Ver mes</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 </div>
 
 {% endblock %}

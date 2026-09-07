@@ -15,10 +15,10 @@
 <!-- Header -->
 <div class="mb-4">
     <div class="p-4 bg-blanco rounded-lg shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-principal mb-2 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mb-1">
+                <h2 class="text-xl md:text-2xl font-bold text-principal mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mb-1 shrink-0">
                         <path fill-rule="evenodd"
                             d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z"
                             clip-rule="evenodd" />
@@ -38,20 +38,20 @@
                     {% endif %}
                 </p>
             </div>
-            <div class="flex items-center gap-5 shrink-0">
+            <div class="grid grid-cols-3 gap-4 lg:flex lg:items-center shrink-0">
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-principal leading-none">{{ total_horas|horas }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">horas totales</div>
+                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">{{ total_horas|horas }}</div>
+                    <div class="text-xs text-gray-400 mt-1">horas totales</div>
                 </div>
-                <div class="w-px h-8 bg-gray-200"></div>
+                <div class="w-px h-8 bg-gray-200 hidden lg:block"></div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-principal leading-none">${{ total_monto|pesos }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">costo del período</div>
+                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">${{ total_monto|pesos }}</div>
+                    <div class="text-xs text-gray-400 mt-1">costo del período</div>
                 </div>
-                <div class="w-px h-8 bg-gray-200"></div>
+                <div class="w-px h-8 bg-gray-200 hidden lg:block"></div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-principal leading-none">{{ cantidad_profesoras }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">profesora{{ cantidad_profesoras|pluralize }}</div>
+                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">{{ cantidad_profesoras }}</div>
+                    <div class="text-xs text-gray-400 mt-1">profesora{{ cantidad_profesoras|pluralize }}</div>
                 </div>
             </div>
         </div>
@@ -60,26 +60,26 @@
 
 <!-- Filtro de período -->
 <div class="mb-4 p-4 bg-blanco rounded-lg shadow-sm">
-    <div class="flex flex-wrap gap-2 mb-4">
+    <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-4">
         <a href="?periodo=dia&fecha={{ hoy|date:'Y-m-d' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium {% if periodo == 'dia' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'dia' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
             Por día
         </a>
         <a href="?periodo=semana&fecha={{ fecha|date:'Y-m-d' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium {% if periodo == 'semana' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'semana' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
             Por semana
         </a>
         <a href="?periodo=mes&mes={{ mes_seleccionado|date:'Y-m' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium {% if periodo == 'mes' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'mes' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
             Por mes
         </a>
         <a href="?periodo=personalizado&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium {% if periodo == 'personalizado' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
-            Rango personalizado
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'personalizado' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            Rango
         </a>
     </div>
 
-    <form method="get" class="flex flex-wrap items-end gap-3">
+    <form method="get" class="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-end gap-3">
         <input type="hidden" name="periodo" value="{{ periodo }}">
 
         {% if periodo == 'dia' or periodo == 'semana' %}
@@ -88,29 +88,29 @@
                 {% if periodo == 'dia' %}Fecha{% else %}Semana que contiene a{% endif %}
             </label>
             <input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
         </div>
         {% elif periodo == 'mes' %}
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Mes</label>
             <input type="month" name="mes" value="{{ mes_seleccionado|date:'Y-m' }}"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
         </div>
         {% else %}
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
             <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
             <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
         </div>
         {% endif %}
 
         <button type="submit"
-            class="bg-principal text-blanco px-5 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
+            class="w-full sm:w-auto bg-principal text-blanco px-5 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
             Ver
         </button>
     </form>
@@ -129,79 +129,140 @@
 </div>
 {% endif %}
 
-<!-- Tabla de profesoras -->
-<div class="bg-blanco rounded-lg shadow-sm p-4">
-    {% if filas %}
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-secundario/30">
-                    <th class="text-left font-semibold text-gray-600 py-2 pr-4">Profesora</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas semanales</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas del período</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Valor hora</th>
-                    <th class="text-right font-semibold text-gray-600 py-2 pr-4">Costo</th>
-                    {% if es_mes_completo %}
-                    <th class="text-center font-semibold text-gray-600 py-2 pr-4">Pago del mes</th>
+{% if filas %}
+
+<!-- Tarjetas (móvil) -->
+<div class="lg:hidden space-y-3">
+    {% for fila in filas %}
+    <a href="{% url 'gravity:admin_profesora_detalle' fila.profesora.id %}?mes={{ mes_seleccionado|date:'Y-m' }}"
+        class="block bg-blanco rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+        <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
+            <div class="min-w-0">
+                <p class="font-semibold text-gray-900 truncate mb-1">
+                    {{ fila.profesora.get_full_name|default:fila.profesora.username }}
+                </p>
+                <p class="text-xs text-gray-500 mb-0">
+                    {% if fila.horas_semanales %}{{ fila.horas_semanales|horas }} h por semana{% else %}sin horario cargado{% endif %}
+                    {% if fila.valor_hora %} · ${{ fila.valor_hora|pesos }} la hora{% endif %}
+                </p>
+            </div>
+            {% if es_mes_completo %}
+            {% if fila.liquidacion %}
+            <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                Pagado
+            </span>
+            {% elif fila.horas %}
+            <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700">
+                Pendiente
+            </span>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2 divide-x divide-gray-100 border-t border-gray-100 bg-gray-50">
+            <div class="px-3 py-2">
+                <p class="text-xs text-gray-500 mb-1">Horas del período</p>
+                <p class="text-sm font-semibold text-principal mb-0">{{ fila.horas|horas }} h</p>
+            </div>
+            <div class="px-3 py-2">
+                <p class="text-xs text-gray-500 mb-1">Costo</p>
+                <p class="text-sm font-semibold text-gray-900 mb-0">
+                    ${{ fila.monto|pesos }}
+                    {% if fila.sin_valor_hora %}
+                    <span class="block text-xs text-amber-600 font-normal">falta el valor hora</span>
                     {% endif %}
-                    <th class="text-right font-semibold text-gray-600 py-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for fila in filas %}
-                <tr class="border-b border-gray-100 hover:bg-fondo/50 transition-colors">
-                    <td class="py-3 pr-4 font-medium text-gray-800">
-                        {{ fila.profesora.get_full_name|default:fila.profesora.username }}
-                        {% if fila.sin_valor_hora %}
-                        <span class="ml-1 text-xs text-amber-600">sin valor hora</span>
-                        {% endif %}
-                    </td>
-                    <td class="py-3 pr-4 text-right text-gray-600">
-                        {% if fila.horas_semanales %}{{ fila.horas_semanales|horas }} h{% else %}—{% endif %}
-                    </td>
-                    <td class="py-3 pr-4 text-right font-semibold text-principal">{{ fila.horas|horas }} h</td>
-                    <td class="py-3 pr-4 text-right text-gray-600">
-                        {% if fila.valor_hora %}${{ fila.valor_hora|pesos }}{% else %}—{% endif %}
-                    </td>
-                    <td class="py-3 pr-4 text-right font-semibold text-gray-800">${{ fila.monto|pesos }}</td>
-                    {% if es_mes_completo %}
-                    <td class="py-3 pr-4 text-center">
-                        {% if fila.liquidacion %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">
-                            Pagado {{ fila.liquidacion.fecha_pago|date:"d/m" }}
-                        </span>
-                        {% elif fila.horas %}
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">
-                            Pendiente
-                        </span>
-                        {% else %}
-                        <span class="text-gray-300">—</span>
-                        {% endif %}
-                    </td>
-                    {% endif %}
-                    <td class="py-3 text-right">
-                        <a href="{% url 'gravity:admin_profesora_detalle' fila.profesora.id %}?mes={{ mes_seleccionado|date:'Y-m' }}"
-                            class="text-principal hover:underline text-sm font-medium whitespace-nowrap">
-                            Ver ficha
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr class="border-t-2 border-secundario/30">
-                    <td class="py-3 pr-4 font-semibold text-gray-800">Total del estudio</td>
-                    <td class="py-3 pr-4"></td>
-                    <td class="py-3 pr-4 text-right font-bold text-principal">{{ total_horas|horas }} h</td>
-                    <td class="py-3 pr-4"></td>
-                    <td class="py-3 pr-4 text-right font-bold text-principal">${{ total_monto|pesos }}</td>
-                    {% if es_mes_completo %}<td></td>{% endif %}
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
+                </p>
+            </div>
+        </div>
+
+        <div class="px-4 py-2 border-t border-gray-100 text-right">
+            <span class="text-principal text-xs font-medium">Ver ficha →</span>
+        </div>
+    </a>
+    {% endfor %}
+
+    <div class="bg-blanco rounded-xl border border-secundario/30 shadow-sm px-4 py-3 flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold text-gray-800">Total del estudio</span>
+        <span class="text-sm font-bold text-principal text-right">
+            {{ total_horas|horas }} h · ${{ total_monto|pesos }}
+        </span>
     </div>
-    {% else %}
+</div>
+
+<!-- Tabla (escritorio) -->
+<div class="hidden lg:block bg-blanco rounded-lg shadow-sm p-4">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Profesora</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas semanales</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas del período</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Valor hora</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Costo</th>
+                {% if es_mes_completo %}
+                <th class="text-center font-semibold text-gray-600 py-2 pr-4">Pago del mes</th>
+                {% endif %}
+                <th class="text-right font-semibold text-gray-600 py-2"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fila in filas %}
+            <tr class="border-b border-gray-100 hover:bg-fondo/50 transition-colors">
+                <td class="py-3 pr-4 font-medium text-gray-800">
+                    {{ fila.profesora.get_full_name|default:fila.profesora.username }}
+                    {% if fila.sin_valor_hora %}
+                    <span class="ml-1 text-xs text-amber-600">sin valor hora</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 pr-4 text-right text-gray-600">
+                    {% if fila.horas_semanales %}{{ fila.horas_semanales|horas }} h{% else %}—{% endif %}
+                </td>
+                <td class="py-3 pr-4 text-right font-semibold text-principal">{{ fila.horas|horas }} h</td>
+                <td class="py-3 pr-4 text-right text-gray-600">
+                    {% if fila.valor_hora %}${{ fila.valor_hora|pesos }}{% else %}—{% endif %}
+                </td>
+                <td class="py-3 pr-4 text-right font-semibold text-gray-800">${{ fila.monto|pesos }}</td>
+                {% if es_mes_completo %}
+                <td class="py-3 pr-4 text-center">
+                    {% if fila.liquidacion %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">
+                        Pagado {{ fila.liquidacion.fecha_pago|date:"d/m" }}
+                    </span>
+                    {% elif fila.horas %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">
+                        Pendiente
+                    </span>
+                    {% else %}
+                    <span class="text-gray-300">—</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+                <td class="py-3 text-right">
+                    <a href="{% url 'gravity:admin_profesora_detalle' fila.profesora.id %}?mes={{ mes_seleccionado|date:'Y-m' }}"
+                        class="text-principal hover:underline text-sm font-medium whitespace-nowrap">
+                        Ver ficha
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="border-t-2 border-secundario/30">
+                <td class="py-3 pr-4 font-semibold text-gray-800">Total del estudio</td>
+                <td class="py-3 pr-4"></td>
+                <td class="py-3 pr-4 text-right font-bold text-principal">{{ total_horas|horas }} h</td>
+                <td class="py-3 pr-4"></td>
+                <td class="py-3 pr-4 text-right font-bold text-principal">${{ total_monto|pesos }}</td>
+                {% if es_mes_completo %}<td></td>{% endif %}
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+{% else %}
+<div class="bg-blanco rounded-lg shadow-sm p-4">
     <div class="text-center py-12">
         <p class="text-gray-500 mb-2">Todavía no hay profesoras cargadas en el sistema.</p>
         <p class="text-gray-400 text-sm mb-4">
@@ -212,7 +273,7 @@
             Ir a Gestionar Admins
         </a>
     </div>
-    {% endif %}
 </div>
+{% endif %}
 
 {% endblock %}
