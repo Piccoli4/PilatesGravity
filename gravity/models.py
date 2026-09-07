@@ -2439,3 +2439,373 @@ def recalcular_estado_pagos(usuario, redistribuir=True):
         'saldo': saldo,
         'tiene_vencidas': tiene_vencidas,
     }
+
+
+# ==============================================================================
+# HORARIOS Y LIQUIDACIÓN DE PROFESORAS (ADMINISTRADORAS CONTRATADAS)
+# ==============================================================================
+# Las profesoras del estudio son los usuarios con is_staff=True que no son
+# superusuarios. Los superadministradores (Nico y Cami) les cargan un horario
+# semanal con vigencia, un valor por hora también con vigencia, y ajustes
+# puntuales para los días que se apartan del horario habitual.
+
+
+class BloqueHorarioProfesora(models.Model):
+    """
+    Bloque del horario semanal habitual de una profesora.
+
+    Cada bloque vale de `vigente_desde` en adelante. Cuando el horario cambia,
+    el bloque viejo se cierra con `vigente_hasta` en lugar de borrarse, para que
+    los meses ya trabajados sigan calculándose con el horario que regía en ese
+    momento.
+    """
+
+    profesora = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='bloques_horario',
+        verbose_name="Profesora"
+    )
+
+    dia = models.CharField(
+        max_length=10,
+        choices=DIAS_SEMANA_COMPLETOS,
+        verbose_name="Día de la semana"
+    )
+
+    hora_inicio = models.TimeField(verbose_name="Hora de entrada")
+    hora_fin = models.TimeField(verbose_name="Hora de salida")
+
+    sede = models.CharField(
+        max_length=20,
+        choices=Clase.DIRECCIONES,
+        default='sede_principal',
+        verbose_name="Sede"
+    )
+
+    vigente_desde = models.DateField(
+        verbose_name="Vigente desde",
+        help_text="Fecha a partir de la cual la profesora cumple este horario"
+    )
+
+    vigente_hasta = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Vigente hasta",
+        help_text="Último día en que rigió este horario. Vacío significa que sigue vigente."
+    )
+
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='bloques_horario_creados',
+        verbose_name="Cargado por"
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+
+        if self.hora_inicio and self.hora_fin and self.hora_fin <= self.hora_inicio:
+            raise ValidationError({
+                'hora_fin': 'La hora de salida debe ser posterior a la hora de entrada.'
+            })
+
+        if self.vigente_hasta and self.vigente_desde and self.vigente_hasta < self.vigente_desde:
+            raise ValidationError({
+                'vigente_hasta': 'La fecha de cierre no puede ser anterior a la de inicio.'
+            })
+
+    @property
+    def duracion_horas(self):
+        """Duración del bloque en horas, con dos decimales."""
+        inicio = self.hora_inicio.hour * 60 + self.hora_inicio.minute
+        fin = self.hora_fin.hour * 60 + self.hora_fin.minute
+        minutos = max(fin - inicio, 0)
+        return (Decimal(minutos) / Decimal('60')).quantize(Decimal('0.01'))
+
+    def rige_en(self, fecha):
+        """Indica si el bloque estaba vigente en una fecha dada."""
+        if fecha < self.vigente_desde:
+            return False
+        if self.vigente_hasta and fecha > self.vigente_hasta:
+            return False
+        return True
+
+    @property
+    def vigente(self):
+        """True si el bloque sigue vigente hoy."""
+        return self.rige_en(timezone.localtime(timezone.now()).date())
+
+    def __str__(self):
+        nombre = self.profesora.get_full_name() or self.profesora.username
+        return f"{nombre} — {self.dia} de {self.hora_inicio} a {self.hora_fin}"
+
+    class Meta:
+        verbose_name = "Bloque de horario de profesora"
+        verbose_name_plural = "Bloques de horario de profesoras"
+        ordering = ['profesora', 'dia', 'hora_inicio']
+
+
+class ValorHoraProfesora(models.Model):
+    """
+    Valor por hora de una profesora, con historial.
+
+    Al cargar un valor nuevo se cierra el anterior con `vigente_hasta`, de modo
+    que cada mes se liquida con el valor que regía en esa fecha.
+    """
+
+    profesora = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='valores_hora',
+        verbose_name="Profesora"
+    )
+
+    valor_hora = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor por hora",
+        help_text="Monto en pesos que cobra la profesora por cada hora trabajada"
+    )
+
+    vigente_desde = models.DateField(verbose_name="Vigente desde")
+
+    vigente_hasta = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Vigente hasta",
+        help_text="Vacío significa que es el valor actual"
+    )
+
+    observaciones = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Observaciones",
+        help_text="Motivo del cambio (aumento, acuerdo, etc.)"
+    )
+
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='valores_hora_registrados',
+        verbose_name="Registrado por"
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+
+        if self.valor_hora is not None and self.valor_hora <= 0:
+            raise ValidationError({
+                'valor_hora': 'El valor por hora debe ser mayor a cero.'
+            })
+
+        if self.vigente_hasta and self.vigente_desde and self.vigente_hasta < self.vigente_desde:
+            raise ValidationError({
+                'vigente_hasta': 'La fecha de cierre no puede ser anterior a la de inicio.'
+            })
+
+    def rige_en(self, fecha):
+        if fecha < self.vigente_desde:
+            return False
+        if self.vigente_hasta and fecha > self.vigente_hasta:
+            return False
+        return True
+
+    def __str__(self):
+        nombre = self.profesora.get_full_name() or self.profesora.username
+        return f"{nombre} — ${self.valor_hora} desde {self.vigente_desde}"
+
+    class Meta:
+        verbose_name = "Valor hora de profesora"
+        verbose_name_plural = "Valores hora de profesoras"
+        ordering = ['-vigente_desde']
+
+
+class AjusteHorarioProfesora(models.Model):
+    """
+    Excepción puntual al horario habitual, para una fecha concreta.
+
+    - `extra`: turno adicional que se suma a lo planificado ese día.
+    - `reemplazo`: ese día trabajó en otro horario; reemplaza al horario habitual.
+    - `ausencia`: no trabajó ese día, no se le cuentan las horas.
+    """
+
+    TIPOS_AJUSTE = [
+        ('extra', 'Turno extra'),
+        ('reemplazo', 'Trabajó en otro horario'),
+        ('ausencia', 'No trabajó'),
+    ]
+
+    profesora = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ajustes_horario',
+        verbose_name="Profesora"
+    )
+
+    fecha = models.DateField(verbose_name="Fecha")
+
+    tipo = models.CharField(
+        max_length=15,
+        choices=TIPOS_AJUSTE,
+        verbose_name="Tipo de ajuste"
+    )
+
+    hora_inicio = models.TimeField(
+        blank=True,
+        null=True,
+        verbose_name="Hora de entrada"
+    )
+
+    hora_fin = models.TimeField(
+        blank=True,
+        null=True,
+        verbose_name="Hora de salida"
+    )
+
+    sede = models.CharField(
+        max_length=20,
+        choices=Clase.DIRECCIONES,
+        blank=True,
+        verbose_name="Sede"
+    )
+
+    motivo = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Motivo",
+        help_text="Reemplazo de una compañera, feriado, salió antes, etc."
+    )
+
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='ajustes_horario_registrados',
+        verbose_name="Registrado por"
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+
+        if self.tipo in ('extra', 'reemplazo'):
+            if not self.hora_inicio or not self.hora_fin:
+                raise ValidationError(
+                    'Indicá la hora de entrada y la de salida para este tipo de ajuste.'
+                )
+            if self.hora_fin <= self.hora_inicio:
+                raise ValidationError({
+                    'hora_fin': 'La hora de salida debe ser posterior a la hora de entrada.'
+                })
+            if not self.sede:
+                raise ValidationError({'sede': 'Indicá la sede del turno.'})
+
+    @property
+    def duracion_horas(self):
+        if not self.hora_inicio or not self.hora_fin:
+            return Decimal('0.00')
+        inicio = self.hora_inicio.hour * 60 + self.hora_inicio.minute
+        fin = self.hora_fin.hour * 60 + self.hora_fin.minute
+        minutos = max(fin - inicio, 0)
+        return (Decimal(minutos) / Decimal('60')).quantize(Decimal('0.01'))
+
+    def __str__(self):
+        nombre = self.profesora.get_full_name() or self.profesora.username
+        return f"{nombre} — {self.get_tipo_display()} el {self.fecha}"
+
+    class Meta:
+        verbose_name = "Ajuste de horario de profesora"
+        verbose_name_plural = "Ajustes de horario de profesoras"
+        ordering = ['-fecha', 'hora_inicio']
+
+
+class LiquidacionProfesora(models.Model):
+    """
+    Registro del pago mensual a una profesora.
+
+    Guarda las horas y el monto calculados al momento de liquidar, así el
+    comprobante no cambia si después se corrige algún horario viejo.
+    """
+
+    profesora = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='liquidaciones',
+        verbose_name="Profesora"
+    )
+
+    mes_año = models.DateField(
+        verbose_name="Mes liquidado",
+        help_text="Primer día del mes que se está pagando"
+    )
+
+    horas_liquidadas = models.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        verbose_name="Horas trabajadas"
+    )
+
+    monto_calculado = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto calculado por el sistema"
+    )
+
+    monto_pagado = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto efectivamente pagado"
+    )
+
+    fecha_pago = models.DateField(verbose_name="Fecha de pago")
+
+    observaciones = models.TextField(
+        blank=True,
+        max_length=500,
+        verbose_name="Observaciones"
+    )
+
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='liquidaciones_registradas',
+        verbose_name="Registrado por"
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        super().clean()
+
+        if self.monto_pagado is not None and self.monto_pagado < 0:
+            raise ValidationError({
+                'monto_pagado': 'El monto pagado no puede ser negativo.'
+            })
+
+    @property
+    def diferencia(self):
+        """Diferencia entre lo que se pagó y lo que calculó el sistema."""
+        return (self.monto_pagado or Decimal('0')) - (self.monto_calculado or Decimal('0'))
+
+    def __str__(self):
+        nombre = self.profesora.get_full_name() or self.profesora.username
+        return f"{nombre} — {self.mes_año}"
+
+    class Meta:
+        verbose_name = "Liquidación de profesora"
+        verbose_name_plural = "Liquidaciones de profesoras"
+        ordering = ['-mes_año']
+        unique_together = ['profesora', 'mes_año']

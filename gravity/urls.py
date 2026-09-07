@@ -31,6 +31,13 @@ from .views import (
     # IMPORTACIONES PARA LINKS DE REDES SOCIALES
     links,
 )
+from .views_horarios import (
+    # HORARIOS Y LIQUIDACIÓN DE PROFESORAS
+    admin_profesoras_lista, admin_profesora_detalle, admin_profesora_horario_agregar,
+    admin_profesora_horario_eliminar, admin_profesora_valor_hora, admin_profesora_ajuste_crear,
+    admin_profesora_ajuste_eliminar, admin_profesora_liquidar, admin_profesora_liquidacion_anular,
+    mis_horarios,
+)
 from django.views.generic import TemplateView
 
 app_name = 'gravity'
@@ -110,6 +117,24 @@ urlpatterns = [
     
     # Historial de actividad
     path('admin-panel/historial/', admin_historial_actividad, name='admin_historial_actividad'),
+
+    # ==============================================================================
+    # HORARIOS Y LIQUIDACIÓN DE PROFESORAS
+    # ==============================================================================
+
+    # Panel de superadministradores
+    path('admin-panel/profesoras/', admin_profesoras_lista, name='admin_profesoras_lista'),
+    path('admin-panel/profesoras/<int:profesora_id>/', admin_profesora_detalle, name='admin_profesora_detalle'),
+    path('admin-panel/profesoras/<int:profesora_id>/horario/agregar/', admin_profesora_horario_agregar, name='admin_profesora_horario_agregar'),
+    path('admin-panel/profesoras/<int:profesora_id>/horario/<int:bloque_id>/eliminar/', admin_profesora_horario_eliminar, name='admin_profesora_horario_eliminar'),
+    path('admin-panel/profesoras/<int:profesora_id>/valor-hora/', admin_profesora_valor_hora, name='admin_profesora_valor_hora'),
+    path('admin-panel/profesoras/<int:profesora_id>/ajustes/crear/', admin_profesora_ajuste_crear, name='admin_profesora_ajuste_crear'),
+    path('admin-panel/profesoras/<int:profesora_id>/ajustes/<int:ajuste_id>/eliminar/', admin_profesora_ajuste_eliminar, name='admin_profesora_ajuste_eliminar'),
+    path('admin-panel/profesoras/<int:profesora_id>/liquidar/', admin_profesora_liquidar, name='admin_profesora_liquidar'),
+    path('admin-panel/profesoras/<int:profesora_id>/liquidacion/<int:liquidacion_id>/anular/', admin_profesora_liquidacion_anular, name='admin_profesora_liquidacion_anular'),
+
+    # Panel de la profesora
+    path('admin-panel/mis-horarios/', mis_horarios, name='mis_horarios'),
 
     # Registro de asistencias
     path('admin-panel/asistencia/', admin_asistencia, name='admin_asistencia'),

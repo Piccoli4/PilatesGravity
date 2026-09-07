@@ -110,6 +110,10 @@
                             {% endif %}
                         </td>
                         <td class="py-3 text-right">
+                            <a href="{% url 'gravity:admin_profesora_detalle' admin.id %}"
+                                class="text-principal hover:underline text-xs font-medium mr-3">
+                                Horarios y pagos
+                            </a>
                             <button type="button"
                                 onclick="confirmarEliminar({{ admin.id }}, '{{ admin.get_full_name|default:admin.username }}')"
                                 class="text-red-500 hover:text-red-700 text-xs font-medium hover:underline transition-colors">

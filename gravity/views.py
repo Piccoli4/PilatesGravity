@@ -3231,6 +3231,18 @@ def _calcular_reportes(request):
     for dia in stats_por_dia:
         dia['barra'] = round(dia['ocupadas'] / max_ocupadas_dia * 100) if max_ocupadas_dia else 0
 
+    # ===== Agenda por día (versión vertical del mapa, para pantallas chicas) =====
+    agenda_por_dia = [
+        {
+            'dia': nombre,
+            'clases': sorted(
+                [c for c in detalle_clases if c['dia'] == nombre],
+                key=lambda c: c['horario']
+            ),
+        }
+        for _, nombre in DIAS_SEMANA_COMPLETOS
+    ]
+
     # ===== Mapa semanal (horario x día) =====
     horarios = sorted({c['horario'] for c in detalle_clases})
     dias_grilla = [nombre for _, nombre in DIAS_SEMANA_COMPLETOS]
@@ -3721,6 +3733,7 @@ def _calcular_reportes(request):
         'stats_por_dia': stats_por_dia,
         'dias_grilla': dias_grilla,
         'grilla_semanal': grilla_semanal,
+        'agenda_por_dia': agenda_por_dia,
         # Actividad del período
         'reservas_nuevas': reservas_nuevas,
         'reservas_nuevas_prev': reservas_nuevas_prev,

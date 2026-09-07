@@ -30,6 +30,7 @@
 - **Gestión financiera** — registro de pagos con descuento por pago en efectivo (10%, redondeado al millar más cercano), estados de cuenta automáticos y seguimiento de deudas por cliente
 - **Roles de administrador** — los admins con el flag `puede_ver_pagos` desactivado ven guiones en lugar de datos financieros, permitiendo delegar tareas operativas sin exponer información sensible
 - **Notificaciones de cancelación** — cada cancelación permanente o temporal genera una notificación visible en el panel hasta que un administrador la marque como leída (estado de lectura por admin vía ManyToMany)
+- **Horarios de profesoras** — los superadministradores cargan el horario semanal y el valor hora de cada administradora contratada, y consultan las horas trabajadas y el costo por día, semana, mes o rango de fechas, con el total del estudio. Cada profesora ve su propio horario, sus horas del mes y lo que le corresponde cobrar
 
 ---
 
@@ -106,6 +107,23 @@ Se envían 8 tipos de emails transaccionales vía **Gmail SMTP**:
 **`UserProfile`** — extensión del modelo `User` de Django
 - Creado automáticamente vía signal `post_save`
 - Información de contacto y datos complementarios para la práctica
+
+**`BloqueHorarioProfesora`** — bloque del horario semanal de una profesora
+- Día, hora de entrada y salida, y sede
+- Vigencia por fechas: al cambiar el horario el bloque viejo se cierra en vez de borrarse, así los meses ya trabajados no se recalculan
+
+**`ValorHoraProfesora`** — valor por hora con historial
+- Cada valor rige desde una fecha; el anterior se cierra el día previo
+- Cada mes se liquida con el valor que regía en esas fechas
+
+**`AjusteHorarioProfesora`** — excepción puntual a una fecha concreta
+- Tipos: turno extra, trabajó en otro horario, no trabajó
+
+**`LiquidacionProfesora`** — registro del pago mensual a una profesora
+- Guarda las horas y el monto calculados al momento de liquidar
+- Un único registro por profesora y mes
+
+> Las horas y los montos no se guardan día por día: se calculan al vuelo en `gravity/horarios.py` a partir del horario vigente, los ajustes de cada fecha y el valor hora de ese momento.
 
 ---
 
