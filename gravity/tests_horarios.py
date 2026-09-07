@@ -5,7 +5,7 @@ Cubren el cálculo de horas y montos (incluido el respeto del historial cuando
 cambia el horario o el valor hora) y el acceso a las pantallas del panel.
 """
 
-from datetime import date, time
+from datetime import date, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -16,6 +16,7 @@ from . import horarios as h
 from .models import (
     AjusteHorarioProfesora,
     BloqueHorarioProfesora,
+    Clase,
     LiquidacionProfesora,
     ValorHoraProfesora,
 )
@@ -225,6 +226,7 @@ class GestionDesdeElPanelTest(BaseHorariosTest):
         self.client.post(
             reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
             {
+                'modo': 'semanal', 'origen': 'libre',
                 'dia': 'Viernes', 'hora_inicio': '09:00', 'hora_fin': '13:00',
                 'sede': 'sede_principal', 'vigente_desde': '2026-09-01',
             },
@@ -233,10 +235,96 @@ class GestionDesdeElPanelTest(BaseHorariosTest):
             BloqueHorarioProfesora.objects.filter(profesora=self.profesora, dia='Viernes').exists()
         )
 
+    def test_agregar_turnos_eligiendo_clases(self):
+        # Dos clases seguidas de los viernes: cada una es un turno, porque se paga por clase.
+        primera = Clase.objects.create(
+            tipo='Reformer', dia='Viernes', horario=time(9),
+            direccion='sede_principal', cupo_maximo=8,
+        )
+        segunda = Clase.objects.create(
+            tipo='Cadillac', dia='Viernes', horario=time(10),
+            direccion='sede_principal', cupo_maximo=8,
+        )
+
+        self.client.post(
+            reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
+            {
+                'modo': 'semanal', 'origen': 'clase',
+                'clases': [primera.id, segunda.id],
+                'duracion_minutos': '60',
+                'vigente_desde': '2026-09-01',
+            },
+        )
+
+        turnos = BloqueHorarioProfesora.objects.filter(
+            profesora=self.profesora, dia='Viernes'
+        ).order_by('hora_inicio')
+
+        self.assertEqual(turnos.count(), 2)
+        self.assertEqual(
+            [(t.hora_inicio, t.hora_fin, t.clase_id) for t in turnos],
+            [(time(9), time(10), primera.id), (time(10), time(11), segunda.id)],
+        )
+
+    def test_la_duracion_de_la_clase_se_puede_cambiar(self):
+        clase = Clase.objects.create(
+            tipo='Reformer', dia='Viernes', horario=time(9),
+            direccion='sede_principal', cupo_maximo=8,
+        )
+        self.client.post(
+            reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
+            {
+                'modo': 'semanal', 'origen': 'clase', 'clases': [clase.id],
+                'duracion_minutos': '90', 'vigente_desde': '2026-09-01',
+            },
+        )
+        turno = BloqueHorarioProfesora.objects.get(profesora=self.profesora, dia='Viernes')
+        self.assertEqual(turno.hora_fin, time(10, 30))
+
+    def test_agregar_un_turno_para_una_sola_fecha(self):
+        self.client.post(
+            reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
+            {
+                'modo': 'fecha', 'origen': 'libre', 'fecha': '2026-09-05',
+                'hora_inicio': '10:00', 'hora_fin': '12:00', 'sede': 'sede_principal',
+                'motivo': 'Cubrió a una compañera',
+            },
+        )
+
+        # El sábado 5 suma dos horas y ningún otro sábado se toca.
+        self.assertEqual(
+            h.resumen_profesora(self.profesora, date(2026, 9, 5), date(2026, 9, 5))['horas'],
+            Decimal('2.00'),
+        )
+        self.assertEqual(
+            h.resumen_profesora(self.profesora, date(2026, 9, 12), date(2026, 9, 12))['horas'],
+            Decimal('0.00'),
+        )
+        self.assertFalse(
+            BloqueHorarioProfesora.objects.filter(profesora=self.profesora, dia='Sábado').exists()
+        )
+
+    def test_no_se_carga_una_clase_de_otro_dia_en_una_fecha_puntual(self):
+        clase = Clase.objects.create(
+            tipo='Reformer', dia='Viernes', horario=time(9),
+            direccion='sede_principal', cupo_maximo=8,
+        )
+        respuesta = self.client.post(
+            reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
+            {
+                'modo': 'fecha', 'origen': 'clase', 'clases': [clase.id],
+                'fecha': '2026-09-07', 'duracion_minutos': '60',
+            },
+            follow=True,
+        )
+        self.assertFalse(AjusteHorarioProfesora.objects.exists())
+        self.assertContains(respuesta, 'es de los viernes')
+
     def test_no_se_pueden_superponer_dos_turnos_del_mismo_dia(self):
         respuesta = self.client.post(
             reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
             {
+                'modo': 'semanal', 'origen': 'libre',
                 'dia': 'Lunes', 'hora_inicio': '11:00', 'hora_fin': '13:00',
                 'sede': 'sede_principal', 'vigente_desde': '2026-09-01',
             },
@@ -251,6 +339,7 @@ class GestionDesdeElPanelTest(BaseHorariosTest):
         self.client.post(
             reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
             {
+                'modo': 'semanal', 'origen': 'libre',
                 'dia': 'Jueves', 'hora_inicio': '15:00', 'hora_fin': '12:00',
                 'sede': 'sede_2', 'vigente_desde': '2026-09-01',
             },
@@ -267,6 +356,33 @@ class GestionDesdeElPanelTest(BaseHorariosTest):
         )
         bloque.refresh_from_db()
         self.assertEqual(bloque.vigente_hasta, date(2026, 9, 15))
+
+    def test_un_turno_dado_de_baja_deja_de_verse_en_el_horario(self):
+        bloque = BloqueHorarioProfesora.objects.get(profesora=self.profesora, dia='Lunes')
+        ayer = h.hoy() - timedelta(days=1)
+
+        self.client.post(
+            reverse('gravity:admin_profesora_horario_eliminar', args=[self.profesora.id, bloque.id]),
+            {'ultimo_dia': ayer.isoformat()},
+        )
+
+        lunes = {d['dia']: d for d in h.horario_semanal(self.profesora)}['Lunes']
+        self.assertEqual(list(lunes['bloques']), [])
+
+    def test_un_turno_dado_de_baja_hoy_se_sigue_contando_hoy(self):
+        # Si hoy todavía lo trabajó, el turno tiene que seguir sumando horas.
+        bloque = BloqueHorarioProfesora.objects.get(profesora=self.profesora, dia='Lunes')
+        hoy = h.hoy()
+
+        self.client.post(
+            reverse('gravity:admin_profesora_horario_eliminar', args=[self.profesora.id, bloque.id]),
+            {'ultimo_dia': hoy.isoformat()},
+        )
+
+        bloque.refresh_from_db()
+        self.assertEqual(bloque.vigente_hasta, hoy)
+        self.assertTrue(bloque.rige_en(hoy))
+        self.assertFalse(bloque.rige_en(hoy + timedelta(days=1)))
 
     def test_un_turno_que_nunca_rigio_se_borra(self):
         bloque = BloqueHorarioProfesora.objects.create(
@@ -297,25 +413,109 @@ class GestionDesdeElPanelTest(BaseHorariosTest):
         )
         self.assertEqual(ValorHoraProfesora.objects.filter(profesora=self.profesora).count(), 1)
 
-    def test_cargar_y_eliminar_un_ajuste(self):
-        self.client.post(
-            reverse('gravity:admin_profesora_ajuste_crear', args=[self.profesora.id]),
-            {'fecha': '2026-09-07', 'tipo': 'ausencia', 'motivo': 'Franco'},
+    def test_marcar_que_no_trabajo_un_turno_puntual(self):
+        # Ese lunes tiene dos turnos: solo se cae el de la tarde.
+        tarde = BloqueHorarioProfesora.objects.create(
+            profesora=self.profesora, dia='Lunes',
+            hora_inicio=time(18), hora_fin=time(20),
+            sede='sede_2', vigente_desde=SEPTIEMBRE,
         )
-        ajuste = AjusteHorarioProfesora.objects.get(profesora=self.profesora)
-        self.assertEqual(self.resumen_septiembre()['horas'], Decimal('32.00'))
 
         self.client.post(
-            reverse('gravity:admin_profesora_ajuste_eliminar', args=[self.profesora.id, ajuste.id])
+            reverse('gravity:admin_profesora_dia_editar', args=[self.profesora.id]),
+            {
+                'accion': 'no_trabajo', 'fecha': '2026-09-07',
+                'bloque_id': tarde.id, 'motivo': 'Turno cubierto por otra',
+            },
+        )
+
+        turnos = h.resumen_profesora(self.profesora, date(2026, 9, 7), date(2026, 9, 7))
+        self.assertEqual(turnos['horas'], Decimal('4.00'))
+        self.assertEqual(len(turnos['dias'][0]['turnos']), 1)
+
+        # Los demás lunes siguen con los dos turnos.
+        siguiente = h.resumen_profesora(self.profesora, date(2026, 9, 14), date(2026, 9, 14))
+        self.assertEqual(siguiente['horas'], Decimal('6.00'))
+
+    def test_cambiar_el_horario_de_un_turno_puntual(self):
+        tarde = BloqueHorarioProfesora.objects.create(
+            profesora=self.profesora, dia='Lunes',
+            hora_inicio=time(18), hora_fin=time(20),
+            sede='sede_2', vigente_desde=SEPTIEMBRE,
+        )
+
+        self.client.post(
+            reverse('gravity:admin_profesora_dia_editar', args=[self.profesora.id]),
+            {
+                'accion': 'otro_horario', 'fecha': '2026-09-07', 'bloque_id': tarde.id,
+                'hora_inicio': '18:00', 'hora_fin': '19:00', 'motivo': 'Salió antes',
+            },
+        )
+
+        dia = h.resumen_profesora(self.profesora, date(2026, 9, 7), date(2026, 9, 7))
+        self.assertEqual(dia['horas'], Decimal('5.00'))
+
+        # El turno de la mañana quedó intacto.
+        horarios = [(t['hora_inicio'], t['hora_fin']) for t in dia['dias'][0]['turnos']]
+        self.assertIn((time(8), time(12)), horarios)
+        self.assertIn((time(18), time(19)), horarios)
+
+    def test_deshacer_un_cambio_devuelve_el_horario_habitual(self):
+        self.client.post(
+            reverse('gravity:admin_profesora_dia_editar', args=[self.profesora.id]),
+            {'accion': 'no_trabajo', 'fecha': '2026-09-07'},
+        )
+        self.assertEqual(self.resumen_septiembre()['horas'], Decimal('32.00'))
+
+        ajuste = AjusteHorarioProfesora.objects.get(profesora=self.profesora)
+        self.client.post(
+            reverse('gravity:admin_profesora_dia_editar', args=[self.profesora.id]),
+            {'accion': 'deshacer', 'fecha': '2026-09-07', 'ajuste_id': ajuste.id},
         )
         self.assertEqual(self.resumen_septiembre()['horas'], Decimal('36.00'))
 
-    def test_un_ajuste_con_horario_incompleto_se_rechaza(self):
+    def test_un_cambio_nuevo_pisa_al_anterior_del_mismo_turno(self):
+        url = reverse('gravity:admin_profesora_dia_editar', args=[self.profesora.id])
+        bloque = BloqueHorarioProfesora.objects.get(profesora=self.profesora, dia='Lunes')
+
+        self.client.post(url, {
+            'accion': 'no_trabajo', 'fecha': '2026-09-07', 'bloque_id': bloque.id,
+        })
+        self.client.post(url, {
+            'accion': 'otro_horario', 'fecha': '2026-09-07', 'bloque_id': bloque.id,
+            'hora_inicio': '08:00', 'hora_fin': '10:00',
+        })
+
+        self.assertEqual(AjusteHorarioProfesora.objects.count(), 1)
+        self.assertEqual(
+            h.resumen_profesora(self.profesora, date(2026, 9, 7), date(2026, 9, 7))['horas'],
+            Decimal('2.00'),
+        )
+
+    def test_quitar_un_turno_suelto(self):
         self.client.post(
-            reverse('gravity:admin_profesora_ajuste_crear', args=[self.profesora.id]),
-            {'fecha': '2026-09-05', 'tipo': 'extra', 'sede': 'sede_principal'},
+            reverse('gravity:admin_profesora_horario_agregar', args=[self.profesora.id]),
+            {
+                'modo': 'fecha', 'origen': 'libre', 'fecha': '2026-09-05',
+                'hora_inicio': '10:00', 'hora_fin': '12:00', 'sede': 'sede_principal',
+            },
+        )
+        suelto = AjusteHorarioProfesora.objects.get(profesora=self.profesora, tipo='extra')
+
+        self.client.post(
+            reverse('gravity:admin_profesora_dia_editar', args=[self.profesora.id]),
+            {'accion': 'no_trabajo', 'fecha': '2026-09-05', 'ajuste_id': suelto.id},
         )
         self.assertFalse(AjusteHorarioProfesora.objects.exists())
+
+    def test_el_dia_sin_horas_sigue_visible_si_tiene_un_cambio(self):
+        self.client.post(
+            reverse('gravity:admin_profesora_dia_editar', args=[self.profesora.id]),
+            {'accion': 'no_trabajo', 'fecha': '2026-09-07', 'motivo': 'Feriado'},
+        )
+        dias = {d['fecha']: d for d in self.resumen_septiembre()['dias']}
+        self.assertIn(date(2026, 9, 7), dias)
+        self.assertEqual(dias[date(2026, 9, 7)]['horas'], Decimal('0.00'))
 
     def test_registrar_el_pago_del_mes(self):
         self.client.post(

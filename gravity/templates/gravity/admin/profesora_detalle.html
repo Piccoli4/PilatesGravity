@@ -3,6 +3,40 @@
 
 {% block title %}{{ profesora.get_full_name|default:profesora.username }} - Horarios{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Las utilidades de display (grid, flex) le ganan al atributo hidden:
+       sin esto, los bloques que el formulario oculta seguirían viéndose. */
+    [hidden] {
+        display: none !important;
+    }
+
+    /* Opciones tipo tarjeta del formulario de turnos */
+    .opcion-tarjeta {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        cursor: pointer;
+        transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .opcion-tarjeta:hover {
+        background-color: #f8f9fa;
+    }
+
+    .opcion-tarjeta:has(input:checked) {
+        border-color: var(--primary-color);
+        background-color: rgba(93, 118, 139, 0.08);
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
 {% block breadcrumb %}
 <li class="flex items-center">
     <span class="text-gray-400">/</span>
@@ -73,7 +107,7 @@
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
     <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">Horario semanal</h3>
     <p class="text-gray-500 text-sm mb-4">
-        Es el horario que la profesora cumple todas las semanas. Los cambios rigen desde la fecha que
+        Es lo que la profesora hace todas las semanas. Los cambios rigen desde la fecha que
         indiques, así los meses ya trabajados no se modifican.
     </p>
 
@@ -91,14 +125,22 @@
                         {{ bloque.hora_inicio|time:"H:i" }} a {{ bloque.hora_fin|time:"H:i" }}
                     </div>
                     <div class="text-xs text-gray-400">
-                        {{ bloque.get_sede_display }} · desde {{ bloque.vigente_desde|date:"d/m/Y" }}
+                        {% if bloque.clase %}{{ bloque.clase.get_nombre_display }} · {% endif %}
+                        {{ bloque.get_sede_display }}
                     </div>
+                    {% if bloque.vigente_hasta %}
+                    <div class="text-xs text-amber-600">
+                        Dado de baja: se cuenta hasta el {{ bloque.vigente_hasta|date:"d/m/Y" }}
+                    </div>
+                    {% endif %}
                 </div>
+                {% if not bloque.vigente_hasta %}
                 <button type="button"
                     onclick="darDeBajaHorario({{ bloque.id }}, '{{ bloque.dia|escapejs }} de {{ bloque.hora_inicio|time:'H:i'|escapejs }} a {{ bloque.hora_fin|time:'H:i'|escapejs }}')"
                     class="text-red-500 hover:text-red-700 text-xs whitespace-nowrap shrink-0">
                     Dar de baja
                 </button>
+                {% endif %}
             </div>
             {% empty %}
             <div class="text-xs text-gray-300 py-1.5 border-t border-gray-100">Sin turnos</div>
@@ -107,51 +149,164 @@
         {% endfor %}
     </div>
 
-    <!-- Agregar bloque -->
-    <div class="border-t border-secundario/30 pt-4">
-        <h4 class="font-semibold text-gray-700 text-sm mb-3">Agregar un turno al horario semanal</h4>
+    <!-- Alta de turnos -->
+    <div class="border-t border-secundario/30 pt-4" id="alta-turnos">
+        <h4 class="font-semibold text-gray-700 text-sm mb-3">Agregar turnos</h4>
+
         <form method="POST" action="{% url 'gravity:admin_profesora_horario_agregar' profesora.id %}"
-            class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            id="form-turnos" class="space-y-4">
             {% csrf_token %}
+
+            <!-- Cuándo -->
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Día</label>
-                <select name="dia" required
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-                    {% for dia in dias_semana %}
-                    <option value="{{ dia }}">{{ dia }}</option>
-                    {% endfor %}
-                </select>
+                <label class="block text-xs font-medium text-gray-500 mb-1">¿Cada cuánto?</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="opcion-tarjeta">
+                        <input type="radio" name="modo" value="semanal" checked class="mr-2">
+                        Todas las semanas
+                    </label>
+                    <label class="opcion-tarjeta">
+                        <input type="radio" name="modo" value="fecha" class="mr-2">
+                        Un día puntual
+                    </label>
+                </div>
             </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div data-modo="semanal">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Rige desde</label>
+                    <input type="date" name="vigente_desde" value="{{ hoy|date:'Y-m-d' }}"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                </div>
+                <div data-modo="fecha" hidden>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
+                    <input type="date" name="fecha" id="fecha-turno" value="{{ hoy|date:'Y-m-d' }}"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                </div>
+                <div data-modo="fecha" hidden class="md:col-span-2">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Motivo</label>
+                    <input type="text" name="motivo" maxlength="200" placeholder="Cubrió a una compañera, clase especial… (opcional)"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                </div>
+            </div>
+
+            <!-- Qué -->
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Entrada</label>
-                <input type="time" name="hora_inicio" required
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                <label class="block text-xs font-medium text-gray-500 mb-1">¿Qué va a hacer?</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="opcion-tarjeta">
+                        <input type="radio" name="origen" value="clase" checked class="mr-2">
+                        Elegir clases
+                    </label>
+                    <label class="opcion-tarjeta">
+                        <input type="radio" name="origen" value="libre" class="mr-2">
+                        Horario libre
+                    </label>
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Salida</label>
-                <input type="time" name="hora_fin" required
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+
+            <!-- Desde las clases del sistema -->
+            <div data-origen="clase" class="space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div data-modo="semanal">
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Día</label>
+                        <select id="dia-clases"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                            {% for dia in dias_semana %}
+                            <option value="{{ dia }}">{{ dia }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Sede</label>
+                        <select id="sede-clases"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                            <option value="">Todas las sedes</option>
+                            {% for valor, nombre in sedes %}
+                            <option value="{{ valor }}">{{ nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Duración de cada clase</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="duracion_minutos" value="60" min="15" max="480" step="5"
+                                class="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                            <span class="text-sm text-gray-500">minutos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <p class="text-xs text-gray-500 mb-0" id="leyenda-clases">
+                            Marcá las clases que va a dar. Cada clase se carga como un turno aparte.
+                        </p>
+                        <span class="text-xs text-gray-400" id="contador-clases"></span>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto"
+                        id="lista-clases">
+                        {% for clase in clases %}
+                        <label class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-fondo/50 clase-item"
+                            data-dia="{{ clase.dia }}" data-sede="{{ clase.direccion }}">
+                            <input type="checkbox" name="clases" value="{{ clase.id }}" class="shrink-0">
+                            <span class="min-w-0">
+                                <span class="block text-sm text-gray-800">
+                                    {{ clase.horario|time:"H:i" }} · {{ clase.get_nombre_display }}
+                                </span>
+                                <span class="block text-xs text-gray-400">
+                                    {{ clase.dia }} · {{ clase.get_direccion_corta }}
+                                </span>
+                            </span>
+                        </label>
+                        {% empty %}
+                        <p class="text-sm text-gray-400 px-3 py-4 mb-0">
+                            No hay clases activas cargadas en el sistema.
+                        </p>
+                        {% endfor %}
+                    </div>
+                    <p class="text-xs text-amber-600 mt-1" id="sin-clases-dia" hidden>
+                        No hay clases cargadas con ese filtro. Probá otra sede o usá "Horario libre".
+                    </p>
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Sede</label>
-                <select name="sede" required
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-                    {% for valor, nombre in sedes %}
-                    <option value="{{ valor }}">{{ nombre }}</option>
-                    {% endfor %}
-                </select>
+
+            <!-- A mano -->
+            <div data-origen="libre" hidden class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div data-modo="semanal">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Día</label>
+                    <select name="dia"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                        {% for dia in dias_semana %}
+                        <option value="{{ dia }}">{{ dia }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Entrada</label>
+                    <input type="time" name="hora_inicio"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Salida</label>
+                    <input type="time" name="hora_fin"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Sede</label>
+                    <select name="sede"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                        {% for valor, nombre in sedes %}
+                        <option value="{{ valor }}">{{ nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Rige desde</label>
-                <input type="date" name="vigente_desde" value="{{ hoy|date:'Y-m-d' }}" required
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-            </div>
-            <div class="flex items-end">
-                <button type="submit" data-loading-text="Agregando..."
-                    class="w-full bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
-                    Agregar turno
-                </button>
-            </div>
+
+            <button type="submit" data-loading-text="Agregando..."
+                class="w-full sm:w-auto bg-principal text-blanco px-6 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
+                Agregar al horario
+            </button>
         </form>
     </div>
 
@@ -371,17 +526,54 @@
                         <span class="text-gray-500">· ${{ dia.monto|pesos }}</span>
                     </span>
                 </div>
+
                 {% for turno in dia.turnos %}
-                <div class="text-xs text-gray-500 border-t border-gray-100 pt-1 mt-1">
-                    {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }} · {{ turno.sede_display }}
-                    {% if turno.origen == 'extra' %}
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
-                    {% elif turno.origen == 'reemplazo' %}
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
-                    {% endif %}
-                    {% if turno.motivo %}<span class="italic">{{ turno.motivo }}</span>{% endif %}
+                <div class="flex items-start justify-between gap-2 border-t border-gray-100 pt-1 mt-1">
+                    <span class="text-xs text-gray-500 min-w-0">
+                        {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }} · {{ turno.sede_display }}
+                        {% if turno.clase %}<span class="text-gray-400">· {{ turno.clase.get_nombre_display }}</span>{% endif %}
+                        {% if turno.origen == 'extra' %}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">suelto</span>
+                        {% elif turno.origen == 'reemplazo' %}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">cambiado</span>
+                        {% endif %}
+                        {% if turno.motivo %}<span class="italic text-gray-400">{{ turno.motivo }}</span>{% endif %}
+                    </span>
+                    <button type="button" class="btn-turno text-principal text-xs font-medium shrink-0"
+                        data-fecha="{{ dia.fecha|date:'Y-m-d' }}"
+                        data-bloque="{{ turno.bloque_id|default_if_none:'' }}"
+                        data-ajuste="{{ turno.ajuste_id|default_if_none:'' }}"
+                        data-inicio="{{ turno.hora_inicio|time:'H:i' }}"
+                        data-fin="{{ turno.hora_fin|time:'H:i' }}"
+                        data-sede="{{ turno.sede }}"
+                        data-origen="{{ turno.origen }}"
+                        data-titulo="{{ dia.fecha|date:'l d/m' }}, de {{ turno.hora_inicio|time:'H:i' }} a {{ turno.hora_fin|time:'H:i' }}">
+                        Editar
+                    </button>
                 </div>
                 {% endfor %}
+
+                {% for ajuste in dia.ajustes %}
+                {% if ajuste.tipo == 'ausencia' %}
+                <div class="flex items-start justify-between gap-2 border-t border-gray-100 pt-1 mt-1">
+                    <span class="text-xs text-red-600">
+                        No trabajó{% if ajuste.bloque %} el turno de {{ ajuste.bloque.hora_inicio|time:"H:i" }}{% endif %}
+                        {% if ajuste.motivo %}<span class="text-gray-400 italic">— {{ ajuste.motivo }}</span>{% endif %}
+                    </span>
+                    <button type="button" class="btn-deshacer text-gray-500 hover:text-principal text-xs shrink-0"
+                        data-fecha="{{ dia.fecha|date:'Y-m-d' }}" data-ajuste="{{ ajuste.id }}">
+                        Deshacer
+                    </button>
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                <div class="text-right border-t border-gray-100 pt-1 mt-1">
+                    <button type="button" class="btn-agregar-dia text-principal text-xs font-medium"
+                        data-fecha="{{ dia.fecha|date:'Y-m-d' }}">
+                        + Agregar turno a este día
+                    </button>
+                </div>
             </div>
             {% endfor %}
             <div class="border border-secundario/30 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
@@ -394,7 +586,7 @@
 
         <!-- Escritorio -->
         <div class="hidden lg:block">
-<table class="w-full text-sm">
+        <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-secundario/30">
                     <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
@@ -407,30 +599,62 @@
             <tbody>
                 {% for dia in resumen_mes.dias %}
                 <tr class="border-b border-gray-100">
-                    <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">
+                    <td class="py-2 pr-4 text-gray-600 whitespace-nowrap align-top">
                         {{ dia.fecha|date:"D d/m" }}
+                        <button type="button" class="btn-agregar-dia block text-principal text-xs mt-1"
+                            data-fecha="{{ dia.fecha|date:'Y-m-d' }}">
+                            + turno
+                        </button>
                     </td>
                     <td class="py-2 pr-4">
                         {% for turno in dia.turnos %}
-                        <div class="text-gray-800">
-                            {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }}
-                            <span class="text-xs text-gray-400">· {{ turno.sede_display }}</span>
-                            {% if turno.origen == 'extra' %}
-                            <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">extra</span>
-                            {% elif turno.origen == 'reemplazo' %}
-                            <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">horario distinto</span>
-                            {% endif %}
-                            {% if turno.motivo %}
-                            <span class="text-xs text-gray-400 italic">{{ turno.motivo }}</span>
-                            {% endif %}
+                        <div class="text-gray-800 flex items-center gap-2">
+                            <span>
+                                {{ turno.hora_inicio|time:"H:i" }} a {{ turno.hora_fin|time:"H:i" }}
+                                <span class="text-xs text-gray-400">· {{ turno.sede_display }}</span>
+                                {% if turno.clase %}<span class="text-xs text-gray-400">· {{ turno.clase.get_nombre_display }}</span>{% endif %}
+                                {% if turno.origen == 'extra' %}
+                                <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">suelto</span>
+                                {% elif turno.origen == 'reemplazo' %}
+                                <span class="ml-1 inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">cambiado</span>
+                                {% endif %}
+                                {% if turno.motivo %}
+                                <span class="text-xs text-gray-400 italic">{{ turno.motivo }}</span>
+                                {% endif %}
+                            </span>
+                            <button type="button" class="btn-turno text-principal text-xs font-medium"
+                                data-fecha="{{ dia.fecha|date:'Y-m-d' }}"
+                                data-bloque="{{ turno.bloque_id|default_if_none:'' }}"
+                                data-ajuste="{{ turno.ajuste_id|default_if_none:'' }}"
+                                data-inicio="{{ turno.hora_inicio|time:'H:i' }}"
+                                data-fin="{{ turno.hora_fin|time:'H:i' }}"
+                                data-sede="{{ turno.sede }}"
+                                data-origen="{{ turno.origen }}"
+                                data-titulo="{{ dia.fecha|date:'l d/m' }}, de {{ turno.hora_inicio|time:'H:i' }} a {{ turno.hora_fin|time:'H:i' }}">
+                                Editar
+                            </button>
                         </div>
                         {% endfor %}
+                        {% for ajuste in dia.ajustes %}
+                        {% if ajuste.tipo == 'ausencia' %}
+                        <div class="text-xs text-red-600 flex items-center gap-2">
+                            <span>
+                                No trabajó{% if ajuste.bloque %} el turno de {{ ajuste.bloque.hora_inicio|time:"H:i" }} a {{ ajuste.bloque.hora_fin|time:"H:i" }}{% endif %}
+                                {% if ajuste.motivo %}<span class="text-gray-400 italic">— {{ ajuste.motivo }}</span>{% endif %}
+                            </span>
+                            <button type="button" class="btn-deshacer text-gray-500 hover:text-principal"
+                                data-fecha="{{ dia.fecha|date:'Y-m-d' }}" data-ajuste="{{ ajuste.id }}">
+                                Deshacer
+                            </button>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
                     </td>
-                    <td class="py-2 pr-4 text-right font-medium text-gray-800">{{ dia.horas|horas }} h</td>
-                    <td class="py-2 pr-4 text-right text-gray-500">
+                    <td class="py-2 pr-4 text-right font-medium text-gray-800 align-top">{{ dia.horas|horas }} h</td>
+                    <td class="py-2 pr-4 text-right text-gray-500 align-top">
                         {% if dia.valor_hora %}${{ dia.valor_hora|pesos }}{% else %}—{% endif %}
                     </td>
-                    <td class="py-2 text-right text-gray-600">${{ dia.monto|pesos }}</td>
+                    <td class="py-2 text-right text-gray-600 align-top">${{ dia.monto|pesos }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -444,154 +668,17 @@
                 </tr>
             </tfoot>
         </table>
-</div>
+        </div>
     </details>
     {% else %}
     <p class="text-sm text-gray-400 text-center py-6 mb-0">
         No hay horas registradas en {{ mes_seleccionado|date:"F Y" }}.
+        <button type="button" class="btn-agregar-dia text-principal font-medium"
+            data-fecha="{{ mes_seleccionado|date:'Y-m-d' }}">Agregar un turno suelto</button>
     </p>
     {% endif %}
 </div>
 
-<!-- Ajustes del mes -->
-<div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
-    <h3 class="font-cinzel text-lg md:text-xl text-principal mb-1">Ajustes del mes</h3>
-    <p class="text-gray-500 text-sm mb-4">
-        Para los días que se apartan del horario habitual: un turno extra, un día que no trabajó, o un día
-        que trabajó en otro horario (por ejemplo si salió antes o cubrió a una compañera).
-    </p>
-
-    <form method="POST" action="{% url 'gravity:admin_profesora_ajuste_crear' profesora.id %}"
-        class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6" id="form-ajuste">
-        {% csrf_token %}
-        <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Fecha</label>
-            <input type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" required
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
-            <select name="tipo" id="ajuste-tipo" required
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-                {% for valor, nombre in tipos_ajuste %}
-                <option value="{{ valor }}">{{ nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Motivo</label>
-            <input type="text" name="motivo" maxlength="200" placeholder="Opcional"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        <div class="campo-horario">
-            <label class="block text-xs font-medium text-gray-500 mb-1">Entrada</label>
-            <input type="time" name="hora_inicio"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        <div class="campo-horario">
-            <label class="block text-xs font-medium text-gray-500 mb-1">Salida</label>
-            <input type="time" name="hora_fin"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        <div class="campo-horario">
-            <label class="block text-xs font-medium text-gray-500 mb-1">Sede</label>
-            <select name="sede"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-                {% for valor, nombre in sedes %}
-                <option value="{{ valor }}">{{ nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="flex items-end">
-            <button type="submit" data-loading-text="Guardando..."
-                class="w-full bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
-                Cargar ajuste
-            </button>
-        </div>
-    </form>
-
-    {% if ajustes_mes %}
-
-    <!-- Móvil -->
-    <div class="lg:hidden space-y-2">
-        {% for ajuste in ajustes_mes %}
-        <div class="border border-gray-200 rounded-lg px-3 py-2">
-            <div class="flex items-center justify-between gap-2 mb-1">
-                <span class="text-sm font-medium text-gray-700">{{ ajuste.fecha|date:"D d/m/Y" }}</span>
-                {% if ajuste.tipo == 'extra' %}
-                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">Turno extra</span>
-                {% elif ajuste.tipo == 'reemplazo' %}
-                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Otro horario</span>
-                {% else %}
-                <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-50 text-red-600">No trabajó</span>
-                {% endif %}
-            </div>
-            {% if ajuste.hora_inicio %}
-            <div class="text-xs text-gray-500">
-                {{ ajuste.hora_inicio|time:"H:i" }} a {{ ajuste.hora_fin|time:"H:i" }} · {{ ajuste.get_sede_display }}
-            </div>
-            {% endif %}
-            <div class="flex items-center justify-between gap-2 mt-1">
-                <span class="text-xs text-gray-400">{{ ajuste.motivo|default:"Sin motivo" }}</span>
-                <button type="button"
-                    onclick="confirmarAccion('{% url 'gravity:admin_profesora_ajuste_eliminar' profesora.id ajuste.id %}', 'Eliminar ajuste', 'El día {{ ajuste.fecha|date:"d/m/Y"|escapejs }} vuelve a contarse según el horario habitual.', 'Sí, eliminar')"
-                    class="text-red-500 hover:text-red-700 text-xs font-medium shrink-0">
-                    Eliminar
-                </button>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Escritorio -->
-    <div class="hidden lg:block">
-<table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-secundario/30">
-                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha</th>
-                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Tipo</th>
-                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Horario</th>
-                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Motivo</th>
-                <th class="text-right font-semibold text-gray-600 py-2">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ajuste in ajustes_mes %}
-            <tr class="border-b border-gray-100">
-                <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ ajuste.fecha|date:"D d/m/Y" }}</td>
-                <td class="py-2 pr-4">
-                    {% if ajuste.tipo == 'extra' %}
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-600">Turno extra</span>
-                    {% elif ajuste.tipo == 'reemplazo' %}
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Otro horario</span>
-                    {% else %}
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-50 text-red-600">No trabajó</span>
-                    {% endif %}
-                </td>
-                <td class="py-2 pr-4 text-gray-600">
-                    {% if ajuste.hora_inicio %}
-                    {{ ajuste.hora_inicio|time:"H:i" }} a {{ ajuste.hora_fin|time:"H:i" }}
-                    <span class="text-xs text-gray-400">· {{ ajuste.get_sede_display }}</span>
-                    {% else %}—{% endif %}
-                </td>
-                <td class="py-2 pr-4 text-gray-500">{{ ajuste.motivo|default:"—" }}</td>
-                <td class="py-2 text-right">
-                    <button type="button"
-                        onclick="confirmarAccion('{% url 'gravity:admin_profesora_ajuste_eliminar' profesora.id ajuste.id %}', 'Eliminar ajuste', 'El día {{ ajuste.fecha|date:"d/m/Y"|escapejs }} vuelve a contarse según el horario habitual.', 'Sí, eliminar')"
-                        class="text-red-500 hover:text-red-700 text-xs font-medium hover:underline">
-                        Eliminar
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-    {% else %}
-    <p class="text-sm text-gray-400 text-center py-4 mb-0">Sin ajustes cargados en este mes.</p>
-    {% endif %}
-</div>
 
 <!-- Pago del mes -->
 <div class="bg-blanco rounded-lg shadow-sm p-4 mb-4">
@@ -727,13 +814,17 @@
         <h3 class="font-cinzel text-lg text-principal mb-2">Dar de baja un turno</h3>
         <p class="text-sm text-gray-600 mb-4">
             Vas a dar de baja el turno de <strong id="baja-horario-detalle"></strong>.
-            Indicá hasta qué día lo cumplió: los meses anteriores a esa fecha no se modifican.
+            Se cuenta hasta la fecha que pongas, inclusive, y los meses anteriores no se modifican.
         </p>
         <form id="form-baja-horario" method="POST" action="">
             {% csrf_token %}
             <label class="block text-xs font-medium text-gray-500 mb-1">Último día que lo cumplió</label>
-            <input type="date" name="ultimo_dia" value="{{ hoy|date:'Y-m-d' }}" required
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-5 focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+            <input type="date" name="ultimo_dia" value="{{ ayer|date:'Y-m-d' }}" required
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+            <p class="text-xs text-gray-400 mb-5">
+                Viene con la fecha de ayer para que el turno deje de aparecer desde hoy.
+                Si hoy todavía lo trabajó, poné la fecha de hoy: va a seguir figurando hasta esta noche.
+            </p>
             <div class="flex gap-3 justify-end">
                 <button type="button" onclick="cerrarModales()"
                     class="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
@@ -769,8 +860,77 @@
     </div>
 </div>
 
+<!-- Modal: qué pasó con un turno en un día puntual -->
+<div id="modal-turno" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+    <div class="bg-blanco rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
+        <h3 class="font-cinzel text-lg text-principal mb-1">Editar este turno</h3>
+        <p class="text-sm text-gray-600 mb-4" id="turno-detalle"></p>
+
+        <form method="POST" action="{% url 'gravity:admin_profesora_dia_editar' profesora.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="fecha" id="turno-fecha">
+            <input type="hidden" name="bloque_id" id="turno-bloque">
+            <input type="hidden" name="ajuste_id" id="turno-ajuste">
+            <input type="hidden" name="sede" id="turno-sede">
+
+            <div id="turno-horas" hidden class="mb-4">
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Entrada</label>
+                        <input type="time" name="hora_inicio" id="turno-inicio"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Salida</label>
+                        <input type="time" name="hora_fin" id="turno-fin"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                    </div>
+                </div>
+                <input type="text" name="motivo" maxlength="200" placeholder="Motivo (opcional)"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                <button type="submit" name="accion" value="otro_horario" data-loading-text="Guardando..."
+                    class="w-full bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
+                    Guardar el horario nuevo
+                </button>
+            </div>
+
+            <div id="turno-opciones" class="space-y-2">
+                <button type="button" id="btn-otro-horario"
+                    class="w-full border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                    Trabajó en otro horario
+                </button>
+                <button type="submit" name="accion" value="no_trabajo" id="btn-no-trabajo"
+                    data-loading-text="Guardando..."
+                    class="w-full border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm hover:bg-red-50 transition-colors">
+                    No trabajó este turno
+                </button>
+                <button type="submit" name="accion" value="deshacer" id="btn-deshacer-turno" hidden
+                    data-loading-text="Deshaciendo..."
+                    class="w-full border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                    Deshacer el cambio de este día
+                </button>
+            </div>
+
+            <button type="button" onclick="cerrarModales()"
+                class="w-full text-gray-500 text-sm mt-3 hover:text-gray-700">
+                Cancelar
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Deshacer un cambio, sin abrir el modal -->
+<form method="POST" action="{% url 'gravity:admin_profesora_dia_editar' profesora.id %}" id="form-deshacer" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="deshacer">
+    <input type="hidden" name="fecha" id="deshacer-fecha">
+    <input type="hidden" name="ajuste_id" id="deshacer-ajuste">
+</form>
+
 <script>
     const URL_BAJA_HORARIO = "{% url 'gravity:admin_profesora_horario_eliminar' profesora.id 0 %}";
+    const MODALES = ['modal-baja-horario', 'modal-confirmar', 'modal-turno'];
+    const DIAS_JS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
     function abrirModal(id) {
         const modal = document.getElementById(id);
@@ -779,12 +939,22 @@
     }
 
     function cerrarModales() {
-        ['modal-baja-horario', 'modal-confirmar'].forEach(function (id) {
+        MODALES.forEach(function (id) {
             const modal = document.getElementById(id);
+            if (!modal) return;
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         });
     }
+
+    MODALES.forEach(function (id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === this) cerrarModales();
+            });
+        }
+    });
 
     function darDeBajaHorario(bloqueId, detalle) {
         document.getElementById('baja-horario-detalle').textContent = detalle;
@@ -800,29 +970,157 @@
         abrirModal('modal-confirmar');
     }
 
-    ['modal-baja-horario', 'modal-confirmar'].forEach(function (id) {
-        document.getElementById(id).addEventListener('click', function (e) {
-            if (e.target === this) cerrarModales();
-        });
+    // ---------------------------------------------------------------
+    // Editar lo que pasó con un turno en un día concreto
+    // ---------------------------------------------------------------
+    const camposHora = document.getElementById('turno-horas');
+    const opciones = document.getElementById('turno-opciones');
+
+    document.addEventListener('click', function (evento) {
+        const boton = evento.target.closest('.btn-turno');
+        if (!boton) return;
+
+        const datos = boton.dataset;
+        document.getElementById('turno-detalle').textContent = datos.titulo;
+        document.getElementById('turno-fecha').value = datos.fecha;
+        document.getElementById('turno-bloque').value = datos.bloque || '';
+        document.getElementById('turno-ajuste').value = datos.ajuste || '';
+        document.getElementById('turno-sede').value = datos.sede || '';
+        document.getElementById('turno-inicio').value = datos.inicio;
+        document.getElementById('turno-fin').value = datos.fin;
+
+        // Un turno suelto se quita del todo; uno del horario semanal se marca como no trabajado
+        document.getElementById('btn-no-trabajo').textContent =
+            datos.origen === 'extra' ? 'Quitar este turno suelto' : 'No trabajó este turno';
+
+        // Solo se puede deshacer lo que es un cambio cargado a mano
+        document.getElementById('btn-deshacer-turno').hidden = !datos.ajuste;
+
+        camposHora.hidden = true;
+        opciones.hidden = false;
+        abrirModal('modal-turno');
     });
 
-    // Los campos de horario solo tienen sentido si la profesora trabajó ese día
-    const selectTipo = document.getElementById('ajuste-tipo');
-    const camposHorario = document.querySelectorAll('#form-ajuste .campo-horario');
+    document.getElementById('btn-otro-horario').addEventListener('click', function () {
+        camposHora.hidden = false;
+        opciones.hidden = true;
+    });
 
-    function actualizarCamposAjuste() {
-        const requiereHorario = selectTipo.value !== 'ausencia';
-        camposHorario.forEach(function (campo) {
-            campo.style.display = requiereHorario ? '' : 'none';
-            campo.querySelectorAll('input, select').forEach(function (control) {
-                control.required = requiereHorario && control.type === 'time';
-                if (!requiereHorario && control.type === 'time') control.value = '';
-            });
-        });
+    // Deshacer directo desde la fila del día
+    document.addEventListener('click', function (evento) {
+        const boton = evento.target.closest('.btn-deshacer');
+        if (!boton) return;
+        document.getElementById('deshacer-fecha').value = boton.dataset.fecha;
+        document.getElementById('deshacer-ajuste').value = boton.dataset.ajuste;
+        document.getElementById('form-deshacer').submit();
+    });
+
+    // ---------------------------------------------------------------
+    // Alta de turnos: clases o horario libre, semanal o de un solo día
+    // ---------------------------------------------------------------
+    const formTurnos = document.getElementById('form-turnos');
+    const selectDia = document.getElementById('dia-clases');
+    const selectSede = document.getElementById('sede-clases');
+    const inputFecha = document.getElementById('fecha-turno');
+    const avisoSinClases = document.getElementById('sin-clases-dia');
+    const leyendaClases = document.getElementById('leyenda-clases');
+    const contadorClases = document.getElementById('contador-clases');
+
+    // Mostrar u ocultar sin depender de las clases de display de Tailwind
+    function mostrar(elemento, visible) {
+        elemento.hidden = !visible;
+        elemento.style.display = visible ? '' : 'none';
     }
 
-    selectTipo.addEventListener('change', actualizarCamposAjuste);
-    actualizarCamposAjuste();
+    function modoActual() {
+        return formTurnos.querySelector('input[name="modo"]:checked').value;
+    }
+
+    function origenActual() {
+        return formTurnos.querySelector('input[name="origen"]:checked').value;
+    }
+
+    function diaDeLaFecha(valor) {
+        if (!valor) return '';
+        const partes = valor.split('-');
+        const fecha = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+        return DIAS_JS[fecha.getDay()];
+    }
+
+    function diaElegido() {
+        return modoActual() === 'fecha' ? diaDeLaFecha(inputFecha.value) : selectDia.value;
+    }
+
+    function actualizarFormulario() {
+        const modo = modoActual();
+        const origen = origenActual();
+
+        // Mostrar solo los campos que corresponden y no enviar los ocultos
+        formTurnos.querySelectorAll('[data-modo]').forEach(function (bloque) {
+            const visible = bloque.dataset.modo === modo;
+            mostrar(bloque, visible);
+            bloque.querySelectorAll('input, select').forEach(function (campo) {
+                campo.disabled = !visible;
+            });
+        });
+        formTurnos.querySelectorAll('[data-origen]').forEach(function (bloque) {
+            const visible = bloque.dataset.origen === origen;
+            mostrar(bloque, visible);
+            bloque.querySelectorAll('input, select').forEach(function (campo) {
+                if (campo.name === 'clases') return;
+                // Un campo que además depende del modo (el día, por ejemplo)
+                // solo se envía si los dos filtros lo dejan a la vista
+                const porModo = campo.closest('[data-modo]');
+                const modoOculto = porModo && porModo.dataset.modo !== modo;
+                campo.disabled = !visible || modoOculto;
+            });
+        });
+
+        // El día sale del calendario cuando el turno es de una fecha puntual
+        const dia = diaElegido();
+        const sede = selectSede ? selectSede.value : '';
+        let disponibles = 0;
+
+        document.querySelectorAll('.clase-item').forEach(function (item) {
+            const coincide = item.dataset.dia === dia && (!sede || item.dataset.sede === sede);
+            mostrar(item, coincide);
+            const casilla = item.querySelector('input');
+            casilla.disabled = !coincide || origen !== 'clase';
+            if (!coincide) casilla.checked = false;
+            if (coincide) disponibles += 1;
+        });
+
+        mostrar(avisoSinClases, disponibles === 0);
+        if (leyendaClases) {
+            leyendaClases.textContent = dia
+                ? 'Clases de los ' + dia.toLowerCase() + ': marcá las que va a dar. Cada una se carga como un turno aparte.'
+                : 'Marcá las clases que va a dar.';
+        }
+        if (contadorClases) {
+            contadorClases.textContent = disponibles === 1
+                ? '1 clase' : disponibles + ' clases';
+        }
+    }
+
+    formTurnos.addEventListener('change', function (evento) {
+        if (['modo', 'origen'].includes(evento.target.name) || evento.target === selectDia
+            || evento.target === selectSede || evento.target === inputFecha) {
+            actualizarFormulario();
+        }
+    });
+
+    // "+ Agregar turno a este día" prepara el formulario con esa fecha
+    document.addEventListener('click', function (evento) {
+        const boton = evento.target.closest('.btn-agregar-dia');
+        if (!boton) return;
+        formTurnos.querySelector('input[name="modo"][value="fecha"]').checked = true;
+        inputFecha.disabled = false;
+        inputFecha.value = boton.dataset.fecha;
+        actualizarFormulario();
+        document.getElementById('alta-turnos').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    actualizarFormulario();
 </script>
 
 {% endblock %}

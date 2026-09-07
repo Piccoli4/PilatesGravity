@@ -9,7 +9,7 @@ Profesoras (administradoras contratadas): ven su horario y las horas que fueron
 haciendo en el mes, junto con lo que les corresponde cobrar.
 """
 
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
@@ -271,69 +271,189 @@ def admin_profesora_detalle(request, profesora_id):
         'desde_semana': desde_semana,
         'hasta_semana': hasta_semana,
 
-        'ajustes_mes': AjusteHorarioProfesora.objects.filter(
-            profesora=profesora,
-            fecha__gte=desde_mes,
-            fecha__lte=hasta_mes,
-        ).select_related('registrado_por').order_by('-fecha'),
-
         'liquidacion': h.liquidacion_del_mes(profesora, mes_seleccionado),
         'historial_meses': _historial_meses(profesora, _mes_anterior(mes_seleccionado)),
 
+        'clases': h.clases_disponibles(),
         'sedes': Clase.DIRECCIONES,
+        'ayer': hoy - timedelta(days=1),
         'dias_semana': h.DIAS_INDICE[:6],
-        'tipos_ajuste': AjusteHorarioProfesora.TIPOS_AJUSTE,
     }
     return render(request, 'gravity/admin/profesora_detalle.html', context)
 
 
 @superadmin_required
 def admin_profesora_horario_agregar(request, profesora_id):
-    """Agrega un bloque al horario semanal de una profesora."""
+    """
+    Carga turnos para una profesora.
+
+    Se pueden elegir clases del sistema —cada clase es un turno, porque se le
+    paga por clase— o cargar un horario libre, y aplicarlo a todas las semanas
+    o a una fecha puntual.
+    """
     profesora = _get_profesora(profesora_id)
 
     if request.method != 'POST':
         return redirect('gravity:admin_profesora_detalle', profesora_id=profesora.id)
 
-    dia = request.POST.get('dia', '')
-    hora_inicio = request.POST.get('hora_inicio', '')
-    hora_fin = request.POST.get('hora_fin', '')
-    sede = request.POST.get('sede', '')
+    modo = request.POST.get('modo', 'semanal')
+    fecha = _fecha_post(request, 'fecha')
     vigente_desde = _fecha_post(request, 'vigente_desde') or h.hoy()
 
-    bloque = BloqueHorarioProfesora(
-        profesora=profesora,
-        dia=dia,
-        hora_inicio=hora_inicio or None,
-        hora_fin=hora_fin or None,
-        sede=sede,
-        vigente_desde=vigente_desde,
-        creado_por=request.user,
-    )
-
-    try:
-        bloque.full_clean()
-    except Exception as error:
-        mensajes = getattr(error, 'messages', None) or [str(error)]
-        messages.error(request, f'No se pudo agregar el horario: {" ".join(mensajes)}')
+    if modo == 'fecha' and not fecha:
+        messages.error(request, 'Indicá la fecha del turno.')
         return redirect('gravity:admin_profesora_detalle', profesora_id=profesora.id)
 
-    solapado = _buscar_solapamiento(bloque)
-    if solapado:
+    pedidos, problemas = _turnos_pedidos(
+        request, fecha if modo == 'fecha' else None,
+        origen=request.POST.get('origen', 'clase'),
+    )
+
+    if not pedidos:
         messages.error(
             request,
-            f'Ese horario se superpone con el bloque de {solapado.dia} de '
-            f'{solapado.hora_inicio:%H:%M} a {solapado.hora_fin:%H:%M} que ya tiene cargado.'
+            problemas[0] if problemas else 'Elegí al menos una clase o cargá un horario.',
         )
         return redirect('gravity:admin_profesora_detalle', profesora_id=profesora.id)
 
-    bloque.save()
-    messages.success(
-        request,
-        f'Horario agregado: {dia} de {bloque.hora_inicio:%H:%M} a {bloque.hora_fin:%H:%M}, '
-        f'a partir del {vigente_desde:%d/%m/%Y}.'
-    )
-    return redirect('gravity:admin_profesora_detalle', profesora_id=profesora.id)
+    motivo = request.POST.get('motivo', '').strip()
+    creados = []
+
+    for turno in pedidos:
+        if modo == 'fecha':
+            registro = AjusteHorarioProfesora(
+                profesora=profesora,
+                fecha=fecha,
+                tipo='extra',
+                bloque=None,
+                clase=turno['clase'],
+                hora_inicio=turno['hora_inicio'],
+                hora_fin=turno['hora_fin'],
+                sede=turno['sede'],
+                motivo=motivo,
+                registrado_por=request.user,
+            )
+        else:
+            registro = BloqueHorarioProfesora(
+                profesora=profesora,
+                dia=turno['dia'],
+                hora_inicio=turno['hora_inicio'],
+                hora_fin=turno['hora_fin'],
+                sede=turno['sede'],
+                clase=turno['clase'],
+                vigente_desde=vigente_desde,
+                creado_por=request.user,
+            )
+
+        etiqueta = (
+            f"{turno['dia']} de {turno['hora_inicio']:%H:%M} a {turno['hora_fin']:%H:%M}"
+        )
+
+        try:
+            registro.full_clean(exclude=['bloque'] if modo == 'fecha' else None)
+        except Exception as error:
+            mensajes = getattr(error, 'messages', None) or [str(error)]
+            problemas.append(f'{etiqueta}: {" ".join(mensajes)}')
+            continue
+
+        if modo == 'semanal':
+            solapado = _buscar_solapamiento(registro)
+            if solapado:
+                problemas.append(
+                    f'{etiqueta} se superpone con el turno de {solapado.hora_inicio:%H:%M} '
+                    f'a {solapado.hora_fin:%H:%M} que ya tenía cargado.'
+                )
+                continue
+
+        registro.save()
+        creados.append(etiqueta)
+
+    if creados:
+        if modo == 'fecha':
+            detalle = f'para el {fecha:%d/%m/%Y}'
+        else:
+            detalle = f'a partir del {vigente_desde:%d/%m/%Y}'
+        if len(creados) == 1:
+            messages.success(request, f'Turno agregado: {creados[0]}, {detalle}.')
+        else:
+            messages.success(request, f'Se agregaron {len(creados)} turnos {detalle}.')
+
+    for problema in problemas:
+        messages.warning(request, problema)
+
+    destino = _url_detalle(profesora, fecha) if modo == 'fecha' else None
+    return redirect(destino or _url_detalle(profesora))
+
+
+def _turnos_pedidos(request, fecha=None, origen='clase'):
+    """
+    Turnos que se quieren cargar, ya sea desde clases o a mano.
+
+    Devuelve la lista de turnos y los avisos de lo que no se pudo interpretar.
+    """
+    problemas = []
+    turnos = []
+
+    ids_clases = request.POST.getlist('clases')
+
+    if origen == 'clase' and not ids_clases:
+        problemas.append('Marcá al menos una clase de las que aparecen para ese día.')
+        return [], problemas
+
+    if ids_clases:
+        try:
+            minutos = int(request.POST.get('duracion_minutos') or 60)
+        except ValueError:
+            minutos = 60
+        minutos = max(15, min(minutos, 480))
+
+        clases = Clase.objects.filter(id__in=ids_clases, activa=True)
+        for clase in clases:
+            if fecha and clase.dia != h.nombre_dia(fecha):
+                problemas.append(
+                    f'{clase.get_nombre_display()} de las {clase.horario:%H:%M} es de los '
+                    f'{clase.dia.lower()}, y el {fecha:%d/%m/%Y} es {h.nombre_dia(fecha).lower()}.'
+                )
+                continue
+            turnos.append({
+                'dia': clase.dia,
+                'hora_inicio': clase.horario,
+                'hora_fin': _sumar_minutos(clase.horario, minutos),
+                'sede': clase.direccion,
+                'clase': clase,
+            })
+        return turnos, problemas
+
+    hora_inicio = _hora_post(request, 'hora_inicio')
+    hora_fin = _hora_post(request, 'hora_fin')
+    dia = h.nombre_dia(fecha) if fecha else request.POST.get('dia', '')
+
+    if not hora_inicio or not hora_fin:
+        problemas.append('Cargá la hora de entrada y la de salida.')
+        return [], problemas
+
+    turnos.append({
+        'dia': dia,
+        'hora_inicio': hora_inicio,
+        'hora_fin': hora_fin,
+        'sede': request.POST.get('sede', ''),
+        'clase': None,
+    })
+    return turnos, problemas
+
+
+def _hora_post(request, clave):
+    """Lee una hora HH:MM del POST."""
+    try:
+        return time.fromisoformat(request.POST.get(clave, ''))
+    except ValueError:
+        return None
+
+
+def _sumar_minutos(hora, minutos):
+    """Suma minutos a una hora, sin pasar de las 23:59."""
+    total = hora.hour * 60 + hora.minute + minutos
+    return time(min(total // 60, 23), total % 60 if total < 24 * 60 else 59)
 
 
 def _buscar_solapamiento(bloque):
@@ -379,10 +499,18 @@ def admin_profesora_horario_eliminar(request, profesora_id, bloque_id):
     else:
         bloque.vigente_hasta = ultimo_dia
         bloque.save(update_fields=['vigente_hasta'])
-        messages.success(
-            request,
-            f'Horario dado de baja. Rigió hasta el {ultimo_dia:%d/%m/%Y} inclusive.'
-        )
+
+        if ultimo_dia >= h.hoy():
+            messages.success(
+                request,
+                f'Turno dado de baja: se cuenta hasta el {ultimo_dia:%d/%m/%Y} inclusive, '
+                f'así que sigue apareciendo en el horario hasta esa fecha.'
+            )
+        else:
+            messages.success(
+                request,
+                f'Turno dado de baja. Se contó hasta el {ultimo_dia:%d/%m/%Y} inclusive.'
+            )
 
     return redirect('gravity:admin_profesora_detalle', profesora_id=profesora.id)
 
@@ -449,44 +577,116 @@ def admin_profesora_valor_hora(request, profesora_id):
 
 
 @superadmin_required
-def admin_profesora_ajuste_crear(request, profesora_id):
-    """Carga un ajuste puntual: turno extra, horario distinto o día no trabajado."""
+def admin_profesora_dia_editar(request, profesora_id):
+    """
+    Cambia lo que pasó en un día puntual, sin tocar el horario semanal.
+
+    Sirve para marcar que no trabajó un turno, que lo hizo en otro horario, o
+    para deshacer un cambio cargado antes. Cada cambio apunta al turno concreto,
+    así se puede corregir uno solo aunque ese día tenga varios.
+    """
     profesora = _get_profesora(profesora_id)
 
     if request.method != 'POST':
         return redirect('gravity:admin_profesora_detalle', profesora_id=profesora.id)
 
     fecha = _fecha_post(request, 'fecha')
-    tipo = request.POST.get('tipo', '')
+    accion = request.POST.get('accion', '')
 
     if not fecha:
-        messages.error(request, 'Indicá la fecha del ajuste.')
+        messages.error(request, 'No se pudo identificar la fecha del cambio.')
         return redirect('gravity:admin_profesora_detalle', profesora_id=profesora.id)
 
-    ajuste = AjusteHorarioProfesora(
+    bloque = None
+    if request.POST.get('bloque_id'):
+        bloque = BloqueHorarioProfesora.objects.filter(
+            id=request.POST['bloque_id'], profesora=profesora
+        ).first()
+
+    ajuste = None
+    if request.POST.get('ajuste_id'):
+        ajuste = AjusteHorarioProfesora.objects.filter(
+            id=request.POST['ajuste_id'], profesora=profesora
+        ).first()
+
+    motivo = request.POST.get('motivo', '').strip()
+
+    if accion == 'deshacer':
+        if ajuste:
+            ajuste.delete()
+            messages.success(
+                request,
+                f'Listo, el {fecha:%d/%m/%Y} vuelve a contarse según el horario habitual.'
+            )
+        else:
+            messages.error(request, 'Ese cambio ya no existe.')
+
+    elif accion == 'no_trabajo':
+        if ajuste and ajuste.tipo == 'extra':
+            ajuste.delete()
+            messages.success(request, f'Se quitó el turno suelto del {fecha:%d/%m/%Y}.')
+        else:
+            _guardar_cambio_del_dia(
+                profesora, fecha, bloque, 'ausencia', request.user, motivo=motivo,
+            )
+            que = 'ese turno' if bloque else 'ese día'
+            messages.success(request, f'Quedó registrado que no trabajó {que}.')
+
+    elif accion == 'otro_horario':
+        hora_inicio = _hora_post(request, 'hora_inicio')
+        hora_fin = _hora_post(request, 'hora_fin')
+
+        if not hora_inicio or not hora_fin or hora_fin <= hora_inicio:
+            messages.error(request, 'Revisá el horario: la salida tiene que ser posterior a la entrada.')
+            return redirect(_url_detalle(profesora, fecha))
+
+        sede = request.POST.get('sede') or (bloque.sede if bloque else '')
+
+        if ajuste and ajuste.tipo == 'extra':
+            ajuste.hora_inicio = hora_inicio
+            ajuste.hora_fin = hora_fin
+            ajuste.sede = sede
+            if motivo:
+                ajuste.motivo = motivo
+            ajuste.save()
+        else:
+            _guardar_cambio_del_dia(
+                profesora, fecha, bloque, 'reemplazo', request.user,
+                hora_inicio=hora_inicio, hora_fin=hora_fin, sede=sede, motivo=motivo,
+                clase=bloque.clase if bloque else None,
+            )
+
+        messages.success(
+            request,
+            f'El {fecha:%d/%m/%Y} ese turno queda de {hora_inicio:%H:%M} a {hora_fin:%H:%M}.'
+        )
+
+    else:
+        messages.error(request, 'No se entendió qué había que cambiar.')
+
+    return redirect(_url_detalle(profesora, fecha))
+
+
+def _guardar_cambio_del_dia(profesora, fecha, bloque, tipo, usuario, **datos):
+    """
+    Registra el cambio de un turno en una fecha, pisando el anterior si lo había.
+
+    Los turnos sueltos de ese día no se tocan: solo se reemplaza el cambio que
+    afecta al mismo turno del horario semanal.
+    """
+    AjusteHorarioProfesora.objects.filter(
+        profesora=profesora, fecha=fecha, bloque=bloque,
+        tipo__in=['ausencia', 'reemplazo'],
+    ).delete()
+
+    AjusteHorarioProfesora.objects.create(
         profesora=profesora,
         fecha=fecha,
         tipo=tipo,
-        hora_inicio=request.POST.get('hora_inicio') or None,
-        hora_fin=request.POST.get('hora_fin') or None,
-        sede=request.POST.get('sede', '') if tipo != 'ausencia' else '',
-        motivo=request.POST.get('motivo', '').strip(),
-        registrado_por=request.user,
+        bloque=bloque,
+        registrado_por=usuario,
+        **datos,
     )
-
-    try:
-        ajuste.full_clean()
-    except Exception as error:
-        mensajes = getattr(error, 'messages', None) or [str(error)]
-        messages.error(request, f'No se pudo cargar el ajuste: {" ".join(mensajes)}')
-        return redirect(_url_detalle(profesora, fecha))
-
-    ajuste.save()
-    messages.success(
-        request,
-        f'Ajuste cargado para el {fecha:%d/%m/%Y}: {ajuste.get_tipo_display().lower()}.'
-    )
-    return redirect(_url_detalle(profesora, fecha))
 
 
 def _url_detalle(profesora, fecha=None):

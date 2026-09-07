@@ -2483,6 +2483,16 @@ class BloqueHorarioProfesora(models.Model):
         verbose_name="Sede"
     )
 
+    clase = models.ForeignKey(
+        Clase,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='turnos_profesoras',
+        verbose_name="Clase que dicta",
+        help_text="Clase del sistema de la que salió este turno, si se cargó eligiéndola"
+    )
+
     vigente_desde = models.DateField(
         verbose_name="Vigente desde",
         help_text="Fecha a partir de la cual la profesora cumple este horario"
@@ -2657,6 +2667,28 @@ class AjusteHorarioProfesora(models.Model):
         max_length=15,
         choices=TIPOS_AJUSTE,
         verbose_name="Tipo de ajuste"
+    )
+
+    bloque = models.ForeignKey(
+        'BloqueHorarioProfesora',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='ajustes',
+        verbose_name="Turno afectado",
+        help_text=(
+            "Turno del horario semanal al que se le aplica el cambio. "
+            "Vacío significa que el cambio vale para todo el día."
+        )
+    )
+
+    clase = models.ForeignKey(
+        Clase,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='turnos_puntuales_profesoras',
+        verbose_name="Clase que dicta"
     )
 
     hora_inicio = models.TimeField(

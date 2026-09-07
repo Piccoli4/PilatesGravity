@@ -77,6 +77,18 @@ def nombre_profesora(profesora):
     return profesora.get_full_name() or profesora.username
 
 
+def clases_disponibles():
+    """
+    Clases activas del estudio, ordenadas como la semana.
+
+    Son las que se pueden elegir al armar el horario de una profesora, para no
+    tener que tipear día, hora y sede a mano.
+    """
+    orden = {nombre: indice for indice, nombre in enumerate(DIAS_INDICE)}
+    clases = Clase.objects.filter(activa=True)
+    return sorted(clases, key=lambda c: (orden.get(c.dia, 9), c.horario, c.direccion))
+
+
 def nombre_sede(sede):
     """Nombre corto de una sede, o el nombre completo si no es una conocida."""
     if not sede:
@@ -177,59 +189,80 @@ def valor_hora_vigente(profesora, fecha=None):
 # TURNOS Y RESÚMENES
 # ==============================================================================
 
+def _turno_desde_bloque(bloque):
+    return {
+        'hora_inicio': bloque.hora_inicio,
+        'hora_fin': bloque.hora_fin,
+        'sede': bloque.sede,
+        'sede_display': nombre_sede(bloque.sede),
+        'horas': bloque.duracion_horas,
+        'origen': 'habitual',
+        'motivo': '',
+        'bloque_id': bloque.id,
+        'ajuste_id': None,
+        'clase': bloque.clase,
+    }
+
+
+def _turno_desde_ajuste(ajuste, origen):
+    return {
+        'hora_inicio': ajuste.hora_inicio,
+        'hora_fin': ajuste.hora_fin,
+        'sede': ajuste.sede,
+        'sede_display': nombre_sede(ajuste.sede),
+        'horas': ajuste.duracion_horas,
+        'origen': origen,
+        'motivo': ajuste.motivo,
+        'bloque_id': ajuste.bloque_id,
+        'ajuste_id': ajuste.id,
+        'clase': ajuste.clase,
+    }
+
+
 def _turnos_de_fecha(fecha, bloques, ajustes_de_la_fecha):
     """
     Turnos efectivamente trabajados en una fecha.
 
-    Parte del horario habitual de ese día de la semana y le aplica los ajustes:
-    una ausencia lo deja vacío, un reemplazo lo pisa y los turnos extra se suman.
+    Se parte del horario habitual de ese día de la semana y se le aplican los
+    cambios cargados para esa fecha:
+
+    - "no trabajó" saca un turno puntual (si apunta a uno) o el día entero;
+    - "otro horario" cambia el horario de un turno puntual (o, en los cambios
+      viejos que no apuntan a ninguno, el del día entero);
+    - los turnos sueltos se suman.
     """
     ajustes = ajustes_de_la_fecha or []
+    dia = nombre_dia(fecha)
 
-    if any(a.tipo == 'ausencia' for a in ajustes):
-        turnos = []
+    habituales = [b for b in bloques if b.dia == dia and b.rige_en(fecha)]
+
+    ausencias = [a for a in ajustes if a.tipo == 'ausencia']
+    reemplazos = [a for a in ajustes if a.tipo == 'reemplazo']
+
+    # Un cambio sin turno asociado vale para todo el día (así se cargaban antes).
+    if any(a.bloque_id is None for a in ausencias):
+        habituales = []
+    generales = [a for a in reemplazos if a.bloque_id is None]
+    if generales:
+        turnos = [_turno_desde_ajuste(a, 'reemplazo') for a in generales]
+        habituales = []
     else:
-        reemplazos = [a for a in ajustes if a.tipo == 'reemplazo']
-        if reemplazos:
-            turnos = [
-                {
-                    'hora_inicio': a.hora_inicio,
-                    'hora_fin': a.hora_fin,
-                    'sede': a.sede,
-                    'sede_display': nombre_sede(a.sede),
-                    'horas': a.duracion_horas,
-                    'origen': 'reemplazo',
-                    'motivo': a.motivo,
-                }
-                for a in reemplazos
-            ]
+        turnos = []
+
+    sin_trabajar = {a.bloque_id for a in ausencias if a.bloque_id is not None}
+    cambiados = {a.bloque_id: a for a in reemplazos if a.bloque_id is not None}
+
+    for bloque in habituales:
+        if bloque.id in sin_trabajar:
+            continue
+        if bloque.id in cambiados:
+            turnos.append(_turno_desde_ajuste(cambiados[bloque.id], 'reemplazo'))
         else:
-            dia = nombre_dia(fecha)
-            turnos = [
-                {
-                    'hora_inicio': b.hora_inicio,
-                    'hora_fin': b.hora_fin,
-                    'sede': b.sede,
-                    'sede_display': nombre_sede(b.sede),
-                    'horas': b.duracion_horas,
-                    'origen': 'habitual',
-                    'motivo': '',
-                }
-                for b in bloques
-                if b.dia == dia and b.rige_en(fecha)
-            ]
+            turnos.append(_turno_desde_bloque(bloque))
 
     for ajuste in ajustes:
         if ajuste.tipo == 'extra':
-            turnos.append({
-                'hora_inicio': ajuste.hora_inicio,
-                'hora_fin': ajuste.hora_fin,
-                'sede': ajuste.sede,
-                'sede_display': nombre_sede(ajuste.sede),
-                'horas': ajuste.duracion_horas,
-                'origen': 'extra',
-                'motivo': ajuste.motivo,
-            })
+            turnos.append(_turno_desde_ajuste(ajuste, 'extra'))
 
     turnos.sort(key=lambda t: t['hora_inicio'])
     return turnos
@@ -258,7 +291,7 @@ def resumen_profesora(profesora, desde, hasta, incluir_dias_sin_horas=False):
         BloqueHorarioProfesora.objects.filter(
             profesora=profesora,
             vigente_desde__lte=hasta,
-        ).filter(vigente_en(desde))
+        ).filter(vigente_en(desde)).select_related('clase')
     )
 
     ajustes_por_fecha = {}
@@ -266,7 +299,7 @@ def resumen_profesora(profesora, desde, hasta, incluir_dias_sin_horas=False):
         profesora=profesora,
         fecha__gte=desde,
         fecha__lte=hasta,
-    ).order_by('hora_inicio')
+    ).select_related('clase', 'bloque').order_by('hora_inicio')
     for ajuste in ajustes:
         ajustes_por_fecha.setdefault(ajuste.fecha, []).append(ajuste)
 
@@ -293,7 +326,9 @@ def resumen_profesora(profesora, desde, hasta, incluir_dias_sin_horas=False):
             sin_valor_hora = True
         monto_dia = (horas_dia * (valor or CERO)).quantize(Decimal('0.01'))
 
-        if turnos or incluir_dias_sin_horas:
+        ajustes_del_dia = ajustes_por_fecha.get(fecha, [])
+
+        if turnos or ajustes_del_dia or incluir_dias_sin_horas:
             dias.append({
                 'fecha': fecha,
                 'dia': nombre_dia(fecha),
@@ -301,7 +336,7 @@ def resumen_profesora(profesora, desde, hasta, incluir_dias_sin_horas=False):
                 'horas': horas_dia,
                 'valor_hora': valor,
                 'monto': monto_dia,
-                'ajustes': ajustes_por_fecha.get(fecha, []),
+                'ajustes': ajustes_del_dia,
             })
 
         for turno in turnos:
