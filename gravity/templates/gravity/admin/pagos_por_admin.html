@@ -1,0 +1,491 @@
+{% extends 'gravity/admin/base_admin.html' %}
+{% load formato %}
+
+{% block title %}Pagos por Administradora - Panel de Administración{% endblock %}
+
+{% block breadcrumb %}
+<li class="flex items-center">
+    <span class="text-gray-400">/</span>
+    <span class="ml-1 text-gray-500">Pagos por Administradora</span>
+</li>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="mb-4">
+    <div class="p-4 bg-blanco rounded-lg shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl md:text-2xl font-bold text-principal mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor"
+                        class="size-7 mb-1 shrink-0">
+                        <path
+                            d="M296 88C296 74.7 306.7 64 320 64C333.3 64 344 74.7 344 88L344 128L400 128C417.7 128 432 142.3 432 160C432 177.7 417.7 192 400 192L285.1 192C260.2 192 240 212.2 240 237.1C240 259.6 256.5 278.6 278.7 281.8L370.3 294.9C424.1 302.6 464 348.6 464 402.9C464 463.2 415.1 512 354.9 512L344 512L344 552C344 565.3 333.3 576 320 576C306.7 576 296 565.3 296 552L296 512L224 512C206.3 512 192 497.7 192 480C192 462.3 206.3 448 224 448L354.9 448C379.8 448 400 427.8 400 402.9C400 380.4 383.5 361.4 361.3 358.2L269.7 345.1C215.9 337.5 176 291.4 176 237.1C176 176.9 224.9 128 285.1 128L296 128L296 88z" />
+                    </svg>
+                    Pagos por Administradora
+                </h2>
+                <p class="text-gray-500 text-sm mb-0">
+                    Pagos cargados en el período seleccionado.
+                    {% if periodo == 'dia' %}
+                        Día {{ desde|date:"l d/m/Y" }}.
+                    {% elif periodo == 'semana' %}
+                        Semana del {{ desde|date:"d/m" }} al {{ hasta|date:"d/m/Y" }}.
+                    {% elif periodo == 'mes' %}
+                        {{ desde|date:"F Y"|capfirst }}.
+                    {% else %}
+                        Del {{ desde|date:"d/m/Y" }} al {{ hasta|date:"d/m/Y" }}.
+                    {% endif %}
+                    {% if criterio == 'carga' %}
+                        Se toma la fecha en que se cargó el pago al sistema.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="grid grid-cols-3 gap-4 lg:flex lg:items-center shrink-0">
+                <div class="text-center">
+                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">{{ totales.cantidad }}</div>
+                    <div class="text-xs text-gray-400 mt-1">pago{{ totales.cantidad|pluralize }} cargado{{ totales.cantidad|pluralize }}</div>
+                </div>
+                <div class="w-px h-8 bg-gray-200 hidden lg:block"></div>
+                <div class="text-center">
+                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">${{ totales.monto|pesos }}</div>
+                    <div class="text-xs text-gray-400 mt-1">total cobrado</div>
+                </div>
+                <div class="w-px h-8 bg-gray-200 hidden lg:block"></div>
+                <div class="text-center">
+                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">{{ admins_que_cargaron }}</div>
+                    <div class="text-xs text-gray-400 mt-1">cargaron pagos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="mb-4 p-4 bg-blanco rounded-lg shadow-sm">
+    <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-4">
+        <a href="?periodo=dia&fecha={{ hoy|date:'Y-m-d' }}{% if filtros_extra %}&{{ filtros_extra }}{% endif %}"
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'dia' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            Por día
+        </a>
+        <a href="?periodo=semana&fecha={{ fecha|date:'Y-m-d' }}{% if filtros_extra %}&{{ filtros_extra }}{% endif %}"
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'semana' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            Por semana
+        </a>
+        <a href="?periodo=mes&mes={{ mes_seleccionado|date:'Y-m' }}{% if filtros_extra %}&{{ filtros_extra }}{% endif %}"
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'mes' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            Por mes
+        </a>
+        <a href="?periodo=personalizado&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{% if filtros_extra %}&{{ filtros_extra }}{% endif %}"
+            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'personalizado' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
+            Rango
+        </a>
+    </div>
+
+    <form method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-end gap-3">
+        <input type="hidden" name="periodo" value="{{ periodo }}">
+
+        {% if periodo == 'dia' or periodo == 'semana' %}
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">
+                {% if periodo == 'dia' %}Fecha{% else %}Semana que contiene a{% endif %}
+            </label>
+            <input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+        </div>
+        {% elif periodo == 'mes' %}
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Mes</label>
+            <input type="month" name="mes" value="{{ mes_seleccionado|date:'Y-m' }}"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+        </div>
+        {% else %}
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+            <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+            <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+        </div>
+        {% endif %}
+
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Administradora</label>
+            <select name="admin"
+                class="w-full lg:min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                <option value="">Todas</option>
+                {% for administradora in administradoras %}
+                <option value="{{ administradora.id }}" {% if admin_filtro == administradora.id|stringformat:"s" %}selected{% endif %}>
+                    {{ administradora.get_full_name|default:administradora.username }}{% if administradora.is_superuser %} (superadmin){% endif %}
+                </option>
+                {% endfor %}
+                {% if hay_sin_registrar or admin_filtro == 'sin_registrar' %}
+                <option value="sin_registrar" {% if admin_filtro == 'sin_registrar' %}selected{% endif %}>Sin registrar</option>
+                {% endif %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Forma de pago</label>
+            <select name="tipo"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                <option value="">Todas</option>
+                {% for clave, nombre in tipos_pago %}
+                <option value="{{ clave }}" {% if tipo_filtro == clave %}selected{% endif %}>{{ nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Fecha a considerar</label>
+            <select name="criterio"
+                class="w-full lg:min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+                <option value="pago" {% if criterio == 'pago' %}selected{% endif %}>Fecha del pago</option>
+                <option value="carga" {% if criterio == 'carga' %}selected{% endif %}>Fecha de carga</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Cliente</label>
+            <input type="text" name="buscar" value="{{ buscar }}" placeholder="Nombre o apellido"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
+        </div>
+
+        <div class="sm:col-span-2 lg:col-span-1 flex gap-2">
+            <button type="submit"
+                class="w-full sm:w-auto bg-principal text-blanco px-5 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
+                Ver
+            </button>
+            {% if admin_filtro or tipo_filtro or buscar or criterio == 'carga' %}
+            <a href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% elif periodo == 'personalizado' %}&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{% else %}&fecha={{ fecha|date:'Y-m-d' }}{% endif %}"
+                class="w-full sm:w-auto text-center border border-gray-300 text-gray-500 px-5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                Limpiar
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+{% if totales.pendientes_cantidad %}
+<div class="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-3">
+    <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+    </svg>
+    <p class="text-sm text-amber-700 mb-0">
+        Hay {{ totales.pendientes_cantidad }} pago{{ totales.pendientes_cantidad|pluralize }} pendiente{{ totales.pendientes_cantidad|pluralize }}
+        de confirmación en este período. No suman en los totales; figuran en el detalle de abajo.
+    </p>
+</div>
+{% endif %}
+
+<!-- ================================================ -->
+<!-- RESUMEN POR ADMINISTRADORA                        -->
+<!-- ================================================ -->
+<h3 class="text-base font-semibold text-gray-700 mb-3">Resumen del período</h3>
+
+{% if filas %}
+
+<!-- Tarjetas (móvil) -->
+<div class="lg:hidden space-y-3 mb-6">
+    {% for fila in filas %}
+    <div class="bg-blanco rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
+            <div class="min-w-0">
+                <p class="font-semibold text-gray-900 truncate mb-1">
+                    {% if fila.admin %}
+                        {{ fila.admin.get_full_name|default:fila.admin.username }}
+                    {% else %}
+                        Sin registrar
+                    {% endif %}
+                </p>
+                <p class="text-xs text-gray-500 mb-0">
+                    {% if fila.admin.is_superuser %}Superadmin ·{% endif %}
+                    {{ fila.cantidad }} pago{{ fila.cantidad|pluralize }} confirmado{{ fila.cantidad|pluralize }}
+                </p>
+            </div>
+            <span class="shrink-0 text-base font-bold text-principal">${{ fila.monto|pesos }}</span>
+        </div>
+
+        <div class="grid grid-cols-2 divide-x divide-gray-100 border-t border-gray-100 bg-gray-50">
+            {% for tipo in fila.tipos %}
+            <div class="px-3 py-2 border-b border-gray-100">
+                <p class="text-xs text-gray-500 mb-1">{{ tipo.nombre }}</p>
+                <p class="text-sm font-semibold {% if tipo.cantidad %}text-gray-900{% else %}text-gray-300{% endif %} mb-0">
+                    {{ tipo.cantidad }} · ${{ tipo.monto|pesos }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if fila.anulados_cantidad %}
+        <div class="px-4 py-2 border-t border-gray-100 text-xs text-red-600">
+            {{ fila.anulados_cantidad }} anulado{{ fila.anulados_cantidad|pluralize }} por ${{ fila.anulados_monto|pesos }}
+        </div>
+        {% endif %}
+
+        {% if fila.admin %}
+        <div class="px-4 py-2 border-t border-gray-100 text-right">
+            <a href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% elif periodo == 'personalizado' %}&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{% else %}&fecha={{ fecha|date:'Y-m-d' }}{% endif %}&criterio={{ criterio }}&admin={{ fila.admin.id }}"
+                class="text-principal text-xs font-medium">Ver solo sus pagos →</a>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="bg-blanco rounded-xl border border-secundario/30 shadow-sm px-4 py-3 flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold text-gray-800">Total del estudio</span>
+        <span class="text-sm font-bold text-principal text-right">
+            {{ totales.cantidad }} pago{{ totales.cantidad|pluralize }} · ${{ totales.monto|pesos }}
+        </span>
+    </div>
+</div>
+
+<!-- Tabla (escritorio) -->
+<div class="hidden lg:block bg-blanco rounded-lg shadow-sm p-4 mb-6">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Administradora</th>
+                {% for clave, nombre in tipos_pago %}
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">{{ nombre }}</th>
+                {% endfor %}
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Total</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Anulados</th>
+                <th class="text-right font-semibold text-gray-600 py-2"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fila in filas %}
+            <tr class="border-b border-gray-100 hover:bg-fondo/50 transition-colors">
+                <td class="py-3 pr-4 font-medium text-gray-800">
+                    {% if fila.admin %}
+                        {{ fila.admin.get_full_name|default:fila.admin.username }}
+                        {% if fila.admin.is_superuser %}
+                        <span class="ml-1 text-xs text-gray-400">superadmin</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-gray-500">Sin registrar</span>
+                        <span class="ml-1 text-xs text-gray-400">pagos viejos sin autor</span>
+                    {% endif %}
+                </td>
+                {% for tipo in fila.tipos %}
+                <td class="py-3 pr-4 text-right {% if tipo.cantidad %}text-gray-700{% else %}text-gray-300{% endif %}">
+                    {{ tipo.cantidad }}
+                    <span class="block text-xs text-gray-500">${{ tipo.monto|pesos }}</span>
+                </td>
+                {% endfor %}
+                <td class="py-3 pr-4 text-right font-semibold text-principal">
+                    {{ fila.cantidad }}
+                    <span class="block text-xs font-semibold text-gray-800">${{ fila.monto|pesos }}</span>
+                </td>
+                <td class="py-3 pr-4 text-right {% if fila.anulados_cantidad %}text-red-600{% else %}text-gray-300{% endif %}">
+                    {{ fila.anulados_cantidad }}
+                    {% if fila.anulados_cantidad %}
+                    <span class="block text-xs text-red-500">${{ fila.anulados_monto|pesos }}</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 text-right">
+                    {% if fila.admin %}
+                    <a href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% elif periodo == 'personalizado' %}&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{% else %}&fecha={{ fecha|date:'Y-m-d' }}{% endif %}&criterio={{ criterio }}&admin={{ fila.admin.id }}"
+                        class="text-principal hover:underline text-sm font-medium whitespace-nowrap">
+                        Ver detalle
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="border-t-2 border-secundario/30">
+                <td class="py-3 pr-4 font-semibold text-gray-800">Total del estudio</td>
+                {% for tipo in totales.tipos %}
+                <td class="py-3 pr-4 text-right font-bold text-gray-800">
+                    {{ tipo.cantidad }}
+                    <span class="block text-xs font-semibold text-gray-600">${{ tipo.monto|pesos }}</span>
+                </td>
+                {% endfor %}
+                <td class="py-3 pr-4 text-right font-bold text-principal">
+                    {{ totales.cantidad }}
+                    <span class="block text-xs font-bold text-principal">${{ totales.monto|pesos }}</span>
+                </td>
+                <td class="py-3 pr-4 text-right font-bold {% if totales.anulados_cantidad %}text-red-600{% else %}text-gray-300{% endif %}">
+                    {{ totales.anulados_cantidad }}
+                </td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+{% else %}
+<div class="bg-blanco rounded-lg shadow-sm p-4 mb-6">
+    <div class="text-center py-10">
+        <p class="text-gray-500 mb-1">No hay pagos cargados en este período.</p>
+        <p class="text-gray-400 text-sm mb-0">Probá con otro período o quitá los filtros.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- ================================================ -->
+<!-- DETALLE DE LOS PAGOS                              -->
+<!-- ================================================ -->
+<div class="flex items-center justify-between gap-3 mb-3">
+    <h3 class="text-base font-semibold text-gray-700 mb-0">Detalle de los pagos</h3>
+    {% if page_obj.paginator.count %}
+    <span class="text-xs text-gray-500">
+        Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }}
+    </span>
+    {% endif %}
+</div>
+
+{% if page_obj.object_list %}
+
+<!-- Tarjetas (móvil) -->
+<div class="lg:hidden space-y-3">
+    {% for pago in page_obj %}
+    <div class="bg-blanco rounded-xl border border-gray-200 shadow-sm overflow-hidden {% if pago.estado == 'rechazado' %}opacity-70{% endif %}">
+        <div class="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
+            <div class="min-w-0">
+                <p class="font-semibold text-gray-900 truncate mb-1">
+                    {% if pago.cliente %}
+                    <a href="{% url 'gravity:admin_pagos_editar_estado_cliente' pago.cliente.id %}" class="text-principal">
+                        {{ pago.cliente.get_full_name|default:pago.cliente.username }}
+                    </a>
+                    {% else %}
+                    <span class="text-gray-500">Cliente eliminado</span>
+                    {% endif %}
+                </p>
+                <p class="text-xs text-gray-500 mb-0">
+                    {{ pago.fecha_pago|date:"d/m/Y" }} · {{ pago.get_tipo_pago_display }}
+                </p>
+            </div>
+            <span class="shrink-0 text-base font-bold {% if pago.estado == 'rechazado' %}text-gray-400 line-through{% else %}text-principal{% endif %}">
+                ${{ pago.monto|pesos }}
+            </span>
+        </div>
+
+        <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 text-xs text-gray-600">
+            <p class="mb-1">{{ pago.concepto }}{% if pago.comprobante %} · Comp. {{ pago.comprobante }}{% endif %}</p>
+            <p class="mb-0">
+                Cargado por
+                <strong>{% if pago.registrado_por %}{{ pago.registrado_por.get_full_name|default:pago.registrado_por.username }}{% else %}sin registrar{% endif %}</strong>
+                el {{ pago.fecha_registro|date:"d/m/Y H:i" }}
+            </p>
+        </div>
+
+        {% if pago.estado != 'confirmado' %}
+        <div class="px-4 py-2 border-t border-gray-100">
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs {% if pago.estado == 'rechazado' %}bg-red-50 text-red-600{% else %}bg-amber-50 text-amber-700{% endif %}">
+                {% if pago.estado == 'rechazado' %}Anulado{% else %}{{ pago.get_estado_display }}{% endif %}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tabla (escritorio) -->
+<div class="hidden lg:block bg-blanco rounded-lg shadow-sm p-4">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-secundario/30">
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Fecha del pago</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Cargado</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Cliente</th>
+                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Monto</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Forma</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Concepto</th>
+                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Cargado por</th>
+                <th class="text-center font-semibold text-gray-600 py-2">Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pago in page_obj %}
+            <tr class="border-b border-gray-100 hover:bg-fondo/50 transition-colors {% if pago.estado == 'rechazado' %}text-gray-400{% endif %}">
+                <td class="py-3 pr-4 whitespace-nowrap">{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                <td class="py-3 pr-4 whitespace-nowrap text-gray-500">{{ pago.fecha_registro|date:"d/m/Y H:i" }}</td>
+                <td class="py-3 pr-4">
+                    {% if pago.cliente %}
+                    <a href="{% url 'gravity:admin_pagos_editar_estado_cliente' pago.cliente.id %}"
+                        class="text-principal hover:underline font-medium">
+                        {{ pago.cliente.get_full_name|default:pago.cliente.username }}
+                    </a>
+                    {% else %}
+                    <span class="text-gray-400">Cliente eliminado</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 pr-4 text-right font-semibold {% if pago.estado == 'rechazado' %}line-through{% else %}text-gray-800{% endif %}">
+                    ${{ pago.monto|pesos }}
+                </td>
+                <td class="py-3 pr-4 whitespace-nowrap">
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs
+                        {% if pago.tipo_pago == 'efectivo' %}bg-green-50 text-green-700
+                        {% elif pago.tipo_pago == 'transferencia' %}bg-blue-50 text-blue-700
+                        {% elif pago.tipo_pago == 'tarjeta' %}bg-purple-50 text-purple-700
+                        {% else %}bg-gray-100 text-gray-600{% endif %}">
+                        {{ pago.get_tipo_pago_display }}
+                    </span>
+                </td>
+                <td class="py-3 pr-4 text-gray-600">
+                    {{ pago.concepto }}
+                    {% if pago.comprobante %}
+                    <span class="block text-xs text-gray-400">Comp. {{ pago.comprobante }}</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 pr-4">
+                    {% if pago.registrado_por %}
+                        {{ pago.registrado_por.get_full_name|default:pago.registrado_por.username }}
+                    {% else %}
+                        <span class="text-gray-400">Sin registrar</span>
+                    {% endif %}
+                </td>
+                <td class="py-3 text-center whitespace-nowrap">
+                    {% if pago.estado == 'confirmado' %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">Confirmado</span>
+                    {% elif pago.estado == 'rechazado' %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-red-50 text-red-600">Anulado</span>
+                    {% else %}
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">Pendiente</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación -->
+{% if page_obj.has_other_pages %}
+<div class="flex items-center justify-center gap-2 my-6">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}"
+        class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+        Anterior
+    </a>
+    {% endif %}
+    <span class="px-4 py-2 text-sm rounded-lg bg-blanco border border-gray-200 text-gray-500">
+        Página <strong class="text-gray-800">{{ page_obj.number }}</strong>
+        de <strong class="text-gray-800">{{ page_obj.paginator.num_pages }}</strong>
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}"
+        class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+        Siguiente
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-blanco rounded-lg shadow-sm p-4">
+    <div class="text-center py-10">
+        <p class="text-gray-500 mb-0">No hay pagos que coincidan con los filtros elegidos.</p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

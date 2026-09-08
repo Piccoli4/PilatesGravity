@@ -21,7 +21,7 @@ from .views import (
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
     admin_ajustar_deuda_especial, admin_generar_deuda_manual, admin_cancelar_plan_usuario,
     admin_corregir_saldo, admin_pago_editar, admin_pago_anular, admin_eliminar_deuda,
-    admin_recalcular_cuenta,
+    admin_recalcular_cuenta, admin_pagos_por_admin,
     # IMPORTACIONES PARA PLANES DE PAGO
     mis_planes, seleccionar_plan, cancelar_plan, modificar_plan, elegir_reservas_downgrade,
     # IMPORTACIONES PARA TESTIMONIOS
@@ -174,6 +174,9 @@ urlpatterns = [
     path('admin-panel/pagos/pago/<int:pago_id>/editar/', admin_pago_editar, name='admin_pago_editar'),
     path('admin-panel/pagos/pago/<int:pago_id>/anular/', admin_pago_anular, name='admin_pago_anular'),
     path('admin-panel/pagos/deuda/<int:deuda_id>/eliminar/', admin_eliminar_deuda, name='admin_eliminar_deuda'),
+
+    # Pagos cargados por cada administradora (solo superadmins)
+    path('admin-panel/pagos-por-admin/', admin_pagos_por_admin, name='admin_pagos_por_admin'),
     path('admin-panel/planes/<int:plan_id>/cancelar/', admin_cancelar_plan_usuario, name='admin_cancelar_plan_usuario'),
 
     # Gestión de planes de pago

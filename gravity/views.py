@@ -4898,6 +4898,282 @@ def formato_saldo(saldo):
 
 
 # ==============================================================================
+# PAGOS CARGADOS POR CADA ADMINISTRADORA (solo superadmins)
+# ==============================================================================
+
+# Cantidad de pagos que se listan por página en el detalle
+PAGOS_ADMIN_POR_PAGINA = 25
+
+
+def _rango_pagos_admins(request):
+    """
+    Rango de fechas del filtro de la pantalla de pagos por administradora.
+
+    Funciona igual que el filtro de Profesoras: un día puntual, la semana que
+    contiene a una fecha, un mes completo o un rango libre. Devuelve el rango y
+    el contexto para volver a dibujar el selector como quedó elegido.
+    """
+    hoy = timezone.localtime(timezone.now()).date()
+    periodo = request.GET.get('periodo', 'mes')
+
+    def leer_fecha(clave, por_defecto):
+        try:
+            return datetime.strptime(request.GET.get(clave, ''), '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            return por_defecto
+
+    def leer_mes():
+        try:
+            año, mes = request.GET.get('mes', '').split('-')
+            return date(int(año), int(mes), 1)
+        except (ValueError, TypeError, AttributeError):
+            return hoy.replace(day=1)
+
+    if periodo == 'dia':
+        fecha = leer_fecha('fecha', hoy)
+        desde = hasta = fecha
+        mes_seleccionado = fecha.replace(day=1)
+
+    elif periodo == 'semana':
+        fecha = leer_fecha('fecha', hoy)
+        desde = fecha - timedelta(days=fecha.weekday())
+        hasta = desde + timedelta(days=6)
+        mes_seleccionado = fecha.replace(day=1)
+
+    elif periodo == 'personalizado':
+        desde = leer_fecha('desde', hoy.replace(day=1))
+        hasta = leer_fecha('hasta', hoy)
+        if hasta < desde:
+            desde, hasta = hasta, desde
+        fecha = desde
+        mes_seleccionado = desde.replace(day=1)
+
+    else:
+        periodo = 'mes'
+        mes_seleccionado = leer_mes()
+        ultimo_dia = calendar.monthrange(mes_seleccionado.year, mes_seleccionado.month)[1]
+        desde = mes_seleccionado
+        hasta = mes_seleccionado.replace(day=ultimo_dia)
+        fecha = hoy
+
+    contexto = {
+        'periodo': periodo,
+        'desde': desde,
+        'hasta': hasta,
+        'fecha': fecha,
+        'mes_seleccionado': mes_seleccionado,
+        'hoy': hoy,
+    }
+    return desde, hasta, contexto
+
+
+def _fila_pagos_admin(resumen, clave, tipos):
+    """Fila del resumen de una administradora, creándola vacía si no existe."""
+    if clave not in resumen:
+        resumen[clave] = {
+            'admin': None,
+            'es_sin_registrar': clave is None,
+            'por_tipo': {
+                tipo: {'cantidad': 0, 'monto': Decimal('0')} for tipo, _ in tipos
+            },
+            'cantidad': 0,
+            'monto': Decimal('0'),
+            'anulados_cantidad': 0,
+            'anulados_monto': Decimal('0'),
+            'pendientes_cantidad': 0,
+        }
+    return resumen[clave]
+
+
+@superadmin_required
+def admin_pagos_por_admin(request):
+    """
+    Cuántos pagos cargó cada administradora en el período elegido, abiertos por
+    forma de cobro, más el detalle de cada pago.
+
+    Los totales suman solo los pagos confirmados; los anulados van en una
+    columna aparte para que se note si alguien carga y anula seguido.
+    """
+    desde, hasta, filtro = _rango_pagos_admins(request)
+    tipos = list(RegistroPago.TIPOS_PAGO)
+    claves_tipo = [clave for clave, _ in tipos]
+
+    # Los pagos se pueden mirar por la fecha en que el cliente pagó (la que se
+    # usa en el resto del sistema) o por la fecha en que se cargaron al sistema.
+    criterio = request.GET.get('criterio', 'pago')
+    if criterio not in ('pago', 'carga'):
+        criterio = 'pago'
+
+    if criterio == 'carga':
+        rango = {
+            'fecha_registro__date__gte': desde,
+            'fecha_registro__date__lte': hasta,
+        }
+        orden = ('-fecha_registro', '-id')
+    else:
+        rango = {'fecha_pago__gte': desde, 'fecha_pago__lte': hasta}
+        orden = ('-fecha_pago', '-fecha_registro', '-id')
+
+    # ===== FILTROS =====
+    admin_filtro = request.GET.get('admin', '')
+    tipo_filtro = request.GET.get('tipo', '')
+    buscar = request.GET.get('buscar', '').strip()
+
+    if tipo_filtro not in claves_tipo:
+        tipo_filtro = ''
+
+    pagos = RegistroPago.objects.filter(**rango)
+
+    if admin_filtro == 'sin_registrar':
+        pagos = pagos.filter(registrado_por__isnull=True)
+    elif admin_filtro.isdigit():
+        pagos = pagos.filter(registrado_por_id=int(admin_filtro))
+    else:
+        admin_filtro = ''
+
+    if tipo_filtro:
+        pagos = pagos.filter(tipo_pago=tipo_filtro)
+
+    if buscar:
+        pagos = pagos.filter(
+            Q(cliente__first_name__icontains=buscar) |
+            Q(cliente__last_name__icontains=buscar) |
+            Q(cliente__username__icontains=buscar)
+        )
+
+    # ===== RESUMEN POR ADMINISTRADORA =====
+    resumen = {}
+
+    confirmados = pagos.filter(estado='confirmado').values(
+        'registrado_por', 'tipo_pago'
+    ).annotate(cantidad=Count('id'), total=Sum('monto'))
+
+    for dato in confirmados:
+        fila = _fila_pagos_admin(resumen, dato['registrado_por'], tipos)
+        monto = dato['total'] or Decimal('0')
+        tipo = dato['tipo_pago'] if dato['tipo_pago'] in fila['por_tipo'] else 'otro'
+        fila['por_tipo'][tipo]['cantidad'] += dato['cantidad']
+        fila['por_tipo'][tipo]['monto'] += monto
+        fila['cantidad'] += dato['cantidad']
+        fila['monto'] += monto
+
+    anulados = pagos.filter(estado='rechazado').values('registrado_por').annotate(
+        cantidad=Count('id'), total=Sum('monto')
+    )
+    for dato in anulados:
+        fila = _fila_pagos_admin(resumen, dato['registrado_por'], tipos)
+        fila['anulados_cantidad'] += dato['cantidad']
+        fila['anulados_monto'] += dato['total'] or Decimal('0')
+
+    pendientes = pagos.filter(estado='pendiente').values('registrado_por').annotate(
+        cantidad=Count('id')
+    )
+    for dato in pendientes:
+        fila = _fila_pagos_admin(resumen, dato['registrado_por'], tipos)
+        fila['pendientes_cantidad'] += dato['cantidad']
+
+    # Administradoras del sistema: las contratadas y los superadministradores,
+    # porque todos pueden cargar pagos.
+    administradoras = list(
+        User.objects.filter(is_staff=True, is_active=True)
+        .order_by('first_name', 'last_name', 'username')
+    )
+    por_id = {usuario.id: usuario for usuario in administradoras}
+
+    # Quien cargó pagos y después quedó inactiva o dejó de ser staff igual tiene
+    # que aparecer, si no los totales no cierran.
+    faltantes = [clave for clave in resumen if clave is not None and clave not in por_id]
+    if faltantes:
+        for usuario in User.objects.filter(id__in=faltantes):
+            por_id[usuario.id] = usuario
+            administradoras.append(usuario)
+
+    filas = []
+    if admin_filtro != 'sin_registrar':
+        for usuario in administradoras:
+            # Con el filtro de administradora puesto, solo se muestra esa fila
+            if admin_filtro and str(usuario.id) != admin_filtro:
+                continue
+            fila = _fila_pagos_admin(resumen, usuario.id, tipos)
+            fila['admin'] = usuario
+            filas.append(fila)
+
+    if None in resumen:
+        fila_sin_autor = resumen[None]
+        fila_sin_autor['admin'] = None
+        filas.append(fila_sin_autor)
+
+    filas.sort(key=lambda f: (-f['monto'], -f['cantidad']))
+
+    # Las plantillas no pueden buscar por clave en un diccionario: se pasa cada
+    # forma de pago como lista, en el mismo orden que los encabezados.
+    for fila in filas:
+        fila['tipos'] = [
+            {
+                'clave': tipo,
+                'nombre': nombre,
+                'cantidad': fila['por_tipo'][tipo]['cantidad'],
+                'monto': fila['por_tipo'][tipo]['monto'],
+            }
+            for tipo, nombre in tipos
+        ]
+
+    # ===== TOTALES DEL PERÍODO =====
+    totales = {
+        'tipos': [
+            {
+                'clave': tipo,
+                'nombre': nombre,
+                'cantidad': sum(f['por_tipo'][tipo]['cantidad'] for f in filas),
+                'monto': sum((f['por_tipo'][tipo]['monto'] for f in filas), Decimal('0')),
+            }
+            for tipo, nombre in tipos
+        ],
+        'cantidad': sum(f['cantidad'] for f in filas),
+        'monto': sum((f['monto'] for f in filas), Decimal('0')),
+        'anulados_cantidad': sum(f['anulados_cantidad'] for f in filas),
+        'anulados_monto': sum((f['anulados_monto'] for f in filas), Decimal('0')),
+        'pendientes_cantidad': sum(f['pendientes_cantidad'] for f in filas),
+    }
+
+    admins_que_cargaron = len([f for f in filas if f['cantidad']])
+
+    # ===== DETALLE DE CADA PAGO =====
+    detalle = pagos.select_related('cliente', 'registrado_por').order_by(*orden)
+    paginator = Paginator(detalle, PAGOS_ADMIN_POR_PAGINA)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Querystring sin la página, para que la paginación conserve los filtros
+    parametros = request.GET.copy()
+    parametros.pop('page', None)
+    querystring = parametros.urlencode()
+
+    # Los mismos filtros sin el período, para los botones de día/semana/mes/rango
+    extra = request.GET.copy()
+    for clave in ('page', 'periodo', 'fecha', 'mes', 'desde', 'hasta'):
+        extra.pop(clave, None)
+    filtros_extra = extra.urlencode()
+
+    context = {
+        **filtro,
+        'criterio': criterio,
+        'admin_filtro': admin_filtro,
+        'tipo_filtro': tipo_filtro,
+        'buscar': buscar,
+        'tipos_pago': tipos,
+        'administradoras': administradoras,
+        'hay_sin_registrar': None in resumen,
+        'filas': filas,
+        'totales': totales,
+        'admins_que_cargaron': admins_que_cargaron,
+        'page_obj': page_obj,
+        'querystring': querystring,
+        'filtros_extra': filtros_extra,
+    }
+    return render(request, 'gravity/admin/pagos_por_admin.html', context)
+
+
+# ==============================================================================
 # VISTAS DE PLANES DE PAGO
 # ==============================================================================
 
