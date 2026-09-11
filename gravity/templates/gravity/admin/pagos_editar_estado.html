@@ -556,22 +556,22 @@
             </div>
 
             <div class="bg-fondo rounded-lg p-3 mb-4 text-sm">
-                <p class="text-gris-medio">Mes: <span id="modal-mes" class="font-medium text-gris-oscuro capitalize"></span></p>
-                <p class="text-gris-medio">Ahora se cobra: <span id="modal-monto-original" class="font-medium text-gris-oscuro"></span></p>
+                <p class="text-gris-medio">Mes: <span id="ajuste-mes" class="font-medium text-gris-oscuro capitalize"></span></p>
+                <p class="text-gris-medio">Ahora se cobra: <span id="ajuste-monto-original" class="font-medium text-gris-oscuro"></span></p>
             </div>
 
             <form id="form-ajuste" method="post" action="">
                 {% csrf_token %}
                 <div class="mb-4">
-                    <label for="modal-monto-ajustado" class="block text-sm font-medium text-gris-oscuro mb-1">¿Cuánto tiene que pagar por ese mes? ($)</label>
-                    <input type="number" name="monto_ajustado" id="modal-monto-ajustado" step="0.01" min="0" required
+                    <label for="ajuste-monto-ajustado" class="block text-sm font-medium text-gris-oscuro mb-1">¿Cuánto tiene que pagar por ese mes? ($)</label>
+                    <input type="number" name="monto_ajustado" id="ajuste-monto-ajustado" step="0.01" min="0" required
                            class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal"
                            placeholder="0">
                     <p class="text-xs text-gris-medio mt-1">Poné $0 si ese mes no hay que cobrarlo.</p>
                 </div>
                 <div class="mb-4">
-                    <label for="modal-motivo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo (opcional)</label>
-                    <textarea name="motivo" id="modal-motivo" rows="3"
+                    <label for="ajuste-motivo" class="block text-sm font-medium text-gris-oscuro mb-1">Motivo (opcional)</label>
+                    <textarea name="motivo" id="ajuste-motivo" rows="3"
                               class="w-full px-3 py-2 border border-gris-claro rounded-lg focus:ring-2 focus:ring-principal focus:border-principal resize-y"
                               placeholder="Acuerdo especial, descuento puntual, etc."></textarea>
                 </div>
@@ -770,7 +770,10 @@
         modal.classList.remove('flex');
     }
 
-    document.querySelectorAll('[id^="modal-"]').forEach(function (modal) {
+    // Solo los fondos de los modales (div.fixed), no los campos que tengan ids parecidos.
+    const modales = document.querySelectorAll('div.fixed[id^="modal-"]');
+
+    modales.forEach(function (modal) {
         modal.addEventListener('click', function (e) {
             if (e.target === this) cerrarModal(this.id);
         });
@@ -778,7 +781,7 @@
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
-            document.querySelectorAll('[id^="modal-"]').forEach(function (modal) {
+            modales.forEach(function (modal) {
                 if (!modal.classList.contains('hidden')) cerrarModal(modal.id);
             });
         }
@@ -809,10 +812,10 @@
     const ajusteUrlBase = "{% url 'gravity:admin_ajustar_deuda_especial' 0 %}";
 
     function abrirModalAjuste(btn) {
-        document.getElementById('modal-mes').textContent = btn.dataset.mes;
-        document.getElementById('modal-monto-original').textContent = pesos(btn.dataset.monto);
-        document.getElementById('modal-monto-ajustado').value = '';
-        document.getElementById('modal-motivo').value = '';
+        document.getElementById('ajuste-mes').textContent = btn.dataset.mes;
+        document.getElementById('ajuste-monto-original').textContent = pesos(btn.dataset.monto);
+        document.getElementById('ajuste-monto-ajustado').value = '';
+        document.getElementById('ajuste-motivo').value = '';
         document.getElementById('form-ajuste').action = ajusteUrlBase.replace('/0/', '/' + btn.dataset.deudaId + '/');
         abrirModal('modal-ajuste');
     }
