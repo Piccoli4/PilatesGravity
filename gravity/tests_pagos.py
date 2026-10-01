@@ -7,8 +7,10 @@ Reproducen los dos problemas reales que aparecieron en producción:
 """
 from datetime import date, datetime
 from decimal import Decimal
+from io import StringIO
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -467,3 +469,117 @@ class PagosPorAdministradoraTests(TestCase):
 
         self.assertEqual(respuesta.status_code, 302)
         self.assertIn('/admin-panel/', respuesta['Location'])
+
+
+class PrecioNuevoEnCuotasDelMesTests(TestCase):
+    """
+    Reproduce lo del 01/10/2026: el cron generó las cuotas a las 5 de la mañana
+    y Nico actualizó los precios a las 9, así que las cuotas quedaron con el
+    precio viejo.
+    """
+
+    def setUp(self):
+        hoy = timezone.localtime(timezone.now()).date()
+        self.mes = primer_dia(hoy)
+        self.admin = User.objects.create_superuser(
+            username='nico', email='nico@test.com', password='clave123'
+        )
+        self.plan = PlanPago.objects.create(
+            nombre='2 clases semanales', clases_por_semana=2, precio_mensual=Decimal('61000')
+        )
+        self.client.force_login(self.admin)
+
+    def crear_cliente_con_cuota(self, username, monto='61000', estado='pendiente',
+                                es_medio_mes=False):
+        cliente = User.objects.create_user(username=username, password='clave123')
+        EstadoPagoCliente.objects.create(usuario=cliente, plan_actual=self.plan, activo=True)
+        cuota = DeudaMensual.objects.create(
+            usuario=cliente,
+            mes_año=self.mes,
+            plan_aplicado=self.plan,
+            monto_original=Decimal(monto),
+            monto_pendiente=Decimal('0') if estado == 'pagado' else Decimal(monto),
+            es_medio_mes=es_medio_mes,
+            fecha_vencimiento=date(self.mes.year, self.mes.month, 10),
+            estado=estado,
+        )
+        return cliente, cuota
+
+    def editar_precio(self, precio, aplicar=True):
+        datos = {
+            'editar_plan': self.plan.id,
+            'nombre': self.plan.nombre,
+            'clases_por_semana': self.plan.clases_por_semana,
+            'precio_mensual': precio,
+            'descripcion': '',
+            'activo': 'True',
+        }
+        if aplicar:
+            datos['aplicar_a_cuotas_del_mes'] = '1'
+        return self.client.post(reverse('gravity:admin_pagos_configurar_planes'), datos)
+
+    def test_editar_el_precio_actualiza_las_cuotas_impagas_del_mes(self):
+        cliente, cuota = self.crear_cliente_con_cuota('josefina')
+
+        self.editar_precio('67000')
+
+        cuota.refresh_from_db()
+        self.assertEqual(cuota.monto_original, Decimal('67000'))
+        self.assertEqual(cuota.monto_pendiente, Decimal('67000'))
+        self.assertIn('Precio actualizado', cuota.observaciones)
+        estado = EstadoPagoCliente.objects.get(usuario=cliente)
+        self.assertEqual(estado.saldo_actual, Decimal('-67000'))
+
+    def test_el_modal_de_edicion_ofrece_aplicar_el_precio_a_las_cuotas(self):
+        respuesta = self.client.get(reverse('gravity:admin_pagos_configurar_planes'))
+
+        self.assertContains(respuesta, 'name="aplicar_a_cuotas_del_mes"')
+
+    def test_sin_tildar_la_opcion_las_cuotas_no_cambian(self):
+        _, cuota = self.crear_cliente_con_cuota('josefina')
+
+        self.editar_precio('67000', aplicar=False)
+
+        cuota.refresh_from_db()
+        self.assertEqual(cuota.monto_original, Decimal('61000'))
+
+    def test_no_toca_cuotas_pagadas_medio_mes_ni_ajustadas(self):
+        _, pagada = self.crear_cliente_con_cuota('pagada', estado='pagado')
+        _, medio = self.crear_cliente_con_cuota('medio', monto='30500', es_medio_mes=True)
+        _, ajustada = self.crear_cliente_con_cuota('ajustada', monto='55000')
+
+        self.editar_precio('67000')
+
+        for cuota, monto in ((pagada, '61000'), (medio, '30500'), (ajustada, '55000')):
+            cuota.refresh_from_db()
+            self.assertEqual(cuota.monto_original, Decimal(monto))
+
+    def test_comando_corrige_las_cuotas_generadas_con_el_precio_viejo(self):
+        cliente, cuota = self.crear_cliente_con_cuota('josefina')
+        _, anulada = self.crear_cliente_con_cuota('anulada', monto='0', estado='pagado')
+        PlanPago.objects.filter(id=self.plan.id).update(precio_mensual=Decimal('67000'))
+
+        call_command('aplicar_precios_actuales_a_cuotas', '--dry-run', stdout=StringIO())
+        cuota.refresh_from_db()
+        self.assertEqual(cuota.monto_original, Decimal('61000'))
+
+        call_command('aplicar_precios_actuales_a_cuotas', stdout=StringIO())
+        cuota.refresh_from_db()
+        anulada.refresh_from_db()
+        self.assertEqual(cuota.monto_original, Decimal('67000'))
+        self.assertEqual(anulada.monto_original, Decimal('0'))
+        self.assertEqual(
+            EstadoPagoCliente.objects.get(usuario=cliente).saldo_actual, Decimal('-67000')
+        )
+
+    def test_comando_saltea_planes_con_montos_distintos(self):
+        _, cuota = self.crear_cliente_con_cuota('josefina')
+        _, ajustada = self.crear_cliente_con_cuota('ajustada', monto='55000')
+        PlanPago.objects.filter(id=self.plan.id).update(precio_mensual=Decimal('67000'))
+
+        salida = StringIO()
+        call_command('aplicar_precios_actuales_a_cuotas', stdout=salida)
+
+        cuota.refresh_from_db()
+        self.assertEqual(cuota.monto_original, Decimal('61000'))
+        self.assertIn('revisar a mano', salida.getvalue())

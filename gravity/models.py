@@ -2441,6 +2441,62 @@ def recalcular_estado_pagos(usuario, redistribuir=True):
     }
 
 
+ESTADOS_CUOTA_IMPAGA = ('pendiente', 'parcial', 'vencido')
+
+
+def cuotas_con_precio_anterior(plan, precio_anterior, mes):
+    """
+    Cuotas del mes que se generaron con `precio_anterior` y todavía no se
+    pagaron. Quedan afuera los medios meses y las cuotas que ya se ajustaron
+    a mano o por una cancelación, porque su monto no coincide con el precio.
+    """
+    return DeudaMensual.objects.filter(
+        plan_aplicado=plan,
+        mes_año=mes,
+        monto_original=precio_anterior,
+        es_medio_mes=False,
+        estado__in=ESTADOS_CUOTA_IMPAGA,
+    ).select_related('usuario')
+
+
+def aplicar_precio_a_cuotas_del_mes(plan, precio_anterior, mes=None):
+    """
+    Pasa al precio actual del plan las cuotas impagas del mes que se habían
+    generado con el precio anterior, y recalcula la cuenta de cada cliente.
+
+    Hace falta porque el cron genera las cuotas el día 1 a la madrugada: si
+    el precio se actualiza ese mismo día, las cuotas quedan con el viejo.
+
+    Devuelve la lista de cuotas actualizadas.
+    """
+    from datetime import date
+    from django.db import transaction
+
+    if mes is None:
+        hoy = timezone.localtime(timezone.now()).date()
+        mes = date(hoy.year, hoy.month, 1)
+
+    precio_nuevo = plan.precio_mensual
+    if precio_anterior == precio_nuevo:
+        return []
+
+    fecha = timezone.localtime(timezone.now()).strftime('%d/%m/%Y')
+    actualizadas = []
+    with transaction.atomic():
+        for deuda in cuotas_con_precio_anterior(plan, precio_anterior, mes):
+            deuda.monto_original = precio_nuevo
+            deuda.observaciones = (
+                f'{deuda.observaciones}\n' if deuda.observaciones else ''
+            ) + f'Precio actualizado de ${precio_anterior} a ${precio_nuevo} ({fecha}).'
+            deuda.save(update_fields=['monto_original', 'observaciones'])
+            actualizadas.append(deuda)
+
+        for usuario in {d.usuario for d in actualizadas}:
+            recalcular_estado_pagos(usuario)
+
+    return actualizadas
+
+
 # ==============================================================================
 # HORARIOS Y LIQUIDACIÓN DE PROFESORAS (ADMINISTRADORAS CONTRATADAS)
 # ==============================================================================

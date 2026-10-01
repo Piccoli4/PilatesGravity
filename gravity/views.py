@@ -49,8 +49,9 @@ from .email_service import (
 )
 from .models import (
     PlanPago, EstadoPagoCliente, RegistroPago, DeudaMensual, SolicitudCambioPlan,
-    AjusteSaldo, recalcular_estado_pagos
+    AjusteSaldo, recalcular_estado_pagos, aplicar_precio_a_cuotas_del_mes
 )
+from .templatetags.formato import pesos
 from .forms import (
     PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm,
     CorregirSaldoForm, EditarPagoForm, AnularPagoForm
@@ -4127,10 +4128,22 @@ def admin_pagos_configurar_planes(request):
         elif 'editar_plan' in request.POST:
             plan_id = request.POST.get('editar_plan')
             plan = get_object_or_404(PlanPago, id=plan_id)
+            # Guardarlo antes de is_valid(), que ya le asigna los datos nuevos a la instancia
+            precio_anterior = plan.precio_mensual
             form = PlanPagoForm(request.POST, instance=plan)
             if form.is_valid():
-                form.save()
+                with transaction.atomic():
+                    plan = form.save()
+                    actualizadas = []
+                    if request.POST.get('aplicar_a_cuotas_del_mes'):
+                        actualizadas = aplicar_precio_a_cuotas_del_mes(plan, precio_anterior)
                 messages.success(request, f'Plan "{plan.nombre}" actualizado exitosamente.')
+                if actualizadas:
+                    messages.success(
+                        request,
+                        f'Se actualizaron {len(actualizadas)} cuota(s) impaga(s) de este mes '
+                        f'de ${pesos(precio_anterior)} a ${pesos(plan.precio_mensual)}.'
+                    )
                 return redirect('gravity:admin_pagos_configurar_planes')
         elif 'eliminar_plan' in request.POST:
             plan_id = request.POST.get('eliminar_plan')
