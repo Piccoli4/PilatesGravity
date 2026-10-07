@@ -1917,7 +1917,12 @@ def admin_reserva_cancelar(request, reserva_id):
     Cancelar una reserva como administrador (sin restricciones de tiempo)
     Ahora con sistema de emails automático
     """
-    reserva = get_object_or_404(Reserva, id=reserva_id, activa=True)
+    reserva = get_object_or_404(Reserva, id=reserva_id)
+
+    # Protección contra doble envío: si ya fue cancelada, volver al listado
+    if not reserva.activa:
+        messages.info(request, f'La reserva {reserva.numero_reserva} ya estaba cancelada.')
+        return redirect('gravity:admin_reservas_lista')
     
     if request.method == 'POST':
         # Obtener datos del formulario
@@ -1933,8 +1938,18 @@ def admin_reserva_cancelar(request, reserva_id):
             messages.error(request, 'Debes seleccionar un motivo para la cancelación.')
             return render(request, 'gravity/admin/reserva_cancelar.html', {'reserva': reserva})
         
+        cancelacion = None
         try:
+            # Solo los cambios en la base van en la transacción; el email se envía
+            # después del commit para no dejar la página esperando al SMTP.
             with transaction.atomic():
+                # Bloquear la fila: si llegan dos POST a la vez, el segundo espera
+                # al primero y ve la reserva ya cancelada.
+                reserva = Reserva.objects.select_for_update().get(pk=reserva.pk)
+                if not reserva.activa:
+                    messages.info(request, f'La reserva {reserva.numero_reserva} ya estaba cancelada.')
+                    return redirect('gravity:admin_reservas_lista')
+
                 # Guardar información adicional en las notas antes de cancelar
                 notas_cancelacion = f"Cancelada por administrador - Motivo: {motivo}"
                 if motivo_detalle:
@@ -1952,7 +1967,7 @@ def admin_reserva_cancelar(request, reserva_id):
 
                 # Registrar cancelación por admin en historial
                 try:
-                    CancelacionAdmin.objects.create(
+                    cancelacion = CancelacionAdmin.objects.create(
                         reserva=reserva,
                         admin_user=request.user,
                         motivo=motivo,
@@ -1966,40 +1981,6 @@ def admin_reserva_cancelar(request, reserva_id):
                 if registrar_incidencia:
                     registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, request.user)
                 
-                # Enviar email de notificación si se solicitó
-                email_enviado = False
-                if notificar_usuario and reserva.usuario.email:
-                    try:
-                        email_enviado = enviar_email_cancelacion_reserva(
-                            reserva=reserva,
-                            motivo=motivo,
-                            motivo_detalle=motivo_detalle,
-                            ofrecer_reemplazo=ofrecer_reemplazo,
-                            ofrecer_otras_sedes=ofrecer_otras_sedes
-                        )
-                    except Exception as e:
-                        logger.error(f"Error enviando email de cancelación: {str(e)}")
-                        email_enviado = False
-                
-                # Mensaje de éxito
-                mensaje_exito = (
-                    f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
-                    f'cancelada exitosamente.'
-                )
-                
-                if notificar_usuario:
-                    if email_enviado:
-                        mensaje_exito += f' Se envió notificación por email a {reserva.usuario.email}.'
-                    elif reserva.usuario.email:
-                        mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
-                    else:
-                        mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
-                
-                if registrar_incidencia:
-                    mensaje_exito += ' Se registró como incidencia para seguimiento.'
-                
-                messages.success(request, mensaje_exito)
-                
         except Exception as e:
             messages.error(
                 request, 
@@ -2007,7 +1988,43 @@ def admin_reserva_cancelar(request, reserva_id):
                 'La cancelación no se completó.'
             )
             return render(request, 'gravity/admin/reserva_cancelar.html', {'reserva': reserva})
+
+        # Enviar email de notificación si se solicitó (la cancelación ya está confirmada)
+        email_enviado = False
+        if notificar_usuario and reserva.usuario.email:
+            try:
+                email_enviado = enviar_email_cancelacion_reserva(
+                    reserva=reserva,
+                    motivo=motivo,
+                    motivo_detalle=motivo_detalle,
+                    ofrecer_reemplazo=ofrecer_reemplazo,
+                    ofrecer_otras_sedes=ofrecer_otras_sedes
+                )
+            except Exception as e:
+                logger.error(f"Error enviando email de cancelación: {str(e)}")
+                email_enviado = False
+
+        if email_enviado and cancelacion:
+            CancelacionAdmin.objects.filter(pk=cancelacion.pk).update(email_enviado=True)
         
+        # Mensaje de éxito
+        mensaje_exito = (
+            f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
+            f'cancelada exitosamente.'
+        )
+        
+        if notificar_usuario:
+            if email_enviado:
+                mensaje_exito += f' Se envió notificación por email a {reserva.usuario.email}.'
+            elif reserva.usuario.email:
+                mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
+            else:
+                mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
+        
+        if registrar_incidencia:
+            mensaje_exito += ' Se registró como incidencia para seguimiento.'
+        
+        messages.success(request, mensaje_exito)
         return redirect('gravity:admin_reservas_lista')
     
     # GET request - mostrar formulario
@@ -2035,45 +2052,50 @@ def admin_reserva_modificar(request, reserva_id):
 
         if form.is_valid():
             try:
-                with transaction.atomic():
-                    nueva_clase = form.cleaned_data['nueva_clase']
-                    clase_anterior = reserva.clase
+                nueva_clase = form.cleaned_data['nueva_clase']
+                clase_anterior = reserva.clase
 
+                # Solo el cambio va en la transacción; el email se envía después del commit
+                with transaction.atomic():
                     reserva.clase = nueva_clase
                     reserva.save()
 
-                    # Enviar email de notificación si se solicitó
-                    email_enviado = False
-                    if notificar_usuario and reserva.usuario.email:
-                        try:
-                            email_enviado = enviar_email_modificacion_reserva(
-                                reserva=reserva,
-                                clase_anterior=clase_anterior,
-                            )
-                        except Exception as e:
-                            logger.error(f"Error enviando email de modificación: {str(e)}")
+                # Enviar email de notificación si se solicitó
+                email_enviado = False
+                if notificar_usuario and reserva.usuario.email:
+                    try:
+                        email_enviado = enviar_email_modificacion_reserva(
+                            reserva=reserva,
+                            clase_anterior=clase_anterior,
+                        )
+                    except Exception as e:
+                        logger.error(f"Error enviando email de modificación: {str(e)}")
 
-                    mensaje_exito = (
-                        f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
-                        f'modificada: {clase_anterior.get_nombre_display()} ({clase_anterior.dia} '
-                        f'{clase_anterior.horario.strftime("%H:%M")}) → '
-                        f'{nueva_clase.get_nombre_display()} ({nueva_clase.dia} '
-                        f'{nueva_clase.horario.strftime("%H:%M")}).'
-                    )
+                mensaje_exito = (
+                    f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
+                    f'modificada: {clase_anterior.get_nombre_display()} ({clase_anterior.dia} '
+                    f'{clase_anterior.horario.strftime("%H:%M")}) → '
+                    f'{nueva_clase.get_nombre_display()} ({nueva_clase.dia} '
+                    f'{nueva_clase.horario.strftime("%H:%M")}).'
+                )
 
-                    if notificar_usuario:
-                        if email_enviado:
-                            mensaje_exito += f' Notificación enviada a {reserva.usuario.email}.'
-                        elif reserva.usuario.email:
-                            mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
-                        else:
-                            mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
+                if notificar_usuario:
+                    if email_enviado:
+                        mensaje_exito += f' Notificación enviada a {reserva.usuario.email}.'
+                    elif reserva.usuario.email:
+                        mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
+                    else:
+                        mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
 
-                    messages.success(request, mensaje_exito)
-                    return redirect('gravity:admin_reservas_lista')
+                messages.success(request, mensaje_exito)
+                return redirect('gravity:admin_reservas_lista')
 
             except IntegrityError:
+                reserva.clase = clase_anterior
                 messages.error(request, 'Error: el alumno ya tiene una reserva en esa clase.')
+            except ValidationError as e:
+                reserva.clase = clase_anterior
+                messages.error(request, ' '.join(e.messages))
             except Exception as e:
                 messages.error(request, f'Error al modificar la reserva: {str(e)}')
     else:
@@ -2743,16 +2765,19 @@ def admin_usuario_toggle_status(request, usuario_id):
                     reserva.activa = False
                     reserva.save()
                     if usuario.email:
-                        try:
-                            enviar_email_cancelacion_reserva(
-                                reserva=reserva,
-                                motivo='Baja del estudio',
-                                motivo_detalle='Tu reserva fue cancelada porque tu cuenta fue desactivada.',
-                                ofrecer_reemplazo=False,
-                                ofrecer_otras_sedes=False
-                            )
-                        except Exception as e:
-                            logger.error(f"Error enviando email de cancelación a {usuario.email}: {str(e)}")
+                        # Los emails salen después del commit, no dentro de la transacción
+                        def _enviar_cancelacion(reserva=reserva):
+                            try:
+                                enviar_email_cancelacion_reserva(
+                                    reserva=reserva,
+                                    motivo='Baja del estudio',
+                                    motivo_detalle='Tu reserva fue cancelada porque tu cuenta fue desactivada.',
+                                    ofrecer_reemplazo=False,
+                                    ofrecer_otras_sedes=False
+                                )
+                            except Exception as e:
+                                logger.error(f"Error enviando email de cancelación a {usuario.email}: {str(e)}")
+                        transaction.on_commit(_enviar_cancelacion)
 
                 # 2. Desactivar planes activos
                 PlanUsuario.objects.filter(usuario=usuario, activo=True).update(activo=False)

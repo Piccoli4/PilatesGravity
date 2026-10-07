@@ -178,6 +178,9 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+# Sin timeout, un SMTP lento deja la request colgada hasta que gunicorn la corta (502)
+# y el usuario vuelve a enviar el formulario. Los envíos ya capturan la excepción.
+EMAIL_TIMEOUT = 10
 
 # Email settings para reset de contraseña
 DEFAULT_FROM_EMAIL = f'Pilates Gravity <{config("EMAIL_HOST_USER", default="pilatesgravity@gmail.com")}>'

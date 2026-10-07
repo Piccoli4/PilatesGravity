@@ -7,6 +7,7 @@ tardó ~11 s; volvió a tocar "Confirmar" y el segundo POST no vio la reserva to
 sin confirmar, creando un duplicado.
 """
 from datetime import time, timedelta
+from decimal import Decimal
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -15,7 +16,7 @@ from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Clase, Reserva
+from .models import CancelacionAdmin, Clase, PlanPago, PlanUsuario, Reserva
 
 
 def crear_clase(**kwargs):
@@ -120,3 +121,66 @@ class AdminReservaEmailFueraDeTransaccionTests(TransactionTestCase):
 
         self.assertIn('en_transaccion', estado, 'No se llamó al envío de email')
         self.assertFalse(estado['en_transaccion'])
+
+    def test_cancelar_envia_email_despues_del_commit(self):
+        reserva = Reserva.objects.create(usuario=self.alumna, clase=self.clase)
+        estado = {}
+
+        def email_falso(**kwargs):
+            estado['en_transaccion'] = connection.in_atomic_block
+            return True
+
+        with mock.patch('gravity.views.enviar_email_cancelacion_reserva',
+                        side_effect=email_falso):
+            self.client.post(
+                reverse('gravity:admin_reserva_cancelar', args=[reserva.id]),
+                {'motivo': 'otro', 'notificar_usuario': 'on'},
+            )
+
+        self.assertIn('en_transaccion', estado, 'No se llamó al envío de email')
+        self.assertFalse(estado['en_transaccion'])
+        # El historial registra que el email salió
+        self.assertTrue(CancelacionAdmin.objects.get(reserva=reserva).email_enviado)
+
+    def test_modificar_envia_email_despues_del_commit(self):
+        plan = PlanPago.objects.create(nombre='2 clases', clases_por_semana=2,
+                                       precio_mensual=Decimal('60000'))
+        hoy = timezone.localtime(timezone.now()).date()
+        PlanUsuario.objects.create(usuario=self.alumna, plan=plan, fecha_inicio=hoy,
+                                   fecha_fin=hoy + timedelta(days=30))
+        reserva = Reserva.objects.create(usuario=self.alumna, clase=self.clase)
+        otra_clase = crear_clase(dia='Jueves')
+        estado = {}
+
+        def email_falso(**kwargs):
+            estado['en_transaccion'] = connection.in_atomic_block
+            return True
+
+        with mock.patch('gravity.views.enviar_email_modificacion_reserva',
+                        side_effect=email_falso):
+            self.client.post(
+                reverse('gravity:admin_reserva_modificar', args=[reserva.id]),
+                {'nueva_clase': otra_clase.id, 'notificar_usuario': 'on'},
+            )
+
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.clase, otra_clase)
+        self.assertIn('en_transaccion', estado, 'No se llamó al envío de email')
+        self.assertFalse(estado['en_transaccion'])
+
+
+class AdminCancelarDobleEnvioTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(username='nico', password='clave123', is_staff=True)
+        self.alumna = User.objects.create_user(username='avril', password='clave123')
+        self.reserva = Reserva.objects.create(usuario=self.alumna, clase=crear_clase())
+        self.url = reverse('gravity:admin_reserva_cancelar', args=[self.reserva.id])
+        self.client.force_login(self.admin)
+
+    def test_segundo_envio_no_cancela_dos_veces(self):
+        self.client.post(self.url, {'motivo': 'otro'})
+        respuesta = self.client.post(self.url, {'motivo': 'otro'}, follow=True)
+
+        self.assertEqual(respuesta.status_code, 200)  # antes daba 404
+        self.assertContains(respuesta, 'ya estaba cancelada')
+        self.assertEqual(CancelacionAdmin.objects.filter(reserva=self.reserva).count(), 1)
