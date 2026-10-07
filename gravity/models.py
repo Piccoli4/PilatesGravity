@@ -307,6 +307,34 @@ class Reserva(models.Model):
         verbose_name="Fecha única",
         help_text="Para recuperos y cupos temporales. Se cancela automáticamente al día siguiente de esta fecha."
     )
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reservas_creadas',
+        verbose_name="Creado por",
+        help_text="Quién creó la reserva: el propio alumno o el administrador que la cargó"
+    )
+
+    class Meta:
+        verbose_name = "Reserva"
+        verbose_name_plural = "Reservas"
+        # Red de seguridad a nivel base de datos contra duplicados (p. ej. doble envío
+        # del formulario). clean() hace la misma validación con mensajes amigables,
+        # pero no ve filas que otra request todavía no confirmó.
+        constraints = [
+            models.UniqueConstraint(
+                fields=['usuario', 'clase'],
+                condition=models.Q(activa=True, fecha_unica__isnull=True),
+                name='unique_reserva_permanente_activa'
+            ),
+            models.UniqueConstraint(
+                fields=['usuario', 'clase', 'fecha_unica'],
+                condition=models.Q(activa=True, fecha_unica__isnull=False),
+                name='unique_reserva_fecha_unica_activa'
+            ),
+        ]
 
     def clean(self):
         """Validaciones personalizadas del modelo"""
@@ -355,8 +383,9 @@ class Reserva(models.Model):
         if not self.numero_reserva:
             self.numero_reserva = self.generar_numero_reserva()
         
-        # Ejecutar validaciones
-        self.full_clean()
+        # Ejecutar validaciones. Los constraints de Meta los hace cumplir la base de datos
+        # (IntegrityError); clean() ya cubre los mismos casos con mensajes amigables.
+        self.full_clean(validate_constraints=False)
         super().save(*args, **kwargs)
 
     def generar_numero_reserva(self):
@@ -626,22 +655,6 @@ class Reserva(models.Model):
                 return False, "Ya tienes una reserva para esta clase."
         
         return True, f"Puedes reservar. Tienes {clases_disponibles - reservas_actuales} clases disponibles esta semana."
-
-        class Meta:
-            verbose_name = "Reserva"
-            verbose_name_plural = "Reservas"
-            constraints = [
-                models.UniqueConstraint(
-                    fields=['usuario', 'clase'],
-                    condition=models.Q(activa=True),
-                    name='unique_active_reservation_per_user_class'
-                )
-            ]
-            ordering = ['-fecha_reserva']
-            permissions = [
-                ('can_manage_all_reservas', 'Puede gestionar todas las reservas'),
-                ('can_view_all_reservas', 'Puede ver todas las reservas'),
-            ]
 
     @staticmethod
     def usuario_puede_hacer_recupero(usuario):

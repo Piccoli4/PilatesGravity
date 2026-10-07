@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from .models import (
@@ -154,7 +155,8 @@ def reservar_clase(request):
                 reserva = Reserva.objects.create(
                     usuario=request.user,
                     clase=clase,
-                    fecha_unica=fecha_unica
+                    fecha_unica=fecha_unica,
+                    creado_por=request.user,
                 )
 
                 # 📧 ENVIAR EMAIL DE CONFIRMACIÓN DE RESERVA
@@ -175,12 +177,13 @@ def reservar_clase(request):
                 }
                 return redirect('accounts:mis_reservas')
                 
-            except IntegrityError:
-                # Error de duplicado - no debería ocurrir por las validaciones del form
+            except (IntegrityError, ValidationError):
+                # Duplicado por doble envío del formulario (el form valida antes, pero
+                # dos POST simultáneos pueden pasar esa validación)
                 messages.error(
                     request,
-                    'Error interno: Ya tienes una reserva para esta clase. '
-                    'Si esto persiste, contacta al administrador.'
+                    'Ya tenés una reserva para esta clase. '
+                    'Revisá "Mis reservas" antes de intentar nuevamente.'
                 )
     else:
         # Permitir preseleccionar tipo de clase desde URL
@@ -275,7 +278,7 @@ def modificar_reserva(request, numero_reserva):
                 
                 return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
                 
-            except IntegrityError:
+            except (IntegrityError, ValidationError):
                 messages.error(
                     request,
                     'Error interno: conflicto de reserva. '
@@ -1423,13 +1426,13 @@ def admin_clase_detalle(request, clase_id):
     reservas_permanentes = clase.reserva_set.filter(
         activa=True,
         fecha_unica__isnull=True,
-    ).select_related('usuario', 'usuario__profile')
+    ).select_related('usuario', 'usuario__profile', 'creado_por')
 
     # Reservas de fecha única SOLO para la próxima clase
     reservas_fecha_unica = clase.reserva_set.filter(
         activa=True,
         fecha_unica=proxima_fecha_clase,
-    ).select_related('usuario', 'usuario__profile')
+    ).select_related('usuario', 'usuario__profile', 'creado_por')
 
     # IDs de ausencias para la próxima clase
     reservas_con_ausencia = set(
@@ -2200,10 +2203,10 @@ def reservar_recupero(request):
                 clase=clase,
                 es_recupero=True,
                 fecha_unica=fecha_recupero,
-                notas=f'Recupero por ausencia temporal — {fecha_recupero.strftime("%d/%m/%Y")}'
+                notas=f'Recupero por ausencia temporal — {fecha_recupero.strftime("%d/%m/%Y")}',
+                creado_por=request.user,
             )
-            reserva.full_clean()
-            reserva.save()
+            reserva.save()  # save() ya ejecuta full_clean()
 
             request.session['reserva_exitosa'] = {
                 'tipo': 'recupero',
@@ -2215,6 +2218,12 @@ def reservar_recupero(request):
             }
             return redirect('accounts:mis_reservas')
 
+        except IntegrityError:
+            messages.error(request, 'Ya tenés una reserva para esa clase en esa fecha.')
+            return redirect('accounts:mis_reservas')
+        except ValidationError as e:
+            messages.error(request, ' '.join(e.messages))
+            return redirect('gravity:reservar_recupero')
         except Exception as e:
             messages.error(request, f'Error al procesar el recupero: {str(e)}')
             return redirect('gravity:reservar_recupero')
@@ -2331,10 +2340,10 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
                 clase=clase,
                 es_recupero=puede_recupero,
                 fecha_unica=fecha,
-                notas=f'{tipo_nota} — {fecha.strftime("%d/%m/%Y")}'
+                notas=f'{tipo_nota} — {fecha.strftime("%d/%m/%Y")}',
+                creado_por=request.user,
             )
-            reserva.full_clean()
-            reserva.save()
+            reserva.save()  # save() ya ejecuta full_clean()
 
             request.session['reserva_exitosa'] = {
                 'tipo': 'recupero' if puede_recupero else 'temporal',
@@ -2346,6 +2355,11 @@ def reservar_cupo_temporal(request, clase_id, fecha_str):
             }
             return redirect('accounts:mis_reservas')
 
+        except IntegrityError:
+            messages.error(request, 'Ya tenés una reserva para esta clase en esa fecha.')
+            return redirect('accounts:mis_reservas')
+        except ValidationError as e:
+            messages.error(request, ' '.join(e.messages))
         except Exception as e:
             messages.error(request, f'Error al procesar la reserva: {str(e)}')
 
@@ -2478,74 +2492,80 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
             })
 
         try:
-            with transaction.atomic():
-                # Calcular fecha_unica y es_recupero según tipo
-                fecha_unica = None
-                es_recupero = False
-                if tipo_reserva in ('temporal', 'recupero'):
-                    ahora = timezone.localtime(timezone.now())
-                    hoy = ahora.date()
-                    dias_map = {
-                        'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
-                        'Jueves': 3, 'Viernes': 4, 'Sábado': 5
-                    }
-                    dia_num = dias_map.get(clase.dia, 0)
-                    dias_hasta = (dia_num - hoy.weekday()) % 7
-                    if dias_hasta == 0:
-                        clase_hoy = ahora.replace(
-                            hour=clase.horario.hour,
-                            minute=clase.horario.minute,
-                            second=0, microsecond=0
-                        )
-                        if clase_hoy <= ahora:
-                            dias_hasta = 7
-                    fecha_unica = hoy + timedelta(days=dias_hasta)
-                    es_recupero = (tipo_reserva == 'recupero')
+            # Calcular fecha_unica y es_recupero según tipo
+            fecha_unica = None
+            es_recupero = False
+            if tipo_reserva in ('temporal', 'recupero'):
+                ahora = timezone.localtime(timezone.now())
+                hoy = ahora.date()
+                dias_map = {
+                    'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
+                    'Jueves': 3, 'Viernes': 4, 'Sábado': 5
+                }
+                dia_num = dias_map.get(clase.dia, 0)
+                dias_hasta = (dia_num - hoy.weekday()) % 7
+                if dias_hasta == 0:
+                    clase_hoy = ahora.replace(
+                        hour=clase.horario.hour,
+                        minute=clase.horario.minute,
+                        second=0, microsecond=0
+                    )
+                    if clase_hoy <= ahora:
+                        dias_hasta = 7
+                fecha_unica = hoy + timedelta(days=dias_hasta)
+                es_recupero = (tipo_reserva == 'recupero')
 
+            # Solo la creación va en la transacción: el email se envía después del commit.
+            # Si el email tarda dentro de la transacción, la reserva no es visible para un
+            # segundo envío del formulario y se crea un duplicado.
+            with transaction.atomic():
                 reserva = Reserva.objects.create(
                     usuario=usuario,
                     clase=clase,
                     fecha_unica=fecha_unica,
                     es_recupero=es_recupero,
+                    creado_por=request.user,
                 )
 
-                # Email opcional
-                email_enviado = False
-                if notificar and usuario.email:
-                    try:
-                        email_enviado = enviar_email_confirmacion_reserva_detallado(reserva)
-                    except Exception as e:
-                        logger.error(f"Error enviando email de confirmación (admin): {str(e)}")
+            # Email opcional
+            email_enviado = False
+            if notificar and usuario.email:
+                try:
+                    email_enviado = enviar_email_confirmacion_reserva_detallado(reserva)
+                except Exception as e:
+                    logger.error(f"Error enviando email de confirmación (admin): {str(e)}")
 
-                tipo_label = {
-                    'recurrente': 'recurrente',
-                    'temporal': 'una sola vez',
-                    'recupero': 'recupero',
-                }.get(tipo_reserva, 'recurrente')
+            tipo_label = {
+                'recurrente': 'recurrente',
+                'temporal': 'una sola vez',
+                'recupero': 'recupero',
+            }.get(tipo_reserva, 'recurrente')
 
-                mensaje = (
-                    f'✅ Reserva {reserva.numero_reserva} ({tipo_label}) creada para '
-                    f'{usuario.get_full_name() or usuario.username} en '
-                    f'{clase.get_nombre_display()} - {clase.dia} '
-                    f'{clase.horario.strftime("%H:%M")} ({clase.get_direccion_corta()}).'
-                )
-                if notificar:
-                    if email_enviado:
-                        mensaje += f' Email de confirmación enviado a {usuario.email}.'
-                    elif usuario.email:
-                        mensaje += f' ⚠️ No se pudo enviar el email a {usuario.email}.'
-                    else:
-                        mensaje += ' ⚠️ El alumno no tiene email configurado.'
+            mensaje = (
+                f'✅ Reserva {reserva.numero_reserva} ({tipo_label}) creada para '
+                f'{usuario.get_full_name() or usuario.username} en '
+                f'{clase.get_nombre_display()} - {clase.dia} '
+                f'{clase.horario.strftime("%H:%M")} ({clase.get_direccion_corta()}).'
+            )
+            if notificar:
+                if email_enviado:
+                    mensaje += f' Email de confirmación enviado a {usuario.email}.'
+                elif usuario.email:
+                    mensaje += f' ⚠️ No se pudo enviar el email a {usuario.email}.'
+                else:
+                    mensaje += ' ⚠️ El alumno no tiene email configurado.'
 
-                messages.success(request, mensaje)
+            messages.success(request, mensaje)
 
-                # Redirigir según el origen
-                if usuario_id:
-                    return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
-                return redirect('gravity:admin_clases_lista')
+            # Redirigir según el origen
+            if usuario_id:
+                return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
+            return redirect('gravity:admin_clases_lista')
 
         except IntegrityError:
             messages.error(request, 'Error: ya existe una reserva para ese alumno en esa clase.')
+        except ValidationError as e:
+            messages.error(request, ' '.join(e.messages))
         except Exception as e:
             messages.error(request, f'Error al crear la reserva: {str(e)}')
 
@@ -2885,32 +2905,40 @@ def admin_agregar_usuario(request):
                     profile.sede_preferida = 'cualquiera'
                     profile.save()
 
-                # Enviar email de bienvenida (siempre, si tiene email)
+                # Enviar email de bienvenida (siempre, si tiene email).
+                # Los emails se envían con on_commit: si se mandan dentro de la transacción,
+                # la página queda esperando el SMTP y un segundo envío del formulario
+                # no ve lo que todavía no se confirmó.
                 if email:
-                    try:
-                        enviar_email_bienvenida(
-                            usuario=user,
-                            is_admin_created=incluir_credenciales,
-                            password_temporal=password if incluir_credenciales else None,
-                        )
-                        logger.info(f"Email de bienvenida enviado a {user.email}")
-                    except Exception as e:
-                        logger.error(f"Error enviando email de bienvenida: {str(e)}")
+                    def _enviar_bienvenida(user=user):
+                        try:
+                            enviar_email_bienvenida(
+                                usuario=user,
+                                is_admin_created=incluir_credenciales,
+                                password_temporal=password if incluir_credenciales else None,
+                            )
+                            logger.info(f"Email de bienvenida enviado a {user.email}")
+                        except Exception as e:
+                            logger.error(f"Error enviando email de bienvenida: {str(e)}")
+                    transaction.on_commit(_enviar_bienvenida)
 
                 # Si se seleccionó clase, crear la reserva
                 if clase:
                     reserva = Reserva.objects.create(
                         usuario=user,
-                        clase=clase
+                        clase=clase,
+                        creado_por=request.user,
                     )
 
                     # Enviar email de confirmación de reserva si se marcó la opción
                     if request.POST.get('enviar_confirmacion') and email:
-                        try:
-                            enviar_email_confirmacion_reserva_detallado(reserva)
-                            logger.info(f"Email de confirmación de reserva enviado para {reserva.numero_reserva}")
-                        except Exception as e:
-                            logger.error(f"Error enviando email de confirmación de reserva: {str(e)}")
+                        def _enviar_confirmacion(reserva=reserva):
+                            try:
+                                enviar_email_confirmacion_reserva_detallado(reserva)
+                                logger.info(f"Email de confirmación de reserva enviado para {reserva.numero_reserva}")
+                            except Exception as e:
+                                logger.error(f"Error enviando email de confirmación de reserva: {str(e)}")
+                        transaction.on_commit(_enviar_confirmacion)
 
                     messages.success(
                         request,

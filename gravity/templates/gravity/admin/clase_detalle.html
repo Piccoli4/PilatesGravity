@@ -421,6 +421,11 @@
                                 </td>
                                 <td class="py-3 px-4">
                                     <small class="text-gray-600">{{ reserva.fecha_reserva|date:"d/m/Y H:i" }}</small>
+                                    {% if reserva.creado_por %}
+                                    <small class="block text-gray-400">
+                                        por {% if reserva.creado_por_id == reserva.usuario_id %}el alumno{% else %}{{ reserva.creado_por.first_name|default:reserva.creado_por.username }}{% endif %}
+                                    </small>
+                                    {% endif %}
                                 </td>
                                 <td class="py-3 px-4">
                                     <small class="text-green-600 flex items-center">
@@ -534,6 +539,11 @@
                                                 </path>
                                             </svg>
                                             {{ reserva.fecha_reserva|date:"d/m/Y H:i" }}
+                                            {% if reserva.creado_por %}
+                                            <span class="ml-1 text-gray-400">
+                                                · por {% if reserva.creado_por_id == reserva.usuario_id %}el alumno{% else %}{{ reserva.creado_por.first_name|default:reserva.creado_por.username }}{% endif %}
+                                            </span>
+                                            {% endif %}
                                         </div>
                                     </div>
 

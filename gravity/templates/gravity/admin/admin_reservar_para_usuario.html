@@ -48,7 +48,7 @@
         </div>
 
         <div class="card-body p-3">
-            <form method="post" class="space-y-6">
+            <form method="post" id="form-reservar-para-usuario" class="space-y-6">
                 {% csrf_token %}
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -361,6 +361,36 @@
         });
     });
     {% endif %}
+
+    // Evitar doble envío: base_admin no carga form_submit.js. Un segundo toque mientras
+    // el servidor responde creaba reservas duplicadas.
+    (() => {
+        const form = document.getElementById('form-reservar-para-usuario');
+        const btn = form?.querySelector('[type="submit"]');
+        if (!form || !btn) return;
+        const btnHtml = btn.innerHTML;
+        let enviando = false;
+
+        form.addEventListener('submit', (e) => {
+            if (enviando) {
+                e.preventDefault();
+                return;
+            }
+            enviando = true;
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btn.textContent = btn.dataset.loadingText || 'Enviando...';
+        });
+
+        // Al volver con "atrás" el navegador restaura la página desde caché
+        window.addEventListener('pageshow', (e) => {
+            if (!e.persisted) return;
+            enviando = false;
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            btn.innerHTML = btnHtml;
+        });
+    })();
 </script>
 
 <!-- Adaptar Tom Select a la paleta del proyecto -->
