@@ -12,7 +12,8 @@ from .models import UserProfile, Testimonio
 from gravity.email_service import enviar_email_bienvenida_completo, enviar_email_despedida_completo
 from gravity.models import AusenciaTemporal
 from datetime import date, timedelta
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
+from django.core.exceptions import ValidationError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,9 +50,15 @@ def signup(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             try:
-                user = form.save()
+                # Atómico: si falla al guardar el perfil, no queda el User creado a medias
+                with transaction.atomic():
+                    user = form.save()
             except IntegrityError:
                 form.add_error('username', 'Ya existe una cuenta con ese nombre de usuario. Por favor elegí uno diferente.')
+                return render(request, 'accounts/signup.html', {'form': form})
+            except ValidationError:
+                logger.exception("Error de validación al guardar el perfil en el registro")
+                messages.error(request, 'No pudimos crear la cuenta. Revisá los datos e intentá de nuevo.')
                 return render(request, 'accounts/signup.html', {'form': form})
             username = form.cleaned_data.get('username')
             messages.success(

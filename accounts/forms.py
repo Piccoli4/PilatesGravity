@@ -6,6 +6,31 @@ from .models import UserProfile, Testimonio
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.models import User
 from django.conf import settings
+import re
+
+
+def normalizar_telefono(telefono):
+    """
+    Limpia el teléfono y lo valida con la misma regla que UserProfile.telefono.
+    Devuelve solo dígitos (con + opcional al inicio): si se guardara tal cual
+    lo escribió el usuario, el full_clean() del perfil lo rechazaría y la
+    request terminaría en error 500.
+    """
+    if not telefono:
+        return telefono
+
+    telefono_limpio = re.sub(r'[\s\-().]', '', telefono)
+
+    if not re.fullmatch(r'\+?\d+', telefono_limpio):
+        raise ValidationError('El teléfono solo puede contener números, espacios, guiones y paréntesis.')
+
+    digitos = len(telefono_limpio.lstrip('+'))
+    if digitos < 9:
+        raise ValidationError('El teléfono debe tener al menos 9 dígitos.')
+    if digitos > 15:
+        raise ValidationError('El teléfono no puede tener más de 15 dígitos.')
+
+    return telefono_limpio
 
 
 class SignUpForm(UserCreationForm):
@@ -78,20 +103,7 @@ class SignUpForm(UserCreationForm):
 
     def clean_telefono(self):
         """Validar formato del teléfono si se proporciona"""
-        telefono = self.cleaned_data.get('telefono')
-        if telefono:
-            # Remover espacios y caracteres especiales comunes
-            telefono_limpio = telefono.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
-            
-            # Validar que solo contenga números y posible + al inicio
-            if not telefono_limpio.replace('+', '').isdigit():
-                raise ValidationError('El teléfono solo puede contener números, espacios, guiones y paréntesis.')
-            
-            # Validar longitud
-            if len(telefono_limpio.replace('+', '')) < 9:
-                raise ValidationError('El teléfono debe tener al menos 9 dígitos.')
-                
-        return telefono
+        return normalizar_telefono(self.cleaned_data.get('telefono'))
 
     def clean_first_name(self):
         return self.cleaned_data.get('first_name', '').strip().title()
@@ -193,20 +205,7 @@ class ProfileUpdateForm(forms.Form):
 
     def clean_telefono(self):
         """Validar formato del teléfono si se proporciona"""
-        telefono = self.cleaned_data.get('telefono')
-        if telefono:
-            # Remover espacios y caracteres especiales comunes
-            telefono_limpio = telefono.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
-            
-            # Validar que solo contenga números y posible + al inicio
-            if not telefono_limpio.replace('+', '').isdigit():
-                raise ValidationError('El teléfono solo puede contener números, espacios, guiones y paréntesis.')
-            
-            # Validar longitud
-            if len(telefono_limpio.replace('+', '')) < 9:
-                raise ValidationError('El teléfono debe tener al menos 9 dígitos.')
-                
-        return telefono
+        return normalizar_telefono(self.cleaned_data.get('telefono'))
 
     def clean_first_name(self):
         return self.cleaned_data.get('first_name', '').strip().title()
