@@ -21,6 +21,12 @@ class SeoTests(TestCase):
         self.assertIn('<title>Precios y planes de Pilates en Santa Fe | Pilates Gravity</title>', html)
         self.assertIn('<link rel="canonical" href="https://pilatesgravity.com.ar/precios/">', html)
 
+    def test_descripciones_y_titulos_no_se_cortan(self):
+        from gravity.seo import PAGINAS_PUBLICAS
+        for nombre, pagina in PAGINAS_PUBLICAS.items():
+            self.assertLessEqual(len(pagina['descripcion']), 160, nombre)
+            self.assertLessEqual(len(pagina['titulo']), 60, nombre)
+
     def test_paginas_privadas_no_se_indexan(self):
         html = self.client.get(reverse('accounts:login')).content.decode()
         self.assertIn('<meta name="robots" content="noindex, follow">', html)

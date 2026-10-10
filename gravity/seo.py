@@ -43,12 +43,12 @@ SEDES = [
 ]
 
 DESCRIPCION_GENERAL = (
-    'Estudio de Pilates Reformer y Cadillac en Santa Fe Capital, con dos sedes: '
-    'La Rioja 3044 y 9 de Julio 3698. Grupos reducidos, instructores certificados '
-    'y reservas online.'
+    'Pilates Reformer y Cadillac en Santa Fe Capital. Dos sedes: La Rioja 3044 y '
+    '9 de Julio 3698. Grupos reducidos, instructores certificados y reserva online.'
 )
 
 # url_name → textos de la página. 'prioridad' y 'frecuencia' van al sitemap.
+# Descripciones de hasta 160 caracteres para que Google y las redes no las corten.
 PAGINAS_PUBLICAS = {
     'gravity:home': {
         'titulo': 'Pilates Gravity | Pilates Reformer y Cadillac en Santa Fe',
@@ -58,16 +58,16 @@ PAGINAS_PUBLICAS = {
     'gravity:precios_publicos': {
         'titulo': 'Precios y planes de Pilates en Santa Fe | Pilates Gravity',
         'descripcion': (
-            'Planes mensuales de Pilates Reformer y Cadillac de 1 a 5 clases por semana. '
-            'Mirá el precio por clase y elegí el ritmo que mejor te queda en Pilates Gravity, Santa Fe.'
+            'Planes mensuales de Pilates Reformer y Cadillac, de 1 a 5 clases por semana. '
+            'Mirá el precio por clase y elegí tu ritmo en Pilates Gravity, Santa Fe.'
         ),
         'prioridad': '0.9', 'frecuencia': 'monthly',
     },
     'gravity:clases_disponibles': {
         'titulo': 'Horarios y clases disponibles | Pilates Gravity Santa Fe',
         'descripcion': (
-            'Consultá los horarios de Pilates Reformer y Cadillac con lugares libres en nuestras '
-            'dos sedes de Santa Fe Capital y reservá tu clase online en un par de minutos.'
+            'Horarios de Pilates Reformer y Cadillac con lugares libres en nuestras dos sedes '
+            'de Santa Fe Capital. Reservá tu clase online en un par de minutos.'
         ),
         'prioridad': '0.8', 'frecuencia': 'daily',
     },
