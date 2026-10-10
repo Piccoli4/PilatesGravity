@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.views import (
     LoginView, PasswordResetView, PasswordResetDoneView,
     PasswordResetConfirmView, PasswordResetCompleteView
@@ -18,16 +19,37 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+AUTH_TEMPLATE = 'accounts/auth.html'
+
+
+def _render_auth(request, mode, login_form=None, signup_form=None, extra=None):
+    """Login y registro comparten una sola vista con panel deslizante."""
+    context = {
+        'mode': mode,
+        'login_form': login_form or AuthenticationForm(request),
+        'signup_form': signup_form or SignUpForm(),
+    }
+    context.update(extra or {})
+    return render(request, AUTH_TEMPLATE, context)
+
+
 class CustomLoginView(LoginView):
     """Vista personalizada para el login"""
-    template_name = 'accounts/login.html'
+    template_name = AUTH_TEMPLATE
     redirect_authenticated_user = True
-    
+
     def get_success_url(self):
         return reverse_lazy('accounts:profile')
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['mode'] = 'login'
+        context['login_form'] = context['form']
+        context['signup_form'] = SignUpForm()
+        return context
+
     def form_invalid(self, form):
-        messages.error(self.request, 'Usuario o contraseña incorrectos')
+        # El error se muestra dentro del panel de login (non_field_errors), sin aviso duplicado.
         return super().form_invalid(form)
 
 def custom_logout_view(request):
@@ -55,11 +77,11 @@ def signup(request):
                     user = form.save()
             except IntegrityError:
                 form.add_error('username', 'Ya existe una cuenta con ese nombre de usuario. Por favor elegí uno diferente.')
-                return render(request, 'accounts/signup.html', {'form': form})
+                return _render_auth(request, 'signup', signup_form=form)
             except ValidationError:
                 logger.exception("Error de validación al guardar el perfil en el registro")
                 messages.error(request, 'No pudimos crear la cuenta. Revisá los datos e intentá de nuevo.')
-                return render(request, 'accounts/signup.html', {'form': form})
+                return _render_auth(request, 'signup', signup_form=form)
             username = form.cleaned_data.get('username')
             messages.success(
                 request,
@@ -82,8 +104,8 @@ def signup(request):
             messages.error(request, 'Por favor corrige los errores en el formulario')
     else:
         form = SignUpForm()
-    
-    return render(request, 'accounts/signup.html', {'form': form})
+
+    return _render_auth(request, 'signup', signup_form=form)
 
 @login_required
 def profile(request):

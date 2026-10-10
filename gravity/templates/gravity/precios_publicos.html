@@ -4,179 +4,154 @@
 {% block title %}Precios y Planes - Pilates Gravity{% endblock %}
 
 {% block content %}
-    <div class="min-h-screen bg-fondo py-8">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Header -->
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-principal mb-4 font-cinzel">
-                    Nuestros Planes y Precios
-                </h1>
-                <p class="text-xl text-gris-oscuro max-w-3xl mx-auto">
-                    Elegí el plan que mejor se adapte a tus necesidades y horarios. Para reservar tus clases solo necesitás crear una cuenta gratuita.
-                </p>
+    <!-- Encabezado -->
+    <section class="g-section g-section--cream pr-hero">
+        <div class="g-container g-head g-reveal">
+            <span class="g-eyebrow">Planes mensuales</span>
+            <h1 class="g-title">Elegí tu ritmo</h1>
+            <p class="g-lead">Un plan según cuántas veces por semana quieras venir. Valen para las dos sedes y los gestionás desde tu cuenta.</p>
+            <div class="pr-hero__pills">
+                <span class="g-pill">Válido en las dos sedes</span>
+                <span class="g-pill">10% off en efectivo del 1 al 10</span>
+                <span class="g-pill">Recuperás clases avisando 3 h antes</span>
             </div>
+        </div>
+    </section>
 
-            <!-- Planes disponibles -->
-            <div class="mb-8">
-                {% if planes_disponibles %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {% for plan in planes_disponibles %}
-                            <div class="group relative bg-blanco rounded-2xl shadow-xl border border-secundario/30 overflow-visible hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:border-principal/50">
-                                <!-- Decorative gradient overlay -->
-                                <div class="absolute inset-0 bg-gradient-to-br from-principal/5 to-secundario/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"></div>
+    <!-- Planes -->
+    <section class="pr-plans">
+        <div class="g-container">
+            {% if planes_disponibles %}
+                <div class="pr-grid">
+                    {% for plan in planes_disponibles %}
+                    <article class="pr-card{% if plan.destacado %} pr-card--featured{% endif %} g-reveal" style="--i: {{ forloop.counter0 }}">
+                        {% if plan.destacado %}<span class="pr-ribbon">Más elegido</span>{% endif %}
 
-                                <!-- Featured badge for most popular plan (example: 2 classes) -->
-                                {% if plan.clases_por_semana == 2 %}
-                                <div class="absolute -top-3 -right-3 bg-gradient-to-r from-exito to-exito/80 text-blanco text-xs font-bold px-4 py-2 rounded-full shadow-xl transform rotate-12 z-20 border-2 border-blanco">
-                                    <span class="drop-shadow-sm">Más Popular</span>
-                                </div>
-                                {% endif %}
+                        <div class="pr-card__top">
+                            <span class="pr-tag">{% if plan.es_reformer %}Pilates Reformer{% else %}Plan mensual{% endif %}</span>
+                        </div>
 
-                                <div class="relative p-6">
-                                    <!-- Plan header -->
-                                    <div class="text-center mb-5">
-                                        <h3 class="text-xl font-bold text-principal mb-2 font-cinzel group-hover:text-principal-dark transition-colors duration-300">
-                                            {{ plan.nombre }}
-                                        </h3>
+                        <div class="pr-card__rhythm">
+                            <span class="pr-card__count">{{ plan.clases_por_semana }}</span>
+                            <span class="pr-card__count-label">clase{{ plan.clases_por_semana|pluralize }}<br>por semana</span>
+                        </div>
 
-                                        <!-- Plan price - destacado -->
-                                        <div class="mb-3">
-                                            <span class="text-3xl font-black text-exito precio-formato group-hover:scale-110 transition-transform duration-300 inline-block">
-                                                ${{ plan.precio_mensual }}
-                                            </span>
-                                            <span class="text-gris-medio text-sm font-medium ml-1">/mes</span>
-                                        </div>
+                        <div class="pr-week" aria-label="{{ plan.clases_por_semana }} clase{{ plan.clases_por_semana|pluralize }} por semana">
+                            {% for dia, activo in plan.semana %}
+                                <span class="pr-week__day{% if activo %} is-on{% endif %}">{{ dia }}</span>
+                            {% endfor %}
+                        </div>
 
-                                        <!-- Clases por semana - visual mejorado -->
-                                        <div class="inline-flex items-center bg-secundario/20 rounded-full px-3 py-1 mb-4">
-                                            <svg class="w-4 h-4 text-principal mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
-                                            </svg>
-                                            <span class="text-base font-semibold text-principal">
-                                                {{ plan.clases_por_semana }} clase{{ plan.clases_por_semana|pluralize:"s" }}
-                                            </span>
-                                            <span class="text-xs text-gris-medio ml-1">por semana</span>
-                                        </div>
-                                    </div>
+                        <h2 class="pr-card__name">{{ plan.nombre }}</h2>
 
-                                    <!-- Plan features/benefits -->
-                                    <div class="mb-5">
-                                        <ul class="space-y-2 text-sm">
-                                            <li class="flex items-center text-gris-oscuro">
-                                                <svg class="w-4 h-4 text-exito mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                </svg>
-                                                Acceso a todas las sedes
-                                            </li>
-                                            <li class="flex items-center text-gris-oscuro">
-                                                <svg class="w-4 h-4 text-exito mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                </svg>
-                                                Modificación de reservas
-                                            </li>
-                                            {% if plan.descripcion %}
-                                            <li class="flex items-center text-gris-oscuro">
-                                                <svg class="w-4 h-4 text-exito mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                </svg>
-                                                {{ plan.descripcion }}
-                                            </li>
-                                            {% endif %}
-                                        </ul>
-                                    </div>
+                        <div class="pr-price">
+                            <span class="pr-price__currency">$</span>
+                            <span class="pr-price__value">{{ plan.precio_fmt }}</span>
+                            <span class="pr-price__period">/ mes</span>
+                        </div>
+                        <span class="pr-per-class">≈ ${{ plan.por_clase_fmt }} por clase</span>
 
-                                    <!-- CTA: como no hay sesión, invita a crear cuenta -->
-                                    <a href="{% url 'accounts:signup' %}" class="w-full block bg-gradient-to-r from-principal to-principal-dark text-blanco py-2 px-4 rounded-xl font-semibold hover:from-principal-dark hover:to-principal transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-102 focus:outline-none focus:ring-4 focus:ring-principal/30 text-center">
-                                        <span class="flex items-center justify-center text-sm">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            Registrarme
-                                        </span>
-                                    </a>
-                                </div>
+                        <ul class="pr-features">
+                            <li>Acceso a las dos sedes</li>
+                            <li>Reservás y modificás desde la web</li>
+                            <li>Recuperás clases dentro de los 7 días</li>
+                            {% if plan.descripcion %}<li>{{ plan.descripcion }}</li>{% endif %}
+                        </ul>
 
-                                <!-- Subtle bottom border accent -->
-                                <div class="h-1 bg-gradient-to-r from-principal via-secundario to-principal transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-12">
-                        <svg class="w-16 h-16 text-gris-medio mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <h3 class="text-lg font-medium text-principal mb-2">No hay planes disponibles</h3>
-                        <p class="text-gris-medio">Contacta al administrador para más información.</p>
-                    </div>
-                {% endif %}
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'gravity:seleccionar_plan' %}" class="g-btn {% if plan.destacado %}g-btn--sand{% else %}g-btn--primary{% endif %} g-btn--block">Elegir este plan</a>
+                        {% else %}
+                            <a href="{% url 'accounts:signup' %}" class="g-btn {% if plan.destacado %}g-btn--sand{% else %}g-btn--primary{% endif %} g-btn--block">Empezar con este plan</a>
+                        {% endif %}
+                    </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="g-glass cd-empty">
+                    <h3>No hay planes disponibles</h3>
+                    <p>Escribinos por WhatsApp y te contamos las opciones.</p>
+                </div>
+            {% endif %}
+
+            {% if not user.is_authenticated %}
+                <p class="pr-login">¿Ya tenés cuenta? <a href="{% url 'accounts:login' %}">Iniciá sesión</a> para elegir tu plan.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Cómo empezar -->
+    <section class="g-section g-section--white">
+        <div class="g-container">
+            <div class="g-head g-reveal">
+                <span class="g-eyebrow">Cómo empezar</span>
+                <h2 class="g-title">En tres pasos estás en el reformer</h2>
             </div>
+            <ol class="pr-steps">
+                <li class="g-card pr-step g-reveal">
+                    <span class="pr-step__num">1</span>
+                    <h3>Creá tu cuenta</h3>
+                    <p>Es gratis y te lleva un minuto.</p>
+                </li>
+                <li class="g-card pr-step g-reveal">
+                    <span class="pr-step__num">2</span>
+                    <h3>Completá tu perfil</h3>
+                    <p>Contanos si tenés alguna lesión para adaptar cada ejercicio.</p>
+                </li>
+                <li class="g-card pr-step g-reveal">
+                    <span class="pr-step__num">3</span>
+                    <h3>Elegí tu plan y reservá</h3>
+                    <p>Elegí sede, día y horario. Nosotros aprobamos tu plan y listo.</p>
+                </li>
+            </ol>
+        </div>
+    </section>
 
-            <!-- Nota orientativa -->
-            <p class="text-center text-sm text-gris-medio mb-6">
-                Al crear tu cuenta, te vamos a pedir que completes tu perfil y luego podrás elegir tu plan para empezar a reservar.
-            </p>
-
-            <!-- Botón de navegación -->
-            <div class="text-center">
-                <a href="{% url 'accounts:login' %}" class="inline-block bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
-                    ¿Ya tenés cuenta? Iniciá sesión
-                </a>
-            </div>
-
-            <!-- Información adicional -->
-            <div class="mt-12 bg-advertencia/10 border border-advertencia/30 rounded-lg p-6">
-                <h3 class="text-lg font-semibold text-gris-oscuro mb-3 flex items-center">
-                    <svg class="w-5 h-5 text-advertencia mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Información Importante
-                </h3>
-                <ul class="space-y-2 text-gris-oscuro text-sm">
-                    <li class="flex items-start">
-                        <span class="text-principal font-bold mr-2 mt-0.5">•</span>
-                        Tu plan es válido hasta el último día del mes en curso.
-                    </li>
-                    <li class="flex items-start">
-                        <span class="text-principal font-bold mr-2 mt-0.5">•</span>
-                        Las clases no utilizadas no se acumulan para el siguiente mes.
-                    </li>
-                    <li class="flex items-start">
-                        <span class="text-principal font-bold mr-2 mt-0.5">•</span>
-                        Los planes temporales no se renuevan automáticamente.
-                    </li>
+    <!-- Información importante -->
+    <section class="g-section g-section--cream">
+        <div class="g-container pr-info">
+            <div class="g-glass pr-info__card g-reveal">
+                <span class="g-eyebrow">Bueno saber</span>
+                <h3>Cómo funcionan los planes</h3>
+                <ul class="pr-info__list">
+                    <li>Tu plan es válido hasta el último día del mes en curso.</li>
+                    <li>Las clases no utilizadas no se acumulan para el mes siguiente.</li>
+                    <li>Los planes temporales no se renuevan automáticamente.</li>
+                    <li>La cuota se abona del 1 al 10 de cada mes; en efectivo tiene 10% de descuento dentro de ese período.</li>
                 </ul>
+            </div>
 
-                <div class="mt-4 pt-4 border-t border-advertencia/30">
-                    <p class="text-sm font-semibold text-gris-oscuro mb-2">Política de cancelación:</p>
-                    <ul class="space-y-1 text-sm text-gris-oscuro">
-                        <li class="flex items-center">
-                            <span class="inline-block w-2 h-2 rounded-full bg-exito mr-2 flex-shrink-0"></span>
-                            <span><strong>Del 1 al 4 del mes:</strong> no se cobra el mes en curso.</span>
-                        </li>
-                        <li class="flex items-center">
-                            <span class="inline-block w-2 h-2 rounded-full bg-advertencia mr-2 flex-shrink-0"></span>
-                            <span><strong>Del 5 al 9 del mes:</strong> se cobra la mitad del mes.</span>
-                        </li>
-                        <li class="flex items-center">
-                            <span class="inline-block w-2 h-2 rounded-full bg-error mr-2 flex-shrink-0"></span>
-                            <span><strong>A partir del día 10:</strong> se cobra el mes completo.</span>
-                        </li>
-                    </ul>
+            <div class="g-glass pr-info__card g-reveal">
+                <span class="g-eyebrow">Política de cancelación</span>
+                <h3>Si cancelás tu plan</h3>
+                <div class="pr-timeline">
+                    <div class="pr-timeline__item pr-timeline__item--ok">
+                        <span class="pr-timeline__days">Del 1 al 4</span>
+                        <span class="pr-timeline__text">No se cobra el mes en curso</span>
+                    </div>
+                    <div class="pr-timeline__item pr-timeline__item--warn">
+                        <span class="pr-timeline__days">Del 5 al 9</span>
+                        <span class="pr-timeline__text">Se cobra la mitad del mes</span>
+                    </div>
+                    <div class="pr-timeline__item pr-timeline__item--full">
+                        <span class="pr-timeline__days">Desde el 10</span>
+                        <span class="pr-timeline__text">Se cobra el mes completo</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+{% endblock %}
 
-    <!-- Script para formatear precios -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const precios = document.querySelectorAll('.precio-formato');
-            precios.forEach(function(precio) {
-                const valor = precio.textContent.replace('$', '');
-                const formateado = parseInt(valor).toLocaleString('es-AR');
-                precio.textContent = '$' + formateado;
-            });
-        });
-    </script>
+{% block extra_js %}
+<script>
+    // Animación de entrada
+    (function () {
+        const items = document.querySelectorAll('.g-reveal');
+        if (!('IntersectionObserver' in window)) { items.forEach(el => el.classList.add('is-visible')); return; }
+        const io = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+        }, { threshold: 0.12 });
+        items.forEach(el => io.observe(el));
+    })();
+</script>
 {% endblock %}

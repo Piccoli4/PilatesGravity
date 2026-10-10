@@ -1,92 +1,94 @@
-// Muestra el menu
-document.getElementById('menuToggle').addEventListener('click', function () {
-    document.querySelector('nav ul').classList.toggle('show');
-});
+// Navbar de vidrio: menú móvil
+const navMenu = document.getElementById('navMenu');
+const menuToggle = document.getElementById('menuToggle');
 
-// Cierra el menú al hacer clic en cualquier ítem del nav en pantallas menores a 768px
-document.querySelectorAll('nav ul li a').forEach(link => {
-    link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-            document.querySelector('nav ul').classList.remove('show');
-        }
-    });
-});
-
-// Muestra el chat al hacer clic en el botón de WhatsApp o en la card de teléfono en la section de contacto
-function openChatBox() {
-    document.getElementById('chatBox').style.display = 'block';
-    document.getElementById('openChat').style.display = 'none';
-
-    // Oculta la notificación si existe
-    const notif = document.getElementById('whatsappNotification');
-    if (notif) notif.style.display = 'none';
-
-    // Opcional: enfocar el textarea
-    document.getElementById('whatsappMessage').focus();
+function setMenu(abierto) {
+    navMenu.classList.toggle('show', abierto);
+    menuToggle.setAttribute('aria-expanded', abierto ? 'true' : 'false');
 }
 
-document.getElementById('openChat').addEventListener('click', openChatBox);
-
-// Verificar si existe el elemento antes de agregar el event listener
-const openChatFromPhone = document.getElementById('openChatFromPhone');
-if (openChatFromPhone) {
-    openChatFromPhone.addEventListener('click', function (e) {
-        e.preventDefault();
-        openChatBox();
-    });
-}
-
-// Muestra una notificación tras 3 segundos
-setTimeout(() => {
-    const notif = document.getElementById('whatsappNotification');
-    if (notif) {
-        notif.style.display = 'flex';
-    }
-}, 3000);
-
-// Función para cerrar el chat
-function closeChatBox() {
-    document.getElementById('chatBox').style.display = 'none';
-    document.getElementById('openChat').style.display = 'flex';
-}
-
-// Cierra el chat al hacer clic en el botón de cerrar
-document.getElementById('closeChat').addEventListener('click', function () {
-    closeChatBox();
+menuToggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    setMenu(!navMenu.classList.contains('show'));
 });
 
-// Cierra el chat al hacer clic fuera de él
+// Cierra el menú al elegir una opción o al tocar fuera
+navMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => setMenu(false));
+});
 document.addEventListener('click', function (e) {
+    if (navMenu.classList.contains('show') && !navMenu.contains(e.target)) setMenu(false);
+});
+
+// Navbar más sólida al scrollear
+const siteNav = document.getElementById('siteNav');
+function marcarScroll() {
+    siteNav.classList.toggle('is-scrolled', window.scrollY > 24);
+}
+window.addEventListener('scroll', marcarScroll, { passive: true });
+marcarScroll();
+
+// ── Chat de WhatsApp ──────────────────────────────────────────────
+(function () {
+    const chat = document.getElementById('gChat');
     const chatBox = document.getElementById('chatBox');
-    const openChatButton = document.getElementById('openChat');
-    const openChatPhone = document.getElementById('openChatFromPhone');
+    const openBtn = document.getElementById('openChat');
+    const closeBtn = document.getElementById('closeChat');
+    const badge = document.getElementById('whatsappNotification');
+    const textarea = document.getElementById('whatsappMessage');
+    const sendBtn = document.getElementById('startWhatsapp');
+    if (!chat || !chatBox || !openBtn) return;
 
-    if (
-        chatBox.style.display === 'block' &&
-        !chatBox.contains(e.target) &&
-        !openChatButton.contains(e.target) &&
-        (!openChatPhone || !openChatPhone.contains(e.target))
-    ) {
-        closeChatBox();
+    const TELEFONO = '5493425114448';
+    const MENSAJE_POR_DEFECTO = '¡Hola! Quiero saber más sobre Pilates Gravity';
+
+    function setChat(abierto) {
+        chat.classList.toggle('is-open', abierto);
+        chatBox.setAttribute('aria-hidden', abierto ? 'false' : 'true');
+        openBtn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        if (abierto) {
+            if (badge) badge.classList.remove('is-on');
+            setTimeout(() => textarea && textarea.focus({ preventScroll: true }), 250);
+        }
     }
-});
 
-// Envía el mensaje de WhatsApp al hacer clic en "Iniciar chat"
-document.getElementById('startWhatsapp').addEventListener('click', function (e) {
-    const message = document.getElementById('whatsappMessage').value.trim();
-    if (message !== '') {
-        const phoneNumber = '5493425114448';
-        const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-        window.open(whatsappURL, '_blank');
+    openBtn.addEventListener('click', e => { e.stopPropagation(); setChat(!chat.classList.contains('is-open')); });
+    if (closeBtn) closeBtn.addEventListener('click', () => setChat(false));
 
-            // Cierra el chat y limpia el mensaje
-        document.getElementById('chatBox').style.display = 'none';
-        document.getElementById('openChat').style.display = 'flex';
-        document.getElementById('whatsappMessage').value = '';
-    } else {
-        alert('Por favor escribí un mensaje antes de enviar.');
+    // La tarjeta de WhatsApp de la sección Contacto también abre el chat
+    const desdeContacto = document.getElementById('openChatFromPhone');
+    if (desdeContacto) {
+        desdeContacto.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); setChat(true); });
     }
-});
+
+    // Respuestas rápidas
+    document.querySelectorAll('[data-chat-chip]').forEach(chip => {
+        chip.addEventListener('click', () => { textarea.value = chip.dataset.chatChip; textarea.focus(); });
+    });
+
+    // Enviar: abre WhatsApp una sola vez con el mensaje (o uno por defecto)
+    function enviar() {
+        const mensaje = (textarea.value || '').trim() || MENSAJE_POR_DEFECTO;
+        window.open('https://wa.me/' + TELEFONO + '?text=' + encodeURIComponent(mensaje), '_blank', 'noopener');
+        textarea.value = '';
+        setChat(false);
+    }
+    if (sendBtn) sendBtn.addEventListener('click', enviar);
+    if (textarea) {
+        textarea.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+        });
+    }
+
+    // Cerrar al tocar fuera o con Escape
+    document.addEventListener('click', e => {
+        if (chat.classList.contains('is-open') && !chat.contains(e.target)) setChat(false);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') setChat(false); });
+
+    // Aviso de mensaje nuevo a los pocos segundos
+    setTimeout(() => { if (badge && !chat.classList.contains('is-open')) badge.classList.add('is-on'); }, 4000);
+})();
 
 // Confirmación antes de cerrar sesión
 document.addEventListener('DOMContentLoaded', function() {
@@ -99,12 +101,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-// ── PWA Service Worker ────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW registrado:', reg.scope))
-            .catch(err => console.log('SW error:', err));
-    });
-}
+// El registro del service worker está en templates/base.html

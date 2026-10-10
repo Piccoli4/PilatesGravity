@@ -1,93 +1,79 @@
 {% load static %}
-
-<!-- Contenido de Contacto -->
-<section id="Contacto" class="bg-[#fdfdfd] py-20 px-5 relative">
-    <div class="container mx-auto">
-        <div class="section-title text-center mb-12">
-            <h2 class="text-3xl font-bold text-[#5D768B] mt-2 mb-4">Contáctanos</h2>
-            <div class="divider w-16 h-1 bg-[#C8B39B] mx-auto mb-4"></div>
-            <p class="max-w-[1200px] my-5 mx-auto text-[#666]">¿Tienes alguna pregunta o quieres reservar una clase?
-                Estamos aquí para ayudarte.</p>
+<!-- Sedes y contacto -->
+<section id="Contacto" class="g-section g-section--white">
+    <div class="g-container">
+        <div class="g-head g-reveal">
+            <span class="g-eyebrow">Nuestras sedes</span>
+            <h2 class="g-title">Dos estudios en Santa Fe Capital</h2>
+            <p class="g-lead">¿Tenés alguna pregunta o querés reservar una clase? Visitanos o escribinos, estamos para ayudarte.</p>
         </div>
 
-        <div class="contact-content flex flex-col gap-[10px] lg:flex-row">
-            <div
-                class="contact-info flex-1 bg-[#F8EFE5] p-[30px] rounded-[10px] shadow-[0_10px_25px_rgba(0,0,0,0.05)] text-center">
-                <h3 class="text-2xl text-[#5d768b] mb-6">Información de Contacto</h3>
-                <div class="contact-cards-container flex flex-row justify-center content-center">
-                    <a href="https://www.google.com/maps/place/La+Rioja+3044,+S3000+Santa+Fe+de+la+Vera+Cruz,+Santa+Fe"
-                        target="_blank" rel="noopener noreferrer"
-                        class="no-underline hover:scale-105 transition-transform duration-300 ease-in-ou">
-                        <div
-                            class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
-                            <img src="{% static 'icons/location.png' %}" alt="Icono de ubicación"
-                                class="w-[50px] h-auto mb-[3px]">
-                            <h4 class="my-[2px] text-black">Dirección</h4>
-                            <p class="my-[2px] text-black">Sede Central: La Rioja 3044, Santa Fe Capital</p>
-                            <p class="my-[2px] text-black">Sede 2: 9 de Julio 3698, Santa Fe Capital</p>
-                        </div>
-                    </a>
-                    <a href="#" id="openChatFromPhone"
-                        class="no-underline hover:scale-105 transition-transform duration-300 ease-in-ou">
-                        <div
-                            class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
-                            <img src="{% static 'icons/telefono.png' %}" alt="Icono de teléfono"
-                                class="w-[50px] h-auto mb-[3px]">
-                            <h4 class="my-[2px] text-black">Teléfono</h4>
-                            <p class="my-[2px] text-black">+54 342 511 4448</p>
-                        </div>
-                    </a>
-                    <a href="mailto:gravity@gmail.com?subject=Consulta&body=Hola, quiero hacer una consulta sobre..."
-                        target="_blank" rel="noopener noreferrer"
-                        class="no-underline hover:scale-105 transition-transform duration-300 ease-in-ou">
-                        <div
-                            class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
-                            <img src="{% static 'icons/email.png' %}" alt="Icono de email"
-                                class="w-[50px] h-auto mb-[3px]">
-                            <h4 class="my-[2px] text-black">E-mail</h4>
-                            <p class="my-[2px] text-black">pilatesgravity@gmail.com</p>
-                        </div>
-                    </a>
-                    <a href="https://www.instagram.com/pilatesgravity/" target="_blank" rel="noopener noreferrer"
-                        class="no-underline hover:scale-105 transition-transform duration-300 ease-in-out">
-                        <div
-                            class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
-                            <img src="{% static 'icons/instagram.png' %}" alt="Icono de email"
-                                class="w-[50px] h-auto mb-[3px]">
-                            <h4 class="my-[2px] text-black">Instagram</h4>
-                            <p class="my-[2px] text-black">@pilatesgravity</p>
-                        </div>
-                    </a>
-                    <a href="{% url 'gravity:clases_disponibles' %}"
-                        class="no-underline hover:scale-105 transition-transform duration-300 ease-in-out">
-                        <div
-                            class="contact-card flex flex-col items-center text-center p-5 cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
-                            <img src="{% static 'icons/clock.png' %}" alt="Icono de horarios"
-                                class="w-[50px] h-auto mb-[3px]">
-                            <h4 class="my-[2px] text-black">Horarios</h4>
-                            <p class="my-[2px] text-black">
-                                Ver Clases Disponibles
-                            </p>
-                        </div>
-                    </a>
+        <div class="g-sedes">
+            <!-- Sede Central -->
+            <article class="g-card g-sede g-reveal">
+                <div class="g-sede__media">
+                    <img src="{% static 'scroll_world/stills/03_cadillac.webp' %}" alt="Sede Central de Pilates Gravity" loading="lazy">
+                    <span class="g-sede__tag">Sede Central</span>
                 </div>
-            </div>
+                <div class="g-sede__body">
+                    <h3 class="g-sede__name">La Rioja 3044</h3>
+                    <p class="g-sede__addr">
+                        <span class="g-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+                        Santa Fe Capital
+                    </p>
+                    <div class="g-sede__map">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3396.619129229321!2d-60.71445542475522!3d-31.64427707415752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b5a9b0f73ec06d%3A0xcd46785c2438f588!2sLa%20Rioja%203044%2C%20S3000%20Santa%20Fe%20de%20la%20Vera%20Cruz%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1755964929156!5m2!1ses-419!2sar"
+                            title="Mapa Sede Central" loading="lazy" allowfullscreen
+                            referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                    <a href="https://www.google.com/maps/place/La+Rioja+3044,+S3000+Santa+Fe+de+la+Vera+Cruz,+Santa+Fe"
+                       target="_blank" rel="noopener noreferrer" class="g-btn g-btn--ghost g-btn--sm" style="align-self:flex-start">Cómo llegar</a>
+                </div>
+            </article>
+
+            <!-- Sede 2 -->
+            <article class="g-card g-sede g-reveal">
+                <div class="g-sede__media">
+                    <img src="{% static 'scroll_world/stills/01_llegada.webp' %}" alt="Sede 2 de Pilates Gravity" loading="lazy">
+                    <span class="g-sede__tag">Sede 2</span>
+                </div>
+                <div class="g-sede__body">
+                    <h3 class="g-sede__name">9 de Julio 3698</h3>
+                    <p class="g-sede__addr">
+                        <span class="g-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+                        Santa Fe Capital
+                    </p>
+                    <div class="g-sede__map">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3397.0470325170086!2d-60.70969451933478!3d-31.632562607543367!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b5a9c72649d965%3A0x4fa58c19f86fcb02!2s9%20de%20Julio%203696%2C%20S3002EXD%20Santa%20Fe%20de%20la%20Vera%20Cruz%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1755964478655!5m2!1ses-419!2sar"
+                            title="Mapa Sede 2" loading="lazy" allowfullscreen
+                            referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                    <a href="https://www.google.com/maps/search/?api=1&query=9+de+Julio+3698,+Santa+Fe"
+                       target="_blank" rel="noopener noreferrer" class="g-btn g-btn--ghost g-btn--sm" style="align-self:flex-start">Cómo llegar</a>
+                </div>
+            </article>
         </div>
 
-        <div class="row flex flex-col lg:flex-row gap-6 mt-[50px]">
-            <div class="map flex-1 h-[300px] bg-[#e8e8e8] rounded-xl overflow-hidden">
-                <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3396.619129229321!2d-60.71445542475522!3d-31.64427707415752!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b5a9b0f73ec06d%3A0xcd46785c2438f588!2sLa%20Rioja%203044%2C%20S3000%20Santa%20Fe%20de%20la%20Vera%20Cruz%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1755964929156!5m2!1ses-419!2sar"
-                    width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade"></iframe>
-            </div>
-            <div class="map flex-1 h-[300px] bg-[#e8e8e8] rounded-xl overflow-hidden">
-                <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3397.0470325170086!2d-60.70969451933478!3d-31.632562607543367!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b5a9c72649d965%3A0x4fa58c19f86fcb02!2s9%20de%20Julio%203696%2C%20S3002EXD%20Santa%20Fe%20de%20la%20Vera%20Cruz%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1755964478655!5m2!1ses-419!2sar"
-                    width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade"></iframe>
-            </div>
+        <!-- Canales de contacto -->
+        <div class="g-contact-strip">
+            <a href="#" id="openChatFromPhone" class="g-card g-contact g-reveal">
+                <span class="g-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 21l2.1-5.5A8.4 8.4 0 1 1 21 11.5Z"/></svg></span>
+                <span><small>WhatsApp</small><strong>+54 342 511 4448</strong></span>
+            </a>
+            <a href="mailto:pilatesgravity@gmail.com?subject=Consulta&body=Hola, quiero hacer una consulta sobre..." class="g-card g-contact g-reveal">
+                <span class="g-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+                <span><small>E-mail</small><strong>pilatesgravity@gmail.com</strong></span>
+            </a>
+            <a href="https://www.instagram.com/pilatesgravity/" target="_blank" rel="noopener noreferrer" class="g-card g-contact g-reveal">
+                <span class="g-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></span>
+                <span><small>Instagram</small><strong>@pilatesgravity</strong></span>
+            </a>
+            <a href="{% url 'gravity:clases_disponibles' %}" class="g-card g-contact g-reveal">
+                <span class="g-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                <span><small>Horarios</small><strong>Ver clases disponibles</strong></span>
+            </a>
         </div>
-
     </div>
 </section>

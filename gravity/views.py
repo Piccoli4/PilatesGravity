@@ -631,7 +631,28 @@ def precios_publicos(request):
     """
     Vista pública para mostrar los planes y precios sin necesidad de login.
     """
-    planes_disponibles = PlanPago.objects.filter(activo=True).order_by('clases_por_semana')
+    planes_disponibles = list(PlanPago.objects.filter(activo=True).order_by('clases_por_semana', 'precio_mensual'))
+
+    def formato_ars(valor):
+        return f"{int(round(valor)):,}".replace(',', '.')
+
+    # Días de la semana (L a S) que se marcan en la tarjeta según las clases semanales
+    ritmo_por_clases = {1: {2}, 2: {1, 3}, 3: {0, 2, 4}, 4: {0, 1, 3, 4}, 5: {0, 1, 2, 3, 4}}
+    destacado_asignado = False
+    for plan in planes_disponibles:
+        clases = plan.clases_por_semana or 1
+        plan.precio_fmt = formato_ars(plan.precio_mensual)
+        plan.por_clase_fmt = formato_ars(plan.precio_mensual / (clases * 4))
+        plan.es_reformer = 'reformer' in plan.nombre.lower()
+        marcados = ritmo_por_clases.get(clases, set(range(min(clases, 6))))
+        plan.semana = [(dia, i in marcados) for i, dia in enumerate(['L', 'M', 'M', 'J', 'V', 'S'])]
+        # El plan más elegido: el primero de 2 clases semanales
+        plan.destacado = not destacado_asignado and clases == 2 and not plan.es_reformer
+        destacado_asignado = destacado_asignado or plan.destacado
+
+    # Primero los planes generales y después los de Reformer
+    planes_disponibles.sort(key=lambda p: (p.es_reformer, p.clases_por_semana, p.precio_mensual))
+
     context = {
         'planes_disponibles': planes_disponibles,
     }
@@ -6161,56 +6182,86 @@ def manifest_json(request):
     }
     return JsonResponse(manifest)
 
+def _version_deploy():
+    """
+    Versión del service worker: el commit desplegado (cambia con cada git pull).
+    Así cada deploy instala un service worker nuevo y los clientes se actualizan solos.
+    Si no se puede leer git, usa la fecha del día.
+    """
+    from pathlib import Path
+    from django.conf import settings
+    try:
+        git_dir = Path(settings.BASE_DIR) / '.git'
+        head = (git_dir / 'HEAD').read_text().strip()
+        if head.startswith('ref:'):
+            ref = head.split(' ', 1)[1].strip()
+            ref_file = git_dir / ref
+            if ref_file.exists():
+                return ref_file.read_text().strip()[:12]
+            # refs empaquetadas (después de un git gc)
+            for linea in (git_dir / 'packed-refs').read_text().splitlines():
+                if linea.endswith(' ' + ref):
+                    return linea.split(' ', 1)[0][:12]
+        return head[:12]
+    except Exception:
+        return timezone.localtime(timezone.now()).strftime('%Y%m%d')
+
+
 def service_worker_js(request):
-    from django.utils.timezone import now
-    # Cambiar esta versión en cada deploy para forzar actualización en clientes
-    version = now().strftime('%Y%m%d')  # Ej: '20250410' — cambia automáticamente cada día
+    version = _version_deploy()
     sw_content = f"""
         const CACHE_NAME = 'pilates-gravity-{version}';
-        const STATIC_ASSETS = [
+        const OFFLINE_ASSETS = [
             '/',
             '/static/css/tailwind-output.css',
-            '/static/js/base_scripts.js',
             '/static/icons/icon-192x192.png',
         ];
 
         self.addEventListener('install', (event) => {{
             event.waitUntil(
-                caches.open(CACHE_NAME).then((cache) => {{
-                    return cache.addAll(STATIC_ASSETS);
-                }})
+                caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_ASSETS))
             );
             self.skipWaiting();
         }});
 
         self.addEventListener('activate', (event) => {{
             event.waitUntil(
-                caches.keys().then((cacheNames) => {{
-                    return Promise.all(
-                        cacheNames
-                            .filter((name) => name !== CACHE_NAME)
-                            .map((name) => caches.delete(name))
-                    );
-                }}).then(() => {{
-                    return self.clients.matchAll({{ type: 'window' }});
-                }}).then((clients) => {{
-                    clients.forEach(client => client.postMessage({{ type: 'SW_UPDATED' }}));
-                }})
+                caches.keys().then((cacheNames) => Promise.all(
+                    cacheNames
+                        .filter((name) => name !== CACHE_NAME)
+                        .map((name) => caches.delete(name))
+                )).then(() => self.clients.claim())
+                  .then(() => self.clients.matchAll({{ type: 'window' }}))
+                  .then((clients) => {{
+                      clients.forEach(client => client.postMessage({{ type: 'SW_UPDATED' }}));
+                  }})
             );
-            self.clients.claim();
         }});
 
         self.addEventListener('fetch', (event) => {{
-            if (event.request.method !== 'GET') return;
+            const req = event.request;
+            if (req.method !== 'GET') return;
 
-            event.respondWith(
-                caches.match(event.request).then((cached) => {{
-                    return cached || fetch(event.request);
-                }})
-            );
+            // Páginas: siempre primero la red (contenido al día); la caché solo sin conexión
+            if (req.mode === 'navigate') {{
+                event.respondWith(
+                    fetch(req).catch(() => caches.match(req).then(r => r || caches.match('/')))
+                );
+                return;
+            }}
+
+            // Archivos precargados: red primero y caché como respaldo
+            const url = new URL(req.url);
+            if (url.origin === location.origin && OFFLINE_ASSETS.includes(url.pathname)) {{
+                event.respondWith(fetch(req).catch(() => caches.match(req)));
+            }}
+            // El resto (videos, imágenes, CSS/JS versionados) va directo a la red
         }});
     """
-    return HttpResponse(sw_content, content_type='application/javascript')
+    response = HttpResponse(sw_content, content_type='application/javascript')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Service-Worker-Allowed'] = '/'
+    return response
 
 # ==============================================================================
 # VISTAS PÚBLICAS DE LINKS PARA REDES SOCIALES

@@ -3,380 +3,209 @@
 
 {% block title %}Clases Disponibles - Pilates Gravity{% endblock %}
 
-{% block extra_css %}
-    <style>
-        .card-hover-effect {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover-effect:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(93, 118, 139, 0.15);
-        }
-        
-        .ocupacion-bar {
-            transition: width 0.8s ease-in-out;
-        }
-        
-        .status-disponible {
-            background: linear-gradient(135deg, #28A745 0%, #20C997 100%);
-        }
-        
-        .status-limitado {
-            background: linear-gradient(135deg, #FFC107 0%, #FD7E14 100%);
-        }
-        
-        .status-completo {
-            background: linear-gradient(135deg, #DC3545 0%, #E74C3C 100%);
-        }
-        
-        .pulse-ring {
-            animation: pulse-ring 2s ease-in-out infinite;
-        }
-        
-        .sede-header {
-            background: linear-gradient(135deg, #5D768B 0%, #C8B39B 100%);
-        }
-        
-        @keyframes pulse-ring {
-            0% { transform: scale(1); opacity: 0.3; }
-            50% { transform: scale(1.05); opacity: 0.1; }
-            100% { transform: scale(1.1); opacity: 0; }
-        }
-    </style>
-{% endblock %}
-
 {% block content %}
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-principal to-secundario text-white py-20 relative overflow-hidden min-h-[90vh]">
-        <div class="absolute inset-0 opacity-10">
-            <div class="w-96 h-96 bg-white rounded-full absolute -top-48 -right-48 pulse-ring"></div>
-            <div class="w-64 h-64 bg-white rounded-full absolute -bottom-32 -left-32 animate-float"></div>
-        </div>
-        
-        <div class="container mx-auto px-4 relative z-10">
-            <div class="max-w-4xl mx-auto text-center">
-                <h1 class="text-4xl md:text-5xl font-cinzel font-bold mb-6 animate-fadeInUp">
-                    Clases Disponibles
-                </h1>
-                <div class="w-24 h-1 bg-white mx-auto mb-6"></div>
-                <p class="text-xl md:text-2xl mb-8 leading-relaxed animate-fadeInUp" style="animation-delay: 0.2s;">
-                    Descubre nuestros horarios en ambas sedes y encuentra la clase perfecta para tu rutina
-                </p>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style="animation-delay: 0.4s;">
+    <!-- Hero -->
+    <section class="g-section g-section--cream cd-hero">
+        <div class="g-container cd-hero__grid">
+            <div class="cd-hero__copy g-reveal">
+                <span class="g-eyebrow">Horarios · Ambas sedes</span>
+                <h1 class="g-title cd-hero__title">Clases disponibles</h1>
+                <p class="g-lead">Descubrí nuestros horarios en las dos sedes y encontrá la clase perfecta para tu rutina.</p>
+                <div class="cd-hero__actions">
                     {% if user.is_authenticated %}
-                        <a href="{% url 'gravity:reservar_clase' %}" 
-                        class="bg-white text-principal px-8 py-3 rounded-lg font-semibold text-center inline-flex items-center justify-center transition-all duration-300 hover:shadow-btn-primary-hover">
-                            Reservar Ahora
-                        </a>
+                        <a href="{% url 'gravity:reservar_clase' %}" class="g-btn g-btn--primary">Reservar ahora</a>
                     {% else %}
-                        <a href="{% url 'accounts:signup' %}" 
-                        class="bg-white text-principal px-8 py-3 rounded-lg font-semibold text-center inline-flex items-center justify-center transition-all duration-300 hover:shadow-btn-primary-hover">
-                            Registrarse
-                        </a>
+                        <a href="{% url 'accounts:signup' %}" class="g-btn g-btn--primary">Crear cuenta</a>
                     {% endif %}
-                    <a href="{% url 'gravity:conoce_mas' %}" 
-                    class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold text-center inline-flex items-center justify-center hover:bg-white hover:text-principal transition-all duration-300">
-                        Conoce Más
-                    </a>
+                    <a href="{% url 'gravity:conoce_mas' %}" class="g-btn g-btn--ghost">Conocé más</a>
+                </div>
+            </div>
+            <div class="cd-hero__media g-reveal">
+                <img src="{% static 'scroll_world/stills/02_reformer.webp' %}" alt="Sala de reformers de Pilates Gravity">
+            </div>
+        </div>
+    </section>
+
+    <!-- Estadísticas y filtros -->
+    <section class="cd-panel-wrap">
+        <div class="g-container">
+            <div class="g-glass cd-panel g-reveal">
+                <div class="cd-stats">
+                    <div class="cd-stat">
+                        <strong>{{ estadisticas_generales.total }}</strong>
+                        <span>Clases totales</span>
+                    </div>
+                    <div class="cd-stat cd-stat--ok">
+                        <strong id="clases-disponibles">{{ estadisticas_generales.disponibles }}</strong>
+                        <span>Disponibles</span>
+                    </div>
+                    <div class="cd-stat cd-stat--warn">
+                        <strong id="clases-limitadas">{{ estadisticas_generales.limitadas }}</strong>
+                        <span>Cupos limitados</span>
+                    </div>
+                    <div class="cd-stat cd-stat--full">
+                        <strong id="clases-completas">{{ estadisticas_generales.completas }}</strong>
+                        <span>Completas</span>
+                    </div>
+                </div>
+
+                <div class="cd-filters">
+                    <label class="cd-field">
+                        <span>Tipo de clase</span>
+                        <select id="filtro-tipo">
+                            <option value="">Todos los tipos</option>
+                            <option value="Reformer">Pilates Reformer</option>
+                            <option value="Cadillac">Pilates Cadillac</option>
+                            <option value="Especial">Clase Especial</option>
+                        </select>
+                    </label>
+                    <label class="cd-field">
+                        <span>Sede</span>
+                        <select id="filtro-sede">
+                            <option value="">Todas las sedes</option>
+                            <option value="sede_principal">Sede Central - La Rioja 3044</option>
+                            <option value="sede_2">Sede 2 - 9 de Julio 3696</option>
+                        </select>
+                    </label>
+                    <label class="cd-field">
+                        <span>Día</span>
+                        <select id="filtro-dia">
+                            <option value="">Todos los días</option>
+                            <option value="Lunes">Lunes</option>
+                            <option value="Martes">Martes</option>
+                            <option value="Miércoles">Miércoles</option>
+                            <option value="Jueves">Jueves</option>
+                            <option value="Viernes">Viernes</option>
+                            <option value="Sábado">Sábado</option>
+                        </select>
+                    </label>
+                    <label class="cd-field">
+                        <span>Disponibilidad</span>
+                        <select id="filtro-disponibilidad">
+                            <option value="">Todas las clases</option>
+                            <option value="disponible">Solo disponibles</option>
+                            <option value="limitado">Cupos limitados</option>
+                            <option value="completo">Clases completas</option>
+                        </select>
+                    </label>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Filtros y estadísticas -->
-    <section class="py-12 bg-fondo">
-        <div class="container mx-auto px-4">
-            <div class="max-w-6xl mx-auto">
-                <!-- Estadísticas rápidas -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-                    <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-principal mb-2">{{ estadisticas_generales.total }}</div>
-                        <div class="text-sm text-gris-oscuro">Clases Totales</div>
+    <!-- Clases por sede -->
+    <section class="g-section g-section--cream cd-list">
+        <div class="g-container">
+            {% for sede_key, sede_info in clases_por_sede.items %}
+            <div class="cd-sede">
+                <div class="cd-sede__head">
+                    <div>
+                        <span class="g-eyebrow">Sede</span>
+                        <h2 class="cd-sede__name">{{ sede_info.nombre }}</h2>
                     </div>
-                    <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-exito mb-2" id="clases-disponibles">{{ estadisticas_generales.disponibles }}</div>
-                        <div class="text-sm text-gris-oscuro">Disponibles</div>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-advertencia mb-2" id="clases-limitadas">{{ estadisticas_generales.limitadas }}</div>
-                        <div class="text-sm text-gris-oscuro">Cupos Limitados</div>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 text-center shadow-wizard">
-                        <div class="text-3xl font-bold text-error mb-2" id="clases-completas">{{ estadisticas_generales.completas }}</div>
-                        <div class="text-sm text-gris-oscuro">Completas</div>
+                    <div class="cd-sede__pills">
+                        <span class="g-pill">{{ sede_info.estadisticas.total }} clases</span>
+                        <span class="g-pill cd-pill--ok">{{ sede_info.estadisticas.disponibles }} disponibles</span>
                     </div>
                 </div>
-                
-                <!-- Filtros -->
-                <div class="bg-white rounded-xl p-6 shadow-wizard mb-8">
-                    <h3 class="text-xl font-bold text-principal mb-4">Filtrar Clases</h3>
-                    <div class="grid md:grid-cols-4 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Tipo de Clase</label>
-                            <select id="filtro-tipo" class="w-full px-4 py-2 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal">
-                                <option value="">Todos los tipos</option>
-                                <option value="Reformer">Pilates Reformer</option>
-                                <option value="Cadillac">Pilates Cadillac</option>
-                                <option value="Especial">Clase Especial</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Sede</label>
-                            <select id="filtro-sede" class="w-full px-4 py-2 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal">
-                                <option value="">Todas las sedes</option>
-                                <option value="sede_principal">Sede Principal - La Rioja 3044</option>
-                                <option value="sede_2">Sede 2 - 9 de julio 3696</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Día de la Semana</label>
-                            <select id="filtro-dia" class="w-full px-4 py-2 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal">
-                                <option value="">Todos los días</option>
-                                <option value="Lunes">Lunes</option>
-                                <option value="Martes">Martes</option>
-                                <option value="Miércoles">Miércoles</option>
-                                <option value="Jueves">Jueves</option>
-                                <option value="Viernes">Viernes</option>
-                                <option value="Sábado">Sábado</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gris-oscuro mb-2">Disponibilidad</label>
-                            <select id="filtro-disponibilidad" class="w-full px-4 py-2 border border-gris-medio/30 rounded-lg focus:ring-2 focus:ring-principal/20 focus:border-principal">
-                                <option value="">Todas las clases</option>
-                                <option value="disponible">Solo disponibles</option>
-                                <option value="limitado">Cupos limitados</option>
-                                <option value="completo">Clases completas</option>
-                            </select>
-                        </div>
+
+                {% if sede_info.clases %}
+                    <div class="cd-grid" id="clases-grid-{{ sede_key }}">
+                        {% for clase_info in sede_info.clases %}
+                        <article class="g-card g-card--hover clase-card"
+                            data-tipo="{{ clase_info.clase.tipo }}"
+                            data-sede="{{ sede_key }}"
+                            data-dia="{{ clase_info.clase.dia }}"
+                            data-disponibilidad="{% if clase_info.esta_completa %}completo{% elif clase_info.cupos_disponibles <= 2 %}limitado{% else %}disponible{% endif %}">
+
+                            <div class="cd-card__top">
+                                <span class="cd-card__type">{{ clase_info.clase.tipo }}</span>
+                                <span class="cd-badge {% if clase_info.esta_completa %}cd-badge--full{% elif clase_info.cupos_disponibles <= 2 %}cd-badge--warn{% else %}cd-badge--ok{% endif %}">
+                                    {% if clase_info.esta_completa %}Completa{% elif clase_info.cupos_disponibles <= 2 %}Limitado{% else %}Disponible{% endif %}
+                                </span>
+                            </div>
+
+                            <h3 class="cd-card__name">{{ clase_info.clase.get_nombre_display }}</h3>
+
+                            <div class="cd-card__when">
+                                <span class="cd-card__day">{{ clase_info.clase.dia }}</span>
+                                <span class="cd-card__time">{{ clase_info.clase.horario|time:"H:i" }}</span>
+                            </div>
+
+                            <div class="cd-card__cupos">
+                                <div class="cd-card__cupos-row">
+                                    <span>Cupos libres</span>
+                                    <strong>{{ clase_info.cupos_disponibles }} <small>/ {{ clase_info.clase.cupo_maximo }}</small></strong>
+                                </div>
+                                <div class="cd-bar">
+                                    <div class="ocupacion-bar {% if clase_info.porcentaje_ocupacion >= 90 %}is-full{% elif clase_info.porcentaje_ocupacion >= 70 %}is-warn{% else %}is-ok{% endif %}"
+                                         data-width="{{ clase_info.porcentaje_ocupacion|default:0 }}"></div>
+                                </div>
+                                <small class="cd-card__pct">{{ clase_info.porcentaje_ocupacion|default:0 }}% ocupado</small>
+                            </div>
+
+                            <div class="cd-card__action">
+                                {% if user.is_authenticated %}
+                                    {% if clase_info.cupo_temporal %}
+                                        <a href="{% url 'gravity:reservar_cupo_temporal' clase_info.clase.id clase_info.cupo_temporal.fecha_str %}"
+                                           class="g-btn g-btn--sand g-btn--block">
+                                            Reservar el {{ clase_info.cupo_temporal.fecha|date:"d/m" }}
+                                        </a>
+                                        <p class="cd-card__note">
+                                            Cupo libre solo el {{ clase_info.cupo_temporal.fecha|date:"d/m" }}:
+                                            {{ clase_info.cupo_temporal.cupos }} lugar{{ clase_info.cupo_temporal.cupos|pluralize:"es" }} disponible{{ clase_info.cupo_temporal.cupos|pluralize }}.
+                                        </p>
+                                    {% elif clase_info.esta_completa %}
+                                        <button disabled class="g-btn g-btn--ghost g-btn--block">Clase completa</button>
+                                    {% else %}
+                                        <a href="{% url 'gravity:reservar_clase' %}?tipo={{ clase_info.clase.tipo }}&sede={{ sede_key }}&dia={{ clase_info.clase.dia }}&horario={{ clase_info.clase.horario|time:'H:i' }}"
+                                           class="g-btn g-btn--primary g-btn--block">
+                                            Reservar clase
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'accounts:signup' %}" class="g-btn g-btn--primary g-btn--block">Registrate para reservar</a>
+                                {% endif %}
+                            </div>
+                        </article>
+                        {% endfor %}
                     </div>
-                </div>
+                {% else %}
+                    <div class="g-glass cd-empty">
+                        <h3>No hay clases disponibles en esta sede</h3>
+                        <p>Pronto vamos a sumar más horarios.</p>
+                    </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="g-glass cd-empty">
+                <h3>No hay clases disponibles</h3>
+                <p>Volvé pronto para ver nuevas clases.</p>
+            </div>
+            {% endfor %}
+
+            <!-- Sin resultados para los filtros elegidos -->
+            <div id="no-results" class="g-glass cd-empty is-hidden">
+                <h3>No encontramos clases</h3>
+                <p>Probá cambiando los filtros para ver más opciones.</p>
             </div>
         </div>
     </section>
 
-    <!-- Lista de clases por sede -->
-    <section class="py-12 bg-blanco">
-        <div class="container mx-auto px-4">
-            <div class="max-w-6xl mx-auto">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl md:text-4xl font-cinzel font-bold text-principal mb-4">
-                        Nuestros Horarios
-                    </h2>
-                    <p class="text-lg text-gris-oscuro max-w-2xl mx-auto">
-                        Encuentra la clase perfecta para tu horario y nivel en cualquiera de nuestras sedes
-                    </p>
-                </div>
-                
-                <!-- Clases por sede -->
-                {% for sede_key, sede_info in clases_por_sede.items %}
-                <div class="mb-16">
-                    <!-- Header de la sede -->
-                    <div class="sede-header rounded-t-2xl p-6 text-principal mb-0">
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
-                            <div>
-                                <h3 class="text-2xl font-cinzel font-bold mb-2">
-                                    {{ sede_info.nombre }}
-                                </h3>
-                            </div>
-                            <div class="mt-4 md:mt-0 flex flex-wrap gap-4">
-                                <div class="bg-white/20 rounded-lg px-4 py-2 text-center">
-                                    <div class="text-lg font-bold">{{ sede_info.estadisticas.total }}</div>
-                                    <div class="text-sm opacity-90">Clases</div>
-                                </div>
-                                <div class="bg-white/20 rounded-lg px-4 py-2 text-center">
-                                    <div class="text-lg font-bold">{{ sede_info.estadisticas.disponibles }}</div>
-                                    <div class="text-sm opacity-90">Disponibles</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Grid de clases -->
-                    {% if sede_info.clases %}
-                        <div class="bg-white rounded-b-2xl p-6 shadow-wizard">
-                            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8" id="clases-grid-{{ sede_key }}">
-                                {% for clase_info in sede_info.clases %}
-                                <div class="bg-white rounded-2xl shadow-wizard p-6 card-hover-effect clase-card" 
-                                    data-tipo="{{ clase_info.clase.tipo }}" 
-                                    data-sede="{{ sede_key }}"
-                                    data-dia="{{ clase_info.clase.dia }}"
-                                    data-disponibilidad="{% if clase_info.esta_completa %}completo{% elif clase_info.cupos_disponibles <= 2 %}limitado{% else %}disponible{% endif %}">
-                                    
-                                    <!-- Header de la clase -->
-                                    <div class="flex items-center justify-between mb-6">
-                                        <div class="flex items-center space-x-3">
-                                            <!-- Icono del equipo -->
-                                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-principal to-secundario flex items-center justify-center">
-                                                {% if clase_info.clase.tipo == 'Reformer' %}
-                                                    <img src="{% static 'icons/reformer.png' %}" class="w-8 h-8 object-contain" alt="Reformer">
-                                                {% elif clase_info.clase.tipo == 'Cadillac' %}
-                                                    <img src="{% static 'icons/cadillac.png' %}" class="w-8 h-8 object-contain" alt="Cadillac">
-                                                {% else %}
-                                                    <img src="{% static 'icons/especial.png' %}" class="w-8 h-8 object-contain" alt="Especial">
-                                                {% endif %}
-                                            </div>
-                                            <div>
-                                                <h4 class="text-xl font-bold text-principal">{{ clase_info.clase.get_nombre_display }}</h4>
-                                                <p class="text-sm text-gris-medio">{{ clase_info.clase.dia }}</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Badge de estado -->
-                                        <div class="status-badge px-3 py-1 rounded-full text-white text-sm font-medium
-                                                    {% if clase_info.esta_completa %}status-completo
-                                                    {% elif clase_info.cupos_disponibles <= 2 %}status-limitado
-                                                    {% else %}status-disponible{% endif %}">
-                                            {% if clase_info.esta_completa %}
-                                                Completa
-                                            {% elif clase_info.cupos_disponibles <= 2 %}
-                                                Limitado
-                                            {% else %}
-                                                Disponible
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Información de la clase -->
-                                    <div class="space-y-4">
-                                        <!-- Horario -->
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-fondo rounded-lg flex items-center justify-center">
-                                                🕐
-                                            </div>
-                                            <div>
-                                                <p class="font-medium text-gris-oscuro">Horario</p>
-                                                <p class="text-lg font-bold text-principal">{{ clase_info.clase.horario|time:"H:i" }}</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Cupos disponibles -->
-                                        <div class="flex items-center space-x-3">
-                                            <div class="w-10 h-10 bg-fondo rounded-lg flex items-center justify-center">
-                                                👥
-                                            </div>
-                                            <div class="flex-1">
-                                                <div class="flex justify-between items-center mb-1">
-                                                    <p class="font-medium text-gris-oscuro">Cupos</p>
-                                                    <p class="text-sm font-bold">
-                                                        <span class="{% if clase_info.cupos_disponibles <= 2 %}text-error{% elif clase_info.cupos_disponibles <= 5 %}text-advertencia{% else %}text-exito{% endif %}">
-                                                            {{ clase_info.cupos_disponibles }}
-                                                        </span>
-                                                        <span class="text-gris-medio">/ {{ clase_info.clase.cupo_maximo }}</span>
-                                                    </p>
-                                                </div>
-                                                
-                                                <!-- Barra de ocupación -->
-                                                <div class="w-full bg-gris-claro rounded-full h-2">
-                                                    <div class="ocupacion-bar h-2 rounded-full 
-                                                                {% if clase_info.porcentaje_ocupacion >= 90 %}bg-error
-                                                                {% elif clase_info.porcentaje_ocupacion >= 70 %}bg-advertencia
-                                                                {% else %}bg-exito{% endif %}"
-                                                        data-width="{{ clase_info.porcentaje_ocupacion|default:0 }}">
-                                                    </div>
-                                                </div>
-                                                <p class="text-xs text-gris-medio mt-1">{{ clase_info.porcentaje_ocupacion|default:0 }}% ocupado</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Botón de acción -->
-                                    <div class="mt-6">
-                                        {% if user.is_authenticated %}
-                                            {% if clase_info.cupo_temporal %}
-                                                <a href="{% url 'gravity:reservar_cupo_temporal' clase_info.clase.id clase_info.cupo_temporal.fecha_str %}"
-                                                   class="mb-1 block w-full bg-secundario hover:bg-secundario/50 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300">
-                                                    Reservar el {{ clase_info.cupo_temporal.fecha|date:"d/m" }}
-                                                </a>
-                                                <div class="bg-teal-50 border border-teal-200 rounded-lg p-3 text-center">
-                                                    <p class="text-xs font-semibold text-teal-700 mb-0.5">
-                                                        🎉 Cupo libre el {{ clase_info.cupo_temporal.fecha|date:"d/m" }}
-                                                    </p>
-                                                    <p class="text-xs text-teal-600">
-                                                        {{ clase_info.cupo_temporal.cupos }} cupo{{ clase_info.cupo_temporal.cupos|pluralize }} disponible{{ clase_info.cupo_temporal.cupos|pluralize }} solo ese día
-                                                    </p>
-                                                </div>
-                                            {% elif clase_info.esta_completa %}
-                                                <button disabled class="w-full bg-gris-claro text-gris-medio px-4 py-3 rounded-lg font-semibold cursor-not-allowed">
-                                                    Clase Completa
-                                                </button>
-                                            {% else %}
-                                                <a href="{% url 'gravity:reservar_clase' %}?tipo={{ clase_info.clase.tipo }}&sede={{ sede_key }}&dia={{ clase_info.clase.dia }}&horario={{ clase_info.clase.horario|time:'H:i' }}"
-                                                   class="block w-full bg-principal hover:bg-principal/90 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300 hover:shadow-btn-primary-hover">
-                                                    Reservar Clase
-                                                </a>
-                                            {% endif %}
-                                        {% else %}
-                                            <a href="{% url 'accounts:signup' %}"
-                                               class="block w-full bg-secundario hover:bg-secundario/90 text-white px-4 py-3 rounded-lg font-semibold text-center transition-all duration-300">
-                                                Registrarse para Reservar
-                                            </a>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="bg-white rounded-b-2xl p-12 shadow-wizard text-center">
-                            <div class="text-6xl mb-4">📅</div>
-                            <h4 class="text-xl font-bold text-gris-oscuro mb-2">No hay clases disponibles en esta sede</h4>
-                            <p class="text-gris-medio">Pronto agregaremos más horarios aquí</p>
-                        </div>
-                    {% endif %}
-                </div>
-                {% empty %}
-                <div class="text-center py-12">
-                    <div class="text-6xl mb-4">😔</div>
-                    <h3 class="text-2xl font-bold text-gris-oscuro mb-2">No hay clases disponibles</h3>
-                    <p class="text-gris-medio">Vuelve pronto para ver nuevas clases</p>
-                </div>
-                {% endfor %}
-                
-                <!-- Mensaje cuando no hay resultados filtrados -->
-                <div id="no-results" class="text-center py-12 hidden">
-                    <div class="text-6xl mb-4">🔍</div>
-                    <h3 class="text-2xl font-bold text-gris-oscuro mb-2">No se encontraron clases</h3>
-                    <p class="text-gris-medio">Intenta cambiar los filtros para ver más opciones</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Call to Action -->
-    <section class="py-20 bg-gradient-to-br from-principal to-secundario text-white">
-        <div class="container mx-auto px-4 text-center">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-3xl md:text-4xl font-cinzel font-bold mb-6">
-                    ¿Listo para Comenzar?
-                </h2>
-                <p class="text-xl mb-8 leading-relaxed">
-                    Únete a nuestra comunidad y experimenta la transformación que solo el Pilates puede ofrecer
-                </p>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'gravity:reservar_clase' %}" 
-                        class="bg-white text-principal px-8 py-4 text-lg font-semibold rounded-lg hover:shadow-btn-primary-hover transform hover:-translate-y-1 transition-all duration-300">
-                            Reserva tu Primera Clase
-                        </a>
-                        <a href="{% url 'accounts:mis_reservas' %}" 
-                        class="border-2 border-white text-white px-8 py-4 text-lg font-semibold rounded-lg hover:bg-white hover:text-principal transition-all duration-300">
-                            Ver Mis Reservas
-                        </a>
-                    {% else %}
-                        <a href="{% url 'accounts:signup' %}" 
-                        class="bg-white text-principal px-8 py-4 text-lg font-semibold rounded-lg hover:shadow-btn-primary-hover transform hover:-translate-y-1 transition-all duration-300">
-                            Únete Ahora
-                        </a>
-                        <a href="{% url 'accounts:login' %}" 
-                        class="border-2 border-white text-white px-8 py-4 text-lg font-semibold rounded-lg hover:bg-white hover:text-principal transition-all duration-300">
-                            Iniciar Sesión
-                        </a>
-                    {% endif %}
-                </div>
+    <!-- Llamado a la acción -->
+    <section class="cd-cta">
+        <div class="g-container cd-cta__inner">
+            <span class="g-eyebrow">Empezá hoy</span>
+            <h2 class="g-title">¿Listo para comenzar?</h2>
+            <p class="g-lead">Sumate a nuestra comunidad y viví la transformación que el Pilates puede darte.</p>
+            <div class="cd-hero__actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'gravity:reservar_clase' %}" class="g-btn g-btn--sand">Reservar una clase</a>
+                    <a href="{% url 'accounts:mis_reservas' %}" class="g-btn cd-btn--light">Ver mis reservas</a>
+                {% else %}
+                    <a href="{% url 'accounts:signup' %}" class="g-btn g-btn--sand">Crear cuenta</a>
+                    <a href="{% url 'accounts:login' %}" class="g-btn cd-btn--light">Iniciar sesión</a>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -384,138 +213,69 @@
 
 {% block extra_js %}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elementos
+        document.addEventListener('DOMContentLoaded', function () {
             const filtroTipo = document.getElementById('filtro-tipo');
             const filtroSede = document.getElementById('filtro-sede');
             const filtroDia = document.getElementById('filtro-dia');
             const filtroDisponibilidad = document.getElementById('filtro-disponibilidad');
             const noResults = document.getElementById('no-results');
-            
-            // Contadores
+
             const contadorDisponibles = document.getElementById('clases-disponibles');
             const contadorLimitadas = document.getElementById('clases-limitadas');
             const contadorCompletas = document.getElementById('clases-completas');
-            
-            // Inicializar contadores y barras de progreso
+
             actualizarContadores();
             inicializarBarrasProgreso();
-            
-            // Event listeners para filtros
-            filtroTipo.addEventListener('change', aplicarFiltros);
-            filtroSede.addEventListener('change', aplicarFiltros);
-            filtroDia.addEventListener('change', aplicarFiltros);
-            filtroDisponibilidad.addEventListener('change', aplicarFiltros);
-            
+
+            [filtroTipo, filtroSede, filtroDia, filtroDisponibilidad].forEach(f => f.addEventListener('change', aplicarFiltros));
+
             function aplicarFiltros() {
-                const tipoSeleccionado = filtroTipo.value;
-                const sedeSeleccionada = filtroSede.value;
-                const diaSeleccionado = filtroDia.value;
-                const disponibilidadSeleccionada = filtroDisponibilidad.value;
-                
-                const clases = document.querySelectorAll('.clase-card');
-                const sedes = document.querySelectorAll('[id^="clases-grid-"]');
-                let clasesVisibles = 0;
-                
-                clases.forEach(clase => {
-                    const tipo = clase.dataset.tipo;
-                    const sede = clase.dataset.sede;
-                    const dia = clase.dataset.dia;
-                    const disponibilidad = clase.dataset.disponibilidad;
-                    
-                    let mostrar = true;
-                    
-                    // Filtro por tipo
-                    if (tipoSeleccionado && tipo !== tipoSeleccionado) {
-                        mostrar = false;
-                    }
-                    
-                    // Filtro por sede
-                    if (sedeSeleccionada && sede !== sedeSeleccionada) {
-                        mostrar = false;
-                    }
-                    
-                    // Filtro por día
-                    if (diaSeleccionado && dia !== diaSeleccionado) {
-                        mostrar = false;
-                    }
-                    
-                    // Filtro por disponibilidad
-                    if (disponibilidadSeleccionada && disponibilidad !== disponibilidadSeleccionada) {
-                        mostrar = false;
-                    }
-                    
-                    // Mostrar/ocultar clase
-                    if (mostrar) {
-                        clase.style.display = 'block';
-                        clase.classList.add('animate-fadeIn');
-                        clasesVisibles++;
-                    } else {
-                        clase.style.display = 'none';
-                        clase.classList.remove('animate-fadeIn');
-                    }
+                const tipo = filtroTipo.value;
+                const sede = filtroSede.value;
+                const dia = filtroDia.value;
+                const disponibilidad = filtroDisponibilidad.value;
+                let visibles = 0;
+
+                document.querySelectorAll('.clase-card').forEach(clase => {
+                    const mostrar =
+                        (!tipo || clase.dataset.tipo === tipo) &&
+                        (!sede || clase.dataset.sede === sede) &&
+                        (!dia || clase.dataset.dia === dia) &&
+                        (!disponibilidad || clase.dataset.disponibilidad === disponibilidad);
+                    clase.style.display = mostrar ? '' : 'none';
+                    if (mostrar) visibles++;
                 });
-                
-                // Mostrar/ocultar sedes vacías
-                sedes.forEach(sedeGrid => {
-                    const sedeClases = sedeGrid.querySelectorAll('.clase-card[style*="block"], .clase-card:not([style*="none"])');
-                    const sedeContainer = sedeGrid.closest('.mb-16');
-                    
-                    if (sedeClases.length === 0) {
-                        sedeContainer.style.display = 'none';
-                    } else {
-                        sedeContainer.style.display = 'block';
-                    }
+
+                // Oculta las sedes que se quedaron sin clases visibles
+                document.querySelectorAll('[id^="clases-grid-"]').forEach(grid => {
+                    const algunaVisible = [...grid.querySelectorAll('.clase-card')].some(c => c.style.display !== 'none');
+                    grid.closest('.cd-sede').style.display = algunaVisible ? '' : 'none';
                 });
-                
-                // Mostrar mensaje de "no resultados" si es necesario
-                if (clasesVisibles === 0) {
-                    noResults.classList.remove('hidden');
-                } else {
-                    noResults.classList.add('hidden');
-                }
+
+                noResults.classList.toggle('is-hidden', visibles !== 0);
             }
-            
+
             function actualizarContadores() {
-                const clases = document.querySelectorAll('.clase-card');
                 let disponibles = 0, limitadas = 0, completas = 0;
-                
-                clases.forEach(clase => {
-                    const disponibilidad = clase.dataset.disponibilidad;
-                    
-                    switch(disponibilidad) {
-                        case 'disponible':
-                            disponibles++;
-                            break;
-                        case 'limitado':
-                            limitadas++;
-                            break;
-                        case 'completo':
-                            completas++;
-                            break;
-                    }
+                document.querySelectorAll('.clase-card').forEach(clase => {
+                    if (clase.dataset.disponibilidad === 'disponible') disponibles++;
+                    else if (clase.dataset.disponibilidad === 'limitado') limitadas++;
+                    else if (clase.dataset.disponibilidad === 'completo') completas++;
                 });
-                
-                // Animar contadores
                 animarContador(contadorDisponibles, disponibles);
                 animarContador(contadorLimitadas, limitadas);
                 animarContador(contadorCompletas, completas);
             }
-            
+
             function inicializarBarrasProgreso() {
-                const barras = document.querySelectorAll('.ocupacion-bar');
-                barras.forEach(barra => {
-                    const ancho = barra.dataset.width || 0;
-                    setTimeout(() => {
-                        barra.style.width = ancho + '%';
-                    }, 100);
+                document.querySelectorAll('.ocupacion-bar').forEach(barra => {
+                    setTimeout(() => { barra.style.width = (barra.dataset.width || 0) + '%'; }, 150);
                 });
             }
-            
+
             function animarContador(elemento, valorFinal) {
                 let valorActual = 0;
-                const incremento = valorFinal / 30; // 30 frames de animación
-                
+                const incremento = valorFinal / 30;
                 const timer = setInterval(() => {
                     valorActual += incremento;
                     if (valorActual >= valorFinal) {
@@ -524,21 +284,20 @@
                     } else {
                         elemento.textContent = Math.floor(valorActual);
                     }
-                }, 50);
+                }, 40);
             }
-            
-            // Animaciones de entrada
-            const observer = new IntersectionObserver((entries) => {
+
+            // Animación de entrada
+            const items = document.querySelectorAll('.g-reveal, .clase-card');
+            const io = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('animate-fadeInUp');
+                        entry.target.classList.add('is-visible');
+                        io.unobserve(entry.target);
                     }
                 });
             }, { threshold: 0.1 });
-            
-            document.querySelectorAll('.clase-card').forEach(card => {
-                observer.observe(card);
-            });
+            items.forEach(el => io.observe(el));
         });
     </script>
 {% endblock %}

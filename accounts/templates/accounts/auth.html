@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if mode == 'signup' %}Crear cuenta{% else %}Iniciar sesión{% endif %} - Pilates Gravity</title>
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/brittany-font.css' %}">
+    <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261010f">
+    <link rel="stylesheet" href="{% static 'css/accounts/auth.css' %}?v=20261010c">
+    <meta name="theme-color" content="#4A5F73">
+</head>
+<body class="auth-body">
+
+    <a href="{% url 'gravity:home' %}" class="auth-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Volver al inicio
+    </a>
+
+    {% if messages %}
+    <div class="auth-toasts" id="authToasts">
+        {% for message in messages %}
+            <div class="auth-toast auth-toast--{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="auth {% if mode == 'signup' %}is-signup{% endif %}" id="auth"
+          data-login-url="{% url 'accounts:login' %}" data-signup-url="{% url 'accounts:signup' %}">
+
+        <!-- ================= Iniciar sesión ================= -->
+        <section class="auth-panel auth-panel--login" aria-label="Iniciar sesión">
+            <form method="post" action="{% url 'accounts:login' %}" class="auth-form" novalidate>
+                {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+                <span class="auth-eyebrow">Bienvenido de nuevo</span>
+                <h1 class="auth-title">Iniciar sesión</h1>
+                <p class="auth-sub">Ingresá a tu cuenta para reservar y gestionar tus clases.</p>
+
+                {% if login_form.non_field_errors %}
+                    <div class="auth-alert">Usuario o contraseña incorrectos. Revisá los datos e intentá de nuevo.</div>
+                {% endif %}
+
+                <div class="input-group">
+                    <svg class="ig-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2.25c-4.1 0-8.25 2.07-8.25 5.25 0 .62.5 1.13 1.13 1.13h14.24c.62 0 1.13-.5 1.13-1.13 0-3.18-4.15-5.25-8.25-5.25Z"/></svg>
+                    <input type="text" name="username" id="id_username" placeholder=" " autocomplete="username" autocapitalize="none"
+                           value="{{ login_form.username.value|default_if_none:'' }}" required>
+                    <label for="id_username">Usuario</label>
+                </div>
+
+                <div class="input-group">
+                    <svg class="ig-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 9h-1V7a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Z"/></svg>
+                    <input type="password" name="password" id="id_password" placeholder=" " autocomplete="current-password" required>
+                    <label for="id_password">Contraseña</label>
+                    <button type="button" class="ig-eye" data-toggle-password="id_password" aria-label="Mostrar contraseña">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <small class="ig-caps">Mayúsculas activadas</small>
+                </div>
+
+                <div class="auth-row">
+                    <span class="auth-hint">El usuario distingue mayúsculas</span>
+                    <a href="{% url 'accounts:password_reset' %}" class="auth-link">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="auth-btn" data-loading-text="Ingresando...">Ingresar</button>
+
+                <p class="auth-switch">¿No tenés cuenta? <button type="button" data-auth-switch="signup">Crear cuenta</button></p>
+            </form>
+        </section>
+
+        <!-- ================= Crear cuenta ================= -->
+        <section class="auth-panel auth-panel--signup" aria-label="Crear cuenta">
+            <form method="post" action="{% url 'accounts:signup' %}" class="auth-form" novalidate>
+                {% csrf_token %}
+
+                <span class="auth-eyebrow">Sumate a Gravity</span>
+                <h1 class="auth-title">Crear cuenta</h1>
+                <p class="auth-sub">Solo te lleva un minuto.</p>
+
+                {% if signup_form.non_field_errors %}
+                    <div class="auth-alert">{% for e in signup_form.non_field_errors %}{{ e }} {% endfor %}</div>
+                {% endif %}
+
+                <div class="auth-grid">
+                    {% include 'accounts/_auth_field.html' with field=signup_form.first_name id='su_first_name' label='Nombre' type='text' ac='given-name' icon='user' %}
+                    {% include 'accounts/_auth_field.html' with field=signup_form.last_name id='su_last_name' label='Apellido' type='text' ac='family-name' icon='user' %}
+                    {% include 'accounts/_auth_field.html' with field=signup_form.username id='su_username' label='Usuario' type='text' ac='username' icon='at' %}
+                    {% include 'accounts/_auth_field.html' with field=signup_form.telefono id='su_telefono' label='Teléfono' type='tel' ac='tel' icon='phone' %}
+                    <div class="auth-grid__full">
+                        {% include 'accounts/_auth_field.html' with field=signup_form.email id='su_email' label='Correo electrónico' type='email' ac='email' icon='mail' %}
+                    </div>
+                    {% include 'accounts/_auth_field.html' with field=signup_form.password1 id='su_password1' label='Contraseña' type='password' ac='new-password' icon='lock' %}
+                    {% include 'accounts/_auth_field.html' with field=signup_form.password2 id='su_password2' label='Confirmar' type='password' ac='new-password' icon='lock' %}
+                </div>
+
+                <button type="submit" class="auth-btn" data-loading-text="Creando cuenta...">Crear cuenta</button>
+
+                <p class="auth-switch">¿Ya tenés cuenta? <button type="button" data-auth-switch="login">Iniciar sesión</button></p>
+            </form>
+        </section>
+
+        <!-- ================= Panel deslizante ================= -->
+        <aside class="overlay-panel" aria-hidden="true">
+            <div class="overlay-panel__bg"></div>
+            <div class="overlay-panel__content overlay-panel__content--to-signup">
+                <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="" class="overlay-logo">
+                <h2>¿Nuevo por acá?</h2>
+                <p>Creá tu cuenta y reservá tu lugar en el reformer en un par de minutos.</p>
+                <button type="button" class="auth-ghost" data-auth-switch="signup" tabindex="-1">Crear cuenta</button>
+            </div>
+            <div class="overlay-panel__content overlay-panel__content--to-login">
+                <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="" class="overlay-logo">
+                <h2>¿Ya sos parte?</h2>
+                <p>Ingresá y retomá tus clases donde las dejaste.</p>
+                <button type="button" class="auth-ghost" data-auth-switch="login" tabindex="-1">Iniciar sesión</button>
+            </div>
+        </aside>
+    </main>
+
+    <script src="{% static 'js/form_submit.js' %}?v=20261007"></script>
+    <script>
+        (function () {
+            const auth = document.getElementById('auth');
+
+            // Cambiar entre iniciar sesión y crear cuenta (y reflejarlo en la URL)
+            function setMode(mode) {
+                auth.classList.toggle('is-signup', mode === 'signup');
+                const url = mode === 'signup' ? auth.dataset.signupUrl : auth.dataset.loginUrl;
+                history.replaceState(null, '', url + location.search);
+                document.title = (mode === 'signup' ? 'Crear cuenta' : 'Iniciar sesión') + ' - Pilates Gravity';
+                const panel = auth.querySelector(mode === 'signup' ? '.auth-panel--signup' : '.auth-panel--login');
+                setTimeout(() => { const first = panel.querySelector('input:not([type=hidden])'); if (first) first.focus({ preventScroll: true }); }, 450);
+            }
+            document.querySelectorAll('[data-auth-switch]').forEach(btn => {
+                btn.addEventListener('click', () => setMode(btn.dataset.authSwitch));
+            });
+
+            // Mostrar / ocultar contraseña
+            document.querySelectorAll('[data-toggle-password]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const input = document.getElementById(btn.dataset.togglePassword);
+                    const visible = input.type === 'text';
+                    input.type = visible ? 'password' : 'text';
+                    btn.classList.toggle('is-on', !visible);
+                    btn.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+                });
+            });
+
+            // Aviso de Bloq Mayús en campos de contraseña
+            document.querySelectorAll('input[type=password]').forEach(input => {
+                const aviso = input.parentElement.querySelector('.ig-caps');
+                if (!aviso) return;
+                const check = e => aviso.classList.toggle('is-on', !!(e.getModifierState && e.getModifierState('CapsLock')));
+                input.addEventListener('keydown', check);
+                input.addEventListener('keyup', check);
+                input.addEventListener('blur', () => aviso.classList.remove('is-on'));
+            });
+
+            // Los mensajes se ocultan solos
+            const toasts = document.getElementById('authToasts');
+            if (toasts) setTimeout(() => toasts.classList.add('is-gone'), 6000);
+        })();
+    </script>
+</body>
+</html>

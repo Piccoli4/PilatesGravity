@@ -8,6 +8,8 @@
     <body class="m-0 font-cinzel bg-fondo text-gray-800 overflow-x-hidden">
 
         {% include 'components/base/header.html' %}
+        <!-- Espacio que ocupa la navbar flotante (la home lo anula: el recorrido va detrás del vidrio) -->
+        {% block header_spacer %}<div class="g-nav-spacer" aria-hidden="true"></div>{% endblock %}
 
         {% if messages %}
         <div id="pg-messages-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4 space-y-3 pointer-events-none">
@@ -65,7 +67,7 @@
         {% include 'components/base/whatsapp_chat.html' %}
 
         <!-- Scripts en orden -->
-        <script src="{% static 'js/base_scripts.js' %}"></script>
+        <script src="{% static 'js/base_scripts.js' %}?v=20261010b"></script>
         <script src="{% static 'js/hero_animations.js' %}"></script>
         <script src="{% static 'js/form_submit.js' %}?v=20261007"></script>
 
@@ -78,95 +80,57 @@
         <!-- ============================================================ -->
 
         <!-- Banner Android (toast inferior) -->
-        <div id="pwa-banner-android" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999;
-            background:#5D768B; color:white; padding:14px 16px;
-            box-shadow:0 -4px 20px rgba(0,0,0,0.2);
-            animation: pwaSlideUp 0.4s ease;">
-            <div style="display:flex; align-items:center; gap:12px; max-width:480px; margin:0 auto;">
-                <img src="/static/icons/icon-192x192.png" style="width:44px; height:44px; border-radius:10px; flex-shrink:0;">
-                <div style="flex:1; min-width:0;">
-                    <p style="margin:0; font-weight:700; font-size:14px; font-family:'Cinzel',serif;">Pilates Gravity</p>
-                    <p style="margin:0; font-size:12px; opacity:0.85;">Instalá la app para acceder más rápido</p>
-                </div>
-                <button onclick="instalarPWA()" style="background:#F8EFE5; color:#5D768B;
-                    border:none; border-radius:20px; padding:8px 16px;
-                    font-weight:700; font-size:13px; cursor:pointer; flex-shrink:0;
-                    font-family:'Cinzel',serif;">
-                    Instalar
-                </button>
-                <button onclick="cerrarBannerAndroid()" style="background:transparent; border:none;
-                    color:white; opacity:0.7; cursor:pointer; padding:4px; flex-shrink:0; font-size:20px; line-height:1;">
-                    ✕
-                </button>
+        <div id="pwa-banner-android" class="g-pwa-toast" style="display:none;" role="dialog" aria-label="Instalar la app">
+            <img src="{% static 'icons/icon-192x192.png' %}" alt="" class="g-pwa-toast__icon">
+            <div class="g-pwa-toast__text">
+                <strong>Pilates Gravity</strong>
+                <span>Instalá la app y reservá en un toque</span>
             </div>
+            <button type="button" onclick="instalarPWA()" class="g-btn g-btn--primary g-btn--sm">Instalar</button>
+            <button type="button" onclick="cerrarBannerAndroid()" class="g-pwa-toast__close" aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
         </div>
 
         <!-- Modal iOS (Safari) -->
-        <div id="pwa-modal-ios" style="display:none; position:fixed; inset:0; z-index:9999;
-            background:rgba(0,0,0,0.5); align-items:flex-end; justify-content:center;">
-            <div style="background:#F8EFE5; border-radius:20px 20px 0 0; padding:28px 24px 36px;
-                width:100%; max-width:480px; animation: pwaSlideUp 0.35s ease;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <img src="/static/icons/icon-192x192.png" style="width:48px; height:48px; border-radius:12px;">
-                        <div>
-                            <p style="margin:0; font-weight:700; font-size:16px; color:#5D768B; font-family:'Cinzel',serif;">Pilates Gravity</p>
-                            <p style="margin:0; font-size:12px; color:#666;">Instalá la app en tu iPhone</p>
-                        </div>
+        <div id="pwa-modal-ios" class="g-pwa-sheet" style="display:none;" onclick="if (event.target === this) cerrarModalIOS()" role="dialog" aria-label="Instalar la app en iPhone">
+            <div class="g-pwa-sheet__panel">
+                <span class="g-pwa-sheet__grip" aria-hidden="true"></span>
+                <button type="button" onclick="cerrarModalIOS()" class="g-pwa-sheet__close" aria-label="Cerrar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
+                <div class="g-pwa-sheet__head">
+                    <img src="{% static 'icons/icon-192x192.png' %}" alt="">
+                    <div>
+                        <span class="g-eyebrow">App de alumnos</span>
+                        <strong>Instalá Pilates Gravity</strong>
+                        <small>Reservá y mirá tus clases desde la pantalla de inicio de tu iPhone.</small>
                     </div>
-                    <button onclick="cerrarModalIOS()" style="background:transparent; border:none;
-                        color:#999; font-size:22px; cursor:pointer; padding:4px; line-height:1;">✕</button>
                 </div>
-
-                <div style="display:flex; flex-direction:column; gap:16px;">
-                    <div style="display:flex; align-items:center; gap:14px;">
-                        <div style="background:#5D768B; color:white; border-radius:50%;
-                            width:30px; height:30px; display:flex; align-items:center; justify-content:center;
-                            font-weight:700; font-size:14px; flex-shrink:0;">1</div>
-                        <p style="margin:0; font-size:14px; color:#444;">
-                            Tocá el botón
-                            <span style="display:inline-flex; align-items:center; gap:3px; font-weight:600; color:#5D768B;">
-                                Compartir
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="#5D768B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                                    <polyline points="16 6 12 2 8 6"/>
-                                    <line x1="12" y1="2" x2="12" y2="15"/>
-                                </svg>
+                <ol class="g-pwa-sheet__steps">
+                    <li>
+                        <span class="g-pwa-sheet__num">1</span>
+                        <p>Tocá el botón
+                            <span class="g-pwa-sheet__chip">Compartir
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                             </span>
                             en la barra de Safari
                         </p>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:14px;">
-                        <div style="background:#5D768B; color:white; border-radius:50%;
-                            width:30px; height:30px; display:flex; align-items:center; justify-content:center;
-                            font-weight:700; font-size:14px; flex-shrink:0;">2</div>
-                        <p style="margin:0; font-size:14px; color:#444;">
-                            Deslizá hacia abajo y tocá
-                            <strong style="color:#5D768B;">"Agregar a pantalla de inicio"</strong>
-                        </p>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:14px;">
-                        <div style="background:#5D768B; color:white; border-radius:50%;
-                            width:30px; height:30px; display:flex; align-items:center; justify-content:center;
-                            font-weight:700; font-size:14px; flex-shrink:0;">3</div>
-                        <p style="margin:0; font-size:14px; color:#444;">
-                            Tocá <strong style="color:#5D768B;">"Agregar"</strong> para confirmar
-                        </p>
-                    </div>
+                    </li>
+                    <li>
+                        <span class="g-pwa-sheet__num">2</span>
+                        <p>Deslizá y tocá <span class="g-pwa-sheet__chip">Agregar a pantalla de inicio</span></p>
+                    </li>
+                    <li>
+                        <span class="g-pwa-sheet__num">3</span>
+                        <p>Confirmá con <span class="g-pwa-sheet__chip">Agregar</span></p>
+                    </li>
+                </ol>
+                <div class="g-pwa-sheet__hint" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
                 </div>
-
-                <!-- Flecha apuntando hacia abajo (Safari bar) -->
-                <div style="text-align:center; margin-top:20px; color:#5D768B; font-size:28px;">↓</div>
             </div>
         </div>
-
-        <style>
-            @keyframes pwaSlideUp {
-                from { transform: translateY(100%); opacity: 0; }
-                to   { transform: translateY(0);    opacity: 1; }
-            }
-        </style>
 
         <script>
             // ─── ANDROID ───────────────────────────────────────────────
@@ -199,7 +163,7 @@
 
                 // Mostrar con un pequeño delay para no ser intrusivo
                 setTimeout(function() {
-                    document.getElementById('pwa-banner-android').style.display = 'block';
+                    document.getElementById('pwa-banner-android').style.display = 'flex';
                 }, 2000);
             });
 
@@ -237,21 +201,25 @@
         <!-- Registro del Service Worker (PWA) -->
         <script>
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                    registration.addEventListener('updatefound', function() {
-                        var newWorker = registration.installing;
-                        newWorker.addEventListener('statechange', function() {
-                            if (newWorker.state === 'activated') {
-                                window.location.reload();
-                            }
-                        });
+                // Solo recargamos si ya había una versión anterior controlando la página
+                // (en la primera visita no hace falta).
+                var habiaVersionPrevia = !!navigator.serviceWorker.controller;
+                var recargando = false;
+
+                navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (registration) {
+                    // Al volver a la app (por ejemplo, la PWA instalada que estaba en segundo plano)
+                    // se busca una versión nueva del sitio.
+                    document.addEventListener('visibilitychange', function () {
+                        if (document.visibilityState === 'visible') registration.update().catch(function () {});
                     });
+                    // Y también cada 30 minutos si la app queda abierta
+                    setInterval(function () { registration.update().catch(function () {}); }, 30 * 60 * 1000);
                 });
 
-                navigator.serviceWorker.addEventListener('message', function(event) {
-                    if (event.data && event.data.type === 'SW_UPDATED') {
-                        window.location.reload();
-                    }
+                navigator.serviceWorker.addEventListener('controllerchange', function () {
+                    if (!habiaVersionPrevia || recargando) return;
+                    recargando = true;
+                    window.location.reload();
                 });
             }
         </script>
