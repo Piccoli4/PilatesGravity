@@ -3,6 +3,46 @@
 
 {% block header_spacer %}{% endblock %}
 
+{% block extra_head %}
+    <!-- Primer cuadro del recorrido: es lo primero que se ve, se pide antes que el resto -->
+    <link rel="preload" as="image" href="{% static 'scroll_world/stills/01_llegada.webp' %}?v=2" fetchpriority="high">
+
+    <!-- Preguntas frecuentes para buscadores (mantener igual a components/home/faq.html) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "¿Necesito experiencia previa para practicar Pilates?",
+                "acceptedAnswer": {"@type": "Answer", "text": "No, no necesitás experiencia previa. Nuestras clases están diseñadas para todos los niveles, desde principiantes hasta avanzados. Nuestros instructores te guían paso a paso y adaptan los ejercicios según tu nivel de condición física."}
+            },
+            {
+                "@type": "Question",
+                "name": "¿Qué debo llevar a mi primera clase?",
+                "acceptedAnswer": {"@type": "Answer", "text": "Te recomendamos usar ropa cómoda que te permita moverte libremente. Las medias antideslizantes son recomendables para las clases de reformer. Nosotros proporcionamos todo el equipo necesario: solo necesitás traer una botella de agua y una toalla pequeña."}
+            },
+            {
+                "@type": "Question",
+                "name": "¿Con qué frecuencia debo practicar Pilates?",
+                "acceptedAnswer": {"@type": "Answer", "text": "Para ver resultados, recomendamos practicar Pilates de 2 a 3 veces por semana. Sin embargo, incluso una clase semanal puede darte beneficios. Lo más importante es la constancia y escuchar a tu cuerpo."}
+            },
+            {
+                "@type": "Question",
+                "name": "¿Puedo practicar Pilates si tengo una lesión?",
+                "acceptedAnswer": {"@type": "Answer", "text": "Pilates es excelente para la rehabilitación, pero es importante consultar primero con tu médico. Contanos sobre cualquier lesión o condición médica para que nuestros instructores puedan adaptar los ejercicios a tus necesidades."}
+            },
+            {
+                "@type": "Question",
+                "name": "¿Cómo puedo reservar una clase?",
+                "acceptedAnswer": {"@type": "Answer", "text": "Podés reservar a través de nuestra página web, por teléfono o directamente en el estudio. Recomendamos reservar con anticipación, especialmente las clases de reformer, ya que los lugares son limitados."}
+            }
+        ]
+    }
+    </script>
+{% endblock %}
+
 {% block content %}
     <!-- Recorrido cinematográfico (reemplaza Inicio, Nosotros, Beneficios, Clases e Instructores) -->
     {% include 'components/home/scroll_world.html' %}

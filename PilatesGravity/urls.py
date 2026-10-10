@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from gravity.views import manifest_json, service_worker_js
+from gravity.seo import robots_txt, sitemap_xml
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,6 +30,11 @@ urlpatterns = [
     # ==============================================================================
     path('manifest.json', manifest_json, name='manifest'),
     path('sw.js', service_worker_js, name='service_worker'),
+    # ==============================================================================
+    # SEO
+    # ==============================================================================
+    path('robots.txt', robots_txt, name='robots_txt'),
+    path('sitemap.xml', sitemap_xml, name='sitemap_xml'),
 ]
 
 if settings.DEBUG:

@@ -75,6 +75,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'gravity.seo.seo',
             ],
         },
     },
@@ -189,7 +190,7 @@ EMAIL_SUBJECT_PREFIX = '[Pilates Gravity] '
 # URLs para reset de contraseña
 PASSWORD_RESET_TIMEOUT = 900  # 15 minutos en segundos
 
-# URL del sitio para emails (cambiar según tu dominio)
+# URL pública del sitio: emails, URL canónicas, Open Graph, sitemap.xml y robots.txt
 SITE_URL = config('SITE_URL', default='https://pilatesgravity.com.ar')
 
 # Configuración de logging

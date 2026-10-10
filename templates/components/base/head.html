@@ -1,11 +1,6 @@
 {% load static %}
+{# Hojas de estilo y PWA comunes. El <head>, el título y el SEO están en templates/base.html. #}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pilates Gravity</title>
-    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
-    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,11 +12,6 @@
     <!-- Estilos CSS personalizados -->
     <link rel="stylesheet" href="{% static 'css/brittany-font.css' %}"> <!-- Fuente personalizada -->
     <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_hero.css' %}">
-    <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_about.css' %}">
-    <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_benefits.css' %}">
-    <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_classes.css' %}">
-    <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_instructors.css' %}">
     <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_contact.css' %}">
     <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_norm.css' %}">
     <link rel="stylesheet" href="{% static 'css/gravity/custom_styles_faq.css' %}">
@@ -40,6 +30,3 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Pilates Gravity">
-    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
-
-</head>
