@@ -78,7 +78,7 @@ class MenuPorRolTests(PanelBase):
         self.assertContains(r, 'Solicitudes de plan')
         self.assertContains(r, reverse('gravity:admin_profesoras_lista'))
         self.assertNotContains(r, 'Accesos del equipo')
-        self.assertContains(r, 'class="ad-tabbar"')
+        self.assertContains(r, 'class="pn-tabbar"')
         self.assertTrue(r.context['panel']['ve_ingresos'])
 
     def test_el_equipo_no_ve_lo_que_no_puede_usar(self):
@@ -112,7 +112,7 @@ class MenuPorRolTests(PanelBase):
             with self.subTest(ruta=ruta):
                 r = self.client.get(reverse(f'gravity:{ruta}'))
                 self.assertEqual(r.status_code, 200)
-                self.assertContains(r, 'id="ad-bandeja"')
+                self.assertContains(r, 'id="pn-bandeja"')
 
 
 class BandejaTests(PanelBase):

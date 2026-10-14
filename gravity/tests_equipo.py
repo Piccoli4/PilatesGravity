@@ -308,4 +308,4 @@ class PermisosYDireccionesTests(EquipoBase):
         r = self.client.get(reverse('gravity:admin_dashboard'))
         self.assertNotContains(r, 'tailwind-output.css')
         self.assertNotContains(r, 'admin_legacy.css')
-        self.assertNotContains(r, 'ad-legacy')
+        self.assertNotContains(r, 'pn-legacy')

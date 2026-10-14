@@ -369,13 +369,13 @@ class ClaseAdminForm(forms.ModelForm):
             'direccion': forms.RadioSelect,
             'dia': forms.RadioSelect,
             'nombre_personalizado': forms.TextInput(attrs={
-                'class': 'ad-input', 'placeholder': 'Ej.: Pilates prenatal', 'maxlength': '100',
+                'class': 'pn-input', 'placeholder': 'Ej.: Pilates prenatal', 'maxlength': '100',
             }),
             'horario': forms.TimeInput(format='%H:%M', attrs={
-                'class': 'ad-input', 'type': 'time', 'min': '06:00', 'max': '22:00', 'step': '300',
+                'class': 'pn-input', 'type': 'time', 'min': '06:00', 'max': '22:00', 'step': '300',
             }),
             'cupo_maximo': forms.NumberInput(attrs={
-                'class': 'ad-input', 'min': '1', 'max': '30', 'inputmode': 'numeric',
+                'class': 'pn-input', 'min': '1', 'max': '30', 'inputmode': 'numeric',
             }),
         }
         labels = {
@@ -1411,8 +1411,8 @@ class AnularPagoForm(forms.Form):
 
 def estilo_panel(form):
     """
-    Pone a los campos de un formulario las clases del panel (ad-input, ad-select,
-    ad-textarea) y el formato de fecha que entiende <input type="date">.
+    Pone a los campos de un formulario las clases del panel (pn-input, pn-select,
+    pn-textarea) y el formato de fecha que entiende <input type="date">.
     Sirve para los formularios viejos sin reescribir sus widgets.
     """
     for campo in form.fields.values():
@@ -1420,11 +1420,11 @@ def estilo_panel(form):
         if isinstance(w, (forms.CheckboxInput, forms.RadioSelect, forms.CheckboxSelectMultiple)):
             continue
         if isinstance(w, forms.Select):
-            clase = 'ad-select'
+            clase = 'pn-select'
         elif isinstance(w, forms.Textarea):
-            clase = 'ad-textarea'
+            clase = 'pn-textarea'
         else:
-            clase = 'ad-input'
+            clase = 'pn-input'
         w.attrs['class'] = clase
         if isinstance(w, forms.DateInput):
             w.format = '%Y-%m-%d'
@@ -1461,20 +1461,20 @@ class AlumnoNuevoForm(forms.Form):
     """Alta de un alumno desde el panel (la contraseña la elige el alumno con la invitación)."""
     nombre = forms.CharField(
         label='Nombre', max_length=150, error_messages={'required': 'Poné el nombre.'},
-        widget=forms.TextInput(attrs={'class': 'ad-input', 'autocomplete': 'off', 'autofocus': True}))
+        widget=forms.TextInput(attrs={'class': 'pn-input', 'autocomplete': 'off', 'autofocus': True}))
     apellido = forms.CharField(
         label='Apellido', max_length=150, error_messages={'required': 'Poné el apellido.'},
-        widget=forms.TextInput(attrs={'class': 'ad-input', 'autocomplete': 'off'}))
+        widget=forms.TextInput(attrs={'class': 'pn-input', 'autocomplete': 'off'}))
     telefono = forms.CharField(
         label='Teléfono (WhatsApp)', max_length=25,
         error_messages={'required': 'Poné el teléfono: es por donde se le avisa.'},
-        widget=forms.TextInput(attrs={'class': 'ad-input', 'inputmode': 'tel', 'placeholder': '342 511 4448'}))
+        widget=forms.TextInput(attrs={'class': 'pn-input', 'inputmode': 'tel', 'placeholder': '342 511 4448'}))
     email = forms.EmailField(
         label='Email', required=False, error_messages={'invalid': 'Ese email no parece válido.'},
-        widget=forms.EmailInput(attrs={'class': 'ad-input', 'autocomplete': 'off', 'placeholder': 'nombre@email.com'}))
+        widget=forms.EmailInput(attrs={'class': 'pn-input', 'autocomplete': 'off', 'placeholder': 'nombre@email.com'}))
     notas = forms.CharField(
         label='Notas internas', required=False, max_length=500,
-        widget=forms.Textarea(attrs={'class': 'ad-textarea', 'rows': 3,
+        widget=forms.Textarea(attrs={'class': 'pn-textarea', 'rows': 3,
                                      'placeholder': 'Cómo nos conoció, qué busca, lo que el equipo tenga que saber'}))
 
     def clean_nombre(self):
@@ -1497,28 +1497,28 @@ class AlumnoNuevoForm(forms.Form):
 class AlumnoDatosForm(forms.Form):
     """Editar los datos de un alumno desde su ficha (todo menos la contraseña)."""
     first_name = forms.CharField(label='Nombre', max_length=150, error_messages={'required': 'Poné el nombre.'},
-                                 widget=forms.TextInput(attrs={'class': 'ad-input'}))
+                                 widget=forms.TextInput(attrs={'class': 'pn-input'}))
     last_name = forms.CharField(label='Apellido', max_length=150, error_messages={'required': 'Poné el apellido.'},
-                                widget=forms.TextInput(attrs={'class': 'ad-input'}))
+                                widget=forms.TextInput(attrs={'class': 'pn-input'}))
     telefono = forms.CharField(label='Teléfono (WhatsApp)', max_length=25, required=False,
-                               widget=forms.TextInput(attrs={'class': 'ad-input', 'inputmode': 'tel'}))
+                               widget=forms.TextInput(attrs={'class': 'pn-input', 'inputmode': 'tel'}))
     email = forms.EmailField(label='Email', required=False, error_messages={'invalid': 'Ese email no parece válido.'},
-                             widget=forms.EmailInput(attrs={'class': 'ad-input'}))
+                             widget=forms.EmailInput(attrs={'class': 'pn-input'}))
     fecha_nacimiento = forms.DateField(
         label='Fecha de nacimiento', required=False, error_messages={'invalid': 'Poné una fecha válida.'},
-        widget=forms.DateInput(format='%Y-%m-%d', attrs={'class': 'ad-input', 'type': 'date'}))
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'class': 'pn-input', 'type': 'date'}))
     tiene_lesiones = forms.TypedChoiceField(
         label='¿Tiene alguna lesión o condición?', choices=[('no', 'No'), ('si', 'Sí')],
         coerce=lambda v: v == 'si', widget=forms.RadioSelect)
     descripcion_lesiones = forms.CharField(label='Qué tiene', required=False, max_length=500,
-                                           widget=forms.Textarea(attrs={'class': 'ad-textarea', 'rows': 3}))
+                                           widget=forms.Textarea(attrs={'class': 'pn-textarea', 'rows': 3}))
     fecha_primera_clase = forms.DateField(
         label='Fecha de primera clase', required=False, error_messages={'invalid': 'Poné una fecha válida.'},
-        widget=forms.DateInput(format='%Y-%m-%d', attrs={'class': 'ad-input', 'type': 'date'}))
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'class': 'pn-input', 'type': 'date'}))
     sede_primera_clase = forms.ChoiceField(
         label='Sede de primera clase', required=False,
         choices=[('', 'Sin dato'), ('sede_principal', 'La Rioja 3044'), ('sede_2', '9 de Julio 3696')],
-        widget=forms.Select(attrs={'class': 'ad-select'}))
+        widget=forms.Select(attrs={'class': 'pn-select'}))
 
     def __init__(self, *args, usuario=None, **kwargs):
         self.usuario = usuario
@@ -1582,16 +1582,16 @@ class IntegranteNuevoForm(forms.Form):
     """Alta de alguien del equipo (la contraseña la elige con la invitación)."""
     nombre = forms.CharField(
         label='Nombre', max_length=150, error_messages={'required': 'Poné el nombre.'},
-        widget=forms.TextInput(attrs={'class': 'ad-input', 'autocomplete': 'off'}))
+        widget=forms.TextInput(attrs={'class': 'pn-input', 'autocomplete': 'off'}))
     apellido = forms.CharField(
         label='Apellido', max_length=150, error_messages={'required': 'Poné el apellido.'},
-        widget=forms.TextInput(attrs={'class': 'ad-input', 'autocomplete': 'off'}))
+        widget=forms.TextInput(attrs={'class': 'pn-input', 'autocomplete': 'off'}))
     email = forms.EmailField(
         label='Email', required=False, error_messages={'invalid': 'Ese email no parece válido.'},
-        widget=forms.EmailInput(attrs={'class': 'ad-input', 'autocomplete': 'off', 'placeholder': 'nombre@email.com'}))
+        widget=forms.EmailInput(attrs={'class': 'pn-input', 'autocomplete': 'off', 'placeholder': 'nombre@email.com'}))
     telefono = forms.CharField(
         label='Teléfono (WhatsApp)', max_length=25, required=False,
-        widget=forms.TextInput(attrs={'class': 'ad-input', 'inputmode': 'tel', 'placeholder': '342 511 4448'}))
+        widget=forms.TextInput(attrs={'class': 'pn-input', 'inputmode': 'tel', 'placeholder': '342 511 4448'}))
 
     def clean_nombre(self):
         return capitalizar_nombre(self.cleaned_data['nombre'])

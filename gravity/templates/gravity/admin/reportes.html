@@ -4,68 +4,68 @@
 {% block title %}Estadísticas{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Estadísticas</h1>
-        <p class="ad-head__sub">
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Estadísticas</h1>
+        <p class="pn-head__sub">
             {{ periodo_label }} ({{ desde|date:"d/m/Y" }} al {{ hasta|date:"d/m/Y" }}) · {{ sede_label }}<br>
             <span class="rp-comp">Comparado con {{ desde_prev|date:"d/m/Y" }} al {{ hasta_prev|date:"d/m/Y" }}</span>
         </p>
     </div>
-    <div class="ad-head__actions rp-no-print">
-        <a class="ad-btn ad-btn--ghost ad-btn--sm" href="{% url 'gravity:admin_reportes_exportar' %}?{{ filtros_qs }}">Exportar CSV</a>
-        <button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" onclick="window.print()">Imprimir</button>
+    <div class="pn-head__actions rp-no-print">
+        <a class="pn-btn pn-btn--ghost pn-btn--sm" href="{% url 'gravity:admin_reportes_exportar' %}?{{ filtros_qs }}">Exportar CSV</a>
+        <button type="button" class="pn-btn pn-btn--ghost pn-btn--sm" onclick="window.print()">Imprimir</button>
     </div>
 </header>
 
-<form method="get" class="ad-filters rp-no-print" id="rp-filtros">
+<form method="get" class="pn-filters rp-no-print" id="rp-filtros">
     {% comment %}
     El período actual va primero: el botón que se toque (un chip, "Ver" o el oculto que usa
     Enter en las fechas) lo reemplaza, porque Django toma el último valor.
     {% endcomment %}
     <input type="hidden" name="periodo" value="{{ periodo }}">
-    <button type="submit" name="periodo" value="personalizado" class="ad-sr" tabindex="-1">Aplicar fechas</button>
-    <div class="ad-chips" role="group" aria-label="Período">
+    <button type="submit" name="periodo" value="personalizado" class="pn-sr" tabindex="-1">Aplicar fechas</button>
+    <div class="pn-chips" role="group" aria-label="Período">
         {% for valor, texto in periodos %}
         {% if valor == 'personalizado' %}
-        <button type="button" class="ad-chip{% if periodo == valor %} is-active{% endif %}" data-rp-fechas aria-expanded="{% if periodo == valor %}true{% else %}false{% endif %}" aria-controls="rp-fechas">Elegir fechas</button>
+        <button type="button" class="pn-chip{% if periodo == valor %} is-active{% endif %}" data-rp-fechas aria-expanded="{% if periodo == valor %}true{% else %}false{% endif %}" aria-controls="rp-fechas">Elegir fechas</button>
         {% else %}
-        <button type="submit" name="periodo" value="{{ valor }}" class="ad-chip{% if periodo == valor %} is-active{% endif %}">{{ texto }}</button>
+        <button type="submit" name="periodo" value="{{ valor }}" class="pn-chip{% if periodo == valor %} is-active{% endif %}">{{ texto }}</button>
         {% endif %}
         {% endfor %}
     </div>
-    <div class="ad-filters__row">
+    <div class="pn-filters__row">
         <label>
-            <span class="ad-sr">Sede</span>
-            <select class="ad-select" name="sede" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+            <span class="pn-sr">Sede</span>
+            <select class="pn-select" name="sede" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
                 <option value="">Todas las sedes</option>
                 {% for valor, texto in sedes %}<option value="{{ valor }}"{% if sede == valor %} selected{% endif %}>{{ texto }}</option>{% endfor %}
             </select>
         </label>
     </div>
-    <div class="ad-filters__row ac-fechas" id="rp-fechas"{% if periodo != 'personalizado' %} hidden{% endif %}>
-        <label class="ad-field"><span class="ad-label">Desde</span><input class="ad-input" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}"></label>
-        <label class="ad-field"><span class="ad-label">Hasta</span><input class="ad-input" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}"></label>
-        <div class="ad-field ac-fechas__btn"><button type="submit" name="periodo" value="personalizado" class="ad-btn ad-btn--blue">Ver</button></div>
+    <div class="pn-filters__row ac-fechas" id="rp-fechas"{% if periodo != 'personalizado' %} hidden{% endif %}>
+        <label class="pn-field"><span class="pn-label">Desde</span><input class="pn-input" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}"></label>
+        <label class="pn-field"><span class="pn-label">Hasta</span><input class="pn-input" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}"></label>
+        <div class="pn-field ac-fechas__btn"><button type="submit" name="periodo" value="personalizado" class="pn-btn pn-btn--blue">Ver</button></div>
     </div>
 </form>
 
-<nav class="ad-tabs rp-tabs rp-no-print" role="tablist" aria-label="Secciones">
-    <a class="ad-tabs__item" href="#resumen" role="tab" data-rp-tab="resumen">Resumen</a>
-    <a class="ad-tabs__item" href="#ocupacion" role="tab" data-rp-tab="ocupacion">Ocupación</a>
-    <a class="ad-tabs__item" href="#alumnos" role="tab" data-rp-tab="alumnos">Alumnos</a>
-    <a class="ad-tabs__item" href="#planes" role="tab" data-rp-tab="planes">Planes</a>
-    {% if puede_ver_pagos %}<a class="ad-tabs__item" href="#plata" role="tab" data-rp-tab="plata">Plata</a>{% endif %}
+<nav class="pn-tabs rp-tabs rp-no-print" role="tablist" aria-label="Secciones">
+    <a class="pn-tabs__item" href="#resumen" role="tab" data-rp-tab="resumen">Resumen</a>
+    <a class="pn-tabs__item" href="#ocupacion" role="tab" data-rp-tab="ocupacion">Ocupación</a>
+    <a class="pn-tabs__item" href="#alumnos" role="tab" data-rp-tab="alumnos">Alumnos</a>
+    <a class="pn-tabs__item" href="#planes" role="tab" data-rp-tab="planes">Planes</a>
+    {% if puede_ver_pagos %}<a class="pn-tabs__item" href="#plata" role="tab" data-rp-tab="plata">Plata</a>{% endif %}
 </nav>
 
 {% comment %} ============================== RESUMEN ============================== {% endcomment %}
 <section class="rp-panel" id="resumen" role="tabpanel" aria-label="Resumen">
     <h2 class="rp-print-title">Resumen</h2>
-    <div class="ad-kpis">
+    <div class="pn-kpis">
         {% for kpi in kpis %}
-        <div class="ad-kpi">
-            <p class="ad-kpi__label">{{ kpi.titulo }}</p>
-            <p class="ad-kpi__value">{% if kpi.es_dinero %}${{ kpi.valor|pesos }}{% else %}{{ kpi.valor }}{{ kpi.sufijo }}{% endif %}</p>
+        <div class="pn-kpi">
+            <p class="pn-kpi__label">{{ kpi.titulo }}</p>
+            <p class="pn-kpi__value">{% if kpi.es_dinero %}${{ kpi.valor|pesos }}{% else %}{{ kpi.valor }}{{ kpi.sufijo }}{% endif %}</p>
             {% if kpi.variacion %}
             <p class="rp-var rp-var--{% if kpi.es_bueno %}ok{% else %}mal{% endif %}">
                 <span aria-hidden="true">{% if kpi.sube %}▲{% else %}▼{% endif %}</span>
@@ -74,16 +74,16 @@
             {% elif kpi.variacion == 0 %}
             <p class="rp-var">Igual que el período anterior</p>
             {% endif %}
-            <p class="ad-kpi__detail">{{ kpi.detalle }}</p>
+            <p class="pn-kpi__detail">{{ kpi.detalle }}</p>
         </div>
         {% endfor %}
     </div>
 
-    <div class="ad-card">
-        <div class="ad-card__head"><h3 class="ad-card__title">Qué mirar</h3></div>
-        <div class="ad-card__body rp-alertas">
+    <div class="pn-card">
+        <div class="pn-card__head"><h3 class="pn-card__title">Qué mirar</h3></div>
+        <div class="pn-card__body rp-alertas">
             {% for alerta in alertas %}
-            <div class="ad-alert{% if alerta.nivel == 'critico' %} ad-alert--danger{% elif alerta.nivel == 'atencion' %} ad-alert--warn{% elif alerta.nivel == 'exito' %} ad-alert--ok{% endif %}">
+            <div class="pn-alert{% if alerta.nivel == 'critico' %} pn-alert--danger{% elif alerta.nivel == 'atencion' %} pn-alert--warn{% elif alerta.nivel == 'exito' %} pn-alert--ok{% endif %}">
                 {% if alerta.nivel == 'exito' %}{% include 'gravity/admin/_icono.html' with i='tilde' %}{% elif alerta.nivel == 'info' %}{% include 'gravity/admin/_icono.html' with i='info' %}{% else %}{% include 'gravity/admin/_icono.html' with i='alerta' %}{% endif %}
                 <div><p><strong>{{ alerta.titulo }}</strong></p><p>{{ alerta.detalle }}</p></div>
             </div>
@@ -96,16 +96,16 @@
 <section class="rp-panel" id="ocupacion" role="tabpanel" aria-label="Ocupación">
     <h2 class="rp-print-title">Ocupación</h2>
     <div class="rp-grid">
-        <div class="ad-card">
-            <div class="ad-card__head">
+        <div class="pn-card">
+            <div class="pn-card__head">
                 <div>
-                    <h3 class="ad-card__title">Ocupación de los horarios fijos</h3>
-                    <p class="ad-card__sub">Foto de hoy, sin contar recuperos ni clases únicas</p>
+                    <h3 class="pn-card__title">Ocupación de los horarios fijos</h3>
+                    <p class="pn-card__sub">Foto de hoy, sin contar recuperos ni clases únicas</p>
                 </div>
             </div>
-            <div class="ad-card__body">
+            <div class="pn-card__body">
                 <p class="rp-hero"><span class="rp-hero__num">{{ ocupacion_general }}%</span> <span class="rp-hero__txt">{{ total_ocupados }} de {{ total_cupos }} lugares · {{ lugares_libres }} libres en {{ total_clases }} clase{{ total_clases|pluralize }}</span></p>
-                <span class="ad-meter rp-meter-lg"><span class="ad-meter__bar" style="width: {{ ocupacion_general|stringformat:'d' }}%"></span></span>
+                <span class="pn-meter rp-meter-lg"><span class="pn-meter__bar" style="width: {{ ocupacion_general|stringformat:'d' }}%"></span></span>
 
                 <h4 class="rp-subtitulo">Por sede</h4>
                 <ul class="rp-barras">
@@ -131,14 +131,14 @@
             </div>
         </div>
 
-        <div class="ad-card">
-            <div class="ad-card__head">
+        <div class="pn-card">
+            <div class="pn-card__head">
                 <div>
-                    <h3 class="ad-card__title">Alumnos por día</h3>
-                    <p class="ad-card__sub">Lugares ocupados en horarios fijos</p>
+                    <h3 class="pn-card__title">Alumnos por día</h3>
+                    <p class="pn-card__sub">Lugares ocupados en horarios fijos</p>
                 </div>
             </div>
-            <div class="ad-card__body">
+            <div class="pn-card__body">
                 <ul class="rp-barras">
                     {% for d in stats_por_dia %}{% if d.total_clases %}
                     <li class="rp-barra">
@@ -152,11 +152,11 @@
         </div>
     </div>
 
-    <div class="ad-card">
-        <div class="ad-card__head">
+    <div class="pn-card">
+        <div class="pn-card__head">
             <div>
-                <h3 class="ad-card__title">Mapa de la semana</h3>
-                <p class="ad-card__sub">Cada clase con sus lugares ocupados</p>
+                <h3 class="pn-card__title">Mapa de la semana</h3>
+                <p class="pn-card__sub">Cada clase con sus lugares ocupados</p>
             </div>
             <span class="rp-leyenda" aria-hidden="true">
                 <span><i class="rp-nivel rp-nivel--bajo"></i>Menos de 50%</span>
@@ -165,7 +165,7 @@
                 <span><i class="rp-nivel rp-nivel--completo"></i>Completa</span>
             </span>
         </div>
-        <div class="ad-card__body">
+        <div class="pn-card__body">
             {% comment %} Celular y tablet: agenda por día {% endcomment %}
             <div class="rp-agenda">
                 {% for dia in agenda_por_dia %}{% if dia.clases %}
@@ -208,22 +208,22 @@
         </div>
     </div>
 
-    <div class="ad-card">
-        <div class="ad-card__head"><h3 class="ad-card__title">Clases de la más llena a la más vacía</h3></div>
-        <div class="ad-table-wrap">
-            <table class="ad-table">
-                <thead><tr><th>Clase</th><th>Sede</th><th>Día y hora</th><th>Ocupación</th><th class="ad-num">Libres</th></tr></thead>
+    <div class="pn-card">
+        <div class="pn-card__head"><h3 class="pn-card__title">Clases de la más llena a la más vacía</h3></div>
+        <div class="pn-table-wrap">
+            <table class="pn-table">
+                <thead><tr><th>Clase</th><th>Sede</th><th>Día y hora</th><th>Ocupación</th><th class="pn-num">Libres</th></tr></thead>
                 <tbody>
                     {% for c in ranking_clases %}
                     <tr>
-                        <td class="ad-table__main"><a class="rp-link" href="{% url 'gravity:admin_clase_detalle' c.id %}">{{ c.nombre }}</a></td>
+                        <td class="pn-table__main"><a class="rp-link" href="{% url 'gravity:admin_clase_detalle' c.id %}">{{ c.nombre }}</a></td>
                         <td data-label="Sede">{{ c.sede }}</td>
                         <td data-label="Día y hora">{{ c.dia }} {{ c.horario|time:"H:i" }}</td>
-                        <td data-label="Ocupación"><span class="rp-ocup"><span class="ad-meter"><span class="ad-meter__bar" style="width: {{ c.porcentaje }}%"></span></span>{{ c.ocupadas }}/{{ c.cupo }}</span></td>
-                        <td data-label="Libres" class="ad-num">{{ c.libres }}</td>
+                        <td data-label="Ocupación"><span class="rp-ocup"><span class="pn-meter"><span class="pn-meter__bar" style="width: {{ c.porcentaje }}%"></span></span>{{ c.ocupadas }}/{{ c.cupo }}</span></td>
+                        <td data-label="Libres" class="pn-num">{{ c.libres }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td class="ad-table__main">No hay clases activas{% if sede %} en esta sede{% endif %}.</td></tr>
+                    <tr><td class="pn-table__main">No hay clases activas{% if sede %} en esta sede{% endif %}.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -235,10 +235,10 @@
 <section class="rp-panel" id="alumnos" role="tabpanel" aria-label="Alumnos">
     <h2 class="rp-print-title">Alumnos</h2>
     <div class="rp-grid">
-        <div class="ad-card">
-            <div class="ad-card__head"><h3 class="ad-card__title">Movimiento del período</h3></div>
-            <div class="ad-card__body">
-                <dl class="ad-data ad-data--2 rp-datos">
+        <div class="pn-card">
+            <div class="pn-card__head"><h3 class="pn-card__title">Movimiento del período</h3></div>
+            <div class="pn-card__body">
+                <dl class="pn-data pn-data--2 rp-datos">
                     <div><dt>Reservas nuevas</dt><dd>{{ reservas_nuevas }} <small>antes {{ reservas_nuevas_prev }}</small></dd></div>
                     <div><dt>Bajas de horario fijo</dt><dd>{{ bajas }} <small>antes {{ bajas_prev }}</small></dd></div>
                     <div><dt>Recuperos</dt><dd>{{ recuperos }}</dd></div>
@@ -251,10 +251,10 @@
             </div>
         </div>
 
-        <div class="ad-card">
-            <div class="ad-card__head"><h3 class="ad-card__title">Cuentas</h3></div>
-            <div class="ad-card__body">
-                <dl class="ad-data ad-data--2 rp-datos">
+        <div class="pn-card">
+            <div class="pn-card__head"><h3 class="pn-card__title">Cuentas</h3></div>
+            <div class="pn-card__body">
+                <dl class="pn-data pn-data--2 rp-datos">
                     <div><dt>Cuentas activas</dt><dd>{{ total_clientes }}</dd></div>
                     <div><dt>Con horario fijo</dt><dd>{{ clientes_activos }}</dd></div>
                     <div><dt>Sin reserva</dt><dd>{{ clientes_sin_reserva }}</dd></div>
@@ -266,36 +266,36 @@
             </div>
         </div>
 
-        <div class="ad-card">
-            <div class="ad-card__head">
-                <div><h3 class="ad-card__title">Más horarios fijos</h3><p class="ad-card__sub">Alumnos con más clases por semana</p></div>
+        <div class="pn-card">
+            <div class="pn-card__head">
+                <div><h3 class="pn-card__title">Más horarios fijos</h3><p class="pn-card__sub">Alumnos con más clases por semana</p></div>
             </div>
             {% if top_clientes %}
-            <ul class="ad-list">
+            <ul class="pn-list">
                 {% for c in top_clientes %}
-                <li><a class="ad-row" href="{% url 'gravity:admin_usuario_detalle' c.id %}">
+                <li><a class="pn-row" href="{% url 'gravity:admin_usuario_detalle' c.id %}">
                     {% include 'gravity/admin/_avatar.html' with persona=c %}
-                    <span class="ad-row__body"><span class="ad-row__title">{{ c.get_full_name|default:c.username }}</span></span>
-                    <span class="ad-row__end"><span class="ad-badge ad-badge--plain">{{ c.total_reservas }} por semana</span></span>
+                    <span class="pn-row__body"><span class="pn-row__title">{{ c.get_full_name|default:c.username }}</span></span>
+                    <span class="pn-row__end"><span class="pn-badge pn-badge--plain">{{ c.total_reservas }} por semana</span></span>
                 </a></li>
                 {% endfor %}
             </ul>
             {% else %}<p class="hy-ok">Todavía no hay horarios fijos.</p>{% endif %}
         </div>
 
-        <div class="ad-card">
-            <div class="ad-card__head">
-                <div><h3 class="ad-card__title">Más faltas en el período</h3><p class="ad-card__sub">Con aviso y sin aviso</p></div>
+        <div class="pn-card">
+            <div class="pn-card__head">
+                <div><h3 class="pn-card__title">Más faltas en el período</h3><p class="pn-card__sub">Con aviso y sin aviso</p></div>
             </div>
             {% if clientes_faltas %}
-            <ul class="ad-list">
+            <ul class="pn-list">
                 {% for c in clientes_faltas %}
-                <li><a class="ad-row" href="{% url 'gravity:admin_usuario_detalle' c.id %}">
-                    <span class="ad-row__body">
-                        <span class="ad-row__title">{{ c.nombre }}</span>
-                        <span class="ad-row__sub">{{ c.ausencias }} con aviso · {{ c.inasistencias }} sin aviso</span>
+                <li><a class="pn-row" href="{% url 'gravity:admin_usuario_detalle' c.id %}">
+                    <span class="pn-row__body">
+                        <span class="pn-row__title">{{ c.nombre }}</span>
+                        <span class="pn-row__sub">{{ c.ausencias }} con aviso · {{ c.inasistencias }} sin aviso</span>
                     </span>
-                    <span class="ad-row__end"><span class="ad-badge ad-badge--{% if c.inasistencias %}danger{% else %}warn{% endif %} ad-badge--plain">{{ c.total }}</span></span>
+                    <span class="pn-row__end"><span class="pn-badge pn-badge--{% if c.inasistencias %}danger{% else %}warn{% endif %} pn-badge--plain">{{ c.total }}</span></span>
                 </a></li>
                 {% endfor %}
             </ul>
@@ -308,14 +308,14 @@
 <section class="rp-panel" id="planes" role="tabpanel" aria-label="Planes">
     <h2 class="rp-print-title">Planes</h2>
     <div class="rp-grid">
-        <div class="ad-card">
-            <div class="ad-card__head">
+        <div class="pn-card">
+            <div class="pn-card__head">
                 <div>
-                    <h3 class="ad-card__title">Alumnos por plan</h3>
-                    <p class="ad-card__sub">Planes activos hoy · {{ clientes_sin_plan }} cuenta{{ clientes_sin_plan|pluralize }} activa{{ clientes_sin_plan|pluralize }} sin plan</p>
+                    <h3 class="pn-card__title">Alumnos por plan</h3>
+                    <p class="pn-card__sub">Planes activos hoy · {{ clientes_sin_plan }} cuenta{{ clientes_sin_plan|pluralize }} activa{{ clientes_sin_plan|pluralize }} sin plan</p>
                 </div>
             </div>
-            <div class="ad-card__body">
+            <div class="pn-card__body">
                 <ul class="rp-barras">
                     {% for p in distribucion_planes %}
                     <li class="rp-barra">
@@ -333,13 +333,13 @@
             </div>
         </div>
 
-        <div class="ad-card">
-            <div class="ad-card__head">
-                <div><h3 class="ad-card__title">Cambios de plan pedidos</h3><p class="ad-card__sub">Solicitudes del período</p></div>
-                {% if panel.superadmin %}<a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_solicitudes_plan_lista' %}">Ver solicitudes</a>{% endif %}
+        <div class="pn-card">
+            <div class="pn-card__head">
+                <div><h3 class="pn-card__title">Cambios de plan pedidos</h3><p class="pn-card__sub">Solicitudes del período</p></div>
+                {% if panel.superadmin %}<a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_solicitudes_plan_lista' %}">Ver solicitudes</a>{% endif %}
             </div>
-            <div class="ad-card__body">
-                <dl class="ad-data ad-data--2 rp-datos">
+            <div class="pn-card__body">
+                <dl class="pn-data pn-data--2 rp-datos">
                     <div><dt>Pedidas</dt><dd>{{ solicitudes.total }}</dd></div>
                     <div><dt>Sin resolver (todas)</dt><dd>{{ solicitudes.pendientes }}</dd></div>
                     <div><dt>Aprobadas</dt><dd>{{ solicitudes.aprobadas }}</dd></div>
@@ -356,20 +356,20 @@
 {% if puede_ver_pagos and finanzas %}
 <section class="rp-panel" id="plata" role="tabpanel" aria-label="Plata">
     <h2 class="rp-print-title">Plata</h2>
-    <div class="ad-kpis">
-        <div class="ad-kpi"><p class="ad-kpi__label">Cobrado en el período</p><p class="ad-kpi__value">${{ finanzas.ingresos|pesos }}</p><p class="ad-kpi__detail">{{ finanzas.cantidad_pagos }} pago{{ finanzas.cantidad_pagos|pluralize }} · antes ${{ finanzas.ingresos_prev|pesos }}</p></div>
-        <div class="ad-kpi"><p class="ad-kpi__label">Pago promedio</p><p class="ad-kpi__value">${{ finanzas.ticket_promedio|pesos }}</p></div>
-        <div class="ad-kpi ad-kpi--danger"><p class="ad-kpi__label">Deuda de alumnos</p><p class="ad-kpi__value">${{ finanzas.deuda_total|pesos }}</p><p class="ad-kpi__detail">{{ finanzas.clientes_con_deuda }} alumno{{ finanzas.clientes_con_deuda|pluralize }} · {{ finanzas.cuotas_vencidas }} cuota{{ finanzas.cuotas_vencidas|pluralize }} vencida{{ finanzas.cuotas_vencidas|pluralize }}</p></div>
-        <div class="ad-kpi"><p class="ad-kpi__label">Saldo a favor de alumnos</p><p class="ad-kpi__value">${{ finanzas.saldo_a_favor|pesos }}</p></div>
+    <div class="pn-kpis">
+        <div class="pn-kpi"><p class="pn-kpi__label">Cobrado en el período</p><p class="pn-kpi__value">${{ finanzas.ingresos|pesos }}</p><p class="pn-kpi__detail">{{ finanzas.cantidad_pagos }} pago{{ finanzas.cantidad_pagos|pluralize }} · antes ${{ finanzas.ingresos_prev|pesos }}</p></div>
+        <div class="pn-kpi"><p class="pn-kpi__label">Pago promedio</p><p class="pn-kpi__value">${{ finanzas.ticket_promedio|pesos }}</p></div>
+        <div class="pn-kpi pn-kpi--danger"><p class="pn-kpi__label">Deuda de alumnos</p><p class="pn-kpi__value">${{ finanzas.deuda_total|pesos }}</p><p class="pn-kpi__detail">{{ finanzas.clientes_con_deuda }} alumno{{ finanzas.clientes_con_deuda|pluralize }} · {{ finanzas.cuotas_vencidas }} cuota{{ finanzas.cuotas_vencidas|pluralize }} vencida{{ finanzas.cuotas_vencidas|pluralize }}</p></div>
+        <div class="pn-kpi"><p class="pn-kpi__label">Saldo a favor de alumnos</p><p class="pn-kpi__value">${{ finanzas.saldo_a_favor|pesos }}</p></div>
     </div>
 
     <div class="rp-grid">
-        <div class="ad-card">
-            <div class="ad-card__head"><div><h3 class="ad-card__title">Cobranza del mes en curso</h3><p class="ad-card__sub">Cuotas generadas este mes</p></div></div>
-            <div class="ad-card__body">
+        <div class="pn-card">
+            <div class="pn-card__head"><div><h3 class="pn-card__title">Cobranza del mes en curso</h3><p class="pn-card__sub">Cuotas generadas este mes</p></div></div>
+            <div class="pn-card__body">
                 <p class="rp-hero"><span class="rp-hero__num">{{ finanzas.tasa_cobranza }}%</span> <span class="rp-hero__txt">cobrado</span></p>
-                <span class="ad-meter rp-meter-lg"><span class="ad-meter__bar" style="width: {{ finanzas.tasa_cobranza|stringformat:'d' }}%"></span></span>
-                <dl class="ad-data rp-datos rp-datos--3">
+                <span class="pn-meter rp-meter-lg"><span class="pn-meter__bar" style="width: {{ finanzas.tasa_cobranza|stringformat:'d' }}%"></span></span>
+                <dl class="pn-data rp-datos rp-datos--3">
                     <div><dt>Facturado</dt><dd>${{ finanzas.facturado_mes|pesos }}</dd></div>
                     <div><dt>Cobrado</dt><dd>${{ finanzas.cobrado_mes|pesos }}</dd></div>
                     <div><dt>Falta cobrar</dt><dd>${{ finanzas.pendiente_mes|pesos }}</dd></div>
@@ -377,9 +377,9 @@
             </div>
         </div>
 
-        <div class="ad-card">
-            <div class="ad-card__head"><div><h3 class="ad-card__title">Cómo pagan</h3><p class="ad-card__sub">Del total cobrado en el período</p></div></div>
-            <div class="ad-card__body">
+        <div class="pn-card">
+            <div class="pn-card__head"><div><h3 class="pn-card__title">Cómo pagan</h3><p class="pn-card__sub">Del total cobrado en el período</p></div></div>
+            <div class="pn-card__body">
                 <ul class="rp-barras">
                     {% for m in finanzas.metodos_pago %}{% if m.cantidad %}
                     <li class="rp-barra">
@@ -394,15 +394,15 @@
         </div>
     </div>
 
-    <div class="ad-card">
-        <div class="ad-card__head">
-            <div><h3 class="ad-card__title">Últimos 6 meses</h3><p class="ad-card__sub">Lo que se facturó en cuotas y lo que se cobró</p></div>
+    <div class="pn-card">
+        <div class="pn-card__head">
+            <div><h3 class="pn-card__title">Últimos 6 meses</h3><p class="pn-card__sub">Lo que se facturó en cuotas y lo que se cobró</p></div>
             <span class="rp-leyenda">
                 <span><i class="rp-key rp-key--1"></i>Facturado</span>
                 <span><i class="rp-key rp-key--2"></i>Cobrado</span>
             </span>
         </div>
-        <div class="ad-card__body">
+        <div class="pn-card__body">
             <div class="rp-cols" role="img" aria-label="Facturado y cobrado por mes, últimos 6 meses (detalle en la tabla de abajo)">
                 {% for m in finanzas.evolucion_meses %}
                 <div class="rp-col{% if m.es_mes_actual %} rp-col--actual{% endif %}" tabindex="0">
@@ -417,11 +417,11 @@
             </div>
             <details class="rp-tabla-datos">
                 <summary>Ver los números</summary>
-                <table class="ad-table">
-                    <thead><tr><th>Mes</th><th class="ad-num">Facturado</th><th class="ad-num">Cobrado</th></tr></thead>
+                <table class="pn-table">
+                    <thead><tr><th>Mes</th><th class="pn-num">Facturado</th><th class="pn-num">Cobrado</th></tr></thead>
                     <tbody>
                         {% for m in finanzas.evolucion_meses %}
-                        <tr><td class="ad-table__main">{{ m.label }}</td><td data-label="Facturado" class="ad-num">${{ m.facturado|pesos }}</td><td data-label="Cobrado" class="ad-num">${{ m.cobrado|pesos }}</td></tr>
+                        <tr><td class="pn-table__main">{{ m.label }}</td><td data-label="Facturado" class="pn-num">${{ m.facturado|pesos }}</td><td data-label="Cobrado" class="pn-num">${{ m.cobrado|pesos }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -429,20 +429,20 @@
         </div>
     </div>
 
-    <div class="ad-card">
-        <div class="ad-card__head">
-            <div><h3 class="ad-card__title">Deudas más altas</h3><p class="ad-card__sub">Saldo de hoy</p></div>
-            <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_pagos_vista_principal' %}?estado=debe">Ver en Pagos</a>
+    <div class="pn-card">
+        <div class="pn-card__head">
+            <div><h3 class="pn-card__title">Deudas más altas</h3><p class="pn-card__sub">Saldo de hoy</p></div>
+            <a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_pagos_vista_principal' %}?estado=debe">Ver en Pagos</a>
         </div>
         {% if finanzas.top_deudores %}
-        <ul class="ad-list">
+        <ul class="pn-list">
             {% for d in finanzas.top_deudores %}
-            <li><a class="ad-row" href="{% url 'gravity:admin_pagos_editar_estado_cliente' d.id %}">
-                <span class="ad-row__body">
-                    <span class="ad-row__title">{{ d.nombre }}</span>
-                    <span class="ad-row__sub">{{ d.plan }}{% if d.meses_atraso %} · {{ d.meses_atraso }} mes{{ d.meses_atraso|pluralize:"es" }} de atraso{% endif %}</span>
+            <li><a class="pn-row" href="{% url 'gravity:admin_pagos_editar_estado_cliente' d.id %}">
+                <span class="pn-row__body">
+                    <span class="pn-row__title">{{ d.nombre }}</span>
+                    <span class="pn-row__sub">{{ d.plan }}{% if d.meses_atraso %} · {{ d.meses_atraso }} mes{{ d.meses_atraso|pluralize:"es" }} de atraso{% endif %}</span>
                 </span>
-                <span class="ad-row__end rp-deuda">${{ d.deuda|pesos }}</span>
+                <span class="pn-row__end rp-deuda">${{ d.deuda|pesos }}</span>
             </a></li>
             {% endfor %}
         </ul>

@@ -11,10 +11,10 @@
     let ultimoFoco = null;
 
     // ---------------------------------------------------------------- Hojas
-    const overlay = document.getElementById('ad-overlay');
+    const overlay = document.getElementById('pn-overlay');
 
     function hojaAbierta() {
-        return document.querySelector('.ad-sheet.is-open');
+        return document.querySelector('.pn-sheet.is-open');
     }
 
     function abrirHoja(hoja, disparador) {
@@ -56,7 +56,7 @@
             return;
         }
         if (e.target.closest('[data-cerrar]')) {
-            cerrarHoja(e.target.closest('.ad-sheet'));
+            cerrarHoja(e.target.closest('.pn-sheet'));
         }
     });
 
@@ -72,7 +72,7 @@
     // En escritorio "Más" no existe: si se agranda la ventana con la hoja abierta, se cierra
     window.addEventListener('resize', function () {
         const hoja = hojaAbierta();
-        if (hoja && hoja.id === 'ad-mas' && window.innerWidth >= 1024) cerrarHoja(hoja, false);
+        if (hoja && hoja.id === 'pn-mas' && window.innerWidth >= 1024) cerrarHoja(hoja, false);
     });
 
     // -------------------------------------------------------------- Bandeja
@@ -81,7 +81,7 @@
     let bandejaMarcada = false;
 
     function marcarBandejaVista() {
-        const bandeja = document.getElementById('ad-bandeja');
+        const bandeja = document.getElementById('pn-bandeja');
         if (!bandeja || bandejaMarcada || bandeja.dataset.sinLeer === '0') return;
         bandejaMarcada = true;
         let ids = [];
@@ -95,7 +95,7 @@
             if (!r.ok) throw new Error(r.status);
             document.querySelectorAll('[data-bandeja-dot]').forEach(function (d) { d.remove(); });
             bandeja.dataset.sinLeer = '0';
-            bandeja.querySelector('.ad-inbox').classList.add('is-read');
+            bandeja.querySelector('.pn-inbox').classList.add('is-read');
         }).catch(function () {
             bandejaMarcada = false; // se vuelve a intentar la próxima vez que se abra
         });
@@ -113,7 +113,7 @@
     }
 
     // ---------------------------------------------------------- Confirmación
-    const modal = document.getElementById('ad-confirm');
+    const modal = document.getElementById('pn-confirm');
     let resolver = null;
 
     function cerrarModal(resultado) {
@@ -132,13 +132,13 @@
         if (!modal) return Promise.resolve(window.confirm(opciones.texto || '¿Confirmás?'));
         if (resolver) cerrarModal(false);
         ultimoFoco = document.activeElement;
-        modal.querySelector('.ad-modal__title').textContent = opciones.titulo || '¿Confirmás?';
-        modal.querySelector('.ad-modal__text').textContent = opciones.texto || '';
+        modal.querySelector('.pn-modal__title').textContent = opciones.titulo || '¿Confirmás?';
+        modal.querySelector('.pn-modal__text').textContent = opciones.texto || '';
         const aceptar = modal.querySelector('[data-modal-aceptar]');
         aceptar.textContent = opciones.boton || 'Confirmar';
         const peligro = !!opciones.peligro;
-        modal.classList.toggle('ad-modal--danger', peligro);
-        aceptar.classList.toggle('ad-btn--danger', peligro);
+        modal.classList.toggle('pn-modal--danger', peligro);
+        aceptar.classList.toggle('pn-btn--danger', peligro);
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         body.classList.add('is-locked');
@@ -226,7 +226,7 @@
         }
     });
     // Tocar fuera de la caja cierra el diálogo
-    document.querySelectorAll('dialog.ad-dialog').forEach(function (d) {
+    document.querySelectorAll('dialog.pn-dialog').forEach(function (d) {
         d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
         d.addEventListener('close', function () { if (ultimoFoco && ultimoFoco.focus) ultimoFoco.focus({ preventScroll: true }); });
     });

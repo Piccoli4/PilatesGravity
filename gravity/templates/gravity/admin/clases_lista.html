@@ -3,28 +3,28 @@
 {% block title %}Clases{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Clases</h1>
-        <p class="ad-head__sub">
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Clases</h1>
+        <p class="pn-head__sub">
             {{ conteo.activas }} clase{{ conteo.activas|pluralize }} activa{{ conteo.activas|pluralize }}{% if conteo.pausadas %} y {{ conteo.pausadas }} en pausa{% endif %}
             {% if total_cupo %}· {{ total_fijos }} de {{ total_cupo }} lugares con horario fijo{% endif %}
         </p>
     </div>
-    <div class="ad-head__actions">
-        <a class="ad-btn" href="{% url 'gravity:admin_clase_crear' %}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Nueva clase</a>
+    <div class="pn-head__actions">
+        <a class="pn-btn" href="{% url 'gravity:admin_clase_crear' %}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Nueva clase</a>
     </div>
 </header>
 
-<div class="ad-filters">
-    <nav class="ad-chips" aria-label="Estado">
-        {% for c in chips_estado %}<a class="ad-chip{% if c.activo %} is-active{% endif %}" href="{{ c.url }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }} <span class="ad-chip__count">{{ c.cantidad }}</span></a>{% endfor %}
+<div class="pn-filters">
+    <nav class="pn-chips" aria-label="Estado">
+        {% for c in chips_estado %}<a class="pn-chip{% if c.activo %} is-active{% endif %}" href="{{ c.url }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }} <span class="pn-chip__count">{{ c.cantidad }}</span></a>{% endfor %}
     </nav>
-    <nav class="ad-chips" aria-label="Sede">
-        {% for c in chips_sede %}<a class="ad-chip{% if c.activo %} is-active{% endif %}" href="{{ c.url }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }}</a>{% endfor %}
+    <nav class="pn-chips" aria-label="Sede">
+        {% for c in chips_sede %}<a class="pn-chip{% if c.activo %} is-active{% endif %}" href="{{ c.url }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }}</a>{% endfor %}
     </nav>
-    <nav class="ad-chips" aria-label="Tipo">
-        {% for c in chips_tipo %}<a class="ad-chip{% if c.activo %} is-active{% endif %}" href="{{ c.url }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }}</a>{% endfor %}
+    <nav class="pn-chips" aria-label="Tipo">
+        {% for c in chips_tipo %}<a class="pn-chip{% if c.activo %} is-active{% endif %}" href="{{ c.url }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }}</a>{% endfor %}
     </nav>
 </div>
 
@@ -34,9 +34,9 @@
     <section class="cl-dia" aria-labelledby="cl-dia-{{ forloop.counter }}">
         <div class="cl-dia__head">
             <h2 class="cl-dia__titulo" id="cl-dia-{{ forloop.counter }}">{{ d.dia }} <span>{{ d.clases|length }}</span></h2>
-            <a class="ad-btn ad-btn--quiet ad-btn--sm" href="{% url 'gravity:admin_clase_crear' %}?dia={{ d.dia|urlencode }}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Agregar</a>
+            <a class="pn-btn pn-btn--quiet pn-btn--sm" href="{% url 'gravity:admin_clase_crear' %}?dia={{ d.dia|urlencode }}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Agregar</a>
         </div>
-        <ul class="ad-card cl-lista">
+        <ul class="pn-card cl-lista">
             {% for item in d.clases %}
             <li>
                 <a class="cl-fila{% if not item.clase.activa %} cl-fila--pausada{% endif %}" href="{% url 'gravity:admin_clase_detalle' item.clase.id %}">
@@ -44,16 +44,16 @@
                     <span class="cl-fila__info">
                         <span class="cl-fila__nombre">
                             {{ item.clase.get_nombre_display }}
-                            {% if not item.clase.activa %}<span class="ad-badge ad-badge--muted">En pausa</span>{% elif not item.libres %}<span class="ad-badge ad-badge--danger ad-badge--plain">Completa</span>{% endif %}
+                            {% if not item.clase.activa %}<span class="pn-badge pn-badge--muted">En pausa</span>{% elif not item.libres %}<span class="pn-badge pn-badge--danger pn-badge--plain">Completa</span>{% endif %}
                         </span>
                         <span class="cl-fila__sede">{{ item.clase.get_direccion_corta }}</span>
                     </span>
                     <span class="cl-fila__ocup">
                         <span class="cl-fila__num"><strong>{{ item.fijos }}</strong>/{{ item.clase.cupo_maximo }}</span>
-                        <span class="ad-meter{% if item.nivel %} ad-meter--{{ item.nivel }}{% endif %}" aria-hidden="true"><span class="ad-meter__bar" style="width: {{ item.porcentaje }}%"></span></span>
-                        <span class="ad-sr">{{ item.fijos }} de {{ item.clase.cupo_maximo }} lugares con horario fijo</span>
+                        <span class="pn-meter{% if item.nivel %} pn-meter--{{ item.nivel }}{% endif %}" aria-hidden="true"><span class="pn-meter__bar" style="width: {{ item.porcentaje }}%"></span></span>
+                        <span class="pn-sr">{{ item.fijos }} de {{ item.clase.cupo_maximo }} lugares con horario fijo</span>
                     </span>
-                    <span class="ad-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
+                    <span class="pn-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
                 </a>
             </li>
             {% endfor %}
@@ -63,13 +63,13 @@
 </div>
 <p class="cl-nota">La ocupación cuenta los alumnos con horario fijo. Los recuperos y clases únicas de cada fecha se ven en el detalle de la clase.</p>
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='calendario' %}
-        <p class="ad-empty__title">No hay clases {% if hay_filtros %}con estos filtros{% else %}cargadas{% endif %}</p>
-        <p class="ad-empty__text">{% if hay_filtros %}Probá con otra sede, otro tipo o con todas las clases.{% else %}Creá la primera clase para que los alumnos puedan reservar.{% endif %}</p>
-        {% if hay_filtros %}<a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_clases_lista' %}">Ver las clases activas</a>
-        {% else %}<a class="ad-btn" href="{% url 'gravity:admin_clase_crear' %}">Nueva clase</a>{% endif %}
+        <p class="pn-empty__title">No hay clases {% if hay_filtros %}con estos filtros{% else %}cargadas{% endif %}</p>
+        <p class="pn-empty__text">{% if hay_filtros %}Probá con otra sede, otro tipo o con todas las clases.{% else %}Creá la primera clase para que los alumnos puedan reservar.{% endif %}</p>
+        {% if hay_filtros %}<a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_clases_lista' %}">Ver las clases activas</a>
+        {% else %}<a class="pn-btn" href="{% url 'gravity:admin_clase_crear' %}">Nueva clase</a>{% endif %}
     </div>
 </div>
 {% endif %}

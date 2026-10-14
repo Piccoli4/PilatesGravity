@@ -4,79 +4,79 @@
 {% block title %}Cobros por administradora{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Cobros por administradora</h1>
-        <p class="ad-head__sub">{{ desde|date:"d/m/Y" }}{% if hasta != desde %} al {{ hasta|date:"d/m/Y" }}{% endif %} · por fecha {% if criterio == 'carga' %}de carga{% else %}de pago{% endif %}</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Cobros por administradora</h1>
+        <p class="pn-head__sub">{{ desde|date:"d/m/Y" }}{% if hasta != desde %} al {{ hasta|date:"d/m/Y" }}{% endif %} · por fecha {% if criterio == 'carga' %}de carga{% else %}de pago{% endif %}</p>
     </div>
 </header>
 
-<form method="get" class="ad-filters" id="pa-filtros">
+<form method="get" class="pn-filters" id="pa-filtros">
     <input type="hidden" name="periodo" value="{{ periodo }}">
     {% comment %} Primer botón: el que usa Enter en el buscador (no cambia el período) {% endcomment %}
-    <button type="submit" class="ad-sr" tabindex="-1">Buscar</button>
-    <div class="ad-chips" role="group" aria-label="Período">
-        <button type="submit" name="periodo" value="dia" class="ad-chip{% if periodo == 'dia' %} is-active{% endif %}">Día</button>
-        <button type="submit" name="periodo" value="semana" class="ad-chip{% if periodo == 'semana' %} is-active{% endif %}">Semana</button>
-        <button type="submit" name="periodo" value="mes" class="ad-chip{% if periodo == 'mes' %} is-active{% endif %}">Mes</button>
-        <button type="submit" name="periodo" value="personalizado" class="ad-chip{% if periodo == 'personalizado' %} is-active{% endif %}">Rango</button>
+    <button type="submit" class="pn-sr" tabindex="-1">Buscar</button>
+    <div class="pn-chips" role="group" aria-label="Período">
+        <button type="submit" name="periodo" value="dia" class="pn-chip{% if periodo == 'dia' %} is-active{% endif %}">Día</button>
+        <button type="submit" name="periodo" value="semana" class="pn-chip{% if periodo == 'semana' %} is-active{% endif %}">Semana</button>
+        <button type="submit" name="periodo" value="mes" class="pn-chip{% if periodo == 'mes' %} is-active{% endif %}">Mes</button>
+        <button type="submit" name="periodo" value="personalizado" class="pn-chip{% if periodo == 'personalizado' %} is-active{% endif %}">Rango</button>
     </div>
-    <div class="ad-filters__row">
+    <div class="pn-filters__row">
         {% if periodo == 'mes' %}
-        <label class="ad-field"><span class="ad-label">Mes</span><input class="ad-input" type="month" name="mes" value="{{ mes_seleccionado|date:'Y-m' }}" data-auto></label>
+        <label class="pn-field"><span class="pn-label">Mes</span><input class="pn-input" type="month" name="mes" value="{{ mes_seleccionado|date:'Y-m' }}" data-auto></label>
         {% elif periodo == 'personalizado' %}
-        <label class="ad-field"><span class="ad-label">Desde</span><input class="ad-input" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" data-auto></label>
-        <label class="ad-field"><span class="ad-label">Hasta</span><input class="ad-input" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" data-auto></label>
+        <label class="pn-field"><span class="pn-label">Desde</span><input class="pn-input" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" data-auto></label>
+        <label class="pn-field"><span class="pn-label">Hasta</span><input class="pn-input" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" data-auto></label>
         {% else %}
-        <label class="ad-field"><span class="ad-label">{% if periodo == 'semana' %}Semana del{% else %}Día{% endif %}</span><input class="ad-input" type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" data-auto></label>
+        <label class="pn-field"><span class="pn-label">{% if periodo == 'semana' %}Semana del{% else %}Día{% endif %}</span><input class="pn-input" type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" data-auto></label>
         {% endif %}
-        <label class="ad-field"><span class="ad-label">Fecha que se mira</span>
-            <select class="ad-select" name="criterio" data-auto>
+        <label class="pn-field"><span class="pn-label">Fecha que se mira</span>
+            <select class="pn-select" name="criterio" data-auto>
                 <option value="pago"{% if criterio == 'pago' %} selected{% endif %}>Cuando pagó el alumno</option>
                 <option value="carga"{% if criterio == 'carga' %} selected{% endif %}>Cuando se cargó</option>
             </select>
         </label>
-        <label class="ad-field"><span class="ad-label">Administradora</span>
-            <select class="ad-select" name="admin" data-auto>
+        <label class="pn-field"><span class="pn-label">Administradora</span>
+            <select class="pn-select" name="admin" data-auto>
                 <option value="">Todas</option>
                 {% for a in administradoras %}<option value="{{ a.id }}"{% if admin_filtro == a.id|stringformat:'s' %} selected{% endif %}>{{ a.get_full_name|default:a.username }}</option>{% endfor %}
                 {% if hay_sin_registrar or admin_filtro == 'sin_registrar' %}<option value="sin_registrar"{% if admin_filtro == 'sin_registrar' %} selected{% endif %}>Sin registrar quién</option>{% endif %}
             </select>
         </label>
-        <label class="ad-field"><span class="ad-label">Forma de pago</span>
-            <select class="ad-select" name="tipo" data-auto>
+        <label class="pn-field"><span class="pn-label">Forma de pago</span>
+            <select class="pn-select" name="tipo" data-auto>
                 <option value="">Todas</option>
                 {% for clave, nombre in tipos_pago %}<option value="{{ clave }}"{% if tipo_filtro == clave %} selected{% endif %}>{{ nombre }}</option>{% endfor %}
             </select>
         </label>
     </div>
-    <label class="ad-search">
-        <span class="ad-sr">Buscar alumno</span>
+    <label class="pn-search">
+        <span class="pn-sr">Buscar alumno</span>
         {% include 'gravity/admin/_icono.html' with i='buscar' %}
-        <input class="ad-input" type="search" name="buscar" value="{{ buscar }}" placeholder="Buscar alumno" autocomplete="off">
+        <input class="pn-input" type="search" name="buscar" value="{{ buscar }}" placeholder="Buscar alumno" autocomplete="off">
     </label>
 </form>
 
-<div class="ad-kpis">
-    <div class="ad-kpi ad-kpi--ok"><p class="ad-kpi__label">Cobrado</p><p class="ad-kpi__value">${{ totales.monto|pesos }}</p><p class="ad-kpi__detail">{{ totales.cantidad }} pago{{ totales.cantidad|pluralize }}</p></div>
+<div class="pn-kpis">
+    <div class="pn-kpi pn-kpi--ok"><p class="pn-kpi__label">Cobrado</p><p class="pn-kpi__value">${{ totales.monto|pesos }}</p><p class="pn-kpi__detail">{{ totales.cantidad }} pago{{ totales.cantidad|pluralize }}</p></div>
     {% for t in totales.tipos %}{% if t.cantidad %}
-    <div class="ad-kpi"><p class="ad-kpi__label">{{ t.nombre }}</p><p class="ad-kpi__value">${{ t.monto|pesos }}</p><p class="ad-kpi__detail">{{ t.cantidad }} pago{{ t.cantidad|pluralize }}</p></div>
+    <div class="pn-kpi"><p class="pn-kpi__label">{{ t.nombre }}</p><p class="pn-kpi__value">${{ t.monto|pesos }}</p><p class="pn-kpi__detail">{{ t.cantidad }} pago{{ t.cantidad|pluralize }}</p></div>
     {% endif %}{% endfor %}
-    {% if totales.anulados_cantidad %}<div class="ad-kpi ad-kpi--danger"><p class="ad-kpi__label">Anulados</p><p class="ad-kpi__value">{{ totales.anulados_cantidad }}</p><p class="ad-kpi__detail">${{ totales.anulados_monto|pesos }}</p></div>{% endif %}
+    {% if totales.anulados_cantidad %}<div class="pn-kpi pn-kpi--danger"><p class="pn-kpi__label">Anulados</p><p class="pn-kpi__value">{{ totales.anulados_cantidad }}</p><p class="pn-kpi__detail">${{ totales.anulados_monto|pesos }}</p></div>{% endif %}
 </div>
 
-<section class="ad-card" aria-labelledby="pa-admins">
-    <div class="ad-card__head"><div><h2 class="ad-card__title" id="pa-admins">Por administradora</h2><p class="ad-card__sub">{{ admins_que_cargaron }} cargaron pagos en el período</p></div></div>
-    <ul class="ad-list">
+<section class="pn-card" aria-labelledby="pa-admins">
+    <div class="pn-card__head"><div><h2 class="pn-card__title" id="pa-admins">Por administradora</h2><p class="pn-card__sub">{{ admins_que_cargaron }} cargaron pagos en el período</p></div></div>
+    <ul class="pn-list">
         {% for f in filas %}
         <li>
-            <a class="ad-row" href="?{{ querystring }}&admin={% if f.es_sin_registrar %}sin_registrar{% else %}{{ f.admin.id }}{% endif %}">
+            <a class="pn-row" href="?{{ querystring }}&admin={% if f.es_sin_registrar %}sin_registrar{% else %}{{ f.admin.id }}{% endif %}">
                 {% if f.admin %}{% include 'gravity/admin/_avatar.html' with persona=f.admin %}{% endif %}
-                <span class="ad-row__body">
-                    <span class="ad-row__title">{% if f.es_sin_registrar %}Sin registrar quién{% else %}{{ f.admin.get_full_name|default:f.admin.username }}{% endif %}</span>
-                    <span class="ad-row__sub">{{ f.cantidad }} pago{{ f.cantidad|pluralize }}{% for t in f.tipos %}{% if t.cantidad %} · {{ t.nombre }} ${{ t.monto|pesos }}{% endif %}{% endfor %}{% if f.anulados_cantidad %} · {{ f.anulados_cantidad }} anulado{{ f.anulados_cantidad|pluralize }}{% endif %}{% if f.pendientes_cantidad %} · {{ f.pendientes_cantidad }} sin confirmar{% endif %}</span>
+                <span class="pn-row__body">
+                    <span class="pn-row__title">{% if f.es_sin_registrar %}Sin registrar quién{% else %}{{ f.admin.get_full_name|default:f.admin.username }}{% endif %}</span>
+                    <span class="pn-row__sub">{{ f.cantidad }} pago{{ f.cantidad|pluralize }}{% for t in f.tipos %}{% if t.cantidad %} · {{ t.nombre }} ${{ t.monto|pesos }}{% endif %}{% endfor %}{% if f.anulados_cantidad %} · {{ f.anulados_cantidad }} anulado{{ f.anulados_cantidad|pluralize }}{% endif %}{% if f.pendientes_cantidad %} · {{ f.pendientes_cantidad }} sin confirmar{% endif %}</span>
                 </span>
-                <span class="ad-row__end pg-precio">${{ f.monto|pesos }}</span>
+                <span class="pn-row__end pg-precio">${{ f.monto|pesos }}</span>
             </a>
         </li>
         {% empty %}
@@ -85,17 +85,17 @@
     </ul>
 </section>
 
-<section class="ad-card" aria-labelledby="pa-detalle">
-    <div class="ad-card__head"><div><h2 class="ad-card__title" id="pa-detalle">Cada pago</h2><p class="ad-card__sub">{{ page_obj.paginator.count }} en total</p></div></div>
+<section class="pn-card" aria-labelledby="pa-detalle">
+    <div class="pn-card__head"><div><h2 class="pn-card__title" id="pa-detalle">Cada pago</h2><p class="pn-card__sub">{{ page_obj.paginator.count }} en total</p></div></div>
     {% if page_obj.object_list %}
-    <div class="ad-table-wrap">
-        <table class="ad-table">
-            <thead><tr><th>Alumno</th><th class="ad-num">Monto</th><th>Forma</th><th>Fecha de pago</th><th>Cargó</th></tr></thead>
+    <div class="pn-table-wrap">
+        <table class="pn-table">
+            <thead><tr><th>Alumno</th><th class="pn-num">Monto</th><th>Forma</th><th>Fecha de pago</th><th>Cargó</th></tr></thead>
             <tbody>
                 {% for p in page_obj %}
                 <tr>
-                    <td class="ad-table__main">{% if p.cliente %}<a class="rp-link" href="{% url 'gravity:admin_pagos_editar_estado_cliente' p.cliente.id %}">{{ p.cliente.get_full_name|default:p.cliente.username }}</a>{% else %}—{% endif %}{% if p.estado == 'rechazado' %} <span class="ad-badge ad-badge--danger">Anulado</span>{% elif p.estado == 'pendiente' %} <span class="ad-badge ad-badge--warn">Sin confirmar</span>{% endif %}</td>
-                    <td data-label="Monto" class="ad-num{% if p.estado == 'rechazado' %} pg-tachado{% endif %}">${{ p.monto|pesos }}</td>
+                    <td class="pn-table__main">{% if p.cliente %}<a class="rp-link" href="{% url 'gravity:admin_pagos_editar_estado_cliente' p.cliente.id %}">{{ p.cliente.get_full_name|default:p.cliente.username }}</a>{% else %}—{% endif %}{% if p.estado == 'rechazado' %} <span class="pn-badge pn-badge--danger">Anulado</span>{% elif p.estado == 'pendiente' %} <span class="pn-badge pn-badge--warn">Sin confirmar</span>{% endif %}</td>
+                    <td data-label="Monto" class="pn-num{% if p.estado == 'rechazado' %} pg-tachado{% endif %}">${{ p.monto|pesos }}</td>
                     <td data-label="Forma">{{ p.get_tipo_pago_display }}{% if p.comprobante %} · {{ p.comprobante }}{% endif %}</td>
                     <td data-label="Fecha de pago">{{ p.fecha_pago|date:"d/m/Y" }}</td>
                     <td data-label="Cargó">{% if p.registrado_por %}{{ p.registrado_por.first_name|default:p.registrado_por.username }}{% else %}—{% endif %} <small class="pg-carga">{{ p.fecha_registro|date:"d/m H:i" }}</small></td>
@@ -105,10 +105,10 @@
         </table>
     </div>
     {% if page_obj.has_other_pages %}
-    <nav class="ad-pager pa-pager" aria-label="Páginas">
-        {% if page_obj.has_previous %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ querystring }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
-        <span class="ad-pager__info">{{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}</span>
-        {% if page_obj.has_next %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ querystring }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
+    <nav class="pn-pager pa-pager" aria-label="Páginas">
+        {% if page_obj.has_previous %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ querystring }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
+        <span class="pn-pager__info">{{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}</span>
+        {% if page_obj.has_next %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ querystring }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
     </nav>
     {% endif %}
     {% else %}

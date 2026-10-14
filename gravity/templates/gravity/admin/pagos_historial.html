@@ -9,27 +9,27 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% url 'gravity:admin_pagos_editar_estado_cliente' cliente.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Cuenta</a>
-        <h1 class="ad-head__title">Pagos de {{ cliente.get_full_name|default:cliente.username }}</h1>
-        <p class="ad-head__sub">{{ total_pagos }} pago{{ total_pagos|pluralize }} confirmado{{ total_pagos|pluralize }} · ${{ total_pagado|pesos }} en total</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% url 'gravity:admin_pagos_editar_estado_cliente' cliente.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Cuenta</a>
+        <h1 class="pn-head__title">Pagos de {{ cliente.get_full_name|default:cliente.username }}</h1>
+        <p class="pn-head__sub">{{ total_pagos }} pago{{ total_pagos|pluralize }} confirmado{{ total_pagos|pluralize }} · ${{ total_pagado|pesos }} en total</p>
     </div>
-    <div class="ad-head__actions">
-        <a class="ad-btn" href="{% url 'gravity:admin_pagos_registrar_pago' cliente.id %}">Registrar pago</a>
+    <div class="pn-head__actions">
+        <a class="pn-btn" href="{% url 'gravity:admin_pagos_registrar_pago' cliente.id %}">Registrar pago</a>
     </div>
 </header>
 
 {% if pagos %}
-<div class="ad-card">
-    <div class="ad-table-wrap">
-        <table class="ad-table">
-            <thead><tr><th>Fecha</th><th class="ad-num">Monto</th><th>Forma</th><th>Concepto</th><th>Cargó</th></tr></thead>
+<div class="pn-card">
+    <div class="pn-table-wrap">
+        <table class="pn-table">
+            <thead><tr><th>Fecha</th><th class="pn-num">Monto</th><th>Forma</th><th>Concepto</th><th>Cargó</th></tr></thead>
             <tbody>
                 {% for p in pagos %}
                 <tr>
-                    <td class="ad-table__main">{{ p.fecha_pago|date:"d/m/Y" }}{% if p.estado == 'rechazado' %} <span class="ad-badge ad-badge--danger">Anulado</span>{% elif p.estado == 'pendiente' %} <span class="ad-badge ad-badge--warn">Sin confirmar</span>{% endif %}</td>
-                    <td data-label="Monto" class="ad-num{% if p.estado == 'rechazado' %} pg-tachado{% endif %}">${{ p.monto|pesos }}</td>
+                    <td class="pn-table__main">{{ p.fecha_pago|date:"d/m/Y" }}{% if p.estado == 'rechazado' %} <span class="pn-badge pn-badge--danger">Anulado</span>{% elif p.estado == 'pendiente' %} <span class="pn-badge pn-badge--warn">Sin confirmar</span>{% endif %}</td>
+                    <td data-label="Monto" class="pn-num{% if p.estado == 'rechazado' %} pg-tachado{% endif %}">${{ p.monto|pesos }}</td>
                     <td data-label="Forma">{{ p.get_tipo_pago_display }}</td>
                     <td data-label="Concepto">{{ p.concepto }}{% if p.comprobante %} · {{ p.comprobante }}{% endif %}</td>
                     <td data-label="Cargó">{% if p.registrado_por %}{{ p.registrado_por.first_name|default:p.registrado_por.username }}{% else %}—{% endif %} <small class="pg-carga">{{ p.fecha_registro|date:"d/m H:i" }}</small></td>
@@ -40,6 +40,6 @@
     </div>
 </div>
 {% else %}
-<div class="ad-card"><div class="ad-empty">{% include 'gravity/admin/_icono.html' with i='pagos' %}<p class="ad-empty__title">Todavía no tiene pagos</p></div></div>
+<div class="pn-card"><div class="pn-empty">{% include 'gravity/admin/_icono.html' with i='pagos' %}<p class="pn-empty__title">Todavía no tiene pagos</p></div></div>
 {% endif %}
 {% endblock %}

@@ -3,80 +3,80 @@
 {% block title %}Faltas{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <p class="ad-head__eyebrow">Asistencia</p>
-        <h1 class="ad-head__title">Faltas</h1>
-        <p class="ad-head__sub">Quiénes avisaron que faltaban (y si recuperaron) y quiénes no vinieron sin avisar.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <p class="pn-head__eyebrow">Asistencia</p>
+        <h1 class="pn-head__title">Faltas</h1>
+        <p class="pn-head__sub">Quiénes avisaron que faltaban (y si recuperaron) y quiénes no vinieron sin avisar.</p>
     </div>
 </header>
 
 {% include 'gravity/admin/_asistencia_tabs.html' with activa='faltas' %}
 
-<form method="get" class="ad-filters" role="search">
+<form method="get" class="pn-filters" role="search">
     {% comment %} Primer botón: es el que usa Enter en el buscador {% endcomment %}
-    <button type="submit" class="ad-sr" tabindex="-1">Buscar</button>
+    <button type="submit" class="pn-sr" tabindex="-1">Buscar</button>
     {% if tipo_filtro %}<input type="hidden" name="tipo" value="{{ tipo_filtro }}">{% endif %}
     {% if alumno %}<input type="hidden" name="alumno" value="{{ alumno.id }}">{% endif %}
     {% if not personalizado %}<input type="hidden" name="periodo" value="{{ periodo }}">{% endif %}
 
-    <div class="ad-filters__row">
+    <div class="pn-filters__row">
         {% if not alumno %}
-        <label class="ad-search">
-            <span class="ad-sr">Buscar alumno</span>
+        <label class="pn-search">
+            <span class="pn-sr">Buscar alumno</span>
             {% include 'gravity/admin/_icono.html' with i='buscar' %}
-            <input class="ad-input" type="search" name="buscar" value="{{ buscar }}" placeholder="Buscar alumno" autocomplete="off">
+            <input class="pn-input" type="search" name="buscar" value="{{ buscar }}" placeholder="Buscar alumno" autocomplete="off">
         </label>
         {% endif %}
         <label>
-            <span class="ad-sr">Sede</span>
-            <select class="ad-select" name="sede" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+            <span class="pn-sr">Sede</span>
+            <select class="pn-select" name="sede" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
                 <option value="">Todas las sedes</option>
                 {% for valor, texto in sedes %}<option value="{{ valor }}"{% if sede_filtro == valor %} selected{% endif %}>{{ texto }}</option>{% endfor %}
             </select>
         </label>
     </div>
 
-    <div class="ad-chips" role="group" aria-label="Período">
-        <button type="submit" name="periodo" value="proximas" class="ad-chip{% if periodo == 'proximas' %} is-active{% endif %}">Próximas</button>
-        <button type="submit" name="periodo" value="7" class="ad-chip{% if periodo == '7' %} is-active{% endif %}">7 días</button>
-        <button type="submit" name="periodo" value="30" class="ad-chip{% if periodo == '30' %} is-active{% endif %}">30 días</button>
-        <button type="submit" name="periodo" value="90" class="ad-chip{% if periodo == '90' %} is-active{% endif %}">90 días</button>
-        <button type="button" class="ad-chip{% if personalizado %} is-active{% endif %}" data-fl-fechas aria-expanded="{% if personalizado %}true{% else %}false{% endif %}" aria-controls="fl-fechas">Elegir fechas</button>
+    <div class="pn-chips" role="group" aria-label="Período">
+        <button type="submit" name="periodo" value="proximas" class="pn-chip{% if periodo == 'proximas' %} is-active{% endif %}">Próximas</button>
+        <button type="submit" name="periodo" value="7" class="pn-chip{% if periodo == '7' %} is-active{% endif %}">7 días</button>
+        <button type="submit" name="periodo" value="30" class="pn-chip{% if periodo == '30' %} is-active{% endif %}">30 días</button>
+        <button type="submit" name="periodo" value="90" class="pn-chip{% if periodo == '90' %} is-active{% endif %}">90 días</button>
+        <button type="button" class="pn-chip{% if personalizado %} is-active{% endif %}" data-fl-fechas aria-expanded="{% if personalizado %}true{% else %}false{% endif %}" aria-controls="fl-fechas">Elegir fechas</button>
     </div>
-    <div class="ad-filters__row ac-fechas" id="fl-fechas"{% if not personalizado %} hidden{% endif %}>
-        <label class="ad-field">
-            <span class="ad-label">Desde</span>
-            <input class="ad-input" type="date" name="desde" value="{% if personalizado and desde %}{{ desde|date:'Y-m-d' }}{% endif %}">
+    <div class="pn-filters__row ac-fechas" id="fl-fechas"{% if not personalizado %} hidden{% endif %}>
+        <label class="pn-field">
+            <span class="pn-label">Desde</span>
+            <input class="pn-input" type="date" name="desde" value="{% if personalizado and desde %}{{ desde|date:'Y-m-d' }}{% endif %}">
         </label>
-        <label class="ad-field">
-            <span class="ad-label">Hasta</span>
-            <input class="ad-input" type="date" name="hasta" value="{% if personalizado and hasta %}{{ hasta|date:'Y-m-d' }}{% endif %}">
+        <label class="pn-field">
+            <span class="pn-label">Hasta</span>
+            <input class="pn-input" type="date" name="hasta" value="{% if personalizado and hasta %}{{ hasta|date:'Y-m-d' }}{% endif %}">
         </label>
-        <div class="ad-field ac-fechas__btn">
-            <button type="submit" class="ad-btn ad-btn--blue">Ver</button>
+        <div class="pn-field ac-fechas__btn">
+            <button type="submit" class="pn-btn pn-btn--blue">Ver</button>
         </div>
     </div>
 </form>
 
 {% if alumno %}
-<div class="ad-alert fl-aviso">
+<div class="pn-alert fl-aviso">
     {% include 'gravity/admin/_icono.html' with i='info' %}
     <p>Faltas de <strong>{{ alumno.get_full_name|default:alumno.username }}</strong>. <a href="{% url 'gravity:admin_asistencia_ausencias' %}">Ver las de todos</a></p>
 </div>
 {% elif periodo == 'proximas' %}
-<div class="ad-alert fl-aviso">
+<div class="pn-alert fl-aviso">
     {% include 'gravity/admin/_icono.html' with i='info' %}
     <p>Avisos de hoy en adelante: esos lugares quedan libres para recuperos y clases únicas.</p>
 </div>
 {% endif %}
 
 {% if total_todos %}
-<nav class="ad-chips fl-tipos" aria-label="Tipo de falta">
-    <a class="ad-chip{% if not tipo_filtro %} is-active{% endif %}" href="?{{ qs_sin_tipo }}">Todas <span class="ad-chip__count">{{ total_todos }}</span></a>
+<nav class="pn-chips fl-tipos" aria-label="Tipo de falta">
+    <a class="pn-chip{% if not tipo_filtro %} is-active{% endif %}" href="?{{ qs_sin_tipo }}">Todas <span class="pn-chip__count">{{ total_todos }}</span></a>
     {% for t in tipos %}
     {% if t.cantidad or tipo_filtro == t.clave %}
-    <a class="ad-chip{% if tipo_filtro == t.clave %} is-active{% endif %}" href="?{% if qs_sin_tipo %}{{ qs_sin_tipo }}&{% endif %}tipo={{ t.clave }}">{{ t.texto }} <span class="ad-chip__count">{{ t.cantidad }}</span></a>
+    <a class="pn-chip{% if tipo_filtro == t.clave %} is-active{% endif %}" href="?{% if qs_sin_tipo %}{{ qs_sin_tipo }}&{% endif %}tipo={{ t.clave }}">{{ t.texto }} <span class="pn-chip__count">{{ t.cantidad }}</span></a>
     {% endif %}
     {% endfor %}
 </nav>
@@ -89,7 +89,7 @@
     {% if not forloop.first %}</ul></section>{% endif %}
     <section class="ac-dia">
         <h2 class="ac-dia__titulo">{{ f.dia_texto }}</h2>
-        <ul class="ad-card ac-dia__lista">
+        <ul class="pn-card ac-dia__lista">
     {% endifchanged %}
             <li class="fl-falta">
                 {% include 'gravity/admin/_avatar.html' with persona=f.usuario %}
@@ -97,8 +97,8 @@
                     <p class="fl-falta__nombre">{% if f.url %}<a href="{{ f.url }}">{{ f.nombre }}</a>{% else %}{{ f.nombre }}{% endif %}</p>
                     <p class="fl-falta__clase"><a href="{{ f.url_lista }}">{{ f.clase }}</a></p>
                     <p class="fl-falta__meta">
-                        <span class="ad-badge ad-badge--{% if f.tipo == 'avisada' %}warn{% else %}danger{% endif %}">{% if f.tipo == 'avisada' %}Avisó{% else %}No vino sin avisar{% endif %}</span>
-                        {% if f.tipo == 'avisada' %}<span class="ad-badge ad-badge--plain ad-badge--{{ f.estado.1 }}">{{ f.estado.0 }}</span>{% endif %}
+                        <span class="pn-badge pn-badge--{% if f.tipo == 'avisada' %}warn{% else %}danger{% endif %}">{% if f.tipo == 'avisada' %}Avisó{% else %}No vino sin avisar{% endif %}</span>
+                        {% if f.tipo == 'avisada' %}<span class="pn-badge pn-badge--plain pn-badge--{{ f.estado.1 }}">{{ f.estado.0 }}</span>{% endif %}
                     </p>
                     {% if f.detalle %}<p class="fl-falta__detalle">{{ f.detalle }}</p>{% endif %}
                 </div>
@@ -108,23 +108,23 @@
 </div>
 
 {% if page_obj.has_other_pages %}
-<nav class="ad-pager" aria-label="Páginas">
+<nav class="pn-pager" aria-label="Páginas">
     {% if page_obj.has_previous %}
-    <a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{% if qs_pagina %}{{ qs_pagina }}&{% endif %}page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>
+    <a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{% if qs_pagina %}{{ qs_pagina }}&{% endif %}page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>
     {% else %}<span></span>{% endif %}
-    <span class="ad-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ total_filas }} falta{{ total_filas|pluralize }}</span>
+    <span class="pn-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ total_filas }} falta{{ total_filas|pluralize }}</span>
     {% if page_obj.has_next %}
-    <a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{% if qs_pagina %}{{ qs_pagina }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
+    <a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{% if qs_pagina %}{{ qs_pagina }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
     {% else %}<span></span>{% endif %}
 </nav>
 {% endif %}
 
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='tildes' %}
-        <p class="ad-empty__title">{% if periodo == 'proximas' %}Nadie avisó que va a faltar{% else %}No hay faltas en este período{% endif %}</p>
-        <p class="ad-empty__text">{% if buscar or sede_filtro or tipo_filtro or alumno %}Probá sin filtros o con otro período.{% else %}Probá con un período más largo.{% endif %}</p>
+        <p class="pn-empty__title">{% if periodo == 'proximas' %}Nadie avisó que va a faltar{% else %}No hay faltas en este período{% endif %}</p>
+        <p class="pn-empty__text">{% if buscar or sede_filtro or tipo_filtro or alumno %}Probá sin filtros o con otro período.{% else %}Probá con un período más largo.{% endif %}</p>
     </div>
 </div>
 {% endif %}

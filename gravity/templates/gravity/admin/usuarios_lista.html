@@ -4,32 +4,32 @@
 {% block title %}Alumnos{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Alumnos</h1>
-        <p class="ad-head__sub">{% for c in chips %}{% if c.clave == 'activos' %}{{ c.cantidad }} alumno{{ c.cantidad|pluralize }} activo{{ c.cantidad|pluralize }}{% endif %}{% endfor %}</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Alumnos</h1>
+        <p class="pn-head__sub">{% for c in chips %}{% if c.clave == 'activos' %}{{ c.cantidad }} alumno{{ c.cantidad|pluralize }} activo{{ c.cantidad|pluralize }}{% endif %}{% endfor %}</p>
     </div>
-    <div class="ad-head__actions">
-        <a class="ad-btn" href="{% url 'gravity:admin_agregar_usuario' %}">{% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %} Nuevo alumno</a>
+    <div class="pn-head__actions">
+        <a class="pn-btn" href="{% url 'gravity:admin_agregar_usuario' %}">{% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %} Nuevo alumno</a>
     </div>
 </header>
 
-<form method="get" class="ad-filters" role="search">
+<form method="get" class="pn-filters" role="search">
     <input type="hidden" name="filtro" value="{{ filtro }}">
-    <label class="ad-search">
-        <span class="ad-sr">Buscar alumno</span>
+    <label class="pn-search">
+        <span class="pn-sr">Buscar alumno</span>
         {% include 'gravity/admin/_icono.html' with i='buscar' %}
-        <input class="ad-input" type="search" name="busqueda" value="{{ busqueda }}" placeholder="Nombre, email o teléfono" autocomplete="off">
+        <input class="pn-input" type="search" name="busqueda" value="{{ busqueda }}" placeholder="Nombre, email o teléfono" autocomplete="off">
     </label>
-    <nav class="ad-chips" aria-label="Filtrar alumnos">
+    <nav class="pn-chips" aria-label="Filtrar alumnos">
         {% for c in chips %}
-        <a class="ad-chip{% if c.activo %} is-active{% endif %}" href="?{% if qs_sin_filtro %}{{ qs_sin_filtro }}&{% endif %}filtro={{ c.clave }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }} <span class="ad-chip__count">{{ c.cantidad }}</span></a>
+        <a class="pn-chip{% if c.activo %} is-active{% endif %}" href="?{% if qs_sin_filtro %}{{ qs_sin_filtro }}&{% endif %}filtro={{ c.clave }}"{% if c.activo %} aria-current="true"{% endif %}>{{ c.texto }} <span class="pn-chip__count">{{ c.cantidad }}</span></a>
         {% endfor %}
     </nav>
 </form>
 
 {% if filas %}
-<ul class="ad-card al-lista">
+<ul class="pn-card al-lista">
     {% for f in filas %}
     <li class="al-fila">
         <a class="al-fila__link" href="{% url 'gravity:admin_usuario_detalle' f.usuario.id %}">
@@ -37,9 +37,9 @@
             <span class="al-fila__body">
                 <span class="al-fila__nombre">
                     {{ f.usuario.get_full_name|default:f.usuario.username }}
-                    {% if f.estado.0 != 'activo' %}<span class="ad-badge ad-badge--{{ f.estado.2 }}">{{ f.estado.1 }}</span>{% endif %}
-                    {% if f.nuevo and f.estado.0 == 'activo' %}<span class="ad-badge ad-badge--sand ad-badge--plain">Nuevo</span>{% endif %}
-                    {% if f.salud %}<span class="ad-badge ad-badge--danger">Salud</span>{% endif %}
+                    {% if f.estado.0 != 'activo' %}<span class="pn-badge pn-badge--{{ f.estado.2 }}">{{ f.estado.1 }}</span>{% endif %}
+                    {% if f.nuevo and f.estado.0 == 'activo' %}<span class="pn-badge pn-badge--sand pn-badge--plain">Nuevo</span>{% endif %}
+                    {% if f.salud %}<span class="pn-badge pn-badge--danger">Salud</span>{% endif %}
                 </span>
                 <span class="al-fila__sub">
                     {% if f.plan %}{{ f.plan }}{% else %}Sin plan{% endif %} · {{ f.fijos }} horario{{ f.fijos|pluralize:"s" }} fijo{{ f.fijos|pluralize }}
@@ -48,8 +48,8 @@
             </span>
         </a>
         {% if f.whatsapp %}
-        <a class="ad-iconbtn al-wa" href="{{ f.whatsapp }}" target="_blank" rel="noopener" aria-label="Escribirle por WhatsApp a {{ f.usuario.first_name|default:f.usuario.username }}" title="WhatsApp {{ f.telefono }}">
-            <svg class="ad-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.7.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15l-1.4 5 5.1-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
+        <a class="pn-iconbtn al-wa" href="{{ f.whatsapp }}" target="_blank" rel="noopener" aria-label="Escribirle por WhatsApp a {{ f.usuario.first_name|default:f.usuario.username }}" title="WhatsApp {{ f.telefono }}">
+            <svg class="pn-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.7.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 0 0-8.6 15l-1.4 5 5.1-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2z"/></svg>
         </a>
         {% endif %}
     </li>
@@ -57,19 +57,19 @@
 </ul>
 
 {% if page_obj.has_other_pages %}
-<nav class="ad-pager" aria-label="Páginas">
-    {% if page_obj.has_previous %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
-    <span class="ad-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ page_obj.paginator.count }} alumno{{ page_obj.paginator.count|pluralize }}</span>
-    {% if page_obj.has_next %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
+<nav class="pn-pager" aria-label="Páginas">
+    {% if page_obj.has_previous %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
+    <span class="pn-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ page_obj.paginator.count }} alumno{{ page_obj.paginator.count|pluralize }}</span>
+    {% if page_obj.has_next %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
 </nav>
 {% endif %}
 
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='alumnos' %}
-        <p class="ad-empty__title">{% if busqueda %}No hay alumnos con «{{ busqueda }}»{% else %}No hay alumnos en este grupo{% endif %}</p>
-        {% if busqueda %}<a class="ad-btn ad-btn--ghost" href="?filtro={{ filtro }}">Quitar la búsqueda</a>{% endif %}
+        <p class="pn-empty__title">{% if busqueda %}No hay alumnos con «{{ busqueda }}»{% else %}No hay alumnos en este grupo{% endif %}</p>
+        {% if busqueda %}<a class="pn-btn pn-btn--ghost" href="?filtro={{ filtro }}">Quitar la búsqueda</a>{% endif %}
     </div>
 </div>
 {% endif %}

@@ -5,38 +5,38 @@ _datos_horas() en gravity/views_horarios.py y `base` (la URL a la que se le
 agrega ?mes=...).
 {% endcomment %}
 <div class="eq-mesnav">
-    <a class="ad-btn ad-btn--ghost ad-btn--sm eq-nav__btn" href="{{ base }}mes={{ mes_anterior|date:'Y-m' }}" aria-label="Mes anterior">{% include 'gravity/admin/_icono.html' with i='volver' %}</a>
+    <a class="pn-btn pn-btn--ghost pn-btn--sm eq-nav__btn" href="{{ base }}mes={{ mes_anterior|date:'Y-m' }}" aria-label="Mes anterior">{% include 'gravity/admin/_icono.html' with i='volver' %}</a>
     <p class="eq-nav__titulo">{{ mes_titulo }}</p>
     {% if hay_mes_siguiente %}
-    <a class="ad-btn ad-btn--ghost ad-btn--sm eq-nav__btn" href="{{ base }}mes={{ mes_siguiente|date:'Y-m' }}" aria-label="Mes siguiente">{% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
+    <a class="pn-btn pn-btn--ghost pn-btn--sm eq-nav__btn" href="{{ base }}mes={{ mes_siguiente|date:'Y-m' }}" aria-label="Mes siguiente">{% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
     {% else %}<span class="eq-nav__btn" aria-hidden="true"></span>{% endif %}
 </div>
 
-<div class="ad-kpis eq-kpis">
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">{% if mes_futuro %}Trabajadas{% elif resumen.en_curso %}Trabajadas hasta hoy{% else %}Trabajadas en el mes{% endif %}</p>
-        <p class="ad-kpi__value">{{ resumen.horas|horas }} h</p>
-        <p class="ad-kpi__detail">${{ resumen.monto|pesos }}</p>
+<div class="pn-kpis eq-kpis">
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">{% if mes_futuro %}Trabajadas{% elif resumen.en_curso %}Trabajadas hasta hoy{% else %}Trabajadas en el mes{% endif %}</p>
+        <p class="pn-kpi__value">{{ resumen.horas|horas }} h</p>
+        <p class="pn-kpi__detail">${{ resumen.monto|pesos }}</p>
     </div>
     {% if resumen.en_curso %}
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">A fin de mes</p>
-        <p class="ad-kpi__value">{{ resumen.proyeccion_horas|horas }} h</p>
-        <p class="ad-kpi__detail">${{ resumen.proyeccion_monto|pesos }} si se cumple el horario</p>
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">A fin de mes</p>
+        <p class="pn-kpi__value">{{ resumen.proyeccion_horas|horas }} h</p>
+        <p class="pn-kpi__detail">${{ resumen.proyeccion_monto|pesos }} si se cumple el horario</p>
     </div>
     {% endif %}
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Valor hora</p>
-        <p class="ad-kpi__value">{% if valor_actual %}${{ valor_actual.valor_hora|pesos }}{% else %}—{% endif %}</p>
-        <p class="ad-kpi__detail">{% if valor_actual %}Desde el {{ valor_actual.vigente_desde|date:"d/m/Y" }}{% else %}Todavía no está cargado{% endif %}</p>
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Valor hora</p>
+        <p class="pn-kpi__value">{% if valor_actual %}${{ valor_actual.valor_hora|pesos }}{% else %}—{% endif %}</p>
+        <p class="pn-kpi__detail">{% if valor_actual %}Desde el {{ valor_actual.vigente_desde|date:"d/m/Y" }}{% else %}Todavía no está cargado{% endif %}</p>
     </div>
 </div>
 
-<section class="ad-card eq-pago" aria-labelledby="eq-pago-t">
-    <div class="ad-card__head"><h2 class="ad-card__title" id="eq-pago-t">Pago de {{ mes_titulo|lower }}</h2></div>
-    <div class="ad-card__body">
+<section class="pn-card eq-pago" aria-labelledby="eq-pago-t">
+    <div class="pn-card__head"><h2 class="pn-card__title" id="eq-pago-t">Pago de {{ mes_titulo|lower }}</h2></div>
+    <div class="pn-card__body">
         {% if liquidacion %}
-        <div class="ad-alert ad-alert--ok">
+        <div class="pn-alert pn-alert--ok">
             {% include 'gravity/admin/_icono.html' with i='tilde' %}
             <div>
                 <p><strong>Pagado el {{ liquidacion.fecha_pago|date:"d/m/Y" }}: ${{ liquidacion.monto_pagado|pesos }}</strong> por {{ liquidacion.horas_liquidadas|horas }} h{% if liquidacion.monto_pagado != liquidacion.monto_calculado %} (el sistema calculaba ${{ liquidacion.monto_calculado|pesos }}){% endif %}.</p>
@@ -45,7 +45,7 @@ agrega ?mes=...).
             </div>
         </div>
         {% if diferencia and editable %}
-        <div class="ad-alert ad-alert--warn eq-pago__dif">
+        <div class="pn-alert pn-alert--warn eq-pago__dif">
             {% include 'gravity/admin/_icono.html' with i='alerta' %}
             <p>Después del pago cambió algo de este mes: hoy el sistema calcula <strong>${{ diferencia.0|pesos }}</strong> ({% if diferencia.1 > 0 %}${{ diferencia.1|pesos }} más{% else %}${{ diferencia.1|pesos|cut:"-" }} menos{% endif %} que lo que se calculó al pagar).</p>
         </div>
@@ -54,7 +54,7 @@ agrega ?mes=...).
         <form method="post" action="{% url 'gravity:admin_profesora_liquidacion_anular' profesora.id liquidacion.id %}" class="eq-pago__anular"
               data-confirm="{{ mes_titulo }} vuelve a figurar como pendiente de pago." data-confirm-titulo="¿Eliminar el registro del pago?" data-confirm-boton="Eliminar el pago" data-confirm-peligro>
             {% csrf_token %}
-            <button type="submit" class="ad-btn ad-btn--sm ad-btn--danger-ghost">Eliminar el registro del pago</button>
+            <button type="submit" class="pn-btn pn-btn--sm pn-btn--danger-ghost">Eliminar el registro del pago</button>
         </form>
         {% endif %}
 
@@ -67,21 +67,21 @@ agrega ?mes=...).
         {% elif puede_liquidar %}
         {% if editable %}
         <p class="eq-texto">Según las horas cargadas, le corresponden <strong>${{ resumen.monto|pesos }}</strong> por {{ resumen.horas|horas }} h. Registrá el pago cuando se lo abones.</p>
-        <form method="post" action="{% url 'gravity:admin_profesora_liquidar' profesora.id %}" class="ad-form eq-pago__form">
+        <form method="post" action="{% url 'gravity:admin_profesora_liquidar' profesora.id %}" class="pn-form eq-pago__form">
             {% csrf_token %}
             <input type="hidden" name="mes" value="{{ mes_seleccionado|date:'Y-m' }}">
-            <div class="ad-form__row ad-form__row--3">
-                <label class="ad-field"><span class="ad-label">Monto pagado ($)</span>
-                    <input class="ad-input" type="number" name="monto_pagado" step="0.01" min="0" inputmode="decimal" value="{{ resumen.monto|floatformat:'0' }}" required></label>
-                <label class="ad-field"><span class="ad-label">Fecha de pago</span>
-                    <input class="ad-input" type="date" name="fecha_pago" value="{{ hoy|date:'Y-m-d' }}" required></label>
-                <label class="ad-field"><span class="ad-label">Observaciones <small>(opcional)</small></span>
-                    <input class="ad-input" type="text" name="observaciones" maxlength="500" placeholder="Transferencia, efectivo…"></label>
+            <div class="pn-form__row pn-form__row--3">
+                <label class="pn-field"><span class="pn-label">Monto pagado ($)</span>
+                    <input class="pn-input" type="number" name="monto_pagado" step="0.01" min="0" inputmode="decimal" value="{{ resumen.monto|floatformat:'0' }}" required></label>
+                <label class="pn-field"><span class="pn-label">Fecha de pago</span>
+                    <input class="pn-input" type="date" name="fecha_pago" value="{{ hoy|date:'Y-m-d' }}" required></label>
+                <label class="pn-field"><span class="pn-label">Observaciones <small>(opcional)</small></span>
+                    <input class="pn-input" type="text" name="observaciones" maxlength="500" placeholder="Transferencia, efectivo…"></label>
             </div>
-            <div class="ad-form__actions"><button type="submit" class="ad-btn" data-loading-text="Registrando...">Registrar el pago</button></div>
+            <div class="pn-form__actions"><button type="submit" class="pn-btn" data-loading-text="Registrando...">Registrar el pago</button></div>
         </form>
         {% else %}
-        <p class="eq-texto"><span class="ad-badge ad-badge--warn">Pendiente de pago</span> Te corresponden <strong>${{ resumen.monto|pesos }}</strong> por {{ resumen.horas|horas }} h.</p>
+        <p class="eq-texto"><span class="pn-badge pn-badge--warn">Pendiente de pago</span> Te corresponden <strong>${{ resumen.monto|pesos }}</strong> por {{ resumen.horas|horas }} h.</p>
         {% endif %}
 
         {% else %}
@@ -93,22 +93,22 @@ agrega ?mes=...).
 {% if resumen.semanas or resumen.por_sede|length > 1 %}
 <div class="eq-resumenes">
     {% if resumen.semanas %}
-    <section class="ad-card" aria-labelledby="eq-sem-t">
-        <div class="ad-card__head"><h2 class="ad-card__title" id="eq-sem-t">Por semana{% if resumen.en_curso %} <small>(hasta hoy)</small>{% endif %}</h2></div>
-        <ul class="ad-list eq-mini">
+    <section class="pn-card" aria-labelledby="eq-sem-t">
+        <div class="pn-card__head"><h2 class="pn-card__title" id="eq-sem-t">Por semana{% if resumen.en_curso %} <small>(hasta hoy)</small>{% endif %}</h2></div>
+        <ul class="pn-list eq-mini">
             {% for semana in resumen.semanas %}
-            <li class="ad-row"><span class="ad-row__body"><span class="ad-row__title">Del {{ semana.desde|date:"d/m" }} al {{ semana.hasta|date:"d/m" }}</span></span>
+            <li class="pn-row"><span class="pn-row__body"><span class="pn-row__title">Del {{ semana.desde|date:"d/m" }} al {{ semana.hasta|date:"d/m" }}</span></span>
                 <span class="eq-mini__num">{{ semana.horas|horas }} h · ${{ semana.monto|pesos }}</span></li>
             {% endfor %}
         </ul>
     </section>
     {% endif %}
     {% if resumen.por_sede|length > 1 %}
-    <section class="ad-card" aria-labelledby="eq-sede-t">
-        <div class="ad-card__head"><h2 class="ad-card__title" id="eq-sede-t">Por sede{% if resumen.en_curso %} <small>(hasta hoy)</small>{% endif %}</h2></div>
-        <ul class="ad-list eq-mini">
+    <section class="pn-card" aria-labelledby="eq-sede-t">
+        <div class="pn-card__head"><h2 class="pn-card__title" id="eq-sede-t">Por sede{% if resumen.en_curso %} <small>(hasta hoy)</small>{% endif %}</h2></div>
+        <ul class="pn-list eq-mini">
             {% for sede in resumen.por_sede %}
-            <li class="ad-row"><span class="ad-row__body"><span class="ad-row__title">{{ sede.nombre }}</span></span>
+            <li class="pn-row"><span class="pn-row__body"><span class="pn-row__title">{{ sede.nombre }}</span></span>
                 <span class="eq-mini__num">{{ sede.horas|horas }} h · ${{ sede.monto|pesos }}</span></li>
             {% endfor %}
         </ul>
@@ -117,11 +117,11 @@ agrega ?mes=...).
 </div>
 {% endif %}
 
-<section class="ad-card eq-dias" aria-labelledby="eq-dias-t">
-    <div class="ad-card__head">
-        <div><h2 class="ad-card__title" id="eq-dias-t">Día por día</h2>
-            {% if resumen.en_curso and not mes_futuro %}<p class="ad-card__sub">Los días que faltan figuran como planificados.</p>{% endif %}</div>
-        {% if editable %}<button type="button" class="ad-btn ad-btn--sm ad-btn--ghost" data-dialogo="dlg-dia" data-rellenar='{"fecha": "{% if mes_futuro or not resumen.en_curso %}{{ mes_seleccionado|date:'Y-m-d' }}{% else %}{{ hoy|date:'Y-m-d' }}{% endif %}"}'>{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Turno suelto</button>{% endif %}
+<section class="pn-card eq-dias" aria-labelledby="eq-dias-t">
+    <div class="pn-card__head">
+        <div><h2 class="pn-card__title" id="eq-dias-t">Día por día</h2>
+            {% if resumen.en_curso and not mes_futuro %}<p class="pn-card__sub">Los días que faltan figuran como planificados.</p>{% endif %}</div>
+        {% if editable %}<button type="button" class="pn-btn pn-btn--sm pn-btn--ghost" data-dialogo="dlg-dia" data-rellenar='{"fecha": "{% if mes_futuro or not resumen.en_curso %}{{ mes_seleccionado|date:'Y-m-d' }}{% else %}{{ hoy|date:'Y-m-d' }}{% endif %}"}'>{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Turno suelto</button>{% endif %}
     </div>
     {% if resumen.dias %}
     <ul class="eq-dias__lista">
@@ -129,17 +129,17 @@ agrega ?mes=...).
         <li class="eq-dia{% if dia.futuro %} is-futuro{% endif %}{% if dia.es_hoy %} is-hoy{% endif %}">
             <div class="eq-dia__fecha">
                 <strong>{{ dia.fecha|date:"D j"|capfirst }}</strong>
-                {% if dia.es_hoy %}<span class="ad-badge ad-badge--ok">Hoy</span>{% elif dia.futuro %}<span class="eq-chico">Planificado</span>{% endif %}
+                {% if dia.es_hoy %}<span class="pn-badge pn-badge--ok">Hoy</span>{% elif dia.futuro %}<span class="eq-chico">Planificado</span>{% endif %}
             </div>
             <div class="eq-dia__turnos">
                 {% for turno in dia.turnos %}
                 <div class="eq-turno">
                     <span class="eq-turno__hora">{{ turno.hora_inicio|time:"H:i" }}–{{ turno.hora_fin|time:"H:i" }}</span>
                     <span class="eq-turno__info">{% if turno.clase %}{{ turno.clase.get_nombre_display }} · {% endif %}{{ turno.sede_display }}
-                        {% if turno.origen == 'extra' %}<span class="ad-badge ad-badge--info">Suelto</span>{% elif turno.origen == 'reemplazo' %}<span class="ad-badge ad-badge--warn">Cambiado</span>{% endif %}
+                        {% if turno.origen == 'extra' %}<span class="pn-badge pn-badge--info">Suelto</span>{% elif turno.origen == 'reemplazo' %}<span class="pn-badge pn-badge--warn">Cambiado</span>{% endif %}
                         {% if turno.motivo %}<em>{{ turno.motivo }}</em>{% endif %}</span>
                     {% if editable %}
-                    <button type="button" class="ad-btn ad-btn--sm ad-btn--quiet eq-turno__btn" data-dialogo="dlg-turno"
+                    <button type="button" class="pn-btn pn-btn--sm pn-btn--quiet eq-turno__btn" data-dialogo="dlg-turno"
                             data-rellenar='{"fecha": "{{ dia.fecha|date:'Y-m-d' }}", "bloque_id": "{{ turno.bloque_id|default_if_none:'' }}", "ajuste_id": "{{ turno.ajuste_id|default_if_none:'' }}", "sede": "{{ turno.sede }}", "hora_inicio": "{{ turno.hora_inicio|time:'H:i' }}", "hora_fin": "{{ turno.hora_fin|time:'H:i' }}", "origen": "{{ turno.origen }}", "titulo": "{{ dia.fecha|date:'l j/m'|capfirst }}, de {{ turno.hora_inicio|time:'H:i' }} a {{ turno.hora_fin|time:'H:i' }}"}'
                             aria-label="Editar el turno de las {{ turno.hora_inicio|time:'H:i' }} del {{ dia.fecha|date:'d/m' }}">Editar</button>
                     {% endif %}
@@ -148,14 +148,14 @@ agrega ?mes=...).
                 {% for ajuste in dia.ajustes %}{% if ajuste.tipo == 'ausencia' %}
                 <div class="eq-turno eq-turno--no">
                     <span class="eq-turno__hora">{% if ajuste.bloque %}{{ ajuste.bloque.hora_inicio|time:"H:i" }}–{{ ajuste.bloque.hora_fin|time:"H:i" }}{% else %}Todo el día{% endif %}</span>
-                    <span class="eq-turno__info"><span class="ad-badge ad-badge--danger">No trabajó</span>{% if ajuste.motivo %} <em>{{ ajuste.motivo }}</em>{% endif %}</span>
+                    <span class="eq-turno__info"><span class="pn-badge pn-badge--danger">No trabajó</span>{% if ajuste.motivo %} <em>{{ ajuste.motivo }}</em>{% endif %}</span>
                     {% if editable %}
                     <form method="post" action="{% url 'gravity:admin_profesora_dia_editar' profesora.id %}" class="eq-turno__btn" data-eq-pagado="mes:fecha">
                         {% csrf_token %}
                         <input type="hidden" name="accion" value="deshacer">
                         <input type="hidden" name="fecha" value="{{ dia.fecha|date:'Y-m-d' }}">
                         <input type="hidden" name="ajuste_id" value="{{ ajuste.id }}">
-                        <button type="submit" class="ad-btn ad-btn--sm ad-btn--quiet">Deshacer</button>
+                        <button type="submit" class="pn-btn pn-btn--sm pn-btn--quiet">Deshacer</button>
                     </form>
                     {% endif %}
                 </div>
@@ -168,7 +168,7 @@ agrega ?mes=...).
         </li>
         {% endfor %}
     </ul>
-    <div class="ad-card__foot eq-total">
+    <div class="pn-card__foot eq-total">
         <span>{% if resumen.en_curso and not mes_futuro %}A fin de mes{% else %}Total del mes{% endif %}</span>
         <strong>{{ resumen.proyeccion_horas|horas }} h · ${{ resumen.proyeccion_monto|pesos }}</strong>
     </div>
@@ -178,15 +178,15 @@ agrega ?mes=...).
 </section>
 
 {% if historial_meses %}
-<section class="ad-card" aria-labelledby="eq-hist-t">
-    <div class="ad-card__head"><h2 class="ad-card__title" id="eq-hist-t">Meses anteriores</h2></div>
-    <ul class="ad-list">
+<section class="pn-card" aria-labelledby="eq-hist-t">
+    <div class="pn-card__head"><h2 class="pn-card__title" id="eq-hist-t">Meses anteriores</h2></div>
+    <ul class="pn-list">
         {% for mes in historial_meses %}
-        <li><a class="ad-row" href="{{ base }}mes={{ mes.mes|date:'Y-m' }}">
-            <span class="ad-row__body"><span class="ad-row__title">{{ mes.titulo }}</span>
-                <span class="ad-row__sub">{{ mes.horas|horas }} h · ${{ mes.monto|pesos }}</span></span>
-            <span class="ad-row__end">
-                {% if mes.liquidacion %}<span class="ad-badge ad-badge--ok">Pagado</span>{% elif mes.horas %}<span class="ad-badge ad-badge--warn">Pendiente</span>{% endif %}
+        <li><a class="pn-row" href="{{ base }}mes={{ mes.mes|date:'Y-m' }}">
+            <span class="pn-row__body"><span class="pn-row__title">{{ mes.titulo }}</span>
+                <span class="pn-row__sub">{{ mes.horas|horas }} h · ${{ mes.monto|pesos }}</span></span>
+            <span class="pn-row__end">
+                {% if mes.liquidacion %}<span class="pn-badge pn-badge--ok">Pagado</span>{% elif mes.horas %}<span class="pn-badge pn-badge--warn">Pendiente</span>{% endif %}
                 {% include 'gravity/admin/_icono.html' with i='flecha' %}
             </span>
         </a></li>

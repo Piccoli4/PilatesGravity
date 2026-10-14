@@ -4,52 +4,52 @@
 {% block title %}Pagos{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Pagos</h1>
-        <p class="ad-head__sub">Cuentas de los alumnos activos.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Pagos</h1>
+        <p class="pn-head__sub">Cuentas de los alumnos activos.</p>
     </div>
     {% if puede_configurar_planes %}
-    <div class="ad-head__actions">
-        <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_pagos_configurar_planes' %}">Planes y precios</a>
+    <div class="pn-head__actions">
+        <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_pagos_configurar_planes' %}">Planes y precios</a>
     </div>
     {% endif %}
 </header>
 
-<div class="ad-kpis">
-    <div class="ad-kpi{% if falta_mes %} ad-kpi--warn{% endif %}">
-        <p class="ad-kpi__label">Falta cobrar de {{ mes_texto }}</p>
-        <p class="ad-kpi__value">${{ falta_mes|pesos }}</p>
+<div class="pn-kpis">
+    <div class="pn-kpi{% if falta_mes %} pn-kpi--warn{% endif %}">
+        <p class="pn-kpi__label">Falta cobrar de {{ mes_texto }}</p>
+        <p class="pn-kpi__value">${{ falta_mes|pesos }}</p>
     </div>
-    <div class="ad-kpi{% if clientes_con_deuda %} ad-kpi--danger{% endif %}">
-        <p class="ad-kpi__label">Alumnos que deben</p>
-        <p class="ad-kpi__value">{{ clientes_con_deuda }}</p>
-        {% if total_deuda %}<p class="ad-kpi__detail">${{ total_deuda|pesos }} en total</p>{% endif %}
+    <div class="pn-kpi{% if clientes_con_deuda %} pn-kpi--danger{% endif %}">
+        <p class="pn-kpi__label">Alumnos que deben</p>
+        <p class="pn-kpi__value">{{ clientes_con_deuda }}</p>
+        {% if total_deuda %}<p class="pn-kpi__detail">${{ total_deuda|pesos }} en total</p>{% endif %}
     </div>
     {% if ve_ingresos %}
-    <div class="ad-kpi ad-kpi--ok">
-        <p class="ad-kpi__label">Cobrado en {{ mes_texto }}</p>
-        <p class="ad-kpi__value">${{ ingresos_mes|pesos }}</p>
+    <div class="pn-kpi pn-kpi--ok">
+        <p class="pn-kpi__label">Cobrado en {{ mes_texto }}</p>
+        <p class="pn-kpi__value">${{ ingresos_mes|pesos }}</p>
     </div>
     {% endif %}
 </div>
 
-<form method="get" class="ad-filters" role="search">
+<form method="get" class="pn-filters" role="search">
     <input type="hidden" name="estado" value="{{ filtro_estado }}">
-    <label class="ad-search">
-        <span class="ad-sr">Buscar alumno</span>
+    <label class="pn-search">
+        <span class="pn-sr">Buscar alumno</span>
         {% include 'gravity/admin/_icono.html' with i='buscar' %}
-        <input class="ad-input" type="search" name="buscar" value="{{ buscar_nombre }}" placeholder="Buscar alumno" autocomplete="off">
+        <input class="pn-input" type="search" name="buscar" value="{{ buscar_nombre }}" placeholder="Buscar alumno" autocomplete="off">
     </label>
-    <nav class="ad-chips" aria-label="Estado de la cuenta">
+    <nav class="pn-chips" aria-label="Estado de la cuenta">
         {% for c in chips %}
-        <a class="ad-chip{% if c.activo %} is-active{% endif %}" href="?{% if qs_sin_estado %}{{ qs_sin_estado }}&{% endif %}estado={{ c.clave }}">{{ c.texto }} <span class="ad-chip__count">{{ c.cantidad }}</span></a>
+        <a class="pn-chip{% if c.activo %} is-active{% endif %}" href="?{% if qs_sin_estado %}{{ qs_sin_estado }}&{% endif %}estado={{ c.clave }}">{{ c.texto }} <span class="pn-chip__count">{{ c.cantidad }}</span></a>
         {% endfor %}
     </nav>
 </form>
 
 {% if filas %}
-<ul class="ad-card al-lista">
+<ul class="pn-card al-lista">
     {% for f in filas %}
     <li class="al-fila pg-fila">
         <a class="al-fila__link" href="{% url 'gravity:admin_pagos_editar_estado_cliente' f.usuario.id %}">
@@ -65,40 +65,40 @@
                 {% if f.saldo < 0 %}<small>Debe</small>${{ f.deuda|pesos }}{% elif f.saldo > 0 %}<small>A favor</small>${{ f.saldo|pesos }}{% else %}<small>Al día</small>$0{% endif %}
             </span>
         </a>
-        <a class="ad-btn ad-btn--sm{% if f.saldo >= 0 %} ad-btn--ghost{% endif %} pg-cobrar" href="{% url 'gravity:admin_pagos_registrar_pago' f.usuario.id %}?next={{ aqui|urlencode }}">Cobrar</a>
+        <a class="pn-btn pn-btn--sm{% if f.saldo >= 0 %} pn-btn--ghost{% endif %} pg-cobrar" href="{% url 'gravity:admin_pagos_registrar_pago' f.usuario.id %}?next={{ aqui|urlencode }}">Cobrar</a>
     </li>
     {% endfor %}
 </ul>
 
 {% if page_obj.has_other_pages %}
-<nav class="ad-pager" aria-label="Páginas">
-    {% if page_obj.has_previous %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
-    <span class="ad-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ page_obj.paginator.count }} alumno{{ page_obj.paginator.count|pluralize }}</span>
-    {% if page_obj.has_next %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
+<nav class="pn-pager" aria-label="Páginas">
+    {% if page_obj.has_previous %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
+    <span class="pn-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ page_obj.paginator.count }} alumno{{ page_obj.paginator.count|pluralize }}</span>
+    {% if page_obj.has_next %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
 </nav>
 {% endif %}
 
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='tildes' %}
-        <p class="ad-empty__title">{% if buscar_nombre %}No hay alumnos con «{{ buscar_nombre }}»{% elif filtro_estado == 'debe' %}Nadie debe{% else %}No hay alumnos en este grupo{% endif %}</p>
-        {% if filtro_estado == 'debe' and not buscar_nombre %}<p class="ad-empty__text">Todas las cuentas de los alumnos activos están al día o a favor.</p>{% endif %}
+        <p class="pn-empty__title">{% if buscar_nombre %}No hay alumnos con «{{ buscar_nombre }}»{% elif filtro_estado == 'debe' %}Nadie debe{% else %}No hay alumnos en este grupo{% endif %}</p>
+        {% if filtro_estado == 'debe' and not buscar_nombre %}<p class="pn-empty__text">Todas las cuentas de los alumnos activos están al día o a favor.</p>{% endif %}
     </div>
 </div>
 {% endif %}
 
 {% if planes_activos %}
-<section class="ad-card pg-planes" aria-labelledby="pg-planes">
-    <div class="ad-card__head">
-        <h2 class="ad-card__title" id="pg-planes">Planes vigentes</h2>
-        {% if puede_configurar_planes %}<a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_pagos_configurar_planes' %}">Editar</a>{% endif %}
+<section class="pn-card pg-planes" aria-labelledby="pg-planes">
+    <div class="pn-card__head">
+        <h2 class="pn-card__title" id="pg-planes">Planes vigentes</h2>
+        {% if puede_configurar_planes %}<a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_pagos_configurar_planes' %}">Editar</a>{% endif %}
     </div>
-    <ul class="ad-list">
+    <ul class="pn-list">
         {% for p in planes_activos %}
-        <li class="ad-row">
-            <span class="ad-row__body"><span class="ad-row__title">{{ p.nombre }}</span><span class="ad-row__sub">{{ p.clases_por_semana }} por semana</span></span>
-            <span class="ad-row__end pg-precio">${{ p.precio_mensual|pesos }}<small>efectivo ${{ p.calcular_precio_efectivo|pesos }}</small></span>
+        <li class="pn-row">
+            <span class="pn-row__body"><span class="pn-row__title">{{ p.nombre }}</span><span class="pn-row__sub">{{ p.clases_por_semana }} por semana</span></span>
+            <span class="pn-row__end pg-precio">${{ p.precio_mensual|pesos }}<small>efectivo ${{ p.calcular_precio_efectivo|pesos }}</small></span>
         </li>
         {% endfor %}
     </ul>

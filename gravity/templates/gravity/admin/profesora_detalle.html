@@ -4,22 +4,22 @@
 {% block title %}{{ profesora.get_full_name|default:profesora.username }} · Equipo{% endblock %}
 
 {% block content %}
-<a class="ad-back" href="{% url 'gravity:admin_profesoras_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Equipo</a>
-<header class="ad-head eq-head">
-    {% include 'gravity/admin/_avatar.html' with persona=profesora clase='ad-avatar--lg' %}
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">{{ profesora.get_full_name|default:profesora.username }}</h1>
-        <p class="ad-head__sub">
+<a class="pn-back" href="{% url 'gravity:admin_profesoras_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Equipo</a>
+<header class="pn-head eq-head">
+    {% include 'gravity/admin/_avatar.html' with persona=profesora clase='pn-avatar--lg' %}
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">{{ profesora.get_full_name|default:profesora.username }}</h1>
+        <p class="pn-head__sub">
             Usuario <strong>{{ profesora.username }}</strong>{% if profesora.email %} · {{ profesora.email }}{% endif %}
         </p>
-        {% if estado.0 != 'activo' %}<p class="eq-head__estado"><span class="ad-badge ad-badge--{{ estado.2 }}">{{ estado.1 }}</span></p>{% endif %}
+        {% if estado.0 != 'activo' %}<p class="eq-head__estado"><span class="pn-badge pn-badge--{{ estado.2 }}">{{ estado.1 }}</span></p>{% endif %}
     </div>
 </header>
 
-<nav class="ad-tabs" aria-label="Secciones de la ficha">
-    <a class="ad-tabs__item{% if ver == 'horas' %} is-active{% endif %}" href="?ver=horas{% if mes_seleccionado %}&mes={{ mes_seleccionado|date:'Y-m' }}{% endif %}"{% if ver == 'horas' %} aria-current="page"{% endif %}>{% include 'gravity/admin/_icono.html' with i='pagos' %} Horas y pago</a>
-    <a class="ad-tabs__item{% if ver == 'horario' %} is-active{% endif %}" href="?ver=horario"{% if ver == 'horario' %} aria-current="page"{% endif %}>{% include 'gravity/admin/_icono.html' with i='reloj' %} Horario</a>
-    <a class="ad-tabs__item{% if ver == 'acceso' %} is-active{% endif %}" href="?ver=acceso"{% if ver == 'acceso' %} aria-current="page"{% endif %}>{% include 'gravity/admin/_icono.html' with i='escudo' %} Acceso</a>
+<nav class="pn-tabs" aria-label="Secciones de la ficha">
+    <a class="pn-tabs__item{% if ver == 'horas' %} is-active{% endif %}" href="?ver=horas{% if mes_seleccionado %}&mes={{ mes_seleccionado|date:'Y-m' }}{% endif %}"{% if ver == 'horas' %} aria-current="page"{% endif %}>{% include 'gravity/admin/_icono.html' with i='pagos' %} Horas y pago</a>
+    <a class="pn-tabs__item{% if ver == 'horario' %} is-active{% endif %}" href="?ver=horario"{% if ver == 'horario' %} aria-current="page"{% endif %}>{% include 'gravity/admin/_icono.html' with i='reloj' %} Horario</a>
+    <a class="pn-tabs__item{% if ver == 'acceso' %} is-active{% endif %}" href="?ver=acceso"{% if ver == 'acceso' %} aria-current="page"{% endif %}>{% include 'gravity/admin/_icono.html' with i='escudo' %} Acceso</a>
 </nav>
 
 <div class="eq" data-eq-pagados="{{ meses_pagados|join:',' }}">
@@ -27,11 +27,11 @@
     {% include 'gravity/admin/_equipo_horas.html' with editable=True base='?ver=horas&' %}
 
 {% elif ver == 'horario' %}
-    <section class="ad-card" aria-labelledby="eq-semana-t">
-        <div class="ad-card__head">
-            <div><h2 class="ad-card__title" id="eq-semana-t">Horario semanal</h2>
-                <p class="ad-card__sub">{% if horas_semanales %}{{ horas_semanales|horas }} h por semana{% else %}Todavía no tiene turnos{% endif %}{% if valor_actual %} · ${{ valor_actual.valor_hora|pesos }} la hora{% endif %}</p></div>
-            <a class="ad-btn ad-btn--sm" href="#eq-alta">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Agregar turnos</a>
+    <section class="pn-card" aria-labelledby="eq-semana-t">
+        <div class="pn-card__head">
+            <div><h2 class="pn-card__title" id="eq-semana-t">Horario semanal</h2>
+                <p class="pn-card__sub">{% if horas_semanales %}{{ horas_semanales|horas }} h por semana{% else %}Todavía no tiene turnos{% endif %}{% if valor_actual %} · ${{ valor_actual.valor_hora|pesos }} la hora{% endif %}</p></div>
+            <a class="pn-btn pn-btn--sm" href="#eq-alta">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Agregar turnos</a>
         </div>
         <div class="eq-semana">
             {% for dia in horario_semanal %}
@@ -44,10 +44,10 @@
                         <p class="eq-bloque__info">{% if bloque.clase %}{{ bloque.clase.get_nombre_display }} · {% endif %}{{ bloque.get_sede_display }}</p>
                         {% if bloque.vigente_hasta %}<p class="eq-chico">Se cuenta hasta el {{ bloque.vigente_hasta|date:"d/m/Y" }}</p>
                         {% elif bloque.vigente_desde > hoy %}<p class="eq-chico">Empieza el {{ bloque.vigente_desde|date:"d/m/Y" }}</p>{% endif %}
-                        {% if bloque.aviso %}<p><span class="ad-badge ad-badge--warn eq-bloque__aviso">{{ bloque.aviso }}</span></p>{% endif %}
+                        {% if bloque.aviso %}<p><span class="pn-badge pn-badge--warn eq-bloque__aviso">{{ bloque.aviso }}</span></p>{% endif %}
                     </div>
                     {% if not bloque.vigente_hasta %}
-                    <button type="button" class="ad-btn ad-btn--sm ad-btn--quiet" data-dialogo="dlg-baja"
+                    <button type="button" class="pn-btn pn-btn--sm pn-btn--quiet" data-dialogo="dlg-baja"
                             data-accion="{% url 'gravity:admin_profesora_horario_eliminar' profesora.id bloque.id %}"
                             data-rellenar='{"detalle": "{{ bloque.dia }} de {{ bloque.hora_inicio|time:'H:i' }} a {{ bloque.hora_fin|time:'H:i' }}"}'>Dar de baja</button>
                     {% endif %}
@@ -59,11 +59,11 @@
         {% if bloques_historicos %}
         <details class="eq-historicos">
             <summary>Turnos que ya no rigen ({{ bloques_historicos|length }})</summary>
-            <ul class="ad-list">
+            <ul class="pn-list">
                 {% for bloque in bloques_historicos %}
-                <li class="ad-row"><span class="ad-row__body">
-                    <span class="ad-row__title">{{ bloque.dia }} {{ bloque.hora_inicio|time:"H:i" }}–{{ bloque.hora_fin|time:"H:i" }}{% if bloque.clase %} · {{ bloque.clase.get_nombre_display }}{% endif %}</span>
-                    <span class="ad-row__sub">{{ bloque.get_sede_display }} · del {{ bloque.vigente_desde|date:"d/m/Y" }} al {{ bloque.vigente_hasta|date:"d/m/Y" }}</span>
+                <li class="pn-row"><span class="pn-row__body">
+                    <span class="pn-row__title">{{ bloque.dia }} {{ bloque.hora_inicio|time:"H:i" }}–{{ bloque.hora_fin|time:"H:i" }}{% if bloque.clase %} · {{ bloque.clase.get_nombre_display }}{% endif %}</span>
+                    <span class="pn-row__sub">{{ bloque.get_sede_display }} · del {{ bloque.vigente_desde|date:"d/m/Y" }} al {{ bloque.vigente_hasta|date:"d/m/Y" }}</span>
                 </span></li>
                 {% endfor %}
             </ul>
@@ -71,106 +71,106 @@
         {% endif %}
     </section>
 
-    <section class="ad-card" id="eq-alta" aria-labelledby="eq-alta-t">
-        <div class="ad-card__head"><h2 class="ad-card__title" id="eq-alta-t">Agregar turnos</h2></div>
-        <form method="post" action="{% url 'gravity:admin_profesora_horario_agregar' profesora.id %}" class="ad-card__body ad-form eq-alta" id="eq-form-turnos" data-eq-pagado="auto">
+    <section class="pn-card" id="eq-alta" aria-labelledby="eq-alta-t">
+        <div class="pn-card__head"><h2 class="pn-card__title" id="eq-alta-t">Agregar turnos</h2></div>
+        <form method="post" action="{% url 'gravity:admin_profesora_horario_agregar' profesora.id %}" class="pn-card__body pn-form eq-alta" id="eq-form-turnos" data-eq-pagado="auto">
             {% csrf_token %}
-            <fieldset class="ad-field">
-                <legend class="ad-label">¿Cada cuánto?</legend>
+            <fieldset class="pn-field">
+                <legend class="pn-label">¿Cada cuánto?</legend>
                 <div class="cl-seg eq-seg2">
                     <label class="cl-seg__op"><input type="radio" name="modo" value="semanal" checked><span>Todas las semanas</span></label>
                     <label class="cl-seg__op"><input type="radio" name="modo" value="fecha"><span>Un día puntual</span></label>
                 </div>
             </fieldset>
-            <div class="ad-form__row ad-form__row--2">
-                <label class="ad-field" data-modo="semanal"><span class="ad-label">Rige desde</span>
-                    <input class="ad-input" type="date" name="vigente_desde" value="{{ hoy|date:'Y-m-d' }}"></label>
-                <label class="ad-field" data-modo="fecha" hidden><span class="ad-label">Fecha</span>
-                    <input class="ad-input" type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" data-eq-fecha></label>
-                <label class="ad-field" data-modo="fecha" hidden><span class="ad-label">Motivo <small>(opcional)</small></span>
-                    <input class="ad-input" type="text" name="motivo" maxlength="200" placeholder="Cubrió a una compañera…"></label>
+            <div class="pn-form__row pn-form__row--2">
+                <label class="pn-field" data-modo="semanal"><span class="pn-label">Rige desde</span>
+                    <input class="pn-input" type="date" name="vigente_desde" value="{{ hoy|date:'Y-m-d' }}"></label>
+                <label class="pn-field" data-modo="fecha" hidden><span class="pn-label">Fecha</span>
+                    <input class="pn-input" type="date" name="fecha" value="{{ hoy|date:'Y-m-d' }}" data-eq-fecha></label>
+                <label class="pn-field" data-modo="fecha" hidden><span class="pn-label">Motivo <small>(opcional)</small></span>
+                    <input class="pn-input" type="text" name="motivo" maxlength="200" placeholder="Cubrió a una compañera…"></label>
             </div>
-            <fieldset class="ad-field">
-                <legend class="ad-label">¿Qué va a hacer?</legend>
+            <fieldset class="pn-field">
+                <legend class="pn-label">¿Qué va a hacer?</legend>
                 <div class="cl-seg eq-seg2">
                     <label class="cl-seg__op"><input type="radio" name="origen" value="clase" checked><span>Dar clases</span></label>
                     <label class="cl-seg__op"><input type="radio" name="origen" value="libre"><span>Otro horario</span></label>
                 </div>
             </fieldset>
 
-            <div class="ad-form" data-origen="clase">
-                <div class="ad-form__row ad-form__row--3">
-                    <label class="ad-field" data-modo="semanal"><span class="ad-label">Día</span>
-                        <select class="ad-select" data-eq-dia>{% for dia in dias_semana %}<option value="{{ dia }}">{{ dia }}</option>{% endfor %}</select></label>
-                    <label class="ad-field"><span class="ad-label">Sede</span>
-                        <select class="ad-select" data-eq-sede><option value="">Todas</option>{% for valor, nombre in sedes %}<option value="{{ valor }}">{{ nombre }}</option>{% endfor %}</select></label>
-                    <label class="ad-field"><span class="ad-label">Duración de cada clase <small>(minutos)</small></span>
-                        <input class="ad-input" type="number" name="duracion_minutos" value="60" min="15" max="480" step="5" inputmode="numeric"></label>
+            <div class="pn-form" data-origen="clase">
+                <div class="pn-form__row pn-form__row--3">
+                    <label class="pn-field" data-modo="semanal"><span class="pn-label">Día</span>
+                        <select class="pn-select" data-eq-dia>{% for dia in dias_semana %}<option value="{{ dia }}">{{ dia }}</option>{% endfor %}</select></label>
+                    <label class="pn-field"><span class="pn-label">Sede</span>
+                        <select class="pn-select" data-eq-sede><option value="">Todas</option>{% for valor, nombre in sedes %}<option value="{{ valor }}">{{ nombre }}</option>{% endfor %}</select></label>
+                    <label class="pn-field"><span class="pn-label">Duración de cada clase <small>(minutos)</small></span>
+                        <input class="pn-input" type="number" name="duracion_minutos" value="60" min="15" max="480" step="5" inputmode="numeric"></label>
                 </div>
-                <div class="ad-field">
-                    <p class="ad-label" data-eq-leyenda>Marcá las clases que va a dar.</p>
+                <div class="pn-field">
+                    <p class="pn-label" data-eq-leyenda>Marcá las clases que va a dar.</p>
                     <div class="eq-clases" data-eq-clases>
                         {% for clase in clases %}
-                        <label class="ad-check eq-clase" data-dia="{{ clase.dia }}" data-sede="{{ clase.direccion }}">
+                        <label class="pn-check eq-clase" data-dia="{{ clase.dia }}" data-sede="{{ clase.direccion }}">
                             <input type="checkbox" name="clases" value="{{ clase.id }}">
-                            <span class="ad-check__text">{{ clase.horario|time:"H:i" }} · {{ clase.get_nombre_display }}<small>{{ clase.dia }} · {{ clase.get_direccion_corta }}</small></span>
+                            <span class="pn-check__text">{{ clase.horario|time:"H:i" }} · {{ clase.get_nombre_display }}<small>{{ clase.dia }} · {{ clase.get_direccion_corta }}</small></span>
                         </label>
                         {% endfor %}
                     </div>
-                    <p class="ad-help" data-eq-sin-clases hidden>No hay clases ese día con esa sede. Probá otra sede u "Otro horario".</p>
-                    <p class="ad-help">Cada clase se carga como un turno aparte (se paga por clase). Si después cambia el horario de la clase, el turno se mueve solo.</p>
+                    <p class="pn-help" data-eq-sin-clases hidden>No hay clases ese día con esa sede. Probá otra sede u "Otro horario".</p>
+                    <p class="pn-help">Cada clase se carga como un turno aparte (se paga por clase). Si después cambia el horario de la clase, el turno se mueve solo.</p>
                 </div>
             </div>
 
-            <div class="ad-form__row ad-form__row--2 eq-libre" data-origen="libre" hidden>
-                <label class="ad-field" data-modo="semanal"><span class="ad-label">Día</span>
-                    <select class="ad-select" name="dia">{% for dia in dias_semana %}<option value="{{ dia }}">{{ dia }}</option>{% endfor %}</select></label>
-                <label class="ad-field"><span class="ad-label">Sede</span>
-                    <select class="ad-select" name="sede">{% for valor, nombre in sedes %}<option value="{{ valor }}">{{ nombre }}</option>{% endfor %}</select></label>
-                <label class="ad-field"><span class="ad-label">Entrada</span><input class="ad-input" type="time" name="hora_inicio"></label>
-                <label class="ad-field"><span class="ad-label">Salida</span><input class="ad-input" type="time" name="hora_fin"></label>
+            <div class="pn-form__row pn-form__row--2 eq-libre" data-origen="libre" hidden>
+                <label class="pn-field" data-modo="semanal"><span class="pn-label">Día</span>
+                    <select class="pn-select" name="dia">{% for dia in dias_semana %}<option value="{{ dia }}">{{ dia }}</option>{% endfor %}</select></label>
+                <label class="pn-field"><span class="pn-label">Sede</span>
+                    <select class="pn-select" name="sede">{% for valor, nombre in sedes %}<option value="{{ valor }}">{{ nombre }}</option>{% endfor %}</select></label>
+                <label class="pn-field"><span class="pn-label">Entrada</span><input class="pn-input" type="time" name="hora_inicio"></label>
+                <label class="pn-field"><span class="pn-label">Salida</span><input class="pn-input" type="time" name="hora_fin"></label>
             </div>
 
-            <div class="ad-form__actions"><button type="submit" class="ad-btn" data-loading-text="Agregando...">Agregar al horario</button></div>
+            <div class="pn-form__actions"><button type="submit" class="pn-btn" data-loading-text="Agregando...">Agregar al horario</button></div>
         </form>
     </section>
 
-    <section class="ad-card" aria-labelledby="eq-valor-t">
-        <div class="ad-card__head"><div><h2 class="ad-card__title" id="eq-valor-t">Valor por hora</h2>
-            <p class="ad-card__sub">Cada valor rige desde su fecha: los meses anteriores se siguen calculando con el que regía.</p></div></div>
-        <form method="post" action="{% url 'gravity:admin_profesora_valor_hora' profesora.id %}" class="ad-card__body ad-form" data-eq-pagado="desde:vigente_desde">
+    <section class="pn-card" aria-labelledby="eq-valor-t">
+        <div class="pn-card__head"><div><h2 class="pn-card__title" id="eq-valor-t">Valor por hora</h2>
+            <p class="pn-card__sub">Cada valor rige desde su fecha: los meses anteriores se siguen calculando con el que regía.</p></div></div>
+        <form method="post" action="{% url 'gravity:admin_profesora_valor_hora' profesora.id %}" class="pn-card__body pn-form" data-eq-pagado="desde:vigente_desde">
             {% csrf_token %}
-            <div class="ad-form__row ad-form__row--3">
-                <label class="ad-field"><span class="ad-label">Valor por hora ($)</span>
-                    <input class="ad-input" type="number" name="valor_hora" step="0.01" min="1" required inputmode="decimal" placeholder="8000"></label>
-                <label class="ad-field"><span class="ad-label">Rige desde</span>
-                    <input class="ad-input" type="date" name="vigente_desde" value="{{ hoy|date:'Y-m-d' }}" required></label>
-                <label class="ad-field"><span class="ad-label">Observaciones <small>(opcional)</small></span>
-                    <input class="ad-input" type="text" name="observaciones" maxlength="200" placeholder="Aumento, acuerdo…"></label>
+            <div class="pn-form__row pn-form__row--3">
+                <label class="pn-field"><span class="pn-label">Valor por hora ($)</span>
+                    <input class="pn-input" type="number" name="valor_hora" step="0.01" min="1" required inputmode="decimal" placeholder="8000"></label>
+                <label class="pn-field"><span class="pn-label">Rige desde</span>
+                    <input class="pn-input" type="date" name="vigente_desde" value="{{ hoy|date:'Y-m-d' }}" required></label>
+                <label class="pn-field"><span class="pn-label">Observaciones <small>(opcional)</small></span>
+                    <input class="pn-input" type="text" name="observaciones" maxlength="200" placeholder="Aumento, acuerdo…"></label>
             </div>
-            <div class="ad-form__actions"><button type="submit" class="ad-btn" data-loading-text="Guardando...">Guardar valor hora</button></div>
+            <div class="pn-form__actions"><button type="submit" class="pn-btn" data-loading-text="Guardando...">Guardar valor hora</button></div>
         </form>
         {% if historial_valores %}
-        <ul class="ad-list eq-valores">
+        <ul class="pn-list eq-valores">
             {% for valor in historial_valores %}
-            <li class="ad-row">
-                <span class="ad-row__body">
-                    <span class="ad-row__title">${{ valor.valor_hora|pesos }} la hora</span>
-                    <span class="ad-row__sub">Desde el {{ valor.vigente_desde|date:"d/m/Y" }}{% if valor.vigente_hasta %} hasta el {{ valor.vigente_hasta|date:"d/m/Y" }}{% endif %}{% if valor.observaciones %} · {{ valor.observaciones }}{% endif %}{% if valor.registrado_por %} · {{ valor.registrado_por.get_full_name|default:valor.registrado_por.username }}{% endif %}</span>
+            <li class="pn-row">
+                <span class="pn-row__body">
+                    <span class="pn-row__title">${{ valor.valor_hora|pesos }} la hora</span>
+                    <span class="pn-row__sub">Desde el {{ valor.vigente_desde|date:"d/m/Y" }}{% if valor.vigente_hasta %} hasta el {{ valor.vigente_hasta|date:"d/m/Y" }}{% endif %}{% if valor.observaciones %} · {{ valor.observaciones }}{% endif %}{% if valor.registrado_por %} · {{ valor.registrado_por.get_full_name|default:valor.registrado_por.username }}{% endif %}</span>
                 </span>
-                {% if not valor.vigente_hasta and valor.vigente_desde <= hoy %}<span class="ad-row__end"><span class="ad-badge ad-badge--ok">Vigente</span></span>
-                {% elif valor.vigente_desde > hoy %}<span class="ad-row__end"><span class="ad-badge">Desde el {{ valor.vigente_desde|date:"d/m" }}</span></span>{% endif %}
+                {% if not valor.vigente_hasta and valor.vigente_desde <= hoy %}<span class="pn-row__end"><span class="pn-badge pn-badge--ok">Vigente</span></span>
+                {% elif valor.vigente_desde > hoy %}<span class="pn-row__end"><span class="pn-badge">Desde el {{ valor.vigente_desde|date:"d/m" }}</span></span>{% endif %}
             </li>
             {% endfor %}
         </ul>
         {% else %}
-        <div class="ad-card__body"><div class="ad-alert ad-alert--warn">{% include 'gravity/admin/_icono.html' with i='alerta' %}<p>Todavía no tiene valor por hora: sus horas figuran en $0.</p></div></div>
+        <div class="pn-card__body"><div class="pn-alert pn-alert--warn">{% include 'gravity/admin/_icono.html' with i='alerta' %}<p>Todavía no tiene valor por hora: sus horas figuran en $0.</p></div></div>
         {% endif %}
     </section>
 
 {% else %}
     {% if clave_inicial %}
-    <div class="ad-alert ad-alert--ok eq-clave" role="status">
+    <div class="pn-alert pn-alert--ok eq-clave" role="status">
         {% include 'gravity/admin/_icono.html' with i='tilde' %}
         <div>
             <p><strong>Pasale estos datos para entrar</strong> (la contraseña se muestra una sola vez):</p>
@@ -180,75 +180,75 @@
     </div>
     {% endif %}
 
-    <section class="ad-card" aria-labelledby="eq-acceso-t">
-        <div class="ad-card__head"><h2 class="ad-card__title" id="eq-acceso-t">Acceso al panel</h2>
-            <span class="ad-badge ad-badge--{{ estado.2 }}">{{ estado.1 }}</span></div>
-        <div class="ad-card__body eq-acceso">
+    <section class="pn-card" aria-labelledby="eq-acceso-t">
+        <div class="pn-card__head"><h2 class="pn-card__title" id="eq-acceso-t">Acceso al panel</h2>
+            <span class="pn-badge pn-badge--{{ estado.2 }}">{{ estado.1 }}</span></div>
+        <div class="pn-card__body eq-acceso">
             {% if estado.0 == 'activo' or estado.0 == 'invitacion' %}
             <p>Puede ver las clases del día, pasar lista, reservar para alumnos, cargar alumnos y cobrar (ve las deudas de cada alumno). No ve los ingresos del estudio ni configura planes, corrige cuentas o administra el equipo.</p>
             {% if invitacion_pendiente %}
-            <div class="ad-alert ad-alert--warn">
+            <div class="pn-alert pn-alert--warn">
                 {% include 'gravity/admin/_icono.html' with i='mail' %}
                 <div>
                     <p>Todavía no eligió su contraseña.{% if profesora.email %} La invitación llegó a {{ profesora.email }} y vale 7 días.{% else %} No tiene email: cargalo abajo para mandarle la invitación.{% endif %}</p>
                     {% if profesora.email %}
                     <form method="post" action="{% url 'gravity:admin_equipo_reenviar' profesora.id %}">{% csrf_token %}
-                        <button type="submit" class="ad-btn ad-btn--sm ad-btn--ghost" data-loading-text="Enviando...">Reenviar la invitación</button></form>
+                        <button type="submit" class="pn-btn pn-btn--sm pn-btn--ghost" data-loading-text="Enviando...">Reenviar la invitación</button></form>
                     {% endif %}
                 </div>
             </div>
             {% endif %}
             <div class="eq-acceso__acciones">
-                <a class="ad-btn ad-btn--ghost ad-btn--sm" href="{% url 'gravity:admin_pagos_por_admin' %}?admin={{ profesora.id }}">{% include 'gravity/admin/_icono.html' with i='torta' %} Cobros que cargó</a>
-                <button type="button" class="ad-btn ad-btn--danger-ghost ad-btn--sm" data-dialogo="dlg-quitar">Quitar el acceso</button>
+                <a class="pn-btn pn-btn--ghost pn-btn--sm" href="{% url 'gravity:admin_pagos_por_admin' %}?admin={{ profesora.id }}">{% include 'gravity/admin/_icono.html' with i='torta' %} Cobros que cargó</a>
+                <button type="button" class="pn-btn pn-btn--danger-ghost pn-btn--sm" data-dialogo="dlg-quitar">Quitar el acceso</button>
             </div>
             {% else %}
             <p>{% if estado.0 == 'alumna' %}Ya no entra al panel, pero sigue con su cuenta de alumna.{% else %}Su cuenta está desactivada: no puede entrar.{% endif %} Su historial de horas y pagos queda acá.</p>
             <form method="post" action="{% url 'gravity:admin_equipo_reactivar' profesora.id %}"
                   data-confirm="Vuelve a entrar al panel con su usuario {{ profesora.username }}." data-confirm-titulo="¿Devolverle el acceso?" data-confirm-boton="Devolver el acceso">
                 {% csrf_token %}
-                <button type="submit" class="ad-btn ad-btn--blue ad-btn--sm">Devolverle el acceso</button>
+                <button type="submit" class="pn-btn pn-btn--blue pn-btn--sm">Devolverle el acceso</button>
             </form>
             {% endif %}
         </div>
     </section>
 
-    <section class="ad-card" aria-labelledby="eq-datos-t">
-        <div class="ad-card__head"><h2 class="ad-card__title" id="eq-datos-t">Datos</h2></div>
-        <form method="post" action="{% url 'gravity:admin_equipo_datos' profesora.id %}" class="ad-card__body ad-form" novalidate>
+    <section class="pn-card" aria-labelledby="eq-datos-t">
+        <div class="pn-card__head"><h2 class="pn-card__title" id="eq-datos-t">Datos</h2></div>
+        <form method="post" action="{% url 'gravity:admin_equipo_datos' profesora.id %}" class="pn-card__body pn-form" novalidate>
             {% csrf_token %}
-            <div class="ad-form__row ad-form__row--2">
+            <div class="pn-form__row pn-form__row--2">
                 {% include 'gravity/admin/_campo.html' with campo=form_datos.nombre %}
                 {% include 'gravity/admin/_campo.html' with campo=form_datos.apellido %}
                 {% include 'gravity/admin/_campo.html' with campo=form_datos.email ayuda='A este email le llegan la invitación y el "olvidé mi contraseña".' %}
                 {% include 'gravity/admin/_campo.html' with campo=form_datos.telefono %}
             </div>
-            <p class="ad-help">El usuario para entrar es <strong>{{ profesora.username }}</strong> y no cambia.</p>
-            <div class="ad-form__actions"><button type="submit" class="ad-btn" data-loading-text="Guardando...">Guardar datos</button></div>
+            <p class="pn-help">El usuario para entrar es <strong>{{ profesora.username }}</strong> y no cambia.</p>
+            <div class="pn-form__actions"><button type="submit" class="pn-btn" data-loading-text="Guardando...">Guardar datos</button></div>
         </form>
     </section>
 
     {% if estado.0 == 'activo' or estado.0 == 'invitacion' %}
-    <dialog class="ad-dialog" id="dlg-quitar" aria-labelledby="dlg-quitar-t">
-        <form method="post" action="{% url 'gravity:admin_eliminar_admin_restringido' profesora.id %}" class="ad-dialog__caja" data-eq-pagado="despues:ultimo_dia">
+    <dialog class="pn-dialog" id="dlg-quitar" aria-labelledby="dlg-quitar-t">
+        <form method="post" action="{% url 'gravity:admin_eliminar_admin_restringido' profesora.id %}" class="pn-dialog__caja" data-eq-pagado="despues:ultimo_dia">
             {% csrf_token %}
-            <div class="ad-dialog__head"><h2 class="ad-dialog__title" id="dlg-quitar-t">Quitarle el acceso</h2><button type="button" class="ad-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
-            <div class="ad-dialog__body">
+            <div class="pn-dialog__head"><h2 class="pn-dialog__title" id="dlg-quitar-t">Quitarle el acceso</h2><button type="button" class="pn-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
+            <div class="pn-dialog__body">
                 <p>Deja de entrar al panel. Su historial de horas y pagos queda en Equipo y le podés devolver el acceso cuando quieras.</p>
-                <fieldset class="ad-field">
-                    <legend class="ad-label">¿Qué pasa con su cuenta?</legend>
-                    <label class="ad-check"><input type="radio" name="como" value="desactivar" checked><span class="ad-check__text">Desactivarla<small>No puede entrar más al sitio.</small></span></label>
-                    <label class="ad-check"><input type="radio" name="como" value="alumna"><span class="ad-check__text">Que siga como alumna<small>Pierde solo el panel: puede seguir entrando para reservar{% if tiene_plan or reservas_activas %} (tiene {% if tiene_plan %}un plan activo{% endif %}{% if tiene_plan and reservas_activas %} y {% endif %}{% if reservas_activas %}{{ reservas_activas }} reserva{{ reservas_activas|pluralize }}{% endif %}){% endif %}.</small></span></label>
+                <fieldset class="pn-field">
+                    <legend class="pn-label">¿Qué pasa con su cuenta?</legend>
+                    <label class="pn-check"><input type="radio" name="como" value="desactivar" checked><span class="pn-check__text">Desactivarla<small>No puede entrar más al sitio.</small></span></label>
+                    <label class="pn-check"><input type="radio" name="como" value="alumna"><span class="pn-check__text">Que siga como alumna<small>Pierde solo el panel: puede seguir entrando para reservar{% if tiene_plan or reservas_activas %} (tiene {% if tiene_plan %}un plan activo{% endif %}{% if tiene_plan and reservas_activas %} y {% endif %}{% if reservas_activas %}{{ reservas_activas }} reserva{{ reservas_activas|pluralize }}{% endif %}){% endif %}.</small></span></label>
                 </fieldset>
                 {% if turnos_abiertos %}
-                <label class="ad-field"><span class="ad-label">Último día que trabaja</span>
-                    <input class="ad-input" type="date" name="ultimo_dia" value="{{ hoy|date:'Y-m-d' }}" required>
-                    <span class="ad-help">Sus {{ turnos_abiertos }} turno{{ turnos_abiertos|pluralize }} se cuenta{{ turnos_abiertos|pluralize:"n" }} hasta ese día inclusive.</span></label>
+                <label class="pn-field"><span class="pn-label">Último día que trabaja</span>
+                    <input class="pn-input" type="date" name="ultimo_dia" value="{{ hoy|date:'Y-m-d' }}" required>
+                    <span class="pn-help">Sus {{ turnos_abiertos }} turno{{ turnos_abiertos|pluralize }} se cuenta{{ turnos_abiertos|pluralize:"n" }} hasta ese día inclusive.</span></label>
                 {% else %}
                 <input type="hidden" name="ultimo_dia" value="{{ hoy|date:'Y-m-d' }}">
                 {% endif %}
             </div>
-            <div class="ad-dialog__foot"><button type="button" class="ad-btn ad-btn--ghost" data-cerrar-dialogo>Cancelar</button><button type="submit" class="ad-btn ad-btn--danger" data-loading-text="Guardando...">Quitar el acceso</button></div>
+            <div class="pn-dialog__foot"><button type="button" class="pn-btn pn-btn--ghost" data-cerrar-dialogo>Cancelar</button><button type="submit" class="pn-btn pn-btn--danger" data-loading-text="Guardando...">Quitar el acceso</button></div>
         </form>
     </dialog>
     {% endif %}
@@ -256,83 +256,83 @@
 </div>
 
 {% if ver == 'horario' %}
-<dialog class="ad-dialog" id="dlg-baja" aria-labelledby="dlg-baja-t">
-    <form method="post" action="" class="ad-dialog__caja" data-eq-pagado="despues:ultimo_dia">
+<dialog class="pn-dialog" id="dlg-baja" aria-labelledby="dlg-baja-t">
+    <form method="post" action="" class="pn-dialog__caja" data-eq-pagado="despues:ultimo_dia">
         {% csrf_token %}
-        <div class="ad-dialog__head"><h2 class="ad-dialog__title" id="dlg-baja-t">Dar de baja un turno</h2><button type="button" class="ad-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
-        <div class="ad-dialog__body">
+        <div class="pn-dialog__head"><h2 class="pn-dialog__title" id="dlg-baja-t">Dar de baja un turno</h2><button type="button" class="pn-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
+        <div class="pn-dialog__body">
             <p>El turno de <strong data-rellena="detalle"></strong> se cuenta hasta el día que pongas, inclusive. Los meses anteriores no cambian.</p>
-            <label class="ad-field"><span class="ad-label">Último día que lo hace</span>
-                <input class="ad-input" type="date" name="ultimo_dia" value="{{ ayer|date:'Y-m-d' }}" required>
-                <span class="ad-help">Viene con la fecha de ayer para que deje de aparecer desde hoy. Si hoy todavía lo hizo, poné la fecha de hoy.</span></label>
+            <label class="pn-field"><span class="pn-label">Último día que lo hace</span>
+                <input class="pn-input" type="date" name="ultimo_dia" value="{{ ayer|date:'Y-m-d' }}" required>
+                <span class="pn-help">Viene con la fecha de ayer para que deje de aparecer desde hoy. Si hoy todavía lo hizo, poné la fecha de hoy.</span></label>
         </div>
-        <div class="ad-dialog__foot"><button type="button" class="ad-btn ad-btn--ghost" data-cerrar-dialogo>Cancelar</button><button type="submit" class="ad-btn ad-btn--danger">Dar de baja</button></div>
+        <div class="pn-dialog__foot"><button type="button" class="pn-btn pn-btn--ghost" data-cerrar-dialogo>Cancelar</button><button type="submit" class="pn-btn pn-btn--danger">Dar de baja</button></div>
     </form>
 </dialog>
 {% endif %}
 
 {% if ver == 'horas' %}
-<dialog class="ad-dialog" id="dlg-turno" aria-labelledby="dlg-turno-t">
-    <form method="post" action="{% url 'gravity:admin_profesora_dia_editar' profesora.id %}" class="ad-dialog__caja" data-eq-pagado="mes:fecha">
+<dialog class="pn-dialog" id="dlg-turno" aria-labelledby="dlg-turno-t">
+    <form method="post" action="{% url 'gravity:admin_profesora_dia_editar' profesora.id %}" class="pn-dialog__caja" data-eq-pagado="mes:fecha">
         {% csrf_token %}
         <input type="hidden" name="fecha" data-rellena="fecha">
         <input type="hidden" name="bloque_id" data-rellena="bloque_id">
         <input type="hidden" name="ajuste_id" data-rellena="ajuste_id">
         <input type="hidden" name="sede" data-rellena="sede">
         <input type="hidden" data-rellena="origen" data-eq-origen>
-        <div class="ad-dialog__head"><h2 class="ad-dialog__title" id="dlg-turno-t">Editar el turno</h2><button type="button" class="ad-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
-        <div class="ad-dialog__body">
+        <div class="pn-dialog__head"><h2 class="pn-dialog__title" id="dlg-turno-t">Editar el turno</h2><button type="button" class="pn-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
+        <div class="pn-dialog__body">
             <p data-rellena="titulo"></p>
             <p>Solo cambia ese día: el horario de todas las semanas no se toca.</p>
-            <div class="ad-form__row ad-form__row--2">
-                <label class="ad-field"><span class="ad-label">Entrada</span><input class="ad-input" type="time" name="hora_inicio" data-rellena="hora_inicio"></label>
-                <label class="ad-field"><span class="ad-label">Salida</span><input class="ad-input" type="time" name="hora_fin" data-rellena="hora_fin"></label>
+            <div class="pn-form__row pn-form__row--2">
+                <label class="pn-field"><span class="pn-label">Entrada</span><input class="pn-input" type="time" name="hora_inicio" data-rellena="hora_inicio"></label>
+                <label class="pn-field"><span class="pn-label">Salida</span><input class="pn-input" type="time" name="hora_fin" data-rellena="hora_fin"></label>
             </div>
-            <label class="ad-field"><span class="ad-label">Motivo <small>(opcional)</small></span>
-                <input class="ad-input" type="text" name="motivo" maxlength="200" placeholder="Salió antes, feriado, la cubrió otra…"></label>
+            <label class="pn-field"><span class="pn-label">Motivo <small>(opcional)</small></span>
+                <input class="pn-input" type="text" name="motivo" maxlength="200" placeholder="Salió antes, feriado, la cubrió otra…"></label>
         </div>
-        <div class="ad-dialog__foot eq-dialog-acciones">
-            <button type="submit" name="accion" value="deshacer" class="ad-btn ad-btn--ghost" data-eq-deshacer hidden>Deshacer el cambio</button>
-            <button type="submit" name="accion" value="no_trabajo" class="ad-btn ad-btn--danger-ghost" data-eq-no-trabajo>No trabajó este turno</button>
-            <button type="submit" name="accion" value="otro_horario" class="ad-btn">Guardar el horario</button>
+        <div class="pn-dialog__foot eq-dialog-acciones">
+            <button type="submit" name="accion" value="deshacer" class="pn-btn pn-btn--ghost" data-eq-deshacer hidden>Deshacer el cambio</button>
+            <button type="submit" name="accion" value="no_trabajo" class="pn-btn pn-btn--danger-ghost" data-eq-no-trabajo>No trabajó este turno</button>
+            <button type="submit" name="accion" value="otro_horario" class="pn-btn">Guardar el horario</button>
         </div>
     </form>
 </dialog>
 
-<dialog class="ad-dialog" id="dlg-dia" aria-labelledby="dlg-dia-t">
-    <form method="post" action="{% url 'gravity:admin_profesora_horario_agregar' profesora.id %}" class="ad-dialog__caja" data-eq-pagado="mes:fecha" id="eq-form-dia">
+<dialog class="pn-dialog" id="dlg-dia" aria-labelledby="dlg-dia-t">
+    <form method="post" action="{% url 'gravity:admin_profesora_horario_agregar' profesora.id %}" class="pn-dialog__caja" data-eq-pagado="mes:fecha" id="eq-form-dia">
         {% csrf_token %}
         <input type="hidden" name="modo" value="fecha">
-        <div class="ad-dialog__head"><h2 class="ad-dialog__title" id="dlg-dia-t">Turno suelto</h2><button type="button" class="ad-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
-        <div class="ad-dialog__body">
+        <div class="pn-dialog__head"><h2 class="pn-dialog__title" id="dlg-dia-t">Turno suelto</h2><button type="button" class="pn-iconbtn" data-cerrar-dialogo aria-label="Cerrar">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button></div>
+        <div class="pn-dialog__body">
             <p>Se suma solo ese día (por ejemplo, si cubrió a una compañera).</p>
-            <label class="ad-field"><span class="ad-label">Fecha</span><input class="ad-input" type="date" name="fecha" data-rellena="fecha" data-eq-fecha required></label>
+            <label class="pn-field"><span class="pn-label">Fecha</span><input class="pn-input" type="date" name="fecha" data-rellena="fecha" data-eq-fecha required></label>
             <div class="cl-seg eq-seg2">
                 <label class="cl-seg__op"><input type="radio" name="origen" value="clase" checked><span>Una clase</span></label>
                 <label class="cl-seg__op"><input type="radio" name="origen" value="libre"><span>Otro horario</span></label>
             </div>
-            <div data-origen="clase" class="ad-field">
+            <div data-origen="clase" class="pn-field">
                 <div class="eq-clases" data-eq-clases>
                     {% for clase in clases %}
-                    <label class="ad-check eq-clase" data-dia="{{ clase.dia }}" data-sede="{{ clase.direccion }}">
+                    <label class="pn-check eq-clase" data-dia="{{ clase.dia }}" data-sede="{{ clase.direccion }}">
                         <input type="checkbox" name="clases" value="{{ clase.id }}">
-                        <span class="ad-check__text">{{ clase.horario|time:"H:i" }} · {{ clase.get_nombre_display }}<small>{{ clase.get_direccion_corta }}</small></span>
+                        <span class="pn-check__text">{{ clase.horario|time:"H:i" }} · {{ clase.get_nombre_display }}<small>{{ clase.get_direccion_corta }}</small></span>
                     </label>
                     {% endfor %}
                 </div>
-                <p class="ad-help" data-eq-sin-clases hidden>No hay clases ese día. Usá "Otro horario".</p>
+                <p class="pn-help" data-eq-sin-clases hidden>No hay clases ese día. Usá "Otro horario".</p>
                 <input type="hidden" name="duracion_minutos" value="60">
             </div>
-            <div data-origen="libre" class="ad-form__row ad-form__row--2" hidden>
-                <label class="ad-field"><span class="ad-label">Entrada</span><input class="ad-input" type="time" name="hora_inicio"></label>
-                <label class="ad-field"><span class="ad-label">Salida</span><input class="ad-input" type="time" name="hora_fin"></label>
-                <label class="ad-field"><span class="ad-label">Sede</span>
-                    <select class="ad-select" name="sede">{% for valor, nombre in sedes %}<option value="{{ valor }}">{{ nombre }}</option>{% endfor %}</select></label>
+            <div data-origen="libre" class="pn-form__row pn-form__row--2" hidden>
+                <label class="pn-field"><span class="pn-label">Entrada</span><input class="pn-input" type="time" name="hora_inicio"></label>
+                <label class="pn-field"><span class="pn-label">Salida</span><input class="pn-input" type="time" name="hora_fin"></label>
+                <label class="pn-field"><span class="pn-label">Sede</span>
+                    <select class="pn-select" name="sede">{% for valor, nombre in sedes %}<option value="{{ valor }}">{{ nombre }}</option>{% endfor %}</select></label>
             </div>
-            <label class="ad-field"><span class="ad-label">Motivo <small>(opcional)</small></span>
-                <input class="ad-input" type="text" name="motivo" maxlength="200" placeholder="Cubrió a una compañera…"></label>
+            <label class="pn-field"><span class="pn-label">Motivo <small>(opcional)</small></span>
+                <input class="pn-input" type="text" name="motivo" maxlength="200" placeholder="Cubrió a una compañera…"></label>
         </div>
-        <div class="ad-dialog__foot"><button type="button" class="ad-btn ad-btn--ghost" data-cerrar-dialogo>Cancelar</button><button type="submit" class="ad-btn" data-loading-text="Agregando...">Agregar el turno</button></div>
+        <div class="pn-dialog__foot"><button type="button" class="pn-btn pn-btn--ghost" data-cerrar-dialogo>Cancelar</button><button type="submit" class="pn-btn" data-loading-text="Agregando...">Agregar el turno</button></div>
     </form>
 </dialog>
 {% endif %}

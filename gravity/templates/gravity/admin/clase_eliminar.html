@@ -9,34 +9,34 @@
 
 {% block content %}
 <div class="cd-eliminar">
-    <a class="ad-back" href="{% url 'gravity:admin_clase_detalle' clase.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver a la clase</a>
+    <a class="pn-back" href="{% url 'gravity:admin_clase_detalle' clase.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver a la clase</a>
 
-    <section class="ad-card">
-        <div class="ad-card__body">
-            <div class="ad-modal__icon{% if puede %} cd-icono-peligro{% endif %}">{% include 'gravity/admin/_icono.html' with i=puede|yesno:'basura,info' %}</div>
+    <section class="pn-card">
+        <div class="pn-card__body">
+            <div class="pn-modal__icon{% if puede %} cd-icono-peligro{% endif %}">{% include 'gravity/admin/_icono.html' with i=puede|yesno:'basura,info' %}</div>
             {% if puede %}
-            <h1 class="ad-modal__title">¿Eliminar esta clase?</h1>
-            <p class="ad-modal__text">{{ clase.get_nombre_display }} · {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>
+            <h1 class="pn-modal__title">¿Eliminar esta clase?</h1>
+            <p class="pn-modal__text">{{ clase.get_nombre_display }} · {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>
             <p class="cd-eliminar__texto">Nunca tuvo reservas, así que se borra sin perder nada. No se puede deshacer.</p>
-            <form method="post" class="ad-modal__actions">
+            <form method="post" class="pn-modal__actions">
                 {% csrf_token %}
-                <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_clase_detalle' clase.id %}">Cancelar</a>
-                <button type="submit" class="ad-btn ad-btn--danger" data-loading-text="Eliminando...">Eliminar clase</button>
+                <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_clase_detalle' clase.id %}">Cancelar</a>
+                <button type="submit" class="pn-btn pn-btn--danger" data-loading-text="Eliminando...">Eliminar clase</button>
             </form>
             {% else %}
-            <h1 class="ad-modal__title">Esta clase no se puede eliminar</h1>
-            <p class="ad-modal__text">{{ clase.get_nombre_display }} · {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>
+            <h1 class="pn-modal__title">Esta clase no se puede eliminar</h1>
+            <p class="pn-modal__text">{{ clase.get_nombre_display }} · {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>
             <p class="cd-eliminar__texto">
                 Ya tuvo {{ historial }} reserva{{ historial|pluralize }}{% if fijos %} y hoy {{ fijos }} alumno{{ fijos|pluralize }} la tiene{{ fijos|pluralize:"n" }} como horario fijo{% endif %}.
                 Borrarla se llevaría toda su historia: asistencia, recuperos y estadísticas.
                 {% if clase.activa %}Si no se va a dictar más, pausala: deja de aparecer para reservar y la historia queda.{% else %}Ya está en pausa: no aparece para reservar.{% endif %}
             </p>
-            <div class="ad-modal__actions">
-                <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_clase_detalle' clase.id %}">Volver</a>
+            <div class="pn-modal__actions">
+                <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_clase_detalle' clase.id %}">Volver</a>
                 {% if clase.activa %}
                 <form method="post" action="{% url 'gravity:admin_clase_toggle_status' clase.id %}">
                     {% csrf_token %}
-                    <button type="submit" class="ad-btn">Pausar la clase</button>
+                    <button type="submit" class="pn-btn">Pausar la clase</button>
                 </form>
                 {% endif %}
             </div>

@@ -4,11 +4,11 @@
 {% block title %}Asistencia{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <p class="ad-head__eyebrow">Asistencia</p>
-        <h1 class="ad-head__title">{% if es_hoy %}Hoy{% elif es_ayer %}Ayer{% else %}{{ fecha_larga }}{% endif %}</h1>
-        <p class="ad-head__sub">
+<header class="pn-head">
+    <div class="pn-head__text">
+        <p class="pn-head__eyebrow">Asistencia</p>
+        <h1 class="pn-head__title">{% if es_hoy %}Hoy{% elif es_ayer %}Ayer{% else %}{{ fecha_larga }}{% endif %}</h1>
+        <p class="pn-head__sub">
             {% if es_hoy or es_ayer %}{{ fecha_larga }} · {% endif %}
             {% if es_futura %}Todavía no pasó: acá ves quiénes están anotados.
             {% elif solo_lectura %}Solo para consultar.
@@ -20,60 +20,60 @@
 {% include 'gravity/admin/_asistencia_tabs.html' with activa='lista' %}
 
 <div class="as-filtros">
-    <nav class="ad-chips" aria-label="Elegir día">
+    <nav class="pn-chips" aria-label="Elegir día">
         {% for chip in chips %}
-        <a class="ad-chip{% if chip.activo %} is-active{% endif %}{% if not chip.con_clases %} hy-dia--vacio{% endif %}"
+        <a class="pn-chip{% if chip.activo %} is-active{% endif %}{% if not chip.con_clases %} hy-dia--vacio{% endif %}"
            href="?fecha={{ chip.fecha|date:'Y-m-d' }}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}"{% if chip.activo %} aria-current="date"{% endif %}>{{ chip.texto }}</a>
         {% endfor %}
-        <button type="button" class="ad-chip{% if otra_fecha %} is-active{% endif %}" data-as-otra aria-expanded="{% if otra_fecha %}true{% else %}false{% endif %}" aria-controls="as-otra">Otra fecha</button>
+        <button type="button" class="pn-chip{% if otra_fecha %} is-active{% endif %}" data-as-otra aria-expanded="{% if otra_fecha %}true{% else %}false{% endif %}" aria-controls="as-otra">Otra fecha</button>
     </nav>
     <form method="get" class="as-otra" id="as-otra"{% if not otra_fecha %} hidden{% endif %}>
         {% if sede_filtro %}<input type="hidden" name="sede" value="{{ sede_filtro }}">{% endif %}
-        <label class="ad-field">
-            <span class="ad-label">Fecha</span>
-            <input class="ad-input" type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" required>
+        <label class="pn-field">
+            <span class="pn-label">Fecha</span>
+            <input class="pn-input" type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" required>
         </label>
-        <button type="submit" class="ad-btn ad-btn--blue">Ver</button>
+        <button type="submit" class="pn-btn pn-btn--blue">Ver</button>
     </form>
     {% if sedes|length > 1 %}
-    <nav class="ad-chips" aria-label="Sede">
-        <a class="ad-chip{% if not sede_filtro %} is-active{% endif %}" href="?fecha={{ fecha|date:'Y-m-d' }}">Todas las sedes</a>
+    <nav class="pn-chips" aria-label="Sede">
+        <a class="pn-chip{% if not sede_filtro %} is-active{% endif %}" href="?fecha={{ fecha|date:'Y-m-d' }}">Todas las sedes</a>
         {% for valor, texto in sedes %}
-        <a class="ad-chip{% if sede_filtro == valor %} is-active{% endif %}" href="?fecha={{ fecha|date:'Y-m-d' }}&sede={{ valor }}">{{ texto }}</a>
+        <a class="pn-chip{% if sede_filtro == valor %} is-active{% endif %}" href="?fecha={{ fecha|date:'Y-m-d' }}&sede={{ valor }}">{{ texto }}</a>
         {% endfor %}
     </nav>
     {% endif %}
 </div>
 
 {% if solo_lectura %}
-<div class="ad-alert ad-alert--warn as-aviso">
+<div class="pn-alert pn-alert--warn as-aviso">
     {% include 'gravity/admin/_icono.html' with i='reloj' %}
     <p>La asistencia se puede marcar o corregir hasta {{ dias_para_marcar }} días atrás (desde el {{ fecha_minima|date:"d/m" }}). Esta lista es solo para consultar.</p>
 </div>
 {% elif es_futura %}
-<div class="ad-alert as-aviso">
+<div class="pn-alert as-aviso">
     {% include 'gravity/admin/_icono.html' with i='info' %}
     <p>Vas a poder marcar quién no vino desde que empiece cada clase.</p>
 </div>
 {% endif %}
 
 {% if clases %}
-<div class="ad-kpis as-kpis">
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Clases</p>
-        <p class="ad-kpi__value">{{ totales.clases }}</p>
+<div class="pn-kpis as-kpis">
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Clases</p>
+        <p class="pn-kpi__value">{{ totales.clases }}</p>
     </div>
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Anotados</p>
-        <p class="ad-kpi__value">{{ totales.anotados }}</p>
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Anotados</p>
+        <p class="pn-kpi__value">{{ totales.anotados }}</p>
     </div>
-    <div class="ad-kpi{% if totales.avisaron %} ad-kpi--warn{% endif %}">
-        <p class="ad-kpi__label">Avisaron que faltan</p>
-        <p class="ad-kpi__value">{{ totales.avisaron }}</p>
+    <div class="pn-kpi{% if totales.avisaron %} pn-kpi--warn{% endif %}">
+        <p class="pn-kpi__label">Avisaron que faltan</p>
+        <p class="pn-kpi__value">{{ totales.avisaron }}</p>
     </div>
-    <div class="ad-kpi{% if totales.no_vino %} ad-kpi--danger{% endif %}" data-as-kpi>
-        <p class="ad-kpi__label">No vinieron</p>
-        <p class="ad-kpi__value" data-as-total-nv>{{ totales.no_vino }}</p>
+    <div class="pn-kpi{% if totales.no_vino %} pn-kpi--danger{% endif %}" data-as-kpi>
+        <p class="pn-kpi__label">No vinieron</p>
+        <p class="pn-kpi__value" data-as-total-nv>{{ totales.no_vino }}</p>
     </div>
 </div>
 
@@ -95,7 +95,7 @@
                 </span>
             </span>
             <span class="as-clase__nv{% if not item.no_vino %} is-cero{% endif %}" data-as-nv-badge>
-                <span class="ad-badge ad-badge--danger" data-as-nv>{{ item.no_vino }} no vin{% if item.no_vino == 1 %}o{% else %}ieron{% endif %}</span>
+                <span class="pn-badge pn-badge--danger" data-as-nv>{{ item.no_vino }} no vin{% if item.no_vino == 1 %}o{% else %}ieron{% endif %}</span>
             </span>
             <span class="hy-clase__chev">{% include 'gravity/admin/_icono.html' with i='abajo' %}</span>
         </summary>
@@ -108,8 +108,8 @@
                     <span class="as-alumno__body">
                         <a href="{{ a.url }}" class="hy-alumno__nombre">{{ a.nombre }}</a>
                         <span class="hy-alumno__marcas">
-                            <span class="ad-badge ad-badge--danger" data-as-marca{% if not a.no_vino %} hidden{% endif %}>No vino</span>
-                            {% for texto, tono in a.marcas %}<span class="ad-badge ad-badge--{{ tono }}">{{ texto }}</span>{% endfor %}
+                            <span class="pn-badge pn-badge--danger" data-as-marca{% if not a.no_vino %} hidden{% endif %}>No vino</span>
+                            {% for texto, tono in a.marcas %}<span class="pn-badge pn-badge--{{ tono }}">{{ texto }}</span>{% endfor %}
                         </span>
                     </span>
                     {% if a.marcable %}
@@ -119,7 +119,7 @@
                         <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">
                         <input type="hidden" name="marcar" value="{% if a.no_vino %}0{% else %}1{% endif %}">
                         <input type="hidden" name="next" value="{{ request.get_full_path }}#clase-{{ item.clase.id }}">
-                        <button type="submit" class="ad-btn ad-btn--sm {% if a.no_vino %}ad-btn--ghost{% else %}ad-btn--danger-ghost{% endif %}" aria-label="{% if a.no_vino %}Deshacer: {{ a.nombre }} vino{% else %}Marcar que {{ a.nombre }} no vino{% endif %}">{% if a.no_vino %}Deshacer{% else %}No vino{% endif %}</button>
+                        <button type="submit" class="pn-btn pn-btn--sm {% if a.no_vino %}pn-btn--ghost{% else %}pn-btn--danger-ghost{% endif %}" aria-label="{% if a.no_vino %}Deshacer: {{ a.nombre }} vino{% else %}Marcar que {{ a.nombre }} no vino{% endif %}">{% if a.no_vino %}Deshacer{% else %}No vino{% endif %}</button>
                     </form>
                     {% endif %}
                 </li>
@@ -129,7 +129,7 @@
             <p class="hy-vacio">No había alumnos anotados.</p>
             {% endif %}
             <div class="hy-clase__acciones">
-                <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_clase_detalle' item.clase.id %}">
+                <a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_clase_detalle' item.clase.id %}">
                     Ver clase {% include 'gravity/admin/_icono.html' with i='flecha' %}
                 </a>
             </div>
@@ -137,18 +137,18 @@
     </details>
     {% endfor %}
 </div>
-<p class="ad-sr" aria-live="polite" data-as-vivo></p>
+<p class="pn-sr" aria-live="polite" data-as-vivo></p>
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='calendario' %}
-        <p class="ad-empty__title">No hubo clases {% if es_hoy %}hoy{% else %}este día{% endif %}</p>
-        <p class="ad-empty__text">{% if sede_filtro %}Probá con todas las sedes u otro día.{% else %}Elegí otro día arriba.{% endif %}</p>
+        <p class="pn-empty__title">No hubo clases {% if es_hoy %}hoy{% else %}este día{% endif %}</p>
+        <p class="pn-empty__text">{% if sede_filtro %}Probá con todas las sedes u otro día.{% else %}Elegí otro día arriba.{% endif %}</p>
     </div>
 </div>
 {% endif %}
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/admin_asistencia.js' %}?v=20261012a"></script>
+<script src="{% static 'js/admin_asistencia.js' %}?v=20261014pn"></script>
 {% endblock %}

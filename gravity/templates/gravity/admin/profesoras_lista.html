@@ -4,99 +4,99 @@
 {% block title %}Equipo{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Equipo</h1>
-        <p class="ad-head__sub">Horas, pagos y acceso al panel de quienes trabajan en el estudio.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Equipo</h1>
+        <p class="pn-head__sub">Horas, pagos y acceso al panel de quienes trabajan en el estudio.</p>
     </div>
-    <div class="ad-head__actions">
-        <a class="ad-btn" href="{% url 'gravity:admin_equipo_sumar' %}">{% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %} Sumar al equipo</a>
+    <div class="pn-head__actions">
+        <a class="pn-btn" href="{% url 'gravity:admin_equipo_sumar' %}">{% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %} Sumar al equipo</a>
     </div>
 </header>
 
 {% with sa=ver_sin_acceso|yesno:'&estado=sin_acceso,' %}
 <div class="eq-periodo">
-    <nav class="ad-chips" aria-label="Período">
-        <a class="ad-chip{% if periodo == 'mes' %} is-active{% endif %}" href="?periodo=mes&mes={{ mes_seleccionado|date:'Y-m' }}{{ sa }}">Mes</a>
-        <a class="ad-chip{% if periodo == 'semana' %} is-active{% endif %}" href="?periodo=semana&fecha={% if periodo == 'mes' %}{{ hoy|date:'Y-m-d' }}{% else %}{{ desde|date:'Y-m-d' }}{% endif %}{{ sa }}">Semana</a>
-        <a class="ad-chip{% if periodo == 'dia' %} is-active{% endif %}" href="?periodo=dia&fecha={{ hoy|date:'Y-m-d' }}{{ sa }}">Día</a>
-        <a class="ad-chip{% if periodo == 'personalizado' %} is-active{% endif %}" href="?periodo=personalizado&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{{ sa }}">Fechas</a>
+    <nav class="pn-chips" aria-label="Período">
+        <a class="pn-chip{% if periodo == 'mes' %} is-active{% endif %}" href="?periodo=mes&mes={{ mes_seleccionado|date:'Y-m' }}{{ sa }}">Mes</a>
+        <a class="pn-chip{% if periodo == 'semana' %} is-active{% endif %}" href="?periodo=semana&fecha={% if periodo == 'mes' %}{{ hoy|date:'Y-m-d' }}{% else %}{{ desde|date:'Y-m-d' }}{% endif %}{{ sa }}">Semana</a>
+        <a class="pn-chip{% if periodo == 'dia' %} is-active{% endif %}" href="?periodo=dia&fecha={{ hoy|date:'Y-m-d' }}{{ sa }}">Día</a>
+        <a class="pn-chip{% if periodo == 'personalizado' %} is-active{% endif %}" href="?periodo=personalizado&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{{ sa }}">Fechas</a>
     </nav>
     {% if periodo == 'personalizado' %}
     <form method="get" class="eq-rango">
         <input type="hidden" name="periodo" value="personalizado">
         {% if ver_sin_acceso %}<input type="hidden" name="estado" value="sin_acceso">{% endif %}
-        <label class="ad-field"><span class="ad-label">Desde</span><input class="ad-input" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" required></label>
-        <label class="ad-field"><span class="ad-label">Hasta</span><input class="ad-input" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" required></label>
-        <button type="submit" class="ad-btn ad-btn--blue">Ver</button>
+        <label class="pn-field"><span class="pn-label">Desde</span><input class="pn-input" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" required></label>
+        <label class="pn-field"><span class="pn-label">Hasta</span><input class="pn-input" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" required></label>
+        <button type="submit" class="pn-btn pn-btn--blue">Ver</button>
     </form>
     {% else %}
     <div class="eq-nav">
-        <a class="ad-btn ad-btn--ghost ad-btn--sm eq-nav__btn" href="{{ anterior }}{{ sa }}" aria-label="Período anterior">{% include 'gravity/admin/_icono.html' with i='volver' %}</a>
+        <a class="pn-btn pn-btn--ghost pn-btn--sm eq-nav__btn" href="{{ anterior }}{{ sa }}" aria-label="Período anterior">{% include 'gravity/admin/_icono.html' with i='volver' %}</a>
         <p class="eq-nav__titulo">{{ titulo_periodo }}</p>
-        <a class="ad-btn ad-btn--ghost ad-btn--sm eq-nav__btn" href="{{ siguiente }}{{ sa }}" aria-label="Período siguiente">{% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
+        <a class="pn-btn pn-btn--ghost pn-btn--sm eq-nav__btn" href="{{ siguiente }}{{ sa }}" aria-label="Período siguiente">{% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
     </div>
     {% endif %}
 </div>
 {% endwith %}
 
-<div class="ad-kpis eq-kpis">
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Horas{% if en_curso %} hasta hoy{% endif %}</p>
-        <p class="ad-kpi__value">{{ total_horas|horas }} h</p>
+<div class="pn-kpis eq-kpis">
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Horas{% if en_curso %} hasta hoy{% endif %}</p>
+        <p class="pn-kpi__value">{{ total_horas|horas }} h</p>
     </div>
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Costo{% if en_curso %} hasta hoy{% endif %}</p>
-        <p class="ad-kpi__value">${{ total_monto|pesos }}</p>
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Costo{% if en_curso %} hasta hoy{% endif %}</p>
+        <p class="pn-kpi__value">${{ total_monto|pesos }}</p>
     </div>
     {% if en_curso %}
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">A fin de {% if periodo == 'mes' %}mes{% elif periodo == 'semana' %}semana{% else %}período{% endif %}</p>
-        <p class="ad-kpi__value">${{ total_proyeccion|pesos }}</p>
-        <p class="ad-kpi__detail">Si se cumple el horario</p>
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">A fin de {% if periodo == 'mes' %}mes{% elif periodo == 'semana' %}semana{% else %}período{% endif %}</p>
+        <p class="pn-kpi__value">${{ total_proyeccion|pesos }}</p>
+        <p class="pn-kpi__detail">Si se cumple el horario</p>
     </div>
     {% endif %}
     {% if es_mes_completo %}
-    <div class="ad-kpi{% if falta_pagar %} ad-kpi--warn{% endif %}">
-        <p class="ad-kpi__label">Falta pagar</p>
-        <p class="ad-kpi__value">{{ falta_pagar }}</p>
-        <p class="ad-kpi__detail">{% if en_curso %}El mes todavía no terminó{% else %}persona{{ falta_pagar|pluralize }}{% endif %}</p>
+    <div class="pn-kpi{% if falta_pagar %} pn-kpi--warn{% endif %}">
+        <p class="pn-kpi__label">Falta pagar</p>
+        <p class="pn-kpi__value">{{ falta_pagar }}</p>
+        <p class="pn-kpi__detail">{% if en_curso %}El mes todavía no terminó{% else %}persona{{ falta_pagar|pluralize }}{% endif %}</p>
     </div>
     {% endif %}
 </div>
 
 {% if alguna_sin_valor_hora %}
-<div class="ad-alert ad-alert--warn eq-aviso">
+<div class="pn-alert pn-alert--warn eq-aviso">
     {% include 'gravity/admin/_icono.html' with i='alerta' %}
     <p>Hay horas sin valor por hora cargado: esos días figuran en $0 hasta que lo cargues en su ficha (pestaña Horario).</p>
 </div>
 {% endif %}
 
 {% if ver_sin_acceso %}
-<div class="ad-alert eq-aviso">
+<div class="pn-alert eq-aviso">
     {% include 'gravity/admin/_icono.html' with i='info' %}
     <p>Quienes ya no tienen acceso al panel, con su historial. <a href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% endif %}">Ver el equipo actual</a></p>
 </div>
 {% endif %}
 
 {% if filas %}
-<section class="ad-card">
-    <ul class="ad-list">
+<section class="pn-card">
+    <ul class="pn-list">
         {% for fila in filas %}
         <li>
-            <a class="ad-row eq-fila" href="{% url 'gravity:admin_profesora_detalle' fila.persona.id %}{% if es_mes_completo %}?mes={{ mes_seleccionado|date:'Y-m' }}{% endif %}">
+            <a class="pn-row eq-fila" href="{% url 'gravity:admin_profesora_detalle' fila.persona.id %}{% if es_mes_completo %}?mes={{ mes_seleccionado|date:'Y-m' }}{% endif %}">
                 {% include 'gravity/admin/_avatar.html' with persona=fila.persona %}
-                <span class="ad-row__body">
-                    <span class="ad-row__title">{{ fila.persona.get_full_name|default:fila.persona.username }}</span>
-                    <span class="ad-row__sub">
+                <span class="pn-row__body">
+                    <span class="pn-row__title">{{ fila.persona.get_full_name|default:fila.persona.username }}</span>
+                    <span class="pn-row__sub">
                         {% if fila.horas_semanales %}{{ fila.horas_semanales|horas }} h por semana{% else %}Sin horario cargado{% endif %}
                         {% if fila.valor_hora %} · ${{ fila.valor_hora.valor_hora|pesos }} la hora{% endif %}
                     </span>
                     {% if fila.estado.0 != 'activo' or fila.pago or fila.sin_valor_hora %}
                     <span class="eq-fila__marcas">
-                        {% if fila.estado.0 != 'activo' %}<span class="ad-badge ad-badge--{{ fila.estado.2 }}">{{ fila.estado.1 }}</span>{% endif %}
-                        {% if fila.pago %}<span class="ad-badge ad-badge--{{ fila.pago.1 }}">{{ fila.pago.0 }}</span>{% endif %}
-                        {% if fila.sin_valor_hora %}<span class="ad-badge ad-badge--warn">Falta el valor hora</span>{% endif %}
+                        {% if fila.estado.0 != 'activo' %}<span class="pn-badge pn-badge--{{ fila.estado.2 }}">{{ fila.estado.1 }}</span>{% endif %}
+                        {% if fila.pago %}<span class="pn-badge pn-badge--{{ fila.pago.1 }}">{{ fila.pago.0 }}</span>{% endif %}
+                        {% if fila.sin_valor_hora %}<span class="pn-badge pn-badge--warn">Falta el valor hora</span>{% endif %}
                     </span>
                     {% endif %}
                 </span>
@@ -109,22 +109,22 @@
         </li>
         {% endfor %}
     </ul>
-    <div class="ad-card__foot eq-total">
+    <div class="pn-card__foot eq-total">
         <span>Total{% if en_curso %} hasta hoy{% endif %}</span>
         <strong>{{ total_horas|horas }} h · ${{ total_monto|pesos }}</strong>
     </div>
 </section>
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='alumnos' %}
         {% if ver_sin_acceso %}
-        <p class="ad-empty__title">No hay nadie sin acceso</p>
-        <p class="ad-empty__text">Cuando le quites el acceso a alguien, su historial va a quedar acá.</p>
+        <p class="pn-empty__title">No hay nadie sin acceso</p>
+        <p class="pn-empty__text">Cuando le quites el acceso a alguien, su historial va a quedar acá.</p>
         {% else %}
-        <p class="ad-empty__title">Todavía no hay nadie en el equipo</p>
-        <p class="ad-empty__text">Sumá a quienes dan clases o atienden el estudio: van a poder pasar lista, reservar y cobrar.</p>
-        <a class="ad-btn" href="{% url 'gravity:admin_equipo_sumar' %}">Sumar al equipo</a>
+        <p class="pn-empty__title">Todavía no hay nadie en el equipo</p>
+        <p class="pn-empty__text">Sumá a quienes dan clases o atienden el estudio: van a poder pasar lista, reservar y cobrar.</p>
+        <a class="pn-btn" href="{% url 'gravity:admin_equipo_sumar' %}">Sumar al equipo</a>
         {% endif %}
     </div>
 </div>
@@ -132,7 +132,7 @@
 
 <div class="eq-pie">
     {% if not ver_sin_acceso and cantidad_sin_acceso %}
-    <a class="ad-btn ad-btn--quiet" href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% elif periodo == 'personalizado' %}&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{% else %}&fecha={{ desde|date:'Y-m-d' }}{% endif %}&estado=sin_acceso">Ver quienes ya no tienen acceso ({{ cantidad_sin_acceso }}) {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
+    <a class="pn-btn pn-btn--quiet" href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% elif periodo == 'personalizado' %}&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{% else %}&fecha={{ desde|date:'Y-m-d' }}{% endif %}&estado=sin_acceso">Ver quienes ya no tienen acceso ({{ cantidad_sin_acceso }}) {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
     {% endif %}
     {% if superadmins %}
     <p class="eq-super">{% include 'gravity/admin/_icono.html' with i='escudo' %} Con acceso total (superadmin): {% for s in superadmins %}{{ s.get_full_name|default:s.username }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>

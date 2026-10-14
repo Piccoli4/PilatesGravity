@@ -7,11 +7,11 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
-        <h1 class="ad-head__title">{% if fechas %}Ausencia o baja{% else %}Cancelar {% if reserva.fecha_unica %}{% if reserva.es_recupero %}recupero{% else %}clase única{% endif %}{% else %}horario fijo{% endif %}{% endif %}</h1>
-        <p class="ad-head__sub">{{ reserva.get_nombre_completo_usuario }}</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
+        <h1 class="pn-head__title">{% if fechas %}Ausencia o baja{% else %}Cancelar {% if reserva.fecha_unica %}{% if reserva.es_recupero %}recupero{% else %}clase única{% endif %}{% else %}horario fijo{% endif %}{% endif %}</h1>
+        <p class="pn-head__sub">{{ reserva.get_nombre_completo_usuario }}</p>
     </div>
 </header>
 
@@ -19,8 +19,8 @@
     {% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
-    <section class="ad-card">
-        <div class="ad-card__body rs-actual">
+    <section class="pn-card">
+        <div class="pn-card__body rs-actual">
             <span class="hy-clase__hora">{{ reserva.clase.horario|time:"H:i" }}</span>
             <div>
                 <p class="rs-actual__titulo">{{ reserva.clase.get_nombre_display }} · {{ reserva.clase.dia }}{% if reserva.fecha_unica %} {{ reserva.fecha_unica|date:"d/m" }}{% endif %}</p>
@@ -30,16 +30,16 @@
     </section>
 
     {% if fechas %}
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">¿Qué hacemos?</h2></div>
-        <div class="ad-card__body ad-form">
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">¿Qué hacemos?</h2></div>
+        <div class="pn-card__body pn-form">
             <div class="cl-cards rs-alcance">
                 <label class="cl-card"><input type="radio" name="alcance" value="fecha"{% if alcance == 'fecha' %} checked{% endif %}><span><strong>No viene un día</strong><small>Se libera su lugar esa fecha y queda con su recupero, como si lo hubiera avisado.</small></span></label>
                 <label class="cl-card"><input type="radio" name="alcance" value="baja"{% if alcance == 'baja' %} checked{% endif %}><span><strong>Dar de baja el horario</strong><small>Deja de tener este lugar fijo todas las semanas.</small></span></label>
             </div>
 
-            <fieldset class="ad-field rc-parte" data-parte="fecha">
-                <legend class="ad-label">¿Qué día no viene?</legend>
+            <fieldset class="pn-field rc-parte" data-parte="fecha">
+                <legend class="pn-label">¿Qué día no viene?</legend>
                 <div class="rs-fechas__lista">
                     {% for f in fechas %}
                     <label class="rs-fecha{% if f.avisada %} is-llena{% endif %}">
@@ -55,38 +55,38 @@
     <input type="hidden" name="alcance" value="baja">
     {% endif %}
 
-    <section class="ad-card rc-parte" data-parte="baja">
-        <div class="ad-card__head"><h2 class="ad-card__title">Motivo</h2></div>
-        <div class="ad-card__body ad-form">
-            <div class="ad-field">
-                <label class="ad-label" for="rc-motivo">Por qué se cancela</label>
-                <select class="ad-select" name="motivo" id="rc-motivo">
+    <section class="pn-card rc-parte" data-parte="baja">
+        <div class="pn-card__head"><h2 class="pn-card__title">Motivo</h2></div>
+        <div class="pn-card__body pn-form">
+            <div class="pn-field">
+                <label class="pn-label" for="rc-motivo">Por qué se cancela</label>
+                <select class="pn-select" name="motivo" id="rc-motivo">
                     <option value="">Elegí un motivo</option>
                     {% for m in motivos %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="ad-field">
-                <label class="ad-label" for="rc-detalle">Detalle <small>(opcional; si mandás el email, lo lee el alumno)</small></label>
-                <textarea class="ad-textarea" name="motivo_detalle" id="rc-detalle" rows="3" maxlength="500"></textarea>
+            <div class="pn-field">
+                <label class="pn-label" for="rc-detalle">Detalle <small>(opcional; si mandás el email, lo lee el alumno)</small></label>
+                <textarea class="pn-textarea" name="motivo_detalle" id="rc-detalle" rows="3" maxlength="500"></textarea>
             </div>
             {% if reserva.usuario.email %}
-            <label class="ad-check">
+            <label class="pn-check">
                 <input type="checkbox" name="notificar_usuario" checked>
-                <span class="ad-check__text">Avisarle por email<small>{{ reserva.usuario.email }}</small></span>
+                <span class="pn-check__text">Avisarle por email<small>{{ reserva.usuario.email }}</small></span>
             </label>
-            <label class="ad-check">
+            <label class="pn-check">
                 <input type="checkbox" name="ofrecer_reemplazo" checked>
-                <span class="ad-check__text">Sugerirle otros horarios en el email<small>Clases con lugar del mismo tipo</small></span>
+                <span class="pn-check__text">Sugerirle otros horarios en el email<small>Clases con lugar del mismo tipo</small></span>
             </label>
             {% else %}
-            <p class="ad-help">No tiene email cargado: avisale por WhatsApp.</p>
+            <p class="pn-help">No tiene email cargado: avisale por WhatsApp.</p>
             {% endif %}
         </div>
     </section>
 
-    <div class="ad-form__actions">
-        <a class="ad-btn ad-btn--ghost" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">Volver</a>
-        <button type="submit" class="ad-btn ad-btn--danger" data-rc-boton data-loading-text="Guardando...">{% if fechas %}Avisar la ausencia{% else %}Cancelar la reserva{% endif %}</button>
+    <div class="pn-form__actions">
+        <a class="pn-btn pn-btn--ghost" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">Volver</a>
+        <button type="submit" class="pn-btn pn-btn--danger" data-rc-boton data-loading-text="Guardando...">{% if fechas %}Avisar la ausencia{% else %}Cancelar la reserva{% endif %}</button>
     </div>
 </form>
 {% endblock %}
@@ -104,7 +104,7 @@
             motivo.required = alcance === 'baja';
             boton.textContent = alcance === 'fecha' ? 'Avisar la ausencia'
                 : ({% if reserva.fecha_unica %}'Cancelar la reserva'{% else %}'Dar de baja el horario'{% endif %});
-            boton.classList.toggle('ad-btn--danger', alcance === 'baja');
+            boton.classList.toggle('pn-btn--danger', alcance === 'baja');
         }
         form.addEventListener('change', actualizar);
         actualizar();

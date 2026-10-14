@@ -4,17 +4,17 @@
 {% block title %}Mis horarios{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Mis horarios</h1>
-        <p class="ad-head__sub">Tu horario de cada semana y las horas que vas haciendo en el mes. Si algo no coincide, avisale a quien administra el estudio para que lo corrija.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Mis horarios</h1>
+        <p class="pn-head__sub">Tu horario de cada semana y las horas que vas haciendo en el mes. Si algo no coincide, avisale a quien administra el estudio para que lo corrija.</p>
     </div>
 </header>
 
-<section class="ad-card" aria-labelledby="eq-semana-t">
-    <div class="ad-card__head">
-        <h2 class="ad-card__title" id="eq-semana-t">Mi horario semanal</h2>
-        <span class="ad-card__sub">{% if horas_semanales %}{{ horas_semanales|horas }} h por semana{% endif %}</span>
+<section class="pn-card" aria-labelledby="eq-semana-t">
+    <div class="pn-card__head">
+        <h2 class="pn-card__title" id="eq-semana-t">Mi horario semanal</h2>
+        <span class="pn-card__sub">{% if horas_semanales %}{{ horas_semanales|horas }} h por semana{% endif %}</span>
     </div>
     {% if horas_semanales %}
     <div class="eq-semana">

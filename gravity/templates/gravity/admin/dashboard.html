@@ -4,11 +4,11 @@
 {% block title %}Hoy{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <p class="ad-head__eyebrow">{% if es_hoy %}Hoy · {% endif %}{{ fecha_larga }}</p>
-        <h1 class="ad-head__title">{{ saludo }}</h1>
-        <p class="ad-head__sub">
+<header class="pn-head">
+    <div class="pn-head__text">
+        <p class="pn-head__eyebrow">{% if es_hoy %}Hoy · {% endif %}{{ fecha_larga }}</p>
+        <h1 class="pn-head__title">{{ saludo }}</h1>
+        <p class="pn-head__sub">
             {% if clases %}
                 {% if es_hoy %}Hoy hay{% else %}Ese día hay{% endif %}
                 {{ totales.clases }} clase{{ totales.clases|pluralize }} y {% if es_hoy %}vienen{% else %}están anotados{% endif %}
@@ -19,42 +19,42 @@
             {% endif %}
         </p>
     </div>
-    <div class="ad-head__actions hy-head-actions">
-        <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_agregar_usuario' %}">
+    <div class="pn-head__actions hy-head-actions">
+        <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_agregar_usuario' %}">
             {% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %} Nuevo alumno
         </a>
-        <a class="ad-btn" href="{% url 'gravity:admin_reservar_para_usuario' %}">
+        <a class="pn-btn" href="{% url 'gravity:admin_reservar_para_usuario' %}">
             {% include 'gravity/admin/_icono.html' with i='mas_signo' %} Reservar para un alumno
         </a>
     </div>
 </header>
 
-<nav class="ad-chips hy-dias" aria-label="Elegir día">
+<nav class="pn-chips hy-dias" aria-label="Elegir día">
     {% for chip in chips %}
-    <a class="ad-chip{% if chip.activo %} is-active{% endif %}{% if not chip.con_clases %} hy-dia--vacio{% endif %}"
+    <a class="pn-chip{% if chip.activo %} is-active{% endif %}{% if not chip.con_clases %} hy-dia--vacio{% endif %}"
        href="?fecha={{ chip.fecha|date:'Y-m-d' }}"{% if chip.activo %} aria-current="date"{% endif %}>{{ chip.texto }}</a>
     {% endfor %}
 </nav>
 
 <div class="hy">
     <div class="hy-main">
-        <div class="ad-kpis hy-kpis">
-            <div class="ad-kpi">
-                <p class="ad-kpi__label">Clases</p>
-                <p class="ad-kpi__value">{{ totales.clases }}</p>
+        <div class="pn-kpis hy-kpis">
+            <div class="pn-kpi">
+                <p class="pn-kpi__label">Clases</p>
+                <p class="pn-kpi__value">{{ totales.clases }}</p>
             </div>
-            <div class="ad-kpi">
-                <p class="ad-kpi__label">{% if es_hoy %}Vienen{% else %}Anotados{% endif %}</p>
-                <p class="ad-kpi__value">{{ totales.vienen }}</p>
-                {% if totales.sueltas %}<p class="ad-kpi__detail">{{ totales.sueltas }} recupero{{ totales.sueltas|pluralize }} o {{ totales.sueltas|pluralize:"clase única,clases únicas" }}</p>{% endif %}
+            <div class="pn-kpi">
+                <p class="pn-kpi__label">{% if es_hoy %}Vienen{% else %}Anotados{% endif %}</p>
+                <p class="pn-kpi__value">{{ totales.vienen }}</p>
+                {% if totales.sueltas %}<p class="pn-kpi__detail">{{ totales.sueltas }} recupero{{ totales.sueltas|pluralize }} o {{ totales.sueltas|pluralize:"clase única,clases únicas" }}</p>{% endif %}
             </div>
-            <div class="ad-kpi{% if totales.avisaron %} ad-kpi--warn{% endif %}">
-                <p class="ad-kpi__label">Avisaron que faltan</p>
-                <p class="ad-kpi__value">{{ totales.avisaron }}</p>
+            <div class="pn-kpi{% if totales.avisaron %} pn-kpi--warn{% endif %}">
+                <p class="pn-kpi__label">Avisaron que faltan</p>
+                <p class="pn-kpi__value">{{ totales.avisaron }}</p>
             </div>
-            <div class="ad-kpi">
-                <p class="ad-kpi__label">Lugares libres</p>
-                <p class="ad-kpi__value">{{ totales.libres }}</p>
+            <div class="pn-kpi">
+                <p class="pn-kpi__label">Lugares libres</p>
+                <p class="pn-kpi__value">{{ totales.libres }}</p>
             </div>
         </div>
 
@@ -69,17 +69,17 @@
                         <span class="hy-clase__info">
                             <span class="hy-clase__nombre">{{ item.nombre }}</span>
                             <span class="hy-clase__sede">{{ item.sede }}{% if item.momento == 'en_curso' %} · <strong>En curso</strong>{% elif item.momento == 'pasada' and es_hoy %} · Terminó{% endif %}</span>
-                            <span class="ad-meter{% if item.nivel %} ad-meter--{{ item.nivel }}{% endif %}" aria-hidden="true"><span class="ad-meter__bar" style="width: {{ item.porcentaje }}%"></span></span>
+                            <span class="pn-meter{% if item.nivel %} pn-meter--{{ item.nivel }}{% endif %}" aria-hidden="true"><span class="pn-meter__bar" style="width: {{ item.porcentaje }}%"></span></span>
                             {% if item.avisaron or item.sueltas %}
                             <span class="hy-clase__marcas">
-                                {% if item.avisaron %}<span class="ad-badge ad-badge--warn">{{ item.avisaron }} avis{{ item.avisaron|pluralize:"ó,aron" }} que falta{{ item.avisaron|pluralize:"n" }}</span>{% endif %}
-                                {% if item.sueltas %}<span class="ad-badge ad-badge--ok">{{ item.sueltas }} recupero{{ item.sueltas|pluralize }} o {{ item.sueltas|pluralize:"clase única,clases únicas" }}</span>{% endif %}
+                                {% if item.avisaron %}<span class="pn-badge pn-badge--warn">{{ item.avisaron }} avis{{ item.avisaron|pluralize:"ó,aron" }} que falta{{ item.avisaron|pluralize:"n" }}</span>{% endif %}
+                                {% if item.sueltas %}<span class="pn-badge pn-badge--ok">{{ item.sueltas }} recupero{{ item.sueltas|pluralize }} o {{ item.sueltas|pluralize:"clase única,clases únicas" }}</span>{% endif %}
                             </span>
                             {% endif %}
                         </span>
                         <span class="hy-clase__cupo">
                             <strong>{{ item.vienen }}</strong>/{{ item.cupo }}
-                            <span class="ad-sr">lugares ocupados</span>
+                            <span class="pn-sr">lugares ocupados</span>
                         </span>
                         <span class="hy-clase__chev">{% include 'gravity/admin/_icono.html' with i='abajo' %}</span>
                     </summary>
@@ -87,16 +87,16 @@
                         {% include 'gravity/admin/_clase_alumnos.html' with alumnos=item.alumnos %}
                         <div class="hy-clase__acciones">
                             {% if fecha <= hoy %}
-                            <a class="ad-btn ad-btn--sm ad-btn--ghost" href="{% url 'gravity:admin_asistencia' %}?fecha={{ fecha|date:'Y-m-d' }}#clase-{{ item.clase.id }}">
+                            <a class="pn-btn pn-btn--sm pn-btn--ghost" href="{% url 'gravity:admin_asistencia' %}?fecha={{ fecha|date:'Y-m-d' }}#clase-{{ item.clase.id }}">
                                 {% include 'gravity/admin/_icono.html' with i='asistencia' %} Asistencia
                             </a>
                             {% endif %}
                             {% if item.libres and item.momento != 'pasada' %}
-                            <a class="ad-btn ad-btn--sm ad-btn--ghost" href="{% url 'gravity:admin_reservar_para_usuario_clase' item.clase.id %}?next={{ request.get_full_path|urlencode }}">
+                            <a class="pn-btn pn-btn--sm pn-btn--ghost" href="{% url 'gravity:admin_reservar_para_usuario_clase' item.clase.id %}?next={{ request.get_full_path|urlencode }}">
                                 {% include 'gravity/admin/_icono.html' with i='mas_signo' %} Sumar alumno
                             </a>
                             {% endif %}
-                            <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_clase_detalle' item.clase.id %}">
+                            <a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_clase_detalle' item.clase.id %}">
                                 Ver clase {% include 'gravity/admin/_icono.html' with i='flecha' %}
                             </a>
                         </div>
@@ -105,12 +105,12 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="ad-card">
-                <div class="ad-empty">
+            <div class="pn-card">
+                <div class="pn-empty">
                     {% include 'gravity/admin/_icono.html' with i='calendario' %}
-                    <p class="ad-empty__title">No hay clases {% if es_hoy %}hoy{% else %}este día{% endif %}</p>
-                    <p class="ad-empty__text">Elegí otro día arriba o revisá los horarios en Clases.</p>
-                    <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_clases_lista' %}">Ir a Clases</a>
+                    <p class="pn-empty__title">No hay clases {% if es_hoy %}hoy{% else %}este día{% endif %}</p>
+                    <p class="pn-empty__text">Elegí otro día arriba o revisá los horarios en Clases.</p>
+                    <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_clases_lista' %}">Ir a Clases</a>
                 </div>
             </div>
             {% endif %}
@@ -118,40 +118,40 @@
     </div>
 
     <div class="hy-side">
-        <section class="ad-card hy-pend" aria-labelledby="hy-pend-titulo">
-            <div class="ad-card__head">
-                <h2 class="ad-card__title" id="hy-pend-titulo">Para resolver</h2>
+        <section class="pn-card hy-pend" aria-labelledby="hy-pend-titulo">
+            <div class="pn-card__head">
+                <h2 class="pn-card__title" id="hy-pend-titulo">Para resolver</h2>
             </div>
             {% if pendientes or panel.pendientes_total %}
-            <ul class="ad-list">
+            <ul class="pn-list">
                 {% if panel.pendientes.solicitudes %}
-                <li><a class="ad-row" href="{% url 'gravity:admin_solicitudes_plan_lista' %}?estado=pendiente">
-                    <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i='solicitud' %}</span>
-                    <span class="ad-row__body">
-                        <span class="ad-row__title">{{ panel.pendientes.solicitudes }} solicitud{{ panel.pendientes.solicitudes|pluralize:"es" }} de plan</span>
-                        <span class="ad-row__sub">Esperan tu aprobación</span>
+                <li><a class="pn-row" href="{% url 'gravity:admin_solicitudes_plan_lista' %}?estado=pendiente">
+                    <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i='solicitud' %}</span>
+                    <span class="pn-row__body">
+                        <span class="pn-row__title">{{ panel.pendientes.solicitudes }} solicitud{{ panel.pendientes.solicitudes|pluralize:"es" }} de plan</span>
+                        <span class="pn-row__sub">Esperan tu aprobación</span>
                     </span>
-                    <span class="ad-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
+                    <span class="pn-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
                 </a></li>
                 {% endif %}
                 {% if panel.pendientes.testimonios %}
-                <li><a class="ad-row" href="{% url 'gravity:admin_testimonios_lista' %}?estado=pendientes">
-                    <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i='testimonio' %}</span>
-                    <span class="ad-row__body">
-                        <span class="ad-row__title">{{ panel.pendientes.testimonios }} testimonio{{ panel.pendientes.testimonios|pluralize }} para revisar</span>
-                        <span class="ad-row__sub">No se publican hasta que los apruebes</span>
+                <li><a class="pn-row" href="{% url 'gravity:admin_testimonios_lista' %}?estado=pendientes">
+                    <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i='testimonio' %}</span>
+                    <span class="pn-row__body">
+                        <span class="pn-row__title">{{ panel.pendientes.testimonios }} testimonio{{ panel.pendientes.testimonios|pluralize }} para revisar</span>
+                        <span class="pn-row__sub">No se publican hasta que los apruebes</span>
                     </span>
-                    <span class="ad-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
+                    <span class="pn-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
                 </a></li>
                 {% endif %}
                 {% for p in pendientes %}
-                <li><a class="ad-row" href="{{ p.url }}">
-                    <span class="ad-note-item__icon hy-tono--{{ p.tono }}">{% include 'gravity/admin/_icono.html' with i=p.icono %}</span>
-                    <span class="ad-row__body">
-                        <span class="ad-row__title">{{ p.titulo }}</span>
-                        <span class="ad-row__sub">{{ p.detalle }}</span>
+                <li><a class="pn-row" href="{{ p.url }}">
+                    <span class="pn-note-item__icon hy-tono--{{ p.tono }}">{% include 'gravity/admin/_icono.html' with i=p.icono %}</span>
+                    <span class="pn-row__body">
+                        <span class="pn-row__title">{{ p.titulo }}</span>
+                        <span class="pn-row__sub">{{ p.detalle }}</span>
                     </span>
-                    <span class="ad-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
+                    <span class="pn-row__end">{% include 'gravity/admin/_icono.html' with i='flecha' %}</span>
                 </a></li>
                 {% endfor %}
             </ul>
@@ -161,13 +161,13 @@
         </section>
 
         {% if mes %}
-        <section class="ad-card hy-mes" aria-labelledby="hy-mes-titulo">
-            <div class="ad-card__head">
-                <h2 class="ad-card__title" id="hy-mes-titulo">Plata de {{ mes.mes }}</h2>
-                <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_reportes' %}?periodo=mes#plata">Ver más</a>
+        <section class="pn-card hy-mes" aria-labelledby="hy-mes-titulo">
+            <div class="pn-card__head">
+                <h2 class="pn-card__title" id="hy-mes-titulo">Plata de {{ mes.mes }}</h2>
+                <a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_reportes' %}?periodo=mes#plata">Ver más</a>
             </div>
-            <div class="ad-card__body">
-                <dl class="ad-data ad-data--2 hy-mes__datos">
+            <div class="pn-card__body">
+                <dl class="pn-data pn-data--2 hy-mes__datos">
                     <div><dt>Cobrado</dt><dd>${{ mes.cobrado|pesos }}</dd></div>
                     <div><dt>Falta cobrar</dt><dd>${{ mes.pendiente|pesos }}</dd></div>
                 </dl>
@@ -175,11 +175,11 @@
         </section>
         {% endif %}
 
-        <section class="ad-card hy-accesos" aria-labelledby="hy-accesos-titulo">
-            <div class="ad-card__head">
-                <h2 class="ad-card__title" id="hy-accesos-titulo">Accesos rápidos</h2>
+        <section class="pn-card hy-accesos" aria-labelledby="hy-accesos-titulo">
+            <div class="pn-card__head">
+                <h2 class="pn-card__title" id="hy-accesos-titulo">Accesos rápidos</h2>
             </div>
-            <div class="ad-card__body hy-accesos__grid">
+            <div class="pn-card__body hy-accesos__grid">
                 <a class="hy-acceso" href="{% url 'gravity:admin_reservar_para_usuario' %}">{% include 'gravity/admin/_icono.html' with i='reserva' %}<span>Reservar para un alumno</span></a>
                 <a class="hy-acceso" href="{% url 'gravity:admin_agregar_usuario' %}">{% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %}<span>Nuevo alumno</span></a>
                 <a class="hy-acceso" href="{% url 'gravity:admin_pagos_vista_principal' %}">{% include 'gravity/admin/_icono.html' with i='pagos' %}<span>Registrar un pago</span></a>
@@ -187,21 +187,21 @@
             </div>
         </section>
 
-        <section class="ad-card hy-nov" aria-labelledby="hy-nov-titulo">
-            <div class="ad-card__head">
-                <h2 class="ad-card__title" id="hy-nov-titulo">Novedades</h2>
-                <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_historial_actividad' %}">Ver todo</a>
+        <section class="pn-card hy-nov" aria-labelledby="hy-nov-titulo">
+            <div class="pn-card__head">
+                <h2 class="pn-card__title" id="hy-nov-titulo">Novedades</h2>
+                <a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_historial_actividad' %}">Ver todo</a>
             </div>
             {% if novedades %}
-            <ul class="ad-inbox__list hy-nov__lista">
+            <ul class="pn-inbox__list hy-nov__lista">
                 {% for n in novedades %}
                 <li>
-                    {% if n.url %}<a class="ad-note-item ad-note-item--{{ n.tipo }}" href="{{ n.url }}">{% else %}<div class="ad-note-item ad-note-item--{{ n.tipo }}">{% endif %}
-                        <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i=n.icono %}</span>
-                        <span class="ad-note-item__body">
-                            <span class="ad-note-item__title">{{ n.titulo }}</span>
-                            <span class="ad-note-item__detail">{{ n.detalle }}</span>
-                            <span class="ad-note-item__time">{{ n.hace }}</span>
+                    {% if n.url %}<a class="pn-note-item pn-note-item--{{ n.tipo }}" href="{{ n.url }}">{% else %}<div class="pn-note-item pn-note-item--{{ n.tipo }}">{% endif %}
+                        <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i=n.icono %}</span>
+                        <span class="pn-note-item__body">
+                            <span class="pn-note-item__title">{{ n.titulo }}</span>
+                            <span class="pn-note-item__detail">{{ n.detalle }}</span>
+                            <span class="pn-note-item__time">{{ n.hace }}</span>
                         </span>
                     {% if n.url %}</a>{% else %}</div>{% endif %}
                 </li>

@@ -1,28 +1,28 @@
 {% comment %}
 Menú del panel. Lo usan el menú lateral (escritorio) y la hoja "Más" (celular).
 Las secciones y permisos salen de gravity/panel.py (panel.secciones).
-{% endcomment %}<nav class="ad-nav" aria-label="{{ etiqueta|default:'Menú del panel' }}">
+{% endcomment %}<nav class="pn-nav" aria-label="{{ etiqueta|default:'Menú del panel' }}">
     {% for seccion in panel.secciones %}
-    <div class="ad-nav__group">
-        {% if seccion.titulo %}<p class="ad-nav__title">{{ seccion.titulo }}</p>{% endif %}
+    <div class="pn-nav__group">
+        {% if seccion.titulo %}<p class="pn-nav__title">{{ seccion.titulo }}</p>{% endif %}
         {% for item in seccion.items %}
-        <a href="{{ item.url }}" class="ad-nav__link{% if item.activo %} is-active{% endif %}"{% if item.activo %} aria-current="page"{% endif %}>
+        <a href="{{ item.url }}" class="pn-nav__link{% if item.activo %} is-active{% endif %}"{% if item.activo %} aria-current="page"{% endif %}>
             {% include 'gravity/admin/_icono.html' with i=item.icono %}
-            <span class="ad-nav__text">{{ item.texto }}</span>
-            {% if item.badge %}<span class="ad-count" aria-label="{{ item.badge }} para revisar">{{ item.badge }}</span>{% endif %}
+            <span class="pn-nav__text">{{ item.texto }}</span>
+            {% if item.badge %}<span class="pn-count" aria-label="{{ item.badge }} para revisar">{{ item.badge }}</span>{% endif %}
         </a>
         {% endfor %}
     </div>
     {% endfor %}
     {% if con_cuenta %}
-    <div class="ad-nav__group ad-nav__group--account">
-        <a href="{% url 'gravity:home' %}" class="ad-nav__link">
+    <div class="pn-nav__group pn-nav__group--account">
+        <a href="{% url 'gravity:home' %}" class="pn-nav__link">
             {% include 'gravity/admin/_icono.html' with i='sitio' %}
-            <span class="ad-nav__text">Ir al sitio</span>
+            <span class="pn-nav__text">Ir al sitio</span>
         </a>
-        <a href="{% url 'accounts:logout' %}" class="ad-nav__link">
+        <a href="{% url 'accounts:logout' %}" class="pn-nav__link">
             {% include 'gravity/admin/_icono.html' with i='salir' %}
-            <span class="ad-nav__text">Cerrar sesión</span>
+            <span class="pn-nav__text">Cerrar sesión</span>
         </a>
     </div>
     {% endif %}

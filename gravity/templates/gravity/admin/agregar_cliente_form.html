@@ -7,28 +7,28 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% url 'gravity:admin_usuarios_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Alumnos</a>
-        <h1 class="ad-head__title">Nuevo alumno</h1>
-        <p class="ad-head__sub">Después de crearlo, le asignás el plan y le reservás los horarios desde su ficha.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% url 'gravity:admin_usuarios_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Alumnos</a>
+        <h1 class="pn-head__title">Nuevo alumno</h1>
+        <p class="pn-head__sub">Después de crearlo, le asignás el plan y le reservás los horarios desde su ficha.</p>
     </div>
 </header>
 
 <form method="post" class="cl-form" novalidate>
     {% csrf_token %}
     {% if form.non_field_errors %}
-    <div class="ad-alert ad-alert--danger" role="alert">{% include 'gravity/admin/_icono.html' with i='alerta' %}<div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>
+    <div class="pn-alert pn-alert--danger" role="alert">{% include 'gravity/admin/_icono.html' with i='alerta' %}<div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>
     {% endif %}
 
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">Datos</h2></div>
-        <div class="ad-card__body ad-form">
-            <div class="ad-form__row ad-form__row--2">
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">Datos</h2></div>
+        <div class="pn-card__body pn-form">
+            <div class="pn-form__row pn-form__row--2">
                 {% include 'gravity/admin/_campo.html' with campo=form.nombre %}
                 {% include 'gravity/admin/_campo.html' with campo=form.apellido %}
             </div>
-            <div class="ad-form__row ad-form__row--2">
+            <div class="pn-form__row pn-form__row--2">
                 {% include 'gravity/admin/_campo.html' with campo=form.telefono ayuda='Con característica, sin el 15.' %}
                 {% include 'gravity/admin/_campo.html' with campo=form.email %}
             </div>
@@ -36,7 +36,7 @@
         </div>
     </section>
 
-    <div class="ad-alert">
+    <div class="pn-alert">
         {% include 'gravity/admin/_icono.html' with i='info' %}
         <div>
             <p><strong>Con email:</strong> le llega una invitación para crear su contraseña (vale 7 días).</p>
@@ -44,9 +44,9 @@
         </div>
     </div>
 
-    <div class="ad-form__actions">
-        <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_usuarios_lista' %}">Cancelar</a>
-        <button type="submit" class="ad-btn" data-loading-text="Creando...">Crear alumno</button>
+    <div class="pn-form__actions">
+        <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_usuarios_lista' %}">Cancelar</a>
+        <button type="submit" class="pn-btn" data-loading-text="Creando...">Crear alumno</button>
     </div>
 </form>
 {% endblock %}

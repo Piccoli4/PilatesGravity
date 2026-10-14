@@ -15,61 +15,61 @@
 
     {% comment %} gravity_ui.css aporta los tokens --g-* y los avisos (g-toast); el panel es admin_ui.css {% endcomment %}
     <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261013a">
-    <link rel="stylesheet" href="{% static 'css/gravity/admin_ui.css' %}?v=20261015h">
+    <link rel="stylesheet" href="{% static 'css/gravity/admin_ui.css' %}?v=20261014pn">
 
     {% block extra_css %}{% endblock %}
 </head>
 
-<body class="ad-body">
-    <a class="ad-skip" href="#contenido">Saltar al contenido</a>
+<body class="pn-body">
+    <a class="pn-skip" href="#contenido">Saltar al contenido</a>
 
     {% comment %} Menú lateral (escritorio, desde 1024 px) {% endcomment %}
-    <aside class="ad-side" aria-label="Menú del panel">
-        <a class="ad-brand" href="{% url 'gravity:admin_dashboard' %}">
+    <aside class="pn-side" aria-label="Menú del panel">
+        <a class="pn-brand" href="{% url 'gravity:admin_dashboard' %}">
             <img src="{% static 'img/solo_logo_principal.webp' %}" alt="">
             <span>
-                <span class="ad-brand__name">Pilates Gravity</span>
-                <span class="ad-brand__sub">Panel</span>
+                <span class="pn-brand__name">Pilates Gravity</span>
+                <span class="pn-brand__sub">Panel</span>
             </span>
         </a>
-        <div class="ad-side__scroll">
+        <div class="pn-side__scroll">
             {% include 'gravity/admin/_panel_nav.html' %}
         </div>
-        <div class="ad-side__foot">
-            <a href="{% url 'gravity:home' %}" class="ad-nav__link">
+        <div class="pn-side__foot">
+            <a href="{% url 'gravity:home' %}" class="pn-nav__link">
                 {% include 'gravity/admin/_icono.html' with i='sitio' %}
-                <span class="ad-nav__text">Ir al sitio</span>
+                <span class="pn-nav__text">Ir al sitio</span>
             </a>
-            <a href="{% url 'accounts:logout' %}" class="ad-nav__link">
+            <a href="{% url 'accounts:logout' %}" class="pn-nav__link">
                 {% include 'gravity/admin/_icono.html' with i='salir' %}
-                <span class="ad-nav__text">Cerrar sesión</span>
+                <span class="pn-nav__text">Cerrar sesión</span>
             </a>
         </div>
     </aside>
 
-    <div class="ad-shell">
-        <header class="ad-top">
-            <a class="ad-top__brand" href="{% url 'gravity:admin_dashboard' %}" aria-label="Panel, inicio">
+    <div class="pn-shell">
+        <header class="pn-top">
+            <a class="pn-top__brand" href="{% url 'gravity:admin_dashboard' %}" aria-label="Panel, inicio">
                 <img src="{% static 'img/solo_logo_principal.webp' %}" alt="">
             </a>
-            <p class="ad-top__title">{% block titulo_movil %}{{ panel.titulo }}{% endblock %}</p>
+            <p class="pn-top__title">{% block titulo_movil %}{{ panel.titulo }}{% endblock %}</p>
 
-            <ol class="ad-crumbs" aria-label="Ubicación">
+            <ol class="pn-crumbs" aria-label="Ubicación">
                 <li><a href="{% url 'gravity:admin_dashboard' %}">Panel</a></li>
                 {% block breadcrumb %}<li><span aria-hidden="true">/</span> <span>{{ panel.titulo }}</span></li>{% endblock %}
             </ol>
 
-            <div class="ad-top__actions">
-                <button type="button" class="ad-iconbtn" data-abrir="ad-bandeja" aria-controls="ad-bandeja" aria-expanded="false"
+            <div class="pn-top__actions">
+                <button type="button" class="pn-iconbtn" data-abrir="pn-bandeja" aria-controls="pn-bandeja" aria-expanded="false"
                     aria-label="Actividad{% if panel.notificaciones.sin_leer %}: {{ panel.notificaciones.sin_leer }} sin ver{% endif %}">
                     {% include 'gravity/admin/_icono.html' with i='campana' %}
-                    {% if panel.notificaciones.sin_leer %}<span class="ad-dot" data-bandeja-dot>{% if panel.notificaciones.sin_leer > 9 %}9+{% else %}{{ panel.notificaciones.sin_leer }}{% endif %}</span>{% endif %}
+                    {% if panel.notificaciones.sin_leer %}<span class="pn-dot" data-bandeja-dot>{% if panel.notificaciones.sin_leer > 9 %}9+{% else %}{{ panel.notificaciones.sin_leer }}{% endif %}</span>{% endif %}
                 </button>
-                <div class="ad-user">
+                <div class="pn-user">
                     {% include 'gravity/admin/_avatar.html' with persona=user %}
-                    <span class="ad-user__text">
-                        <span class="ad-user__name">{{ user.get_full_name|default:user.username }}</span>
-                        <span class="ad-user__role">{{ panel.rol }}</span>
+                    <span class="pn-user__text">
+                        <span class="pn-user__name">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="pn-user__role">{{ panel.rol }}</span>
                     </span>
                 </div>
             </div>
@@ -99,45 +99,45 @@
         </div>
         {% endif %}
 
-        <main class="ad-main" id="contenido" tabindex="-1">
-            <div class="ad-main__inner">
+        <main class="pn-main" id="contenido" tabindex="-1">
+            <div class="pn-main__inner">
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
 
     {% comment %} Barra inferior (celular y tablet, hasta 1023 px) {% endcomment %}
-    <nav class="ad-tabbar" aria-label="Accesos rápidos">
+    <nav class="pn-tabbar" aria-label="Accesos rápidos">
         {% for item in panel.accesos_celular %}
-        <a href="{{ item.url }}" class="ad-tab{% if item.activo %} is-active{% endif %}"{% if item.activo %} aria-current="page"{% endif %}>
-            <span class="ad-tab__icon">{% include 'gravity/admin/_icono.html' with i=item.icono %}</span>
+        <a href="{{ item.url }}" class="pn-tab{% if item.activo %} is-active{% endif %}"{% if item.activo %} aria-current="page"{% endif %}>
+            <span class="pn-tab__icon">{% include 'gravity/admin/_icono.html' with i=item.icono %}</span>
             <span>{{ item.texto }}</span>
         </a>
         {% endfor %}
-        <button type="button" class="ad-tab{% if panel.mas_activo %} is-active{% endif %}" data-abrir="ad-mas" aria-controls="ad-mas" aria-expanded="false">
-            <span class="ad-tab__icon">
+        <button type="button" class="pn-tab{% if panel.mas_activo %} is-active{% endif %}" data-abrir="pn-mas" aria-controls="pn-mas" aria-expanded="false">
+            <span class="pn-tab__icon">
                 {% include 'gravity/admin/_icono.html' with i='mas' %}
-                {% if panel.pendientes_total %}<span class="ad-dot">{{ panel.pendientes_total }}</span>{% endif %}
+                {% if panel.pendientes_total %}<span class="pn-dot">{{ panel.pendientes_total }}</span>{% endif %}
             </span>
             <span>Más</span>
         </button>
     </nav>
 
-    <div class="ad-overlay" id="ad-overlay"></div>
+    <div class="pn-overlay" id="pn-overlay"></div>
 
     {% comment %} Hoja "Más": el menú completo en el celular {% endcomment %}
-    <section class="ad-sheet ad-sheet--more ad-more" id="ad-mas" role="dialog" aria-modal="true" aria-labelledby="ad-mas-titulo" aria-hidden="true" tabindex="-1">
-        <div class="ad-sheet__grab" aria-hidden="true"></div>
-        <div class="ad-sheet__head">
-            <h2 class="ad-sheet__title" id="ad-mas-titulo">Menú</h2>
-            <button type="button" class="ad-iconbtn" data-cerrar aria-label="Cerrar menú">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button>
+    <section class="pn-sheet pn-sheet--more pn-more" id="pn-mas" role="dialog" aria-modal="true" aria-labelledby="pn-mas-titulo" aria-hidden="true" tabindex="-1">
+        <div class="pn-sheet__grab" aria-hidden="true"></div>
+        <div class="pn-sheet__head">
+            <h2 class="pn-sheet__title" id="pn-mas-titulo">Menú</h2>
+            <button type="button" class="pn-iconbtn" data-cerrar aria-label="Cerrar menú">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button>
         </div>
-        <div class="ad-sheet__body">
-            <div class="ad-more__user">
-                {% include 'gravity/admin/_avatar.html' with persona=user clase='ad-avatar--lg' %}
-                <span class="ad-user__text">
-                    <span class="ad-user__name">{{ user.get_full_name|default:user.username }}</span>
-                    <span class="ad-user__role">{{ panel.rol }}</span>
+        <div class="pn-sheet__body">
+            <div class="pn-more__user">
+                {% include 'gravity/admin/_avatar.html' with persona=user clase='pn-avatar--lg' %}
+                <span class="pn-user__text">
+                    <span class="pn-user__name">{{ user.get_full_name|default:user.username }}</span>
+                    <span class="pn-user__role">{{ panel.rol }}</span>
                 </span>
             </div>
             {% include 'gravity/admin/_panel_nav.html' with etiqueta='Menú completo' con_cuenta=True %}
@@ -145,34 +145,34 @@
     </section>
 
     {% comment %} Bandeja de actividad (hoja en el celular, desplegable en pantallas grandes) {% endcomment %}
-    <section class="ad-sheet ad-sheet--inbox" id="ad-bandeja" role="dialog" aria-modal="true" aria-labelledby="ad-bandeja-titulo" aria-hidden="true" tabindex="-1"
+    <section class="pn-sheet pn-sheet--inbox" id="pn-bandeja" role="dialog" aria-modal="true" aria-labelledby="pn-bandeja-titulo" aria-hidden="true" tabindex="-1"
         data-al-abrir="bandeja" data-url="{% url 'gravity:admin_marcar_notificaciones_leidas' %}" data-csrf="{{ csrf_token }}"
         data-sin-leer="{{ panel.notificaciones.sin_leer }}" data-sueltas="{{ panel.notificaciones.ids_sueltas }}">
-        <div class="ad-sheet__grab" aria-hidden="true"></div>
-        <div class="ad-sheet__head">
-            <h2 class="ad-sheet__title" id="ad-bandeja-titulo">Actividad</h2>
-            <button type="button" class="ad-iconbtn" data-cerrar aria-label="Cerrar actividad">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button>
+        <div class="pn-sheet__grab" aria-hidden="true"></div>
+        <div class="pn-sheet__head">
+            <h2 class="pn-sheet__title" id="pn-bandeja-titulo">Actividad</h2>
+            <button type="button" class="pn-iconbtn" data-cerrar aria-label="Cerrar actividad">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button>
         </div>
-        <div class="ad-sheet__body ad-inbox">
+        <div class="pn-sheet__body pn-inbox">
             {% if panel.pendientes_total %}
-            <div class="ad-inbox__group">
-                <p class="ad-inbox__label">Para resolver</p>
-                <ul class="ad-inbox__list">
+            <div class="pn-inbox__group">
+                <p class="pn-inbox__label">Para resolver</p>
+                <ul class="pn-inbox__list">
                     {% if panel.pendientes.solicitudes %}
-                    <li><a class="ad-note-item ad-note-item--tarea" href="{% url 'gravity:admin_solicitudes_plan_lista' %}?estado=pendiente">
-                        <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i='solicitud' %}</span>
-                        <span class="ad-note-item__body">
-                            <span class="ad-note-item__title">{{ panel.pendientes.solicitudes }} solicitud{{ panel.pendientes.solicitudes|pluralize:"es" }} de plan</span>
-                            <span class="ad-note-item__detail">Esperan tu aprobación</span>
+                    <li><a class="pn-note-item pn-note-item--tarea" href="{% url 'gravity:admin_solicitudes_plan_lista' %}?estado=pendiente">
+                        <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i='solicitud' %}</span>
+                        <span class="pn-note-item__body">
+                            <span class="pn-note-item__title">{{ panel.pendientes.solicitudes }} solicitud{{ panel.pendientes.solicitudes|pluralize:"es" }} de plan</span>
+                            <span class="pn-note-item__detail">Esperan tu aprobación</span>
                         </span>
                     </a></li>
                     {% endif %}
                     {% if panel.pendientes.testimonios %}
-                    <li><a class="ad-note-item ad-note-item--tarea" href="{% url 'gravity:admin_testimonios_lista' %}?estado=pendientes">
-                        <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i='testimonio' %}</span>
-                        <span class="ad-note-item__body">
-                            <span class="ad-note-item__title">{{ panel.pendientes.testimonios }} testimonio{{ panel.pendientes.testimonios|pluralize }} para revisar</span>
-                            <span class="ad-note-item__detail">No se publican hasta que los apruebes</span>
+                    <li><a class="pn-note-item pn-note-item--tarea" href="{% url 'gravity:admin_testimonios_lista' %}?estado=pendientes">
+                        <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i='testimonio' %}</span>
+                        <span class="pn-note-item__body">
+                            <span class="pn-note-item__title">{{ panel.pendientes.testimonios }} testimonio{{ panel.pendientes.testimonios|pluralize }} para revisar</span>
+                            <span class="pn-note-item__detail">No se publican hasta que los apruebes</span>
                         </span>
                     </a></li>
                     {% endif %}
@@ -180,50 +180,50 @@
             </div>
             {% endif %}
 
-            <div class="ad-inbox__group">
-                {% if panel.pendientes_total %}<p class="ad-inbox__label">Novedades</p>{% endif %}
+            <div class="pn-inbox__group">
+                {% if panel.pendientes_total %}<p class="pn-inbox__label">Novedades</p>{% endif %}
                 {% if panel.notificaciones.items %}
-                <ul class="ad-inbox__list">
+                <ul class="pn-inbox__list">
                     {% for n in panel.notificaciones.items %}
                     <li>
-                        {% if n.url %}<a class="ad-note-item ad-note-item--{{ n.tipo }}" href="{{ n.url }}">{% else %}<div class="ad-note-item ad-note-item--{{ n.tipo }}">{% endif %}
-                            <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i=n.icono %}</span>
-                            <span class="ad-note-item__body">
-                                <span class="ad-note-item__title">{{ n.titulo }}</span>
-                                <span class="ad-note-item__detail">{{ n.detalle }}</span>
-                                <span class="ad-note-item__time">{{ n.hace }}</span>
+                        {% if n.url %}<a class="pn-note-item pn-note-item--{{ n.tipo }}" href="{{ n.url }}">{% else %}<div class="pn-note-item pn-note-item--{{ n.tipo }}">{% endif %}
+                            <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i=n.icono %}</span>
+                            <span class="pn-note-item__body">
+                                <span class="pn-note-item__title">{{ n.titulo }}</span>
+                                <span class="pn-note-item__detail">{{ n.detalle }}</span>
+                                <span class="pn-note-item__time">{{ n.hace }}</span>
                             </span>
                         {% if n.url %}</a>{% else %}</div>{% endif %}
                     </li>
                     {% endfor %}
                 </ul>
                 {% else %}
-                <div class="ad-empty">
+                <div class="pn-empty">
                     {% include 'gravity/admin/_icono.html' with i='tildes' %}
-                    <p class="ad-empty__title">Estás al día</p>
-                    <p class="ad-empty__text">Acá aparecen las bajas, los avisos de ausencia, los planes y los recuperos de los últimos días.</p>
+                    <p class="pn-empty__title">Estás al día</p>
+                    <p class="pn-empty__text">Acá aparecen las bajas, los avisos de ausencia, los planes y los recuperos de los últimos días.</p>
                 </div>
                 {% endif %}
-                <p class="ad-help" style="margin: 12px 8px 0;"><a href="{% url 'gravity:admin_historial_actividad' %}">Ver toda la actividad</a></p>
+                <p class="pn-help" style="margin: 12px 8px 0;"><a href="{% url 'gravity:admin_historial_actividad' %}">Ver toda la actividad</a></p>
             </div>
         </div>
     </section>
 
     {% comment %} Modal de confirmación común (data-confirm / panelConfirmar) {% endcomment %}
-    <div class="ad-modal" id="ad-confirm" role="alertdialog" aria-modal="true" aria-labelledby="ad-confirm-titulo" aria-describedby="ad-confirm-texto" aria-hidden="true">
-        <div class="ad-modal__box">
-            <div class="ad-modal__icon">{% include 'gravity/admin/_icono.html' with i='alerta' %}</div>
-            <h2 class="ad-modal__title" id="ad-confirm-titulo">¿Confirmás?</h2>
-            <p class="ad-modal__text" id="ad-confirm-texto"></p>
-            <div class="ad-modal__actions">
-                <button type="button" class="ad-btn ad-btn--ghost" data-modal-cancelar>Cancelar</button>
-                <button type="button" class="ad-btn" data-modal-aceptar>Confirmar</button>
+    <div class="pn-modal" id="pn-confirm" role="alertdialog" aria-modal="true" aria-labelledby="pn-confirm-titulo" aria-describedby="pn-confirm-texto" aria-hidden="true">
+        <div class="pn-modal__box">
+            <div class="pn-modal__icon">{% include 'gravity/admin/_icono.html' with i='alerta' %}</div>
+            <h2 class="pn-modal__title" id="pn-confirm-titulo">¿Confirmás?</h2>
+            <p class="pn-modal__text" id="pn-confirm-texto"></p>
+            <div class="pn-modal__actions">
+                <button type="button" class="pn-btn pn-btn--ghost" data-modal-cancelar>Cancelar</button>
+                <button type="button" class="pn-btn" data-modal-aceptar>Confirmar</button>
             </div>
         </div>
     </div>
 
     <script src="{% static 'js/form_submit.js' %}?v=20261011a"></script>
-    <script src="{% static 'js/admin_panel.js' %}?v=20261013a"></script>
+    <script src="{% static 'js/admin_panel.js' %}?v=20261014pn"></script>
     {% block extra_js %}{% endblock %}
 </body>
 

@@ -10,42 +10,42 @@
 
 {% block content %}
 <div class="cd-eliminar">
-    <a class="ad-back" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver a la ficha</a>
-    <section class="ad-card">
-        <div class="ad-card__body">
+    <a class="pn-back" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver a la ficha</a>
+    <section class="pn-card">
+        <div class="pn-card__body">
             {% if usuario.is_active %}
-            <div class="ad-modal__icon cd-icono-peligro">{% include 'gravity/admin/_icono.html' with i='baja' %}</div>
-            <h1 class="ad-modal__title">¿Desactivar la cuenta de {{ usuario.get_full_name|default:usuario.username }}?</h1>
-            <p class="ad-modal__text">No va a poder entrar ni reservar. Se cancela:</p>
+            <div class="pn-modal__icon cd-icono-peligro">{% include 'gravity/admin/_icono.html' with i='baja' %}</div>
+            <h1 class="pn-modal__title">¿Desactivar la cuenta de {{ usuario.get_full_name|default:usuario.username }}?</h1>
+            <p class="pn-modal__text">No va a poder entrar ni reservar. Se cancela:</p>
             <ul class="fa-cancela">
                 <li>{{ cancela.fijas|length }} horario{{ cancela.fijas|length|pluralize }} fijo{{ cancela.fijas|length|pluralize }}{% for r in cancela.fijas %}{% if forloop.first %}: {% endif %}{{ r.clase.get_nombre_display }} {{ r.clase.dia|slice:":3" }} {{ r.clase.horario|time:"H:i" }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
                 <li>{{ cancela.sueltas|length }} recupero{{ cancela.sueltas|length|pluralize }} o {{ cancela.sueltas|length|pluralize:"clase única,clases únicas" }}</li>
                 <li>{% if cancela.planes %}El plan {% for p in cancela.planes %}{{ p.plan.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}No tiene plan{% endif %}</li>
             </ul>
             {% if saldo is not None and saldo < 0 %}
-            <div class="ad-alert ad-alert--warn">{% include 'gravity/admin/_icono.html' with i='alerta' %}<p>Debe <strong>${{ saldo|pesos|cut:"-" }}</strong>. La deuda queda en su cuenta aunque la desactives.</p></div>
+            <div class="pn-alert pn-alert--warn">{% include 'gravity/admin/_icono.html' with i='alerta' %}<p>Debe <strong>${{ saldo|pesos|cut:"-" }}</strong>. La deuda queda en su cuenta aunque la desactives.</p></div>
             {% endif %}
             <form method="post" class="cd-eliminar__form">
                 {% csrf_token %}
                 {% if usuario.email and cancela.fijas or usuario.email and cancela.sueltas %}
-                <label class="ad-check">
+                <label class="pn-check">
                     <input type="checkbox" name="avisar" checked>
-                    <span class="ad-check__text">Avisarle por email<small>{{ usuario.email }}</small></span>
+                    <span class="pn-check__text">Avisarle por email<small>{{ usuario.email }}</small></span>
                 </label>
                 {% endif %}
-                <div class="ad-modal__actions">
-                    <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">Volver</a>
-                    <button type="submit" class="ad-btn ad-btn--danger" data-loading-text="Desactivando...">Desactivar cuenta</button>
+                <div class="pn-modal__actions">
+                    <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">Volver</a>
+                    <button type="submit" class="pn-btn pn-btn--danger" data-loading-text="Desactivando...">Desactivar cuenta</button>
                 </div>
             </form>
             {% else %}
-            <div class="ad-modal__icon">{% include 'gravity/admin/_icono.html' with i='tilde' %}</div>
-            <h1 class="ad-modal__title">¿Reactivar la cuenta de {{ usuario.get_full_name|default:usuario.username }}?</h1>
-            <p class="ad-modal__text">Vuelve a poder entrar. Para reservar, después asignale un plan desde su cuenta de pagos.</p>
-            <form method="post" class="ad-modal__actions">
+            <div class="pn-modal__icon">{% include 'gravity/admin/_icono.html' with i='tilde' %}</div>
+            <h1 class="pn-modal__title">¿Reactivar la cuenta de {{ usuario.get_full_name|default:usuario.username }}?</h1>
+            <p class="pn-modal__text">Vuelve a poder entrar. Para reservar, después asignale un plan desde su cuenta de pagos.</p>
+            <form method="post" class="pn-modal__actions">
                 {% csrf_token %}
-                <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">Volver</a>
-                <button type="submit" class="ad-btn" data-loading-text="Reactivando...">Reactivar cuenta</button>
+                <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">Volver</a>
+                <button type="submit" class="pn-btn" data-loading-text="Reactivando...">Reactivar cuenta</button>
             </form>
             {% endif %}
         </div>

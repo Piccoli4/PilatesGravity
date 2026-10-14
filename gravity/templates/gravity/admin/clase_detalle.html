@@ -7,98 +7,98 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% url 'gravity:admin_clases_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Clases</a>
-        <p class="ad-head__eyebrow">{{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>
-        <h1 class="ad-head__title">{{ clase.get_nombre_display }} {% if not clase.activa %}<span class="ad-badge ad-badge--muted">En pausa</span>{% endif %}</h1>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% url 'gravity:admin_clases_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Clases</a>
+        <p class="pn-head__eyebrow">{{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>
+        <h1 class="pn-head__title">{{ clase.get_nombre_display }} {% if not clase.activa %}<span class="pn-badge pn-badge--muted">En pausa</span>{% endif %}</h1>
     </div>
-    <div class="ad-head__actions">
-        <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_clase_editar' clase.id %}">{% include 'gravity/admin/_icono.html' with i='editar' %} Editar</a>
+    <div class="pn-head__actions">
+        <a class="pn-btn pn-btn--ghost" href="{% url 'gravity:admin_clase_editar' clase.id %}">{% include 'gravity/admin/_icono.html' with i='editar' %} Editar</a>
         {% if clase.activa and libres_fijos %}
-        <a class="ad-btn" href="{% url 'gravity:admin_reservar_para_usuario_clase' clase.id %}?next={{ request.get_full_path|urlencode }}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Sumar alumno</a>
+        <a class="pn-btn" href="{% url 'gravity:admin_reservar_para_usuario_clase' clase.id %}?next={{ request.get_full_path|urlencode }}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Sumar alumno</a>
         {% endif %}
     </div>
 </header>
 
 {% if not clase.activa %}
-<div class="ad-alert ad-alert--warn cd-pausa">
+<div class="pn-alert pn-alert--warn cd-pausa">
     {% include 'gravity/admin/_icono.html' with i='alerta' %}
     <div>
         <p><strong>Clase en pausa.</strong> No se dicta ni acepta reservas nuevas.{% if fijos %} Los {{ fijos }} alumno{{ fijos|pluralize }} con horario fijo conserva{{ fijos|pluralize:"n" }} su lugar.{% endif %}{% if profesoras %} Ojo: a {{ profesoras|join:', ' }} se le sigue contando el turno de esta clase.{% endif %}</p>
         <form method="post" action="{% url 'gravity:admin_clase_toggle_status' clase.id %}" class="cd-pausa__form">
             {% csrf_token %}
-            <button type="submit" class="ad-btn ad-btn--sm ad-btn--blue">Reactivar la clase</button>
+            <button type="submit" class="pn-btn pn-btn--sm pn-btn--blue">Reactivar la clase</button>
         </form>
     </div>
 </div>
 {% endif %}
 
-<div class="ad-kpis">
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Horario fijo</p>
-        <p class="ad-kpi__value">{{ fijos }}/{{ clase.cupo_maximo }}</p>
-        <p class="ad-kpi__detail">{{ porcentaje_fijos }}% del cupo</p>
+<div class="pn-kpis">
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Horario fijo</p>
+        <p class="pn-kpi__value">{{ fijos }}/{{ clase.cupo_maximo }}</p>
+        <p class="pn-kpi__detail">{{ porcentaje_fijos }}% del cupo</p>
     </div>
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Lugares fijos libres</p>
-        <p class="ad-kpi__value">{{ libres_fijos }}</p>
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Lugares fijos libres</p>
+        <p class="pn-kpi__value">{{ libres_fijos }}</p>
     </div>
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Recuperos y clases únicas</p>
-        <p class="ad-kpi__value">{{ sueltas|length }}</p>
-        <p class="ad-kpi__detail">reservados desde hoy</p>
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Recuperos y clases únicas</p>
+        <p class="pn-kpi__value">{{ sueltas|length }}</p>
+        <p class="pn-kpi__detail">reservados desde hoy</p>
     </div>
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Próxima clase</p>
-        <p class="ad-kpi__value cd-kpi-fecha">{% if proxima %}{% if proxima.es_hoy %}Hoy{% else %}{{ proxima.fecha|date:"d/m" }}{% endif %}{% else %}—{% endif %}</p>
-        {% if proxima %}<p class="ad-kpi__detail">vienen {{ proxima.vienen }} de {{ proxima.cupo }}</p>{% endif %}
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Próxima clase</p>
+        <p class="pn-kpi__value cd-kpi-fecha">{% if proxima %}{% if proxima.es_hoy %}Hoy{% else %}{{ proxima.fecha|date:"d/m" }}{% endif %}{% else %}—{% endif %}</p>
+        {% if proxima %}<p class="pn-kpi__detail">vienen {{ proxima.vienen }} de {{ proxima.cupo }}</p>{% endif %}
     </div>
 </div>
 
 <div class="cd-grid">
     <div class="cd-col">
         {% if proxima %}
-        <section class="ad-card" aria-labelledby="cd-proxima">
-            <div class="ad-card__head">
+        <section class="pn-card" aria-labelledby="cd-proxima">
+            <div class="pn-card__head">
                 <div>
-                    <h2 class="ad-card__title" id="cd-proxima">Próxima clase</h2>
-                    <p class="ad-card__sub">{{ proxima.fecha_larga }}{% if proxima.momento == 'en_curso' %} · En curso{% endif %}</p>
+                    <h2 class="pn-card__title" id="cd-proxima">Próxima clase</h2>
+                    <p class="pn-card__sub">{{ proxima.fecha_larga }}{% if proxima.momento == 'en_curso' %} · En curso{% endif %}</p>
                 </div>
                 <span class="hy-clase__cupo"><strong>{{ proxima.vienen }}</strong>/{{ proxima.cupo }}</span>
             </div>
-            <div class="ad-card__body cd-proxima">
+            <div class="pn-card__body cd-proxima">
                 {% include 'gravity/admin/_clase_alumnos.html' with alumnos=proxima.alumnos %}
                 {% if proxima.es_hoy %}
                 <div class="hy-clase__acciones">
-                    <a class="ad-btn ad-btn--sm ad-btn--ghost" href="{% url 'gravity:admin_asistencia' %}?fecha={{ proxima.fecha|date:'Y-m-d' }}#clase-{{ clase.id }}">{% include 'gravity/admin/_icono.html' with i='asistencia' %} Asistencia</a>
+                    <a class="pn-btn pn-btn--sm pn-btn--ghost" href="{% url 'gravity:admin_asistencia' %}?fecha={{ proxima.fecha|date:'Y-m-d' }}#clase-{{ clase.id }}">{% include 'gravity/admin/_icono.html' with i='asistencia' %} Asistencia</a>
                 </div>
                 {% endif %}
             </div>
         </section>
         {% endif %}
 
-        <section class="ad-card" aria-labelledby="cd-fijos">
-            <div class="ad-card__head">
+        <section class="pn-card" aria-labelledby="cd-fijos">
+            <div class="pn-card__head">
                 <div>
-                    <h2 class="ad-card__title" id="cd-fijos">Alumnos con horario fijo <span class="cd-cuenta">{{ fijos }}</span></h2>
-                    <p class="ad-card__sub">Vienen todas las semanas</p>
+                    <h2 class="pn-card__title" id="cd-fijos">Alumnos con horario fijo <span class="cd-cuenta">{{ fijos }}</span></h2>
+                    <p class="pn-card__sub">Vienen todas las semanas</p>
                 </div>
             </div>
             {% if fijas %}
-            <ul class="ad-list">
+            <ul class="pn-list">
                 {% for r in fijas %}
                 <li class="cd-alumno">
                     <a class="cd-alumno__link" href="{% url 'gravity:admin_usuario_detalle' r.usuario.id %}">
                         {% include 'gravity/admin/_avatar.html' with persona=r.usuario %}
-                        <span class="ad-row__body">
-                            <span class="ad-row__title">{{ r.usuario.get_full_name|default:r.usuario.username }}{% if r.usuario.profile.tiene_lesiones %} <span class="ad-badge ad-badge--danger">Salud</span>{% endif %}</span>
-                            <span class="ad-row__sub">Desde el {{ r.fecha_reserva|date:"d/m/Y" }}{% if r.creado_por and r.creado_por != r.usuario %} · reservada por {{ r.creado_por.first_name|default:r.creado_por.username }}{% else %} · reservada por el alumno{% endif %}</span>
+                        <span class="pn-row__body">
+                            <span class="pn-row__title">{{ r.usuario.get_full_name|default:r.usuario.username }}{% if r.usuario.profile.tiene_lesiones %} <span class="pn-badge pn-badge--danger">Salud</span>{% endif %}</span>
+                            <span class="pn-row__sub">Desde el {{ r.fecha_reserva|date:"d/m/Y" }}{% if r.creado_por and r.creado_por != r.usuario %} · reservada por {{ r.creado_por.first_name|default:r.creado_por.username }}{% else %} · reservada por el alumno{% endif %}</span>
                         </span>
                     </a>
                     <span class="cd-alumno__acciones">
-                        <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_reserva_modificar' r.id %}?next={{ request.get_full_path|urlencode }}">Cambiar</a>
-                        <a class="ad-btn ad-btn--sm ad-btn--quiet cd-cancelar" href="{% url 'gravity:admin_reserva_cancelar' r.id %}?next={{ request.get_full_path|urlencode }}">Ausencia o baja</a>
+                        <a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_reserva_modificar' r.id %}?next={{ request.get_full_path|urlencode }}">Cambiar</a>
+                        <a class="pn-btn pn-btn--sm pn-btn--quiet cd-cancelar" href="{% url 'gravity:admin_reserva_cancelar' r.id %}?next={{ request.get_full_path|urlencode }}">Ausencia o baja</a>
                     </span>
                 </li>
                 {% endfor %}
@@ -108,27 +108,27 @@
             {% endif %}
         </section>
 
-        <section class="ad-card" aria-labelledby="cd-sueltas">
-            <div class="ad-card__head">
+        <section class="pn-card" aria-labelledby="cd-sueltas">
+            <div class="pn-card__head">
                 <div>
-                    <h2 class="ad-card__title" id="cd-sueltas">Recuperos y clases únicas</h2>
-                    <p class="ad-card__sub">Reservados para una fecha, desde hoy</p>
+                    <h2 class="pn-card__title" id="cd-sueltas">Recuperos y clases únicas</h2>
+                    <p class="pn-card__sub">Reservados para una fecha, desde hoy</p>
                 </div>
             </div>
             {% if sueltas %}
-            <ul class="ad-list">
+            <ul class="pn-list">
                 {% for r in sueltas %}
                 <li class="cd-alumno">
                     <a class="cd-alumno__link" href="{% url 'gravity:admin_usuario_detalle' r.usuario.id %}">
                         <span class="cd-fecha"><strong>{{ r.fecha_unica|date:"d" }}</strong>{{ r.fecha_unica|date:"M"|lower }}</span>
-                        <span class="ad-row__body">
-                            <span class="ad-row__title">{{ r.usuario.get_full_name|default:r.usuario.username }}</span>
-                            <span class="ad-row__sub">{% if r.es_recupero %}Recupero{% else %}Clase única{% endif %}{% if r.creado_por and r.creado_por != r.usuario %} · reservada por {{ r.creado_por.first_name|default:r.creado_por.username }}{% else %} · reservada por el alumno{% endif %}</span>
+                        <span class="pn-row__body">
+                            <span class="pn-row__title">{{ r.usuario.get_full_name|default:r.usuario.username }}</span>
+                            <span class="pn-row__sub">{% if r.es_recupero %}Recupero{% else %}Clase única{% endif %}{% if r.creado_por and r.creado_por != r.usuario %} · reservada por {{ r.creado_por.first_name|default:r.creado_por.username }}{% else %} · reservada por el alumno{% endif %}</span>
                         </span>
                     </a>
                     <span class="cd-alumno__acciones">
-                        <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_reserva_modificar' r.id %}?next={{ request.get_full_path|urlencode }}">Cambiar</a>
-                        <a class="ad-btn ad-btn--sm ad-btn--quiet cd-cancelar" href="{% url 'gravity:admin_reserva_cancelar' r.id %}?next={{ request.get_full_path|urlencode }}">Cancelar</a>
+                        <a class="pn-btn pn-btn--sm pn-btn--quiet" href="{% url 'gravity:admin_reserva_modificar' r.id %}?next={{ request.get_full_path|urlencode }}">Cambiar</a>
+                        <a class="pn-btn pn-btn--sm pn-btn--quiet cd-cancelar" href="{% url 'gravity:admin_reserva_cancelar' r.id %}?next={{ request.get_full_path|urlencode }}">Cancelar</a>
                     </span>
                 </li>
                 {% endfor %}
@@ -141,18 +141,18 @@
 
     <div class="cd-col">
         {% if semanas %}
-        <section class="ad-card" aria-labelledby="cd-semanas">
-            <div class="ad-card__head">
+        <section class="pn-card" aria-labelledby="cd-semanas">
+            <div class="pn-card__head">
                 <div>
-                    <h2 class="ad-card__title" id="cd-semanas">Próximas semanas</h2>
-                    <p class="ad-card__sub">Horario fijo menos avisos, más recuperos y clases únicas</p>
+                    <h2 class="pn-card__title" id="cd-semanas">Próximas semanas</h2>
+                    <p class="pn-card__sub">Horario fijo menos avisos, más recuperos y clases únicas</p>
                 </div>
             </div>
-            <ul class="ad-list">
+            <ul class="pn-list">
                 {% for s in semanas %}
                 <li class="cd-semana">
                     <span class="cd-semana__fecha">{{ s.fecha|date:"D d/m" }}</span>
-                    <span class="ad-meter{% if not s.libres %} ad-meter--lleno{% elif s.porcentaje >= 80 %} ad-meter--alto{% endif %}" aria-hidden="true"><span class="ad-meter__bar" style="width: {{ s.porcentaje }}%"></span></span>
+                    <span class="pn-meter{% if not s.libres %} pn-meter--lleno{% elif s.porcentaje >= 80 %} pn-meter--alto{% endif %}" aria-hidden="true"><span class="pn-meter__bar" style="width: {{ s.porcentaje }}%"></span></span>
                     <span class="cd-semana__num"><strong>{{ s.vienen }}</strong>/{{ clase.cupo_maximo }}</span>
                     <span class="cd-semana__libres">{% if s.libres %}{{ s.libres }} libre{{ s.libres|pluralize }}{% else %}Completa{% endif %}</span>
                 </li>
@@ -161,33 +161,33 @@
         </section>
         {% endif %}
 
-        <section class="ad-card" aria-labelledby="cd-opciones">
-            <div class="ad-card__head"><h2 class="ad-card__title" id="cd-opciones">Opciones</h2></div>
-            <ul class="ad-list">
-                <li><a class="ad-row" href="{% url 'gravity:admin_clase_editar' clase.id %}">
-                    <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i='editar' %}</span>
-                    <span class="ad-row__body"><span class="ad-row__title">Editar</span><span class="ad-row__sub">Tipo, día, horario, sede o cupo</span></span>
+        <section class="pn-card" aria-labelledby="cd-opciones">
+            <div class="pn-card__head"><h2 class="pn-card__title" id="cd-opciones">Opciones</h2></div>
+            <ul class="pn-list">
+                <li><a class="pn-row" href="{% url 'gravity:admin_clase_editar' clase.id %}">
+                    <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i='editar' %}</span>
+                    <span class="pn-row__body"><span class="pn-row__title">Editar</span><span class="pn-row__sub">Tipo, día, horario, sede o cupo</span></span>
                 </a></li>
-                <li><a class="ad-row" href="{% url 'gravity:admin_clase_crear' %}?tipo={{ clase.tipo }}&direccion={{ clase.direccion }}&dia={{ clase.dia|urlencode }}&horario={{ clase.horario|time:'H:i' }}&cupo_maximo={{ clase.cupo_maximo }}{% if clase.nombre_personalizado %}&nombre_personalizado={{ clase.nombre_personalizado|urlencode }}{% endif %}">
-                    <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i='mas_signo' %}</span>
-                    <span class="ad-row__body"><span class="ad-row__title">Crear otra igual</span><span class="ad-row__sub">Para otro día u horario</span></span>
+                <li><a class="pn-row" href="{% url 'gravity:admin_clase_crear' %}?tipo={{ clase.tipo }}&direccion={{ clase.direccion }}&dia={{ clase.dia|urlencode }}&horario={{ clase.horario|time:'H:i' }}&cupo_maximo={{ clase.cupo_maximo }}{% if clase.nombre_personalizado %}&nombre_personalizado={{ clase.nombre_personalizado|urlencode }}{% endif %}">
+                    <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i='mas_signo' %}</span>
+                    <span class="pn-row__body"><span class="pn-row__title">Crear otra igual</span><span class="pn-row__sub">Para otro día u horario</span></span>
                 </a></li>
                 <li>
                     <form method="post" action="{% url 'gravity:admin_clase_toggle_status' clase.id %}"
                           {% if clase.activa %}data-confirm="{% if fijos %}Los {{ fijos }} alumnos con horario fijo conservan su lugar, pero la clase no se dicta ni acepta reservas nuevas hasta que la reactives.{% else %}La clase deja de aparecer para reservar hasta que la reactives.{% endif %}{% if profesoras %} El turno de {{ profesoras|join:', ' }} no se toca: si no la va a dar, dalo de baja en Equipo.{% endif %}" data-confirm-titulo="¿Pausar la clase?" data-confirm-boton="Pausar"{% endif %}>
                         {% csrf_token %}
-                        <button type="submit" class="ad-row cd-boton-fila">
-                            <span class="ad-note-item__icon">{% include 'gravity/admin/_icono.html' with i='reloj' %}</span>
-                            <span class="ad-row__body">
-                                <span class="ad-row__title">{% if clase.activa %}Pausar{% else %}Reactivar{% endif %}</span>
-                                <span class="ad-row__sub">{% if clase.activa %}Deja de dictarse; los alumnos conservan su lugar{% else %}Vuelve a dictarse y a aceptar reservas{% endif %}</span>
+                        <button type="submit" class="pn-row cd-boton-fila">
+                            <span class="pn-note-item__icon">{% include 'gravity/admin/_icono.html' with i='reloj' %}</span>
+                            <span class="pn-row__body">
+                                <span class="pn-row__title">{% if clase.activa %}Pausar{% else %}Reactivar{% endif %}</span>
+                                <span class="pn-row__sub">{% if clase.activa %}Deja de dictarse; los alumnos conservan su lugar{% else %}Vuelve a dictarse y a aceptar reservas{% endif %}</span>
                             </span>
                         </button>
                     </form>
                 </li>
-                <li><a class="ad-row" href="{% url 'gravity:admin_clase_eliminar' clase.id %}">
-                    <span class="ad-note-item__icon cd-icono-peligro">{% include 'gravity/admin/_icono.html' with i='basura' %}</span>
-                    <span class="ad-row__body"><span class="ad-row__title">Eliminar</span><span class="ad-row__sub">{% if puede_eliminar %}Nunca tuvo alumnos: se puede borrar{% else %}Ya tuvo alumnos: solo se puede pausar{% endif %}</span></span>
+                <li><a class="pn-row" href="{% url 'gravity:admin_clase_eliminar' clase.id %}">
+                    <span class="pn-note-item__icon cd-icono-peligro">{% include 'gravity/admin/_icono.html' with i='basura' %}</span>
+                    <span class="pn-row__body"><span class="pn-row__title">Eliminar</span><span class="pn-row__sub">{% if puede_eliminar %}Nunca tuvo alumnos: se puede borrar{% else %}Ya tuvo alumnos: solo se puede pausar{% endif %}</span></span>
                 </a></li>
             </ul>
         </section>

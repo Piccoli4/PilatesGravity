@@ -8,11 +8,11 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% if clase %}{% url 'gravity:admin_clase_detalle' clase.id %}{% else %}{% url 'gravity:admin_clases_lista' %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} {% if clase %}Volver a la clase{% else %}Clases{% endif %}</a>
-        <h1 class="ad-head__title">{% if accion == 'editar' %}Editar clase{% else %}Nueva clase{% endif %}</h1>
-        {% if clase %}<p class="ad-head__sub">{{ clase.get_nombre_display }} · {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>{% endif %}
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% if clase %}{% url 'gravity:admin_clase_detalle' clase.id %}{% else %}{% url 'gravity:admin_clases_lista' %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} {% if clase %}Volver a la clase{% else %}Clases{% endif %}</a>
+        <h1 class="pn-head__title">{% if accion == 'editar' %}Editar clase{% else %}Nueva clase{% endif %}</h1>
+        {% if clase %}<p class="pn-head__sub">{{ clase.get_nombre_display }} · {{ clase.dia }} {{ clase.horario|time:"H:i" }} · {{ clase.get_direccion_corta }}</p>{% endif %}
     </div>
 </header>
 
@@ -22,86 +22,86 @@
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-    <div class="ad-alert ad-alert--danger cl-form__error" role="alert">
+    <div class="pn-alert pn-alert--danger cl-form__error" role="alert">
         {% include 'gravity/admin/_icono.html' with i='alerta' %}
         <div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
     </div>
     {% endif %}
 
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">Qué clase</h2></div>
-        <div class="ad-card__body ad-form">
-            <fieldset class="ad-field{% if form.tipo.errors %} has-error{% endif %}">
-                <legend class="ad-label">{{ form.tipo.label }}</legend>
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">Qué clase</h2></div>
+        <div class="pn-card__body pn-form">
+            <fieldset class="pn-field{% if form.tipo.errors %} has-error{% endif %}">
+                <legend class="pn-label">{{ form.tipo.label }}</legend>
                 <div class="cl-seg">
                     {% for r in form.tipo %}
                     <label class="cl-seg__op">{{ r.tag }}<span>{{ r.choice_label|cut:"Pilates " }}</span></label>
                     {% endfor %}
                 </div>
-                {% for e in form.tipo.errors %}<p class="ad-error">{{ e }}</p>{% endfor %}
+                {% for e in form.tipo.errors %}<p class="pn-error">{{ e }}</p>{% endfor %}
             </fieldset>
 
-            <div class="ad-field cl-especial{% if form.nombre_personalizado.errors %} has-error{% endif %}" id="cl-especial">
-                <label class="ad-label" for="{{ form.nombre_personalizado.id_for_label }}">{{ form.nombre_personalizado.label }}</label>
+            <div class="pn-field cl-especial{% if form.nombre_personalizado.errors %} has-error{% endif %}" id="cl-especial">
+                <label class="pn-label" for="{{ form.nombre_personalizado.id_for_label }}">{{ form.nombre_personalizado.label }}</label>
                 {{ form.nombre_personalizado }}
-                <p class="ad-help">Es el nombre que ven los alumnos al reservar.</p>
-                {% for e in form.nombre_personalizado.errors %}<p class="ad-error">{{ e }}</p>{% endfor %}
+                <p class="pn-help">Es el nombre que ven los alumnos al reservar.</p>
+                {% for e in form.nombre_personalizado.errors %}<p class="pn-error">{{ e }}</p>{% endfor %}
             </div>
         </div>
     </section>
 
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">Dónde y cuándo</h2></div>
-        <div class="ad-card__body ad-form">
-            <fieldset class="ad-field{% if form.direccion.errors %} has-error{% endif %}">
-                <legend class="ad-label">{{ form.direccion.label }}</legend>
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">Dónde y cuándo</h2></div>
+        <div class="pn-card__body pn-form">
+            <fieldset class="pn-field{% if form.direccion.errors %} has-error{% endif %}">
+                <legend class="pn-label">{{ form.direccion.label }}</legend>
                 <div class="cl-cards">
                     {% for r in form.direccion %}
                     <label class="cl-card">{{ r.tag }}<span>{% if r.data.value == 'sede_principal' %}<strong>La Rioja 3044</strong><small>Sede Central</small>{% else %}<strong>9 de Julio 3696</strong><small>Sede 2</small>{% endif %}</span></label>
                     {% endfor %}
                 </div>
-                {% for e in form.direccion.errors %}<p class="ad-error">{{ e }}</p>{% endfor %}
+                {% for e in form.direccion.errors %}<p class="pn-error">{{ e }}</p>{% endfor %}
             </fieldset>
 
-            <fieldset class="ad-field{% if form.dia.errors %} has-error{% endif %}">
-                <legend class="ad-label">{{ form.dia.label }}</legend>
+            <fieldset class="pn-field{% if form.dia.errors %} has-error{% endif %}">
+                <legend class="pn-label">{{ form.dia.label }}</legend>
                 <div class="cl-dias-op">
                     {% for r in form.dia %}
                     <label class="cl-dia-op">{{ r.tag }}<span>{{ r.choice_label|slice:":3" }}</span></label>
                     {% endfor %}
                 </div>
-                <p class="ad-help">Los sábados son solo para clases especiales.</p>
-                {% for e in form.dia.errors %}<p class="ad-error">{{ e }}</p>{% endfor %}
+                <p class="pn-help">Los sábados son solo para clases especiales.</p>
+                {% for e in form.dia.errors %}<p class="pn-error">{{ e }}</p>{% endfor %}
             </fieldset>
 
-            <div class="ad-form__row ad-form__row--2">
-                <div class="ad-field{% if form.horario.errors %} has-error{% endif %}">
-                    <label class="ad-label" for="{{ form.horario.id_for_label }}">{{ form.horario.label }}</label>
+            <div class="pn-form__row pn-form__row--2">
+                <div class="pn-field{% if form.horario.errors %} has-error{% endif %}">
+                    <label class="pn-label" for="{{ form.horario.id_for_label }}">{{ form.horario.label }}</label>
                     {{ form.horario }}
-                    <p class="ad-help">Entre las 06:00 y las 22:00. Las clases duran una hora.</p>
-                    {% for e in form.horario.errors %}<p class="ad-error">{{ e }}</p>{% endfor %}
+                    <p class="pn-help">Entre las 06:00 y las 22:00. Las clases duran una hora.</p>
+                    {% for e in form.horario.errors %}<p class="pn-error">{{ e }}</p>{% endfor %}
                 </div>
-                <div class="ad-field{% if form.cupo_maximo.errors %} has-error{% endif %}">
-                    <label class="ad-label" for="{{ form.cupo_maximo.id_for_label }}">{{ form.cupo_maximo.label }} <small>(lugares)</small></label>
+                <div class="pn-field{% if form.cupo_maximo.errors %} has-error{% endif %}">
+                    <label class="pn-label" for="{{ form.cupo_maximo.id_for_label }}">{{ form.cupo_maximo.label }} <small>(lugares)</small></label>
                     {{ form.cupo_maximo }}
-                    {% if fijos %}<p class="ad-help">Hoy {{ fijos }} alumno{{ fijos|pluralize }} tiene{{ fijos|pluralize:"n" }} este horario fijo.</p>{% endif %}
-                    {% for e in form.cupo_maximo.errors %}<p class="ad-error">{{ e }}</p>{% endfor %}
+                    {% if fijos %}<p class="pn-help">Hoy {{ fijos }} alumno{{ fijos|pluralize }} tiene{{ fijos|pluralize:"n" }} este horario fijo.</p>{% endif %}
+                    {% for e in form.cupo_maximo.errors %}<p class="pn-error">{{ e }}</p>{% endfor %}
                 </div>
             </div>
 
             {% if form.activa %}
-            <label class="ad-check">
+            <label class="pn-check">
                 {{ form.activa }}
-                <span class="ad-check__text">{{ form.activa.label }}<small>{{ form.activa.help_text }}</small></span>
+                <span class="pn-check__text">{{ form.activa.label }}<small>{{ form.activa.help_text }}</small></span>
             </label>
             {% endif %}
         </div>
     </section>
 
     {% if accion == 'editar' and fijos or accion == 'editar' and sueltas or accion == 'editar' and profesoras %}
-    <section class="ad-card cl-aviso" id="cl-aviso">
-        <div class="ad-card__body">
-            <div class="ad-alert ad-alert--warn">
+    <section class="pn-card cl-aviso" id="cl-aviso">
+        <div class="pn-card__body">
+            <div class="pn-alert pn-alert--warn">
                 {% include 'gravity/admin/_icono.html' with i='alerta' %}
                 <div>
                     {% if fijos or sueltas %}
@@ -113,9 +113,9 @@
                 </div>
             </div>
             {% if fijos_con_email or sueltas %}
-            <label class="ad-check cl-aviso__check">
+            <label class="pn-check cl-aviso__check">
                 <input type="checkbox" name="avisar" checked>
-                <span class="ad-check__text">Avisarles por email si cambia el día, el horario o la sede<small>{% if fijos_con_email %}{{ fijos_con_email }} alumno{{ fijos_con_email|pluralize }} con horario fijo tiene{{ fijos_con_email|pluralize:"n" }} email cargado.{% endif %}</small></span>
+                <span class="pn-check__text">Avisarles por email si cambia el día, el horario o la sede<small>{% if fijos_con_email %}{{ fijos_con_email }} alumno{{ fijos_con_email|pluralize }} con horario fijo tiene{{ fijos_con_email|pluralize:"n" }} email cargado.{% endif %}</small></span>
             </label>
             {% endif %}
         </div>
@@ -124,9 +124,9 @@
 
     <div class="cl-form__acciones">
         <p class="cl-form__resumen" id="cl-resumen" aria-live="polite"></p>
-        <div class="ad-form__actions">
-            <a class="ad-btn ad-btn--ghost" href="{% if clase %}{% url 'gravity:admin_clase_detalle' clase.id %}{% else %}{% url 'gravity:admin_clases_lista' %}{% endif %}">Cancelar</a>
-            <button type="submit" class="ad-btn" data-loading-text="Guardando...">{% if accion == 'editar' %}Guardar cambios{% else %}Crear clase{% endif %}</button>
+        <div class="pn-form__actions">
+            <a class="pn-btn pn-btn--ghost" href="{% if clase %}{% url 'gravity:admin_clase_detalle' clase.id %}{% else %}{% url 'gravity:admin_clases_lista' %}{% endif %}">Cancelar</a>
+            <button type="submit" class="pn-btn" data-loading-text="Guardando...">{% if accion == 'editar' %}Guardar cambios{% else %}Crear clase{% endif %}</button>
         </div>
     </div>
 </form>

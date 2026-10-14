@@ -9,23 +9,23 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_pagos_editar_estado_cliente' cliente.id %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
-        <h1 class="ad-head__title">Registrar pago</h1>
-        <p class="ad-head__sub">{{ cliente.get_full_name|default:cliente.username }} · {% if estado_pago.plan_actual %}{{ estado_pago.plan_actual.nombre }}{% else %}Sin plan{% endif %}</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_pagos_editar_estado_cliente' cliente.id %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
+        <h1 class="pn-head__title">Registrar pago</h1>
+        <p class="pn-head__sub">{{ cliente.get_full_name|default:cliente.username }} · {% if estado_pago.plan_actual %}{{ estado_pago.plan_actual.nombre }}{% else %}Sin plan{% endif %}</p>
     </div>
 </header>
 
-<div class="ad-kpis pg-registrar__estado">
-    <div class="ad-kpi{% if estado_pago.saldo_actual < 0 %} ad-kpi--danger{% elif estado_pago.saldo_actual > 0 %} ad-kpi--ok{% endif %}">
-        <p class="ad-kpi__label">Hoy</p>
-        <p class="ad-kpi__value">{% if estado_pago.saldo_actual < 0 %}Debe ${{ estado_pago.saldo_actual|pesos|cut:"-" }}{% elif estado_pago.saldo_actual > 0 %}A favor ${{ estado_pago.saldo_actual|pesos }}{% else %}Al día{% endif %}</p>
+<div class="pn-kpis pg-registrar__estado">
+    <div class="pn-kpi{% if estado_pago.saldo_actual < 0 %} pn-kpi--danger{% elif estado_pago.saldo_actual > 0 %} pn-kpi--ok{% endif %}">
+        <p class="pn-kpi__label">Hoy</p>
+        <p class="pn-kpi__value">{% if estado_pago.saldo_actual < 0 %}Debe ${{ estado_pago.saldo_actual|pesos|cut:"-" }}{% elif estado_pago.saldo_actual > 0 %}A favor ${{ estado_pago.saldo_actual|pesos }}{% else %}Al día{% endif %}</p>
     </div>
-    <div class="ad-kpi">
-        <p class="ad-kpi__label">Último pago</p>
-        <p class="ad-kpi__value">{% if estado_pago.ultimo_pago %}{{ estado_pago.ultimo_pago|date:"d/m" }}{% else %}—{% endif %}</p>
-        {% if estado_pago.monto_ultimo_pago %}<p class="ad-kpi__detail">${{ estado_pago.monto_ultimo_pago|pesos }}</p>{% endif %}
+    <div class="pn-kpi">
+        <p class="pn-kpi__label">Último pago</p>
+        <p class="pn-kpi__value">{% if estado_pago.ultimo_pago %}{{ estado_pago.ultimo_pago|date:"d/m" }}{% else %}—{% endif %}</p>
+        {% if estado_pago.monto_ultimo_pago %}<p class="pn-kpi__detail">${{ estado_pago.monto_ultimo_pago|pesos }}</p>{% endif %}
     </div>
 </div>
 
@@ -33,9 +33,9 @@
     {% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">Cuánto pagó</h2></div>
-        <div class="ad-card__body ad-form">
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">Cuánto pagó</h2></div>
+        <div class="pn-card__body pn-form">
             {% if sugerencias %}
             <div class="pg-sugerencias" role="group" aria-label="Montos sugeridos">
                 {% for s in sugerencias %}
@@ -45,17 +45,17 @@
                 {% endfor %}
             </div>
             {% endif %}
-            <div class="ad-form__row ad-form__row--2">
+            <div class="pn-form__row pn-form__row--2">
                 {% include 'gravity/admin/_campo.html' with campo=form.monto %}
                 {% include 'gravity/admin/_campo.html' with campo=form.tipo_pago %}
             </div>
-            <div class="ad-form__row ad-form__row--2">
+            <div class="pn-form__row pn-form__row--2">
                 {% include 'gravity/admin/_campo.html' with campo=form.fecha_pago %}
                 {% include 'gravity/admin/_campo.html' with campo=form.concepto %}
             </div>
             <details class="pg-mas"{% if form.comprobante.value or form.observaciones.value or form.comprobante.errors %} open{% endif %}>
                 <summary>Comprobante y observaciones</summary>
-                <div class="ad-form">
+                <div class="pn-form">
                     {% include 'gravity/admin/_campo.html' with campo=form.comprobante ayuda='Número de transferencia o de recibo.' %}
                     {% include 'gravity/admin/_campo.html' with campo=form.observaciones %}
                 </div>
@@ -65,13 +65,13 @@
 
     <div class="cl-form__acciones">
         {% if cliente.email %}
-        <label class="ad-check">
+        <label class="pn-check">
             <input type="checkbox" name="enviar_recibo" checked>
-            <span class="ad-check__text">Mandarle el recibo por email<small>{{ cliente.email }}</small></span>
+            <span class="pn-check__text">Mandarle el recibo por email<small>{{ cliente.email }}</small></span>
         </label>
-        {% else %}<span class="ad-help">No tiene email: el recibo no se puede mandar.</span>{% endif %}
-        <div class="ad-form__actions">
-            <button type="submit" class="ad-btn" data-loading-text="Registrando...">Registrar pago</button>
+        {% else %}<span class="pn-help">No tiene email: el recibo no se puede mandar.</span>{% endif %}
+        <div class="pn-form__actions">
+            <button type="submit" class="pn-btn" data-loading-text="Registrando...">Registrar pago</button>
         </div>
     </div>
 </form>

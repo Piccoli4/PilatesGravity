@@ -3,72 +3,72 @@
 {% block title %}Reservas{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Reservas</h1>
-        <p class="ad-head__sub">Horarios fijos, recuperos y clases únicas de los alumnos.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Reservas</h1>
+        <p class="pn-head__sub">Horarios fijos, recuperos y clases únicas de los alumnos.</p>
     </div>
-    <div class="ad-head__actions">
-        <a class="ad-btn" href="{% url 'gravity:admin_reservar_para_usuario' %}?next={{ aqui|urlencode }}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Reservar para un alumno</a>
+    <div class="pn-head__actions">
+        <a class="pn-btn" href="{% url 'gravity:admin_reservar_para_usuario' %}?next={{ aqui|urlencode }}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Reservar para un alumno</a>
     </div>
 </header>
 
-<nav class="ad-tabs" aria-label="Tipo de reservas">
+<nav class="pn-tabs" aria-label="Tipo de reservas">
     {% for p in pestanas %}
-    <a class="ad-tabs__item{% if ver == p.clave %} is-active{% endif %}" href="?{% if qs_sin_ver %}{{ qs_sin_ver }}&{% endif %}ver={{ p.clave }}"{% if ver == p.clave %} aria-current="page"{% endif %}>{{ p.texto }} <span class="ad-chip__count">{{ p.cantidad }}</span></a>
+    <a class="pn-tabs__item{% if ver == p.clave %} is-active{% endif %}" href="?{% if qs_sin_ver %}{{ qs_sin_ver }}&{% endif %}ver={{ p.clave }}"{% if ver == p.clave %} aria-current="page"{% endif %}>{{ p.texto }} <span class="pn-chip__count">{{ p.cantidad }}</span></a>
     {% endfor %}
 </nav>
 
-<form method="get" class="ad-filters" role="search">
+<form method="get" class="pn-filters" role="search">
     <input type="hidden" name="ver" value="{{ ver }}">
-    <label class="ad-search">
-        <span class="ad-sr">Buscar alumno</span>
+    <label class="pn-search">
+        <span class="pn-sr">Buscar alumno</span>
         {% include 'gravity/admin/_icono.html' with i='buscar' %}
-        <input class="ad-input" type="search" name="usuario" value="{{ usuario_filtro }}" placeholder="Buscar alumno por nombre o email" autocomplete="off">
+        <input class="pn-input" type="search" name="usuario" value="{{ usuario_filtro }}" placeholder="Buscar alumno por nombre o email" autocomplete="off">
     </label>
-    <div class="ad-filters__row rs-filtros">
-        <label><span class="ad-sr">Sede</span>
-            <select class="ad-select" name="sede" data-auto>
+    <div class="pn-filters__row rs-filtros">
+        <label><span class="pn-sr">Sede</span>
+            <select class="pn-select" name="sede" data-auto>
                 <option value="">Las dos sedes</option>
                 {% for v, t in sedes %}<option value="{{ v }}"{% if sede_filtro == v %} selected{% endif %}>{% if v == 'sede_principal' %}La Rioja 3044{% else %}9 de Julio 3696{% endif %}</option>{% endfor %}
             </select>
         </label>
-        <label><span class="ad-sr">Tipo de clase</span>
-            <select class="ad-select" name="tipo_clase" data-auto>
+        <label><span class="pn-sr">Tipo de clase</span>
+            <select class="pn-select" name="tipo_clase" data-auto>
                 <option value="">Todos los tipos</option>
                 {% for v, t in tipos %}<option value="{{ v }}"{% if tipo_filtro == v %} selected{% endif %}>{{ v }}</option>{% endfor %}
             </select>
         </label>
-        <label><span class="ad-sr">Día</span>
-            <select class="ad-select" name="dia" data-auto>
+        <label><span class="pn-sr">Día</span>
+            <select class="pn-select" name="dia" data-auto>
                 <option value="">Todos los días</option>
                 {% for v, t in dias %}<option value="{{ v }}"{% if dia_filtro == v %} selected{% endif %}>{{ t }}</option>{% endfor %}
             </select>
         </label>
     </div>
-    <button type="submit" class="ad-sr">Buscar</button>
-    {% if hay_filtros %}<a class="ad-btn ad-btn--quiet ad-btn--sm rs-limpiar" href="?ver={{ ver }}">Quitar filtros</a>{% endif %}
+    <button type="submit" class="pn-sr">Buscar</button>
+    {% if hay_filtros %}<a class="pn-btn pn-btn--quiet pn-btn--sm rs-limpiar" href="?ver={{ ver }}">Quitar filtros</a>{% endif %}
 </form>
 
 {% if filas %}
-<div class="ad-card">
-    <div class="ad-table-wrap">
-        <table class="ad-table">
+<div class="pn-card">
+    <div class="pn-table-wrap">
+        <table class="pn-table">
             <thead>
                 <tr>
                     <th>Alumno</th>
                     <th>Clase</th>
                     {% if ver == 'fijos' %}<th>Día y hora</th><th>Desde</th>{% else %}<th>Fecha</th><th>Tipo</th>{% endif %}
                     <th>{% if ver == 'historial' %}Estado{% else %}Reservó{% endif %}</th>
-                    {% if ver != 'historial' %}<th><span class="ad-sr">Acciones</span></th>{% endif %}
+                    {% if ver != 'historial' %}<th><span class="pn-sr">Acciones</span></th>{% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for f in filas %}{% with r=f.reserva %}
                 <tr>
-                    <td class="ad-table__main">
+                    <td class="pn-table__main">
                         <a class="rp-link" href="{% url 'gravity:admin_usuario_detalle' r.usuario.id %}">{{ r.usuario.get_full_name|default:r.usuario.username }}</a>
-                        {% if not r.clase.activa and r.activa %}<span class="ad-badge ad-badge--muted">Clase en pausa</span>{% endif %}
+                        {% if not r.clase.activa and r.activa %}<span class="pn-badge pn-badge--muted">Clase en pausa</span>{% endif %}
                     </td>
                     <td data-label="Clase"><a class="rp-link" href="{% url 'gravity:admin_clase_detalle' r.clase.id %}">{{ r.clase.get_nombre_display }}</a> · {{ r.clase.get_direccion_corta }}</td>
                     {% if ver == 'fijos' %}
@@ -79,12 +79,12 @@
                     <td data-label="Tipo">{{ f.tipo }}</td>
                     {% endif %}
                     {% if ver == 'historial' %}
-                    <td data-label="Estado"><span class="ad-badge ad-badge--{{ f.estado.1 }}">{{ f.estado.0 }}</span></td>
+                    <td data-label="Estado"><span class="pn-badge pn-badge--{{ f.estado.1 }}">{{ f.estado.0 }}</span></td>
                     {% else %}
                     <td data-label="Reservó">{% if r.creado_por and r.creado_por != r.usuario %}{{ r.creado_por.first_name|default:r.creado_por.username }}{% else %}El alumno{% endif %}</td>
-                    <td class="ad-table__actions">
-                        <a class="ad-btn ad-btn--sm ad-btn--ghost" href="{% url 'gravity:admin_reserva_modificar' r.id %}?next={{ aqui|urlencode }}">Cambiar</a>
-                        <a class="ad-btn ad-btn--sm ad-btn--danger-ghost" href="{% url 'gravity:admin_reserva_cancelar' r.id %}?next={{ aqui|urlencode }}">{% if r.fecha_unica %}Cancelar{% else %}Ausencia o baja{% endif %}</a>
+                    <td class="pn-table__actions">
+                        <a class="pn-btn pn-btn--sm pn-btn--ghost" href="{% url 'gravity:admin_reserva_modificar' r.id %}?next={{ aqui|urlencode }}">Cambiar</a>
+                        <a class="pn-btn pn-btn--sm pn-btn--danger-ghost" href="{% url 'gravity:admin_reserva_cancelar' r.id %}?next={{ aqui|urlencode }}">{% if r.fecha_unica %}Cancelar{% else %}Ausencia o baja{% endif %}</a>
                     </td>
                     {% endif %}
                 </tr>
@@ -95,19 +95,19 @@
 </div>
 
 {% if page_obj.has_other_pages %}
-<nav class="ad-pager" aria-label="Páginas">
-    {% if page_obj.has_previous %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
-    <span class="ad-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ page_obj.paginator.count }} reserva{{ page_obj.paginator.count|pluralize }}</span>
-    {% if page_obj.has_next %}<a class="ad-btn ad-btn--ghost ad-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
+<nav class="pn-pager" aria-label="Páginas">
+    {% if page_obj.has_previous %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.previous_page_number }}">{% include 'gravity/admin/_icono.html' with i='volver' %} Anterior</a>{% else %}<span></span>{% endif %}
+    <span class="pn-pager__info">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} · {{ page_obj.paginator.count }} reserva{{ page_obj.paginator.count|pluralize }}</span>
+    {% if page_obj.has_next %}<a class="pn-btn pn-btn--ghost pn-btn--sm" href="?{{ qs_pagina }}&page={{ page_obj.next_page_number }}">Siguiente {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>{% else %}<span></span>{% endif %}
 </nav>
 {% endif %}
 
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='reserva' %}
-        <p class="ad-empty__title">{% if hay_filtros %}No hay reservas con estos filtros{% elif ver == 'sueltas' %}No hay recuperos ni clases únicas reservados{% elif ver == 'historial' %}Todavía no hay historial{% else %}No hay horarios fijos{% endif %}</p>
-        {% if hay_filtros %}<a class="ad-btn ad-btn--ghost" href="?ver={{ ver }}">Quitar filtros</a>{% endif %}
+        <p class="pn-empty__title">{% if hay_filtros %}No hay reservas con estos filtros{% elif ver == 'sueltas' %}No hay recuperos ni clases únicas reservados{% elif ver == 'historial' %}Todavía no hay historial{% else %}No hay horarios fijos{% endif %}</p>
+        {% if hay_filtros %}<a class="pn-btn pn-btn--ghost" href="?ver={{ ver }}">Quitar filtros</a>{% endif %}
     </div>
 </div>
 {% endif %}

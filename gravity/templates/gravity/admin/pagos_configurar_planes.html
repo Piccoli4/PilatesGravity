@@ -8,79 +8,79 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% url 'gravity:admin_pagos_vista_principal' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Pagos</a>
-        <h1 class="ad-head__title">Planes y precios</h1>
-        <p class="ad-head__sub">Los precios se ven en la página de Precios y en el espacio de los alumnos. En efectivo se cobra 10% menos (redondeado al millar).</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% url 'gravity:admin_pagos_vista_principal' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Pagos</a>
+        <h1 class="pn-head__title">Planes y precios</h1>
+        <p class="pn-head__sub">Los precios se ven en la página de Precios y en el espacio de los alumnos. En efectivo se cobra 10% menos (redondeado al millar).</p>
     </div>
 </header>
 
 <div class="so-lista">
     {% for f in filas %}
-    <details class="ad-card pl-plan{% if not f.plan.activo %} pl-plan--pausado{% endif %}"{% if f.abierto %} open{% endif %}>
+    <details class="pn-card pl-plan{% if not f.plan.activo %} pl-plan--pausado{% endif %}"{% if f.abierto %} open{% endif %}>
         <summary class="pl-plan__sum">
             <span class="pl-plan__info">
-                <span class="pl-plan__nombre">{{ f.plan.nombre }} {% if not f.plan.activo %}<span class="ad-badge ad-badge--muted">Pausado</span>{% endif %}</span>
+                <span class="pl-plan__nombre">{{ f.plan.nombre }} {% if not f.plan.activo %}<span class="pn-badge pn-badge--muted">Pausado</span>{% endif %}</span>
                 <span class="pl-plan__sub">{{ f.plan.clases_por_semana }} por semana · {{ f.alumnos }} alumno{{ f.alumnos|pluralize }}</span>
             </span>
             <span class="pg-precio">${{ f.plan.precio_mensual|pesos }}<small>efectivo ${{ f.efectivo|pesos }}</small></span>
             <span class="hy-clase__chev">{% include 'gravity/admin/_icono.html' with i='abajo' %}</span>
         </summary>
         <div class="pl-plan__body">
-            <form method="post" class="ad-form">
+            <form method="post" class="pn-form">
                 {% csrf_token %}
                 <input type="hidden" name="editar_plan" value="{{ f.plan.id }}">
-                {% if f.form.non_field_errors %}<div class="ad-alert ad-alert--danger">{% include 'gravity/admin/_icono.html' with i='alerta' %}<div>{% for e in f.form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>{% endif %}
+                {% if f.form.non_field_errors %}<div class="pn-alert pn-alert--danger">{% include 'gravity/admin/_icono.html' with i='alerta' %}<div>{% for e in f.form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div></div>{% endif %}
                 {% include 'gravity/admin/_campo.html' with campo=f.form.nombre %}
-                <div class="ad-form__row ad-form__row--2">
+                <div class="pn-form__row pn-form__row--2">
                     {% include 'gravity/admin/_campo.html' with campo=f.form.clases_por_semana %}
                     {% include 'gravity/admin/_campo.html' with campo=f.form.precio_mensual %}
                 </div>
                 {% include 'gravity/admin/_campo.html' with campo=f.form.descripcion %}
                 <input type="hidden" name="activo" value="{% if f.plan.activo %}True{% endif %}">
-                <label class="ad-check">
+                <label class="pn-check">
                     <input type="checkbox" name="aplicar_a_cuotas_del_mes" value="1">
-                    <span class="ad-check__text">Aplicar el precio nuevo a las cuotas impagas de este mes<small>Si no lo tildás, el precio nuevo rige desde el mes que viene.</small></span>
+                    <span class="pn-check__text">Aplicar el precio nuevo a las cuotas impagas de este mes<small>Si no lo tildás, el precio nuevo rige desde el mes que viene.</small></span>
                 </label>
-                <div class="ad-form__actions"><button type="submit" class="ad-btn" data-loading-text="Guardando...">Guardar plan</button></div>
+                <div class="pn-form__actions"><button type="submit" class="pn-btn" data-loading-text="Guardando...">Guardar plan</button></div>
             </form>
             <div class="pl-plan__extra">
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="toggle_activo_plan" value="{{ f.plan.id }}">
-                    <button type="submit" class="ad-btn ad-btn--sm ad-btn--ghost">{% if f.plan.activo %}Pausar (no se ofrece){% else %}Volver a ofrecerlo{% endif %}</button>
+                    <button type="submit" class="pn-btn pn-btn--sm pn-btn--ghost">{% if f.plan.activo %}Pausar (no se ofrece){% else %}Volver a ofrecerlo{% endif %}</button>
                 </form>
                 {% if not f.alumnos %}
                 <form method="post" data-confirm="Se borra el plan {{ f.plan.nombre }}. Solo se puede si nunca tuvo alumnos." data-confirm-titulo="¿Eliminar el plan?" data-confirm-boton="Eliminar" data-confirm-peligro>
                     {% csrf_token %}
                     <input type="hidden" name="eliminar_plan" value="{{ f.plan.id }}">
-                    <button type="submit" class="ad-btn ad-btn--sm ad-btn--danger-ghost">Eliminar</button>
+                    <button type="submit" class="pn-btn pn-btn--sm pn-btn--danger-ghost">Eliminar</button>
                 </form>
                 {% endif %}
             </div>
         </div>
     </details>
     {% empty %}
-    <div class="ad-card"><div class="ad-empty">{% include 'gravity/admin/_icono.html' with i='plan' %}<p class="ad-empty__title">Todavía no hay planes</p></div></div>
+    <div class="pn-card"><div class="pn-empty">{% include 'gravity/admin/_icono.html' with i='plan' %}<p class="pn-empty__title">Todavía no hay planes</p></div></div>
     {% endfor %}
 
-    <details class="ad-card pl-plan pl-plan--nuevo"{% if crear_abierto %} open{% endif %}>
+    <details class="pn-card pl-plan pl-plan--nuevo"{% if crear_abierto %} open{% endif %}>
         <summary class="pl-plan__sum">
             <span class="pl-plan__info"><span class="pl-plan__nombre">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Nuevo plan</span></span>
         </summary>
         <div class="pl-plan__body">
-            <form method="post" class="ad-form">
+            <form method="post" class="pn-form">
                 {% csrf_token %}
                 <input type="hidden" name="crear_plan" value="1">
                 {% include 'gravity/admin/_campo.html' with campo=form.nombre %}
-                <div class="ad-form__row ad-form__row--2">
+                <div class="pn-form__row pn-form__row--2">
                     {% include 'gravity/admin/_campo.html' with campo=form.clases_por_semana %}
                     {% include 'gravity/admin/_campo.html' with campo=form.precio_mensual %}
                 </div>
                 {% include 'gravity/admin/_campo.html' with campo=form.descripcion %}
                 <input type="hidden" name="activo" value="True">
-                <div class="ad-form__actions"><button type="submit" class="ad-btn" data-loading-text="Creando...">Crear plan</button></div>
+                <div class="pn-form__actions"><button type="submit" class="pn-btn" data-loading-text="Creando...">Crear plan</button></div>
             </form>
         </div>
     </details>

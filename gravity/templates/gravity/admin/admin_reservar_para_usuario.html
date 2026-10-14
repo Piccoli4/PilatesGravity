@@ -8,11 +8,11 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_reservas_lista' %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
-        <h1 class="ad-head__title">Reservar para un alumno</h1>
-        <p class="ad-head__sub">Horario fijo, clase única o recupero. Se respeta el cupo de la clase.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_reservas_lista' %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
+        <h1 class="pn-head__title">Reservar para un alumno</h1>
+        <p class="pn-head__sub">Horario fijo, clase única o recupero. Se respeta el cupo de la clase.</p>
     </div>
 </header>
 
@@ -20,59 +20,59 @@
     {% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">1. Alumno</h2></div>
-        <div class="ad-card__body">
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">1. Alumno</h2></div>
+        <div class="pn-card__body">
             {% if alumno %}
             <input type="hidden" name="usuario" value="{{ alumno.id }}">
             <div class="rs-alumno">
-                {% include 'gravity/admin/_avatar.html' with persona=alumno clase='ad-avatar--lg' %}
+                {% include 'gravity/admin/_avatar.html' with persona=alumno clase='pn-avatar--lg' %}
                 <div class="rs-alumno__body">
                     <p class="rs-alumno__nombre"><a href="{% url 'gravity:admin_usuario_detalle' alumno.id %}">{{ alumno.get_full_name|default:alumno.username }}</a></p>
                     <p class="rs-alumno__sub">{{ alumno.email|default:"Sin email" }}</p>
                 </div>
-                <a class="ad-btn ad-btn--sm ad-btn--ghost" href="?{% if clase_elegida %}clase={{ clase_elegida }}{% endif %}{% if next %}&next={{ next|urlencode }}{% endif %}">Cambiar</a>
+                <a class="pn-btn pn-btn--sm pn-btn--ghost" href="?{% if clase_elegida %}clase={{ clase_elegida }}{% endif %}{% if next %}&next={{ next|urlencode }}{% endif %}">Cambiar</a>
             </div>
-            <dl class="ad-data ad-data--2 rs-alumno__datos">
+            <dl class="pn-data pn-data--2 rs-alumno__datos">
                 <div><dt>Plan</dt><dd>{% if info.plan %}{{ info.plan }} · usa {{ info.usadas }} de {{ info.clases_plan }} esta semana{% else %}Sin plan vigente{% endif %}</dd></div>
                 <div><dt>Recuperos</dt><dd>{% if info.recuperos %}{{ info.recuperos }} disponible{{ info.recuperos|pluralize }} hasta el {{ info.limite_recupero|date:"d/m" }}{% else %}No tiene para recuperar{% endif %}</dd></div>
                 <div><dt>Horarios fijos</dt><dd>{% for r in info.fijas %}{{ r.clase.get_nombre_display }} {{ r.clase.dia|slice:":3" }} {{ r.clase.horario|time:"H:i" }}{% if not forloop.last %} · {% endif %}{% empty %}Ninguno{% endfor %}</dd></div>
             </dl>
             {% else %}
             <div class="rs-buscador" data-buscador>
-                <label class="ad-search">
-                    <span class="ad-sr">Buscar alumno</span>
+                <label class="pn-search">
+                    <span class="pn-sr">Buscar alumno</span>
                     {% include 'gravity/admin/_icono.html' with i='buscar' %}
-                    <input class="ad-input" type="search" placeholder="Escribí el nombre o el email" autocomplete="off" aria-controls="rs-resultados" autofocus>
+                    <input class="pn-input" type="search" placeholder="Escribí el nombre o el email" autocomplete="off" aria-controls="rs-resultados" autofocus>
                 </label>
                 <ul class="rs-res" id="rs-resultados" data-resultados hidden></ul>
-                <p class="ad-help">¿Es nuevo? <a href="{% url 'gravity:admin_agregar_usuario' %}">Crealo primero</a>.</p>
+                <p class="pn-help">¿Es nuevo? <a href="{% url 'gravity:admin_agregar_usuario' %}">Crealo primero</a>.</p>
             </div>
             {% endif %}
         </div>
     </section>
 
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">2. Qué reserva</h2></div>
-        <div class="ad-card__body">
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">2. Qué reserva</h2></div>
+        <div class="pn-card__body">
             <div class="cl-seg rs-tipos" role="radiogroup" aria-label="Tipo de reserva">
                 <label class="cl-seg__op"><input type="radio" name="tipo_reserva" value="recurrente"{% if tipo_elegido == 'recurrente' %} checked{% endif %}><span>Horario fijo</span></label>
                 <label class="cl-seg__op"><input type="radio" name="tipo_reserva" value="temporal"{% if tipo_elegido == 'temporal' %} checked{% endif %}><span>Clase única</span></label>
                 <label class="cl-seg__op"><input type="radio" name="tipo_reserva" value="recupero"{% if tipo_elegido == 'recupero' %} checked{% endif %}><span>Recupero</span></label>
             </div>
-            <p class="ad-help rs-tipos__ayuda">El horario fijo se repite todas las semanas. La clase única y el recupero son para una sola fecha; el recupero no cuenta en el plan.</p>
+            <p class="pn-help rs-tipos__ayuda">El horario fijo se repite todas las semanas. La clase única y el recupero son para una sola fecha; el recupero no cuenta en el plan.</p>
         </div>
     </section>
 
-    <section class="ad-card">
-        <div class="ad-card__head"><h2 class="ad-card__title">3. Clase</h2></div>
-        <div class="ad-card__body ad-form">
+    <section class="pn-card">
+        <div class="pn-card__head"><h2 class="pn-card__title">3. Clase</h2></div>
+        <div class="pn-card__body pn-form">
             {% include 'gravity/admin/_selector_clase.html' with campo='clase' elegida=clase_elegida fecha=fecha_elegida %}
         </div>
     </section>
 
     {% if alumno %}
-    <div class="ad-alert ad-alert--warn" data-avisos data-usadas="{{ info.usadas }}" data-clases-plan="{{ info.clases_plan }}" data-recuperos="{{ info.recuperos }}" hidden>
+    <div class="pn-alert pn-alert--warn" data-avisos data-usadas="{{ info.usadas }}" data-clases-plan="{{ info.clases_plan }}" data-recuperos="{{ info.recuperos }}" hidden>
         {% include 'gravity/admin/_icono.html' with i='alerta' %}
         <p data-avisos-texto></p>
     </div>
@@ -80,16 +80,16 @@
 
     <div class="cl-form__acciones">
         {% if alumno and alumno.email %}
-        <label class="ad-check">
+        <label class="pn-check">
             <input type="checkbox" name="notificar_usuario" checked>
-            <span class="ad-check__text">Mandarle la confirmación por email<small>{{ alumno.email }}</small></span>
+            <span class="pn-check__text">Mandarle la confirmación por email<small>{{ alumno.email }}</small></span>
         </label>
         {% else %}<span></span>{% endif %}
-        <div class="ad-form__actions">
-            <button type="submit" class="ad-btn" data-loading-text="Reservando..."{% if not alumno %} disabled{% endif %}>Reservar</button>
+        <div class="pn-form__actions">
+            <button type="submit" class="pn-btn" data-loading-text="Reservando..."{% if not alumno %} disabled{% endif %}>Reservar</button>
         </div>
     </div>
-    {% if not alumno %}<p class="ad-help rs-falta">Elegí el alumno para poder reservar.</p>{% endif %}
+    {% if not alumno %}<p class="pn-help rs-falta">Elegí el alumno para poder reservar.</p>{% endif %}
 </form>
 
 {{ datos_js|json_script:"rs-datos" }}

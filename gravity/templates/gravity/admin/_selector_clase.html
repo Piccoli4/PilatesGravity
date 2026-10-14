@@ -8,10 +8,10 @@ un alumno" y "Cambiar reserva". Recibe:
   fecha    fecha marcada (AAAA-MM-DD), opcional
 Los lugares libres y las fechas los arma static/js/admin_reservas.js con datos_js.
 {% endcomment %}<div class="rs-picker" data-picker data-campo="{{ campo }}"{% if modo %} data-modo="{{ modo }}"{% endif %} data-fecha="{{ fecha }}">
-    <div class="ad-chips rs-sedes" role="group" aria-label="Sede">
-        <button type="button" class="ad-chip is-active" data-sede="">Las dos sedes</button>
-        <button type="button" class="ad-chip" data-sede="sede_principal">La Rioja 3044</button>
-        <button type="button" class="ad-chip" data-sede="sede_2">9 de Julio 3696</button>
+    <div class="pn-chips rs-sedes" role="group" aria-label="Sede">
+        <button type="button" class="pn-chip is-active" data-sede="">Las dos sedes</button>
+        <button type="button" class="pn-chip" data-sede="sede_principal">La Rioja 3044</button>
+        <button type="button" class="pn-chip" data-sede="sede_2">9 de Julio 3696</button>
     </div>
     {% for g in grupos %}
     <fieldset class="rs-dia" data-dia>
@@ -35,8 +35,8 @@ Los lugares libres y las fechas los arma static/js/admin_reservas.js con datos_j
     <p class="hy-vacio rs-sin-clases" data-sin-clases hidden>No hay clases en esta sede.</p>
 </div>
 
-<div class="ad-field rs-fechas" data-fechas hidden>
-    <span class="ad-label">Fecha</span>
+<div class="pn-field rs-fechas" data-fechas hidden>
+    <span class="pn-label">Fecha</span>
     <div class="rs-fechas__lista" data-fechas-lista role="radiogroup" aria-label="Fecha"></div>
-    <p class="ad-help" data-fechas-ayuda>Elegí primero la clase.</p>
+    <p class="pn-help" data-fechas-ayuda>Elegí primero la clase.</p>
 </div>

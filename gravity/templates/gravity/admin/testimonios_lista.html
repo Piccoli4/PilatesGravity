@@ -3,50 +3,50 @@
 {% block title %}Testimonios{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Testimonios</h1>
-        <p class="ad-head__sub">Los aprobados se muestran en «El estudio» con el nombre y la inicial del apellido.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Testimonios</h1>
+        <p class="pn-head__sub">Los aprobados se muestran en «El estudio» con el nombre y la inicial del apellido.</p>
     </div>
 </header>
 
-<form method="get" class="ad-filters" role="search">
+<form method="get" class="pn-filters" role="search">
     <input type="hidden" name="estado" value="{{ estado_filtro }}">
-    <label class="ad-search">
-        <span class="ad-sr">Buscar alumno</span>
+    <label class="pn-search">
+        <span class="pn-sr">Buscar alumno</span>
         {% include 'gravity/admin/_icono.html' with i='buscar' %}
-        <input class="ad-input" type="search" name="busqueda" value="{{ busqueda_filtro }}" placeholder="Buscar alumno" autocomplete="off">
+        <input class="pn-input" type="search" name="busqueda" value="{{ busqueda_filtro }}" placeholder="Buscar alumno" autocomplete="off">
     </label>
-    <nav class="ad-chips" aria-label="Estado">
-        <a class="ad-chip{% if not estado_filtro %} is-active{% endif %}" href="?">Todos</a>
-        <a class="ad-chip{% if estado_filtro == 'pendientes' %} is-active{% endif %}" href="?estado=pendientes">Para revisar <span class="ad-chip__count">{{ total_pendientes }}</span></a>
-        <a class="ad-chip{% if estado_filtro == 'aprobados' %} is-active{% endif %}" href="?estado=aprobados">Publicados <span class="ad-chip__count">{{ total_aprobados }}</span></a>
+    <nav class="pn-chips" aria-label="Estado">
+        <a class="pn-chip{% if not estado_filtro %} is-active{% endif %}" href="?">Todos</a>
+        <a class="pn-chip{% if estado_filtro == 'pendientes' %} is-active{% endif %}" href="?estado=pendientes">Para revisar <span class="pn-chip__count">{{ total_pendientes }}</span></a>
+        <a class="pn-chip{% if estado_filtro == 'aprobados' %} is-active{% endif %}" href="?estado=aprobados">Publicados <span class="pn-chip__count">{{ total_aprobados }}</span></a>
     </nav>
 </form>
 
 {% if testimonios %}
 <div class="so-lista">
     {% for t in testimonios %}
-    <article class="ad-card so-item">
-        <div class="ad-card__body">
+    <article class="pn-card so-item">
+        <div class="pn-card__body">
             <div class="so-item__head">
                 {% include 'gravity/admin/_avatar.html' with persona=t.usuario %}
                 <div class="so-item__quien">
                     <a class="so-item__nombre" href="{% url 'gravity:admin_usuario_detalle' t.usuario.id %}">{{ t.usuario.get_full_name|default:t.usuario.username }}</a>
                     <span class="so-item__fecha">Escrito o editado el {{ t.fecha_actualizacion|date:"d/m/Y" }}{% if not t.usuario.is_active %} · cuenta inactiva (no se muestra){% endif %}</span>
                 </div>
-                <span class="ad-badge ad-badge--{% if t.aprobado %}ok{% else %}warn{% endif %}">{% if t.aprobado %}Publicado{% else %}Para revisar{% endif %}</span>
+                <span class="pn-badge pn-badge--{% if t.aprobado %}ok{% else %}warn{% endif %}">{% if t.aprobado %}Publicado{% else %}Para revisar{% endif %}</span>
             </div>
             <blockquote class="te-texto">{{ t.texto|linebreaksbr }}</blockquote>
             <div class="so-acciones">
                 {% if t.aprobado %}
-                <form method="post" action="{% url 'gravity:admin_testimonio_rechazar' t.id %}">{% csrf_token %}<button type="submit" class="ad-btn ad-btn--sm ad-btn--ghost">Despublicar</button></form>
+                <form method="post" action="{% url 'gravity:admin_testimonio_rechazar' t.id %}">{% csrf_token %}<button type="submit" class="pn-btn pn-btn--sm pn-btn--ghost">Despublicar</button></form>
                 {% else %}
-                <form method="post" action="{% url 'gravity:admin_testimonio_aprobar' t.id %}">{% csrf_token %}<button type="submit" class="ad-btn ad-btn--sm">Publicar</button></form>
+                <form method="post" action="{% url 'gravity:admin_testimonio_aprobar' t.id %}">{% csrf_token %}<button type="submit" class="pn-btn pn-btn--sm">Publicar</button></form>
                 {% endif %}
                 <form method="post" action="{% url 'gravity:admin_testimonio_eliminar' t.id %}"
                       data-confirm="Se borra el testimonio de {{ t.usuario.first_name|default:t.usuario.username }}. No se puede deshacer; el alumno puede escribir otro." data-confirm-titulo="¿Eliminar el testimonio?" data-confirm-boton="Eliminar" data-confirm-peligro>
-                    {% csrf_token %}<button type="submit" class="ad-btn ad-btn--sm ad-btn--danger-ghost">Eliminar</button>
+                    {% csrf_token %}<button type="submit" class="pn-btn pn-btn--sm pn-btn--danger-ghost">Eliminar</button>
                 </form>
             </div>
         </div>
@@ -54,11 +54,11 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='testimonio' %}
-        <p class="ad-empty__title">No hay testimonios para mostrar</p>
-        <p class="ad-empty__text">Los alumnos los escriben desde su espacio.</p>
+        <p class="pn-empty__title">No hay testimonios para mostrar</p>
+        <p class="pn-empty__text">Los alumnos los escriben desde su espacio.</p>
     </div>
 </div>
 {% endif %}

@@ -59,7 +59,7 @@
         if (total) {
             const n = document.querySelectorAll('[data-as-alumno].is-no-vino').length;
             total.textContent = n;
-            total.closest('[data-as-kpi]').classList.toggle('ad-kpi--danger', n > 0);
+            total.closest('[data-as-kpi]').classList.toggle('pn-kpi--danger', n > 0);
         }
     }
 
@@ -70,8 +70,8 @@
         fila.querySelector('[data-as-marca]').hidden = !noVino;
         form.querySelector('input[name="marcar"]').value = noVino ? '0' : '1';
         boton.textContent = noVino ? 'Deshacer' : 'No vino';
-        boton.classList.toggle('ad-btn--ghost', noVino);
-        boton.classList.toggle('ad-btn--danger-ghost', !noVino);
+        boton.classList.toggle('pn-btn--ghost', noVino);
+        boton.classList.toggle('pn-btn--danger-ghost', !noVino);
         boton.setAttribute('aria-label', noVino ? 'Deshacer: ' + nombre + ' vino' : 'Marcar que ' + nombre + ' no vino');
         actualizarClase(fila.closest('.as-clase'));
     }

@@ -10,7 +10,7 @@ Recibe `alumnos` (de gravity/hoy.py: clases_del_dia). Lo usan "Hoy" y el detalle
             <a href="{{ a.url }}" class="hy-alumno__nombre">{{ a.nombre }}</a>
             {% if a.marcas %}
             <span class="hy-alumno__marcas">
-                {% for texto, tono in a.marcas %}<span class="ad-badge ad-badge--{{ tono }}">{{ texto }}</span>{% endfor %}
+                {% for texto, tono in a.marcas %}<span class="pn-badge pn-badge--{{ tono }}">{{ texto }}</span>{% endfor %}
             </span>
             {% endif %}
         </span>

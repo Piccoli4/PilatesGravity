@@ -4,33 +4,33 @@
 {% block title %}Solicitudes de plan{% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <h1 class="ad-head__title">Solicitudes de plan</h1>
-        <p class="ad-head__sub">Altas y cambios de plan que piden los alumnos desde su espacio.</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <h1 class="pn-head__title">Solicitudes de plan</h1>
+        <p class="pn-head__sub">Altas y cambios de plan que piden los alumnos desde su espacio.</p>
     </div>
 </header>
 
-<form method="get" class="ad-filters" role="search">
+<form method="get" class="pn-filters" role="search">
     <input type="hidden" name="estado" value="{{ estado_filtro }}">
-    <label class="ad-search">
-        <span class="ad-sr">Buscar alumno</span>
+    <label class="pn-search">
+        <span class="pn-sr">Buscar alumno</span>
         {% include 'gravity/admin/_icono.html' with i='buscar' %}
-        <input class="ad-input" type="search" name="busqueda" value="{{ busqueda_filtro }}" placeholder="Buscar alumno" autocomplete="off">
+        <input class="pn-input" type="search" name="busqueda" value="{{ busqueda_filtro }}" placeholder="Buscar alumno" autocomplete="off">
     </label>
-    <nav class="ad-chips" aria-label="Estado">
-        <a class="ad-chip{% if estado_filtro == 'pendiente' %} is-active{% endif %}" href="?estado=pendiente">Pendientes <span class="ad-chip__count">{{ total_pendientes }}</span></a>
-        <a class="ad-chip{% if estado_filtro == 'aprobada' %} is-active{% endif %}" href="?estado=aprobada">Aprobadas <span class="ad-chip__count">{{ total_aprobadas }}</span></a>
-        <a class="ad-chip{% if estado_filtro == 'rechazada' %} is-active{% endif %}" href="?estado=rechazada">Rechazadas <span class="ad-chip__count">{{ total_rechazadas }}</span></a>
-        <a class="ad-chip{% if estado_filtro == 'todas' %} is-active{% endif %}" href="?estado=todas">Todas</a>
+    <nav class="pn-chips" aria-label="Estado">
+        <a class="pn-chip{% if estado_filtro == 'pendiente' %} is-active{% endif %}" href="?estado=pendiente">Pendientes <span class="pn-chip__count">{{ total_pendientes }}</span></a>
+        <a class="pn-chip{% if estado_filtro == 'aprobada' %} is-active{% endif %}" href="?estado=aprobada">Aprobadas <span class="pn-chip__count">{{ total_aprobadas }}</span></a>
+        <a class="pn-chip{% if estado_filtro == 'rechazada' %} is-active{% endif %}" href="?estado=rechazada">Rechazadas <span class="pn-chip__count">{{ total_rechazadas }}</span></a>
+        <a class="pn-chip{% if estado_filtro == 'todas' %} is-active{% endif %}" href="?estado=todas">Todas</a>
     </nav>
 </form>
 
 {% if solicitudes %}
 <div class="so-lista">
     {% for s in solicitudes %}
-    <article class="ad-card so-item">
-        <div class="ad-card__body">
+    <article class="pn-card so-item">
+        <div class="pn-card__body">
             <div class="so-item__head">
                 {% include 'gravity/admin/_avatar.html' with persona=s.usuario %}
                 <div class="so-item__quien">
@@ -38,9 +38,9 @@
                     <span class="so-item__fecha">Pidió el {{ s.fecha_solicitud|date:"d/m/Y H:i" }}</span>
                 </div>
                 {% if s.estado == 'pendiente' %}
-                    {% if not s.plan_actual %}<span class="ad-badge">Alta</span>{% elif s.es_upgrade %}<span class="ad-badge ad-badge--ok">Sube</span>{% elif s.es_downgrade %}<span class="ad-badge ad-badge--warn">Baja</span>{% endif %}
+                    {% if not s.plan_actual %}<span class="pn-badge">Alta</span>{% elif s.es_upgrade %}<span class="pn-badge pn-badge--ok">Sube</span>{% elif s.es_downgrade %}<span class="pn-badge pn-badge--warn">Baja</span>{% endif %}
                 {% else %}
-                    <span class="ad-badge ad-badge--{% if s.estado == 'aprobada' %}ok{% else %}muted{% endif %}">{{ s.get_estado_display }}</span>
+                    <span class="pn-badge pn-badge--{% if s.estado == 'aprobada' %}ok{% else %}muted{% endif %}">{{ s.get_estado_display }}</span>
                 {% endif %}
             </div>
 
@@ -63,15 +63,15 @@
                 <form method="post" action="{% url 'gravity:admin_solicitud_plan_aprobar' s.id %}"
                       data-confirm="{{ s.usuario.first_name|default:s.usuario.username }} pasa al plan {{ s.plan_solicitado.nombre }}{% if s.reservas_a_cancelar.all %} y se liberan los horarios que eligió{% endif %}. La cuota del mes se ajusta y le avisamos por email." data-confirm-titulo="{% if s.plan_actual %}¿Aprobar el cambio?{% else %}¿Aprobar el plan?{% endif %}" data-confirm-boton="Aprobar">
                     {% csrf_token %}
-                    <button type="submit" class="ad-btn ad-btn--sm">Aprobar</button>
+                    <button type="submit" class="pn-btn pn-btn--sm">Aprobar</button>
                 </form>
                 <details class="so-rechazo">
-                    <summary class="ad-btn ad-btn--sm ad-btn--danger-ghost">Rechazar</summary>
+                    <summary class="pn-btn pn-btn--sm pn-btn--danger-ghost">Rechazar</summary>
                     <form method="post" action="{% url 'gravity:admin_solicitud_plan_rechazar' s.id %}" class="so-rechazo__form">
                         {% csrf_token %}
-                        <label class="ad-label" for="motivo-{{ s.id }}">Motivo <small>(opcional; le llega por email)</small></label>
-                        <textarea class="ad-textarea" name="motivo_rechazo" id="motivo-{{ s.id }}" rows="2" maxlength="500"></textarea>
-                        <button type="submit" class="ad-btn ad-btn--sm ad-btn--danger">Rechazar solicitud</button>
+                        <label class="pn-label" for="motivo-{{ s.id }}">Motivo <small>(opcional; le llega por email)</small></label>
+                        <textarea class="pn-textarea" name="motivo_rechazo" id="motivo-{{ s.id }}" rows="2" maxlength="500"></textarea>
+                        <button type="submit" class="pn-btn pn-btn--sm pn-btn--danger">Rechazar solicitud</button>
                     </form>
                 </details>
             </div>
@@ -83,11 +83,11 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="ad-card">
-    <div class="ad-empty">
+<div class="pn-card">
+    <div class="pn-empty">
         {% include 'gravity/admin/_icono.html' with i='solicitud' %}
-        <p class="ad-empty__title">{% if estado_filtro == 'pendiente' %}No hay solicitudes pendientes{% else %}No hay solicitudes para mostrar{% endif %}</p>
-        <p class="ad-empty__text">Cuando un alumno pide un plan o un cambio desde su espacio, aparece acá.</p>
+        <p class="pn-empty__title">{% if estado_filtro == 'pendiente' %}No hay solicitudes pendientes{% else %}No hay solicitudes para mostrar{% endif %}</p>
+        <p class="pn-empty__text">Cuando un alumno pide un plan o un cambio desde su espacio, aparece acá.</p>
     </div>
 </div>
 {% endif %}

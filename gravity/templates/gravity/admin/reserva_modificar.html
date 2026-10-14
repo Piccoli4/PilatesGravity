@@ -8,11 +8,11 @@
 {% endblock %}
 
 {% block content %}
-<header class="ad-head">
-    <div class="ad-head__text">
-        <a class="ad-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
-        <h1 class="ad-head__title">Cambiar {% if puntual %}{% if reserva.es_recupero %}recupero{% else %}clase única{% endif %}{% else %}horario fijo{% endif %}</h1>
-        <p class="ad-head__sub">{{ reserva.get_nombre_completo_usuario }}</p>
+<header class="pn-head">
+    <div class="pn-head__text">
+        <a class="pn-back" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver</a>
+        <h1 class="pn-head__title">Cambiar {% if puntual %}{% if reserva.es_recupero %}recupero{% else %}clase única{% endif %}{% else %}horario fijo{% endif %}</h1>
+        <p class="pn-head__sub">{{ reserva.get_nombre_completo_usuario }}</p>
     </div>
 </header>
 
@@ -20,8 +20,8 @@
     {% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
-    <section class="ad-card">
-        <div class="ad-card__body rs-actual">
+    <section class="pn-card">
+        <div class="pn-card__body rs-actual">
             <span class="hy-clase__hora">{{ reserva.clase.horario|time:"H:i" }}</span>
             <div>
                 <p class="rs-actual__titulo">Ahora: {{ reserva.clase.get_nombre_display }} · {{ reserva.clase.dia }}{% if puntual %} {{ reserva.fecha_unica|date:"d/m" }}{% endif %}</p>
@@ -30,28 +30,28 @@
         </div>
     </section>
 
-    <section class="ad-card">
-        <div class="ad-card__head">
+    <section class="pn-card">
+        <div class="pn-card__head">
             <div>
-                <h2 class="ad-card__title">Nueva clase</h2>
-                <p class="ad-card__sub">{% if puntual %}Elegí la clase y la fecha.{% else %}Pasa a ese horario todas las semanas. No se mira el límite del plan, sí el cupo.{% endif %}</p>
+                <h2 class="pn-card__title">Nueva clase</h2>
+                <p class="pn-card__sub">{% if puntual %}Elegí la clase y la fecha.{% else %}Pasa a ese horario todas las semanas. No se mira el límite del plan, sí el cupo.{% endif %}</p>
             </div>
         </div>
-        <div class="ad-card__body ad-form">
+        <div class="pn-card__body pn-form">
             {% include 'gravity/admin/_selector_clase.html' with campo='nueva_clase' elegida=elegida modo=puntual|yesno:'puntual,fijo' fecha=reserva.fecha_unica|date:'Y-m-d' %}
         </div>
     </section>
 
     <div class="cl-form__acciones">
         {% if reserva.usuario.email %}
-        <label class="ad-check">
+        <label class="pn-check">
             <input type="checkbox" name="notificar_usuario" checked>
-            <span class="ad-check__text">Avisarle el cambio por email<small>{{ reserva.usuario.email }}</small></span>
+            <span class="pn-check__text">Avisarle el cambio por email<small>{{ reserva.usuario.email }}</small></span>
         </label>
         {% else %}<span></span>{% endif %}
-        <div class="ad-form__actions">
-            <a class="ad-btn ad-btn--ghost" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">Cancelar</a>
-            <button type="submit" class="ad-btn" data-loading-text="Guardando...">Guardar cambio</button>
+        <div class="pn-form__actions">
+            <a class="pn-btn pn-btn--ghost" href="{% if next %}{{ next }}{% else %}{% url 'gravity:admin_usuario_detalle' reserva.usuario.id %}{% endif %}">Cancelar</a>
+            <button type="submit" class="pn-btn" data-loading-text="Guardando...">Guardar cambio</button>
         </div>
     </div>
 </form>
