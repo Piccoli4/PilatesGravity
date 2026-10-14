@@ -64,7 +64,7 @@
                     <tbody>
                         {% for d in deudas %}
                         <tr>
-                            <td class="pn-table__main">{{ d.mes_año|date:"F Y"|capfirst }}{% if d.es_medio_mes %} <span class="pn-badge pn-badge--muted pn-badge--plain">Medio mes</span>{% endif %}</td>
+                            <td class="pn-table__main"><span class="pn-nowrap">{{ d.mes_año|date:"F Y"|capfirst }}</span>{% if d.es_medio_mes %} <span class="pn-badge pn-badge--muted pn-badge--plain">Medio mes</span>{% endif %}</td>
                             <td data-label="Plan">{{ d.plan_aplicado.nombre|default:"—" }}</td>
                             <td data-label="Se cobra" class="pn-num">${{ d.monto_original|pesos }}</td>
                             <td data-label="Sin pagar" class="pn-num">${{ d.monto_pendiente|pesos }}</td>
@@ -97,11 +97,11 @@
                     <tbody>
                         {% for p in pagos %}
                         <tr>
-                            <td class="pn-table__main">{{ p.fecha_pago|date:"d/m/Y" }}{% if p.estado == 'rechazado' %} <span class="pn-badge pn-badge--danger">Anulado</span>{% elif p.estado == 'pendiente' %} <span class="pn-badge pn-badge--warn">Sin confirmar</span>{% endif %}</td>
+                            <td class="pn-table__main"><span class="pn-nowrap">{{ p.fecha_pago|date:"d/m/Y" }}</span>{% if p.estado == 'rechazado' %} <span class="pn-badge pn-badge--danger">Anulado</span>{% elif p.estado == 'pendiente' %} <span class="pn-badge pn-badge--warn">Sin confirmar</span>{% endif %}</td>
                             <td data-label="Monto" class="pn-num{% if p.estado == 'rechazado' %} pg-tachado{% endif %}">${{ p.monto|pesos }}</td>
-                            <td data-label="Forma">{{ p.get_tipo_pago_display }}</td>
+                            <td data-label="Forma" class="pn-nowrap">{{ p.get_tipo_pago_display }}</td>
                             <td data-label="Concepto">{{ p.concepto|truncatechars:40 }}</td>
-                            <td data-label="Cargó">{% if p.registrado_por %}{{ p.registrado_por.first_name|default:p.registrado_por.username }}{% else %}—{% endif %}</td>
+                            <td data-label="Cargó" class="pn-nowrap">{% if p.registrado_por %}{{ p.registrado_por.first_name|default:p.registrado_por.username }}{% else %}—{% endif %}</td>
                             {% if puede_corregir %}
                             <td class="pn-table__actions">
                                 {% if p.estado != 'rechazado' %}

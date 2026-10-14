@@ -1748,6 +1748,9 @@ a.rp-celda:hover { filter: brightness(0.97); }
     .pn-table tbody tr:last-child td { border-bottom: 0; }
     .pn-table tbody tr:hover td { background: var(--pn-soft); }
     .pn-table .pn-num { text-align: right; }
+    /* En tabla las palabras no se parten: "anywhere" deja achicar la columna a una letra */
+    .pn-table td { overflow-wrap: break-word; }
+    .pn-table .pn-num, .pn-table .pn-nowrap { white-space: nowrap; }
     .pn-card > .pn-table-wrap { padding: 4px 6px 6px; overflow-x: auto; }
 }
 
