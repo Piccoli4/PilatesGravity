@@ -35,7 +35,13 @@
     <div class="g-nav__actions">
         {% if user.is_authenticated %}
             <a href="{% url 'accounts:profile' %}" class="g-nav__user" title="Mi perfil">
-                <span class="g-nav__avatar">{{ user.first_name|default:user.username|first|upper }}</span>
+                {% with avatar=user.profile.avatar %}
+                    {% if avatar %}
+                        <span class="g-nav__avatar"><img src="{{ avatar.url }}" alt=""></span>
+                    {% else %}
+                        <span class="g-nav__avatar">{{ user.first_name|default:user.username|first|upper }}</span>
+                    {% endif %}
+                {% endwith %}
                 <span>Hola, {{ user.first_name|default:user.username }}</span>
             </a>
             <a href="{% url 'gravity:reservar_clase' %}" class="g-btn g-btn--primary g-btn--sm">Reservar</a>
