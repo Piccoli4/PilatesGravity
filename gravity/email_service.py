@@ -369,7 +369,7 @@ def crear_email_bienvenida_texto_plano(context):
 
         NUESTRAS SEDES:
         • Sede Principal: La Rioja 3044, Capital, Santa Fe
-        • Sede 2: 9 de julio 3696, Capital, Santa Fe
+        • Sede 2: 9 de Julio 3696, Capital, Santa Fe
 
         CONTACTO:
         📞 +54 342 511 4448
@@ -450,7 +450,7 @@ def enviar_email_confirmacion_pago_completo(pago):
             f"  Saldo anterior: ${saldo_anterior}\n"
             f"  Pago recibido:  +${pago.monto}\n"
             f"  Saldo actual:   {estado_saldo}\n\n"
-            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe\n"
             f"pilatesgravity@gmail.com · +54 342 511 4448"
         )
 
@@ -537,7 +537,7 @@ def crear_email_pago_texto_plano(context):
         🕘 Lunes a Viernes 8:00 - 20:00
 
         🏢 Sede 2
-        📍 9 de julio 3696, Capital, Santa Fe
+        📍 9 de Julio 3696, Capital, Santa Fe
         📞 +54 342 511 4448
         🕘 Lunes a Viernes 8:00 - 20:00
 
@@ -555,7 +555,7 @@ def crear_email_pago_texto_plano(context):
         💙 El equipo completo de Pilates Gravity
 
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
+        🏢 Sede 2: 9 de Julio 3696, Capital, Santa Fe
         📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
 
         Este es un comprobante automático. Conserva este email como
@@ -769,7 +769,7 @@ def crear_email_reserva_texto_plano(context):
         👩‍🏫 Nicolás, Camila y nuestros instructores
 
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
+        🏢 Sede 2: 9 de Julio 3696, Capital, Santa Fe
         📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
     """
     
@@ -845,7 +845,7 @@ def enviar_email_despedida_completo(usuario):
             f"  Tiempo con nosotros: {estadisticas.get('tiempo_texto', '-')}\n"
             f"  Clase favorita: {estadisticas.get('clase_favorita', 'Pilates')}\n\n"
             f"Cuando quieras volver, acá vamos a estar: {domain_url}\n\n"
-            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe\n"
             f"pilatesgravity@gmail.com · +54 342 511 4448"
         )
 
@@ -856,7 +856,6 @@ def enviar_email_despedida_completo(usuario):
             to=[usuario.email],
         )
         email.attach_alternative(html_message, 'text/html')
-        _adjuntar_imagenes_inline(email)
         email.send(fail_silently=False)
 
         logger.info(f"Email de despedida enviado a {usuario.email}")
@@ -1083,12 +1082,12 @@ def crear_email_recordatorio_texto_plano(context):
     else:
         texto_plano += f"""
             🏢 Sede 2
-            📍 9 de julio 3696, Capital, Santa Fe
+            📍 9 de Julio 3696, Capital, Santa Fe
             📞 +54 342 511 4448
             🚗 Estacionamiento disponible en la zona
-            🚌 Acceso por 9 de julio - Buena conectividad
+            🚌 Acceso por 9 de Julio - Buena conectividad
             ⏰ Atención: Lun-Vie 8:00-20:00 | Sáb 9:00-13:00
-            🚪 Entrada por 9 de julio - Edificio identificado
+            🚪 Entrada por 9 de Julio - Edificio identificado
         """
 
     texto_plano += f"""
@@ -1135,7 +1134,7 @@ def crear_email_recordatorio_texto_plano(context):
         💙 Todo el equipo de Pilates Gravity
         👩‍🏫 Nicolás, Camila y nuestros increíbles instructores
 
-        🏢 Sede Principal: La Rioja 3044 | Sede 2: 9 de julio 3696
+        🏢 Sede Principal: La Rioja 3044 | Sede 2: 9 de Julio 3696
         📧 pilatesgravity@gmail.com | 📱 +54 342 511 4448
 
         Este recordatorio se envía automáticamente 24h antes de tu clase.
@@ -1239,7 +1238,7 @@ def crear_email_despedida_texto_plano(context):
 
         NUESTRAS PUERTAS SIEMPRE ESTARÁN ABIERTAS:
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
+        🏢 Sede 2: 9 de Julio 3696, Capital, Santa Fe
         📱 WhatsApp: +54 342 511 4448
 
         MENSAJE DEL EQUIPO:
@@ -1549,7 +1548,7 @@ def crear_email_recordatorio_completo_texto_plano(context):
         """
     else:
         texto_plano += """
-            🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
+            🏢 Sede 2: 9 de Julio 3696, Capital, Santa Fe
             📞 Teléfono: +54 342 511 4448
             🕐 Horarios: Lun-Vie 8:00-20:00 | Sáb 9:00-13:00
             🚗 Estacionamiento disponible en la zona
@@ -1596,7 +1595,7 @@ def crear_email_recordatorio_completo_texto_plano(context):
         📧 pilatesgravity@gmail.com
         📱 +54 342 511 4448
         🏢 Sede Principal: La Rioja 3044, Capital, Santa Fe
-        🏢 Sede 2: 9 de julio 3696, Capital, Santa Fe
+        🏢 Sede 2: 9 de Julio 3696, Capital, Santa Fe
 
         Este es un recordatorio automático. Si no deseas recibir estos emails,
         puedes desactivar las notificaciones en tu perfil.
@@ -2164,7 +2163,7 @@ def enviar_email_cumpleanios(usuario):
             f"Te esperamos en el estudio cuando quieras.\n\n"
             f"Con afecto,\n"
             f"El equipo de Pilates Gravity\n\n"
-            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe\n"
             f"{domain_url}"
         )
 
@@ -2238,7 +2237,7 @@ def enviar_email_modificacion_reserva(reserva, clase_anterior):
             f"NUEVA CLASE:\n"
             f"  {reserva.clase.get_nombre_display()} — {reserva.clase.dia} "
             f"a las {reserva.clase.horario.strftime('%H:%M')} en {reserva.clase.get_direccion_corta()}\n\n"
-            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe\n"
             f"pilatesgravity@gmail.com · +54 342 511 4448"
         )
 
@@ -2298,7 +2297,7 @@ def enviar_email_cambio_plan_aprobado(solicitud):
             f"Clases por semana: {plan_nuevo.clases_por_semana}\n"
             f"Precio mensual: ${plan_nuevo.precio_mensual}\n\n"
             f"Ya podés reservar tus clases según tu nuevo plan.\n\n"
-            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe\n"
             f"pilatesgravity@gmail.com · +54 342 511 4448"
         )
 
@@ -2315,7 +2314,7 @@ def enviar_email_cambio_plan_aprobado(solicitud):
             <p>Ya podés reservar tus clases según tu nuevo plan.</p>
             <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;">
             <p style="font-size: 12px; color: #888;">
-                Pilates Gravity · La Rioja 3044 y 9 de Julio 3698, Santa Fe<br>
+                Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe<br>
                 pilatesgravity@gmail.com · +54 342 511 4448
             </p>
         </div>
@@ -2338,4 +2337,63 @@ def enviar_email_cambio_plan_aprobado(solicitud):
 
     except Exception as e:
         logger.error(f"Error enviando email de cambio de plan aprobado (solicitud {solicitud.id}): {str(e)}")
+        return False
+
+
+def enviar_email_solicitud_rechazada(solicitud):
+    """
+    Avisa al alumno que su solicitud de plan no se aprobó: su plan y sus horarios
+    siguen igual. Incluye el motivo si el estudio lo escribió.
+    """
+    from django.utils.html import escape
+
+    try:
+        usuario = solicitud.usuario
+        if not usuario.email:
+            return False
+        nombre = usuario.first_name or usuario.username
+        pedido = solicitud.plan_solicitado.nombre if solicitud.plan_solicitado else 'el plan que pediste'
+        actual = (f'Seguís con tu plan "{solicitud.plan_actual.nombre}" y tus horarios no cambian.'
+                  if solicitud.plan_actual else 'Tu cuenta sigue sin plan por ahora.')
+        motivo = (solicitud.observaciones or '').strip()
+
+        text_message = (
+            f"Hola {nombre},\n\n"
+            f"Revisamos tu pedido de pasar a \"{pedido}\" y esta vez no lo pudimos aprobar.\n"
+            + (f"Motivo: {motivo}\n" if motivo else "")
+            + f"\n{actual}\n\n"
+            f"Si tenés dudas o querés buscar otra opción, escribinos por WhatsApp.\n\n"
+            f"Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe\n"
+            f"pilatesgravity@gmail.com · +54 342 511 4448"
+        )
+        bloque_motivo = (
+            f'<p style="margin:16px 0;padding:12px 14px;border-radius:12px;background:#F8EFE5;">'
+            f'<strong>Motivo:</strong> {escape(motivo)}</p>' if motivo else ''
+        )
+        html_message = f"""
+        <div style="font-family: Arial, sans-serif; color: #2F3B47; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #5D768B;">Sobre tu pedido de cambio de plan</h2>
+            <p>Hola {escape(nombre)},</p>
+            <p>Revisamos tu pedido de pasar a <strong>{escape(pedido)}</strong> y esta vez no lo pudimos aprobar.</p>
+            {bloque_motivo}
+            <p>{escape(actual)}</p>
+            <p>Si tenés dudas o querés buscar otra opción, escribinos por WhatsApp al +54 342 511 4448.</p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;">
+            <p style="font-size: 12px; color: #888;">
+                Pilates Gravity · La Rioja 3044 y 9 de Julio 3696, Santa Fe<br>
+                pilatesgravity@gmail.com · +54 342 511 4448
+            </p>
+        </div>
+        """
+        email = EmailMultiAlternatives(
+            subject='Sobre tu pedido de cambio de plan - Pilates Gravity',
+            body=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[usuario.email],
+        )
+        email.attach_alternative(html_message, 'text/html')
+        email.send(fail_silently=False)
+        return True
+    except Exception as e:
+        logger.error(f"Error enviando el rechazo de la solicitud {solicitud.id}: {e}")
         return False

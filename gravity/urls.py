@@ -2,20 +2,19 @@ from django.urls import path
 from .views import (
     home, reservar_clase, conoce_mas, precios_publicos,
     dias_disponibles, horarios_disponibles,
-    verificar_disponibilidad, modificar_reserva,
+    modificar_reserva,
     reservar_recupero, reservar_cupo_temporal, marcar_vencimiento_visto,
     cancelar_reserva, cancelar_ausencia, buscar_reservas_usuario,
     clases_disponibles_api, clases_disponibles, detalle_reserva,
-    sedes_disponibles, cerrar_modal_reserva_exitosa, cerrar_modal_ausencia_registrada, 
+    cerrar_modal_reserva_exitosa, cerrar_modal_ausencia_registrada, 
     # IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_marcar_notificaciones_leidas, admin_clases_lista, admin_clase_crear,
     admin_clase_editar, admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
     admin_reservas_lista, admin_reservar_para_usuario, admin_reserva_cancelar, admin_reserva_modificar,
     admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note,
-    admin_agregar_usuario, admin_reportes, admin_reportes_exportar, admin_gestionar_admins, admin_crear_admin_restringido,
-    admin_eliminar_admin_restringido, admin_historial_actividad,
-    admin_asistencia, admin_asistencia_marcar, admin_asistencia_buscar_alumno, 
-    admin_asistencia_historial_alumno, admin_asistencia_ausencias,
+    admin_usuario_editar, admin_usuario_reenviar_invitacion,
+    admin_agregar_usuario, admin_reportes, admin_reportes_exportar, admin_historial_actividad,
+    admin_asistencia, admin_asistencia_marcar, admin_asistencia_ausencias,
     # IMPORTACIONES PARA SISTEMA DE PAGOS
     admin_pagos_registrar_pago, admin_pagos_vista_principal, admin_pagos_registrar_pago, 
     admin_pagos_historial_cliente, admin_pagos_configurar_planes, admin_pagos_editar_estado_cliente, 
@@ -32,13 +31,15 @@ from .views import (
     links,
 )
 from .views_horarios import (
-    # HORARIOS Y LIQUIDACIÓN DE PROFESORAS
+    # EQUIPO: ACCESOS, HORARIOS Y LIQUIDACIÓN DE PROFESORAS
+    admin_gestionar_admins, admin_equipo_sumar, admin_eliminar_admin_restringido, admin_equipo_reactivar,
+    admin_equipo_datos, admin_equipo_reenviar,
     admin_profesoras_lista, admin_profesora_detalle, admin_profesora_horario_agregar,
     admin_profesora_horario_eliminar, admin_profesora_valor_hora, admin_profesora_dia_editar,
     admin_profesora_ajuste_eliminar, admin_profesora_liquidar, admin_profesora_liquidacion_anular,
     mis_horarios,
 )
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 
 app_name = 'gravity'
 
@@ -69,10 +70,8 @@ urlpatterns = [
     path('terminos_condiciones/', TemplateView.as_view(template_name='gravity/terminos_condiciones.html'), name='terminos_condiciones'),
 
     # API endpoints para AJAX
-    path('api/sedes-disponibles/', sedes_disponibles, name='sedes_disponibles'),
     path('api/dias-disponibles/', dias_disponibles, name='dias_disponibles'),
     path('api/horarios-disponibles/', horarios_disponibles, name='horarios_disponibles'),
-    path('api/verificar-disponibilidad/', verificar_disponibilidad, name='verificar_disponibilidad'),
     path('api/clases-disponibles/', clases_disponibles_api, name='clases_disponibles_api'),
 
     # ==============================================================================
@@ -106,14 +105,14 @@ urlpatterns = [
     path('admin-panel/usuarios/<int:usuario_id>/', admin_usuario_detalle, name='admin_usuario_detalle'),
     path('admin-panel/usuarios/<int:usuario_id>/toggle-status/', admin_usuario_toggle_status, name='admin_usuario_toggle_status'),
     path('admin-panel/usuarios/<int:usuario_id>/add-note/', admin_usuario_add_note, name='admin_usuario_add_note'),
+    path('admin-panel/usuarios/<int:usuario_id>/editar/', admin_usuario_editar, name='admin_usuario_editar'),
+    path('admin-panel/usuarios/<int:usuario_id>/invitacion/', admin_usuario_reenviar_invitacion, name='admin_usuario_reenviar_invitacion'),
     
     # # Agregar usuarios al sistema
     path('admin-panel/agregar-cliente/', admin_agregar_usuario, name='admin_agregar_usuario'),
 
-    # Gestión de administradores restringidos (solo superadmins)
+    # Dirección vieja de los accesos del equipo (ahora en Equipo)
     path('admin-panel/admins/', admin_gestionar_admins, name='admin_gestionar_admins'),
-    path('admin-panel/admins/crear/', admin_crear_admin_restringido, name='admin_crear_admin_restringido'),
-    path('admin-panel/admins/<int:admin_id>/eliminar/', admin_eliminar_admin_restringido, name='admin_eliminar_admin_restringido'),
     
     # Historial de actividad
     path('admin-panel/historial/', admin_historial_actividad, name='admin_historial_actividad'),
@@ -123,15 +122,23 @@ urlpatterns = [
     # ==============================================================================
 
     # Panel de superadministradores
-    path('admin-panel/profesoras/', admin_profesoras_lista, name='admin_profesoras_lista'),
-    path('admin-panel/profesoras/<int:profesora_id>/', admin_profesora_detalle, name='admin_profesora_detalle'),
-    path('admin-panel/profesoras/<int:profesora_id>/horario/agregar/', admin_profesora_horario_agregar, name='admin_profesora_horario_agregar'),
-    path('admin-panel/profesoras/<int:profesora_id>/horario/<int:bloque_id>/eliminar/', admin_profesora_horario_eliminar, name='admin_profesora_horario_eliminar'),
-    path('admin-panel/profesoras/<int:profesora_id>/valor-hora/', admin_profesora_valor_hora, name='admin_profesora_valor_hora'),
-    path('admin-panel/profesoras/<int:profesora_id>/dia/editar/', admin_profesora_dia_editar, name='admin_profesora_dia_editar'),
-    path('admin-panel/profesoras/<int:profesora_id>/ajustes/<int:ajuste_id>/eliminar/', admin_profesora_ajuste_eliminar, name='admin_profesora_ajuste_eliminar'),
-    path('admin-panel/profesoras/<int:profesora_id>/liquidar/', admin_profesora_liquidar, name='admin_profesora_liquidar'),
-    path('admin-panel/profesoras/<int:profesora_id>/liquidacion/<int:liquidacion_id>/anular/', admin_profesora_liquidacion_anular, name='admin_profesora_liquidacion_anular'),
+    path('admin-panel/equipo/', admin_profesoras_lista, name='admin_profesoras_lista'),
+    path('admin-panel/equipo/sumar/', admin_equipo_sumar, name='admin_equipo_sumar'),
+    path('admin-panel/equipo/<int:profesora_id>/', admin_profesora_detalle, name='admin_profesora_detalle'),
+    path('admin-panel/equipo/<int:admin_id>/quitar-acceso/', admin_eliminar_admin_restringido, name='admin_eliminar_admin_restringido'),
+    path('admin-panel/equipo/<int:profesora_id>/reactivar/', admin_equipo_reactivar, name='admin_equipo_reactivar'),
+    path('admin-panel/equipo/<int:profesora_id>/datos/', admin_equipo_datos, name='admin_equipo_datos'),
+    path('admin-panel/equipo/<int:profesora_id>/reenviar-invitacion/', admin_equipo_reenviar, name='admin_equipo_reenviar'),
+    path('admin-panel/equipo/<int:profesora_id>/horario/agregar/', admin_profesora_horario_agregar, name='admin_profesora_horario_agregar'),
+    path('admin-panel/equipo/<int:profesora_id>/horario/<int:bloque_id>/eliminar/', admin_profesora_horario_eliminar, name='admin_profesora_horario_eliminar'),
+    path('admin-panel/equipo/<int:profesora_id>/valor-hora/', admin_profesora_valor_hora, name='admin_profesora_valor_hora'),
+    path('admin-panel/equipo/<int:profesora_id>/dia/editar/', admin_profesora_dia_editar, name='admin_profesora_dia_editar'),
+    path('admin-panel/equipo/<int:profesora_id>/ajustes/<int:ajuste_id>/eliminar/', admin_profesora_ajuste_eliminar, name='admin_profesora_ajuste_eliminar'),
+    path('admin-panel/equipo/<int:profesora_id>/liquidar/', admin_profesora_liquidar, name='admin_profesora_liquidar'),
+    path('admin-panel/equipo/<int:profesora_id>/liquidacion/<int:liquidacion_id>/anular/', admin_profesora_liquidacion_anular, name='admin_profesora_liquidacion_anular'),
+    # Direcciones viejas de Profesoras (ahora Equipo)
+    path('admin-panel/profesoras/', RedirectView.as_view(pattern_name='gravity:admin_profesoras_lista', query_string=True)),
+    path('admin-panel/profesoras/<int:profesora_id>/', RedirectView.as_view(pattern_name='gravity:admin_profesora_detalle', query_string=True)),
 
     # Panel de la profesora
     path('admin-panel/mis-horarios/', mis_horarios, name='mis_horarios'),
@@ -139,8 +146,6 @@ urlpatterns = [
     # Registro de asistencias
     path('admin-panel/asistencia/', admin_asistencia, name='admin_asistencia'),
     path('admin-panel/asistencia/marcar/', admin_asistencia_marcar, name='admin_asistencia_marcar'),
-    path('admin-panel/asistencia/buscar-alumno/', admin_asistencia_buscar_alumno, name='admin_asistencia_buscar_alumno'),
-    path('admin-panel/asistencia/historial/<int:usuario_id>/', admin_asistencia_historial_alumno, name='admin_asistencia_historial_alumno'),
     path('admin-panel/asistencia/ausencias/', admin_asistencia_ausencias, name='admin_asistencia_ausencias'),
 
     # Reportes y estadísticas

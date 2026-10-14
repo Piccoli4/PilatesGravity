@@ -1,0 +1,10 @@
+{% comment %}
+Pestañas de Asistencia: Pasar lista · Faltas. Recibe `activa` ('lista' o 'faltas').
+{% endcomment %}<nav class="ad-tabs as-tabs" aria-label="Asistencia">
+    <a class="ad-tabs__item{% if activa == 'lista' %} is-active{% endif %}" href="{% url 'gravity:admin_asistencia' %}"{% if activa == 'lista' %} aria-current="page"{% endif %}>
+        {% include 'gravity/admin/_icono.html' with i='asistencia' %} Pasar lista
+    </a>
+    <a class="ad-tabs__item{% if activa == 'faltas' %} is-active{% endif %}" href="{% url 'gravity:admin_asistencia_ausencias' %}"{% if activa == 'faltas' %} aria-current="page"{% endif %}>
+        {% include 'gravity/admin/_icono.html' with i='ausencia' %} Faltas
+    </a>
+</nav>

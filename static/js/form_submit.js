@@ -1,7 +1,18 @@
 // Estado de carga en botones de envío + protección contra doble envío.
-// Se usa en el sitio público (templates/base.html, accounts/base.html) y en el panel
+// Se usa en el sitio público (templates/base.html y las páginas de cuenta) y en el panel
 // de administración (base_admin.html).
 (function () {
+
+    // Estilos propios del spinner: no dependen de Tailwind, así funciona igual en
+    // las páginas nuevas (gravity_ui / auth) y en las viejas.
+    const estilos = document.createElement('style');
+    estilos.textContent =
+        '.fs-loading{display:inline-flex;align-items:center;justify-content:center;gap:10px;position:relative;z-index:1}' +
+        '.fs-spin{flex:none;width:1.05em;height:1.05em;border-radius:50%;border:2px solid currentColor;' +
+        'border-right-color:transparent;opacity:.85;animation:fs-spin .7s linear infinite}' +
+        '@keyframes fs-spin{to{transform:rotate(360deg)}}' +
+        '@media (prefers-reduced-motion:reduce){.fs-spin{animation-duration:1.6s}}';
+    document.head.appendChild(estilos);
 
     function esPost(form) {
         return (form.getAttribute('method') || 'get').toLowerCase() === 'post';
@@ -54,16 +65,10 @@
         submitBtn.dataset.originalStyle = submitBtn.getAttribute('style') || '';
         submitBtn.disabled = true;
         submitBtn.style.opacity = '0.75';
-        submitBtn.style.cursor = 'not-allowed';
-        submitBtn.innerHTML = `
-            <span class="relative z-10 flex items-center justify-center">
-                <svg class="animate-spin w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                </svg>
-                ${loadingText}
-            </span>
-        `;
+        submitBtn.style.cursor = 'wait';
+        submitBtn.innerHTML =
+            '<span class="fs-loading"><span class="fs-spin" aria-hidden="true"></span>' +
+            '<span>' + loadingText + '</span></span>';
     });
 
     // Al volver con "atrás", el navegador puede restaurar la página desde caché

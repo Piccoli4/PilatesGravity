@@ -1,510 +1,154 @@
 {% extends 'gravity/admin/base_admin.html' %}
-
-{% block title %}Registro de Asistencia - Panel de Administración{% endblock %}
-
-{% block breadcrumb %}
-<li class="flex items-center">
-    <span class="text-gray-400">/</span>
-    <span class="ml-1 text-gray-500">Asistencia</span>
-</li>
-{% endblock %}
-
-{% block content %}
 {% load static %}
 
-<!-- Tabs Asistencia / Ausencias -->
-<div class="mb-4 flex gap-2">
-    <a href="{% url 'gravity:admin_asistencia' %}"
-        class="px-4 py-2 rounded-lg text-sm font-medium bg-principal text-white">
-        Diaria
-    </a>
-    <a href="{% url 'gravity:admin_asistencia_ausencias' %}"
-        class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-500 hover:bg-gray-50 border border-gray-200">
-        Ausencias
-    </a>
-</div>
+{% block title %}Asistencia{% endblock %}
 
-<!-- Header -->
-<div class="mb-4">
-    <div class="p-4 bg-blanco rounded-lg shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-2xl font-bold text-principal mb-2 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mb-1">
-                        <path fill-rule="evenodd"
-                            d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z"
-                            clip-rule="evenodd" />
-                        <path fill-rule="evenodd"
-                            d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 0 1 3 20.625V9.375Zm9.586 4.594a.75.75 0 0 0-1.172-.938l-2.476 3.096-.908-.907a.75.75 0 0 0-1.06 1.06l1.5 1.5a.75.75 0 0 0 1.116-.062l3-3.75Z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    Registro de Asistencia
-                </h2>
-                <p class="text-gray-500 text-sm mb-0">
-                    {% if es_historico %}
-                        Historial — {{ fecha_seleccionada|date:"l d/m/Y" }}
-                    {% else %}
-                        Marcá las inasistencias sin aviso para el día y sede seleccionados.
-                    {% endif %}
-                </p>
-            </div>
-            {% if clases_con_nomina %}
-            <div class="flex items-center gap-5 shrink-0">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-principal leading-none">{{ total_alumnos }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">alumno{{ total_alumnos|pluralize }}</div>
-                </div>
-                <div class="w-px h-8 bg-gray-200"></div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold {% if total_inasistentes > 0 %}text-red-500{% else %}text-green-500{% endif %} leading-none">{{ total_inasistentes }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">ausente{{ total_inasistentes|pluralize }} s/aviso</div>
-                </div>
-                <div class="w-px h-8 bg-gray-200"></div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-gray-700 leading-none">{{ clases_con_nomina|length }}</div>
-                    <div class="text-xs text-gray-400 mt-0.5">clase{{ clases_con_nomina|length|pluralize }}</div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
+{% block content %}
+<header class="ad-head">
+    <div class="ad-head__text">
+        <p class="ad-head__eyebrow">Asistencia</p>
+        <h1 class="ad-head__title">{% if es_hoy %}Hoy{% elif es_ayer %}Ayer{% else %}{{ fecha_larga }}{% endif %}</h1>
+        <p class="ad-head__sub">
+            {% if es_hoy or es_ayer %}{{ fecha_larga }} · {% endif %}
+            {% if es_futura %}Todavía no pasó: acá ves quiénes están anotados.
+            {% elif solo_lectura %}Solo para consultar.
+            {% else %}Todos vienen salvo que marques "No vino".{% endif %}
+        </p>
     </div>
-</div>
+</header>
 
-<!-- Filtros -->
-<div class="mb-4">
-    <div class="bg-blanco rounded-lg shadow-sm p-4">
-        <form method="get" id="filtros-form">
-            <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-end">
-                <!-- Selector de fecha con navegación -->
-                <div class="col-span-2 sm:flex-1 sm:min-w-0">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Fecha</label>
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" onclick="navegarFecha(-1)"
-                            class="flex-none w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-colors"
-                            title="Día anterior">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <input type="date"
-                            name="fecha"
-                            id="fecha-input"
-                            value="{{ fecha_seleccionada|date:'Y-m-d' }}"
-                            max="{{ hoy|date:'Y-m-d' }}"
-                            class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white"
-                            onchange="this.form.submit()">
-                        <button type="button" onclick="navegarFecha(1)"
-                            id="btn-siguiente"
-                            class="flex-none w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            title="Día siguiente"
-                            {% if not es_historico %}disabled{% endif %}>
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+{% include 'gravity/admin/_asistencia_tabs.html' with activa='lista' %}
 
-                <!-- Botón Hoy (solo cuando se está en historial) -->
-                {% if es_historico %}
-                <div class="col-span-1 sm:shrink-0 sm:self-end">
-                    <a href="?sede={{ sede_seleccionada }}"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 px-4 rounded-lg bg-principal text-white text-sm font-medium hover:bg-principal/90 transition-colors whitespace-nowrap">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        Hoy
-                    </a>
-                </div>
-                {% endif %}
-
-                <!-- Selector de sede -->
-                <div class="{% if es_historico %}col-span-1{% else %}col-span-2{% endif %} sm:flex-1 sm:min-w-0">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Sede</label>
-                    <select name="sede"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/50 bg-white"
-                        onchange="this.form.submit()">
-                        <option value="">Todas las sedes</option>
-                        {% for valor, etiqueta in sedes %}
-                        <option value="{{ valor }}" {% if valor == sede_seleccionada %}selected{% endif %}>{{ etiqueta }}s</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <!-- Indicador de historial -->
-            {% if es_historico %}
-            <div class="mt-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Historial — <strong>{{ fecha_seleccionada|date:"l d/m/Y" }}</strong></span>
-            </div>
-            {% endif %}
-        </form>
-    </div>
-</div>
-
-<!-- Resultado -->
-{% if not clases_con_nomina %}
-<div class="bg-blanco rounded-lg shadow-sm p-10 text-center text-gray-400">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-    </svg>
-    <p class="text-base font-medium text-gray-500">No hay clases programadas</p>
-    <p class="text-sm mt-1">No hay clases activas el <strong>{{ dia_nombre }}</strong>{% if sede_seleccionada %} en la sede seleccionada{% endif %}.</p>
-</div>
-{% else %}
-
-{% for item in clases_con_nomina %}
-<div class="bg-blanco rounded-lg shadow-sm mb-4 overflow-hidden">
-    <!-- Encabezado de clase -->
-    <div class="card-header flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer select-none"
-        onclick="toggleCard('clase-{{ forloop.counter }}')">
-        <div class="flex items-center gap-3">
-            {% if item.clase.tipo == 'Reformer' %}
-            <img src="{% static 'icons/reformer.png' %}" alt="Reformer" class="w-8 h-8">
-            {% elif item.clase.tipo == 'Cadillac' %}
-            <img src="{% static 'icons/cadillac.png' %}" alt="Cadillac" class="w-8 h-8">
-            {% else %}
-            <img src="{% static 'icons/especial.png' %}" alt="Especial" class="w-8 h-8">
-            {% endif %}
-            <div>
-                <h5 class="text-blanco font-semibold text-lg leading-tight">
-                    {{ item.clase.get_nombre_display }}
-                    <span class="text-blanco/70 font-normal text-base ml-1">{{ item.clase.horario|time:"H:i" }}</span>
-                </h5>
-                <span class="text-blanco/70 text-sm">{{ item.clase.get_direccion_display }}</span>
-            </div>
-        </div>
-        <div class="flex items-center gap-3 text-blanco/80 text-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {{ item.total }} alumno{{ item.total|pluralize }}
-
-            {% if item.ausentes > 0 %}
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                {{ item.ausentes }} s/aviso
-            </span>
-            {% endif %}
-
-            <svg id="chevron-clase-{{ forloop.counter }}" class="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </div>
-    </div>
-
-    <div id="clase-{{ forloop.counter }}" class="hidden">
-    {% if item.alumnos %}
-    <!-- Desktop table -->
-    <div class="hidden md:block overflow-x-auto">
-        <table class="table w-full text-sm">
-            <thead>
-                <tr>
-                    <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Alumno</th>
-                    <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Contacto</th>
-                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
-                    <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Acción</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                {% for alumno in item.alumnos %}
-                <tr id="fila-{{ alumno.reserva.id }}" class="hover:bg-gray-50/60 transition-colors">
-                    <td class="py-3 px-4">
-                        <div class="flex items-center gap-3">
-                            {% if alumno.reserva.usuario.profile.avatar %}
-                            <img src="{{ alumno.reserva.usuario.profile.avatar.url }}"
-                                alt="{{ alumno.reserva.usuario.get_full_name }}"
-                                class="w-9 h-9 rounded-full object-cover shrink-0">
-                            {% else %}
-                            <div class="w-9 h-9 bg-gradient-to-br from-principal to-secundario text-white rounded-full flex items-center justify-center font-semibold text-sm shrink-0">
-                                {{ alumno.reserva.usuario.first_name.0|default:alumno.reserva.usuario.username.0|upper }}{{ alumno.reserva.usuario.last_name.0|default:""|upper }}
-                            </div>
-                            {% endif %}
-                            <div>
-                                <div class="font-medium text-gray-800">{{ alumno.reserva.usuario.get_full_name|default:alumno.reserva.usuario.username }}</div>
-                                <div class="text-xs text-gray-400">@{{ alumno.reserva.usuario.username }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="py-3 px-4 text-gray-400 text-xs">
-                        <div>{{ alumno.reserva.usuario.email }}</div>
-                        {% if alumno.reserva.usuario.profile.telefono %}
-                        <div class="mt-0.5">{{ alumno.reserva.usuario.profile.telefono }}</div>
-                        {% endif %}
-                    </td>
-                    <td class="py-3 px-4 text-center">
-                        <span id="badge-{{ alumno.reserva.id }}"
-                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
-                            {% if alumno.estado == 'ausencia_avisada' %}bg-yellow-100 text-yellow-700 border border-yellow-200
-                            {% elif alumno.estado == 'inasistente' %}bg-red-100 text-red-700 border border-red-200
-                            {% else %}bg-green-100 text-green-700 border border-green-200{% endif %}">
-                            {% if alumno.estado == 'ausencia_avisada' %}
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                            Avisó ausencia
-                            {% elif alumno.estado == 'inasistente' %}
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                            Ausente s/aviso
-                            {% else %}
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                            Presente
-                            {% endif %}
-                        </span>
-                        {% if alumno.reserva.fecha_unica == fecha_seleccionada %}
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ml-1
-                            {% if alumno.reserva.es_recupero %}bg-blue-100 text-blue-700 border border-blue-200
-                            {% else %}bg-purple-100 text-purple-700 border border-purple-200{% endif %}">
-                            {% if alumno.reserva.es_recupero %}Recupero{% else %}Clase única{% endif %}
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td class="py-3 px-4 text-center">
-                        {% if alumno.estado == 'ausencia_avisada' %}
-                        <span class="text-xs text-gray-300">—</span>
-                        {% elif alumno.estado == 'inasistente' %}
-                        <button
-                            class="btn bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition-colors duration-200 inline-flex items-center gap-1"
-                            onclick="toggleInasistencia({{ alumno.reserva.id }}, '{{ fecha_seleccionada|date:'Y-m-d' }}', false, this)">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
-                            Revertir
-                        </button>
-                        {% else %}
-                        <button
-                            class="btn bg-red-50 hover:bg-red-100 text-red-700 text-xs px-3 py-1.5 rounded-lg transition-colors duration-200 inline-flex items-center gap-1 border border-red-200"
-                            onclick="toggleInasistencia({{ alumno.reserva.id }}, '{{ fecha_seleccionada|date:'Y-m-d' }}', true, this)">
-                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                            Marcar ausente
-                        </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Mobile cards -->
-    <div class="md:hidden divide-y divide-gray-100">
-        {% for alumno in item.alumnos %}
-        <div class="p-4 flex items-center justify-between gap-3" id="card-{{ alumno.reserva.id }}">
-            <div class="flex items-center gap-3 min-w-0">
-                {% if alumno.reserva.usuario.profile.avatar %}
-                <img src="{{ alumno.reserva.usuario.profile.avatar.url }}"
-                    class="w-10 h-10 rounded-full object-cover shrink-0">
-                {% else %}
-                <div class="w-10 h-10 bg-gradient-to-br from-principal to-secundario text-white rounded-full flex items-center justify-center font-semibold shrink-0">
-                    {{ alumno.reserva.usuario.first_name.0|default:alumno.reserva.usuario.username.0|upper }}{{ alumno.reserva.usuario.last_name.0|default:""|upper }}
-                </div>
-                {% endif %}
-                <div class="min-w-0">
-                    <div class="font-medium text-gray-800 truncate">{{ alumno.reserva.usuario.get_full_name|default:alumno.reserva.usuario.username }}</div>
-                    <span id="badge-{{ alumno.reserva.id }}-mob"
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-0.5
-                        {% if alumno.estado == 'ausencia_avisada' %}bg-yellow-100 text-yellow-700
-                        {% elif alumno.estado == 'inasistente' %}bg-red-100 text-red-700
-                        {% else %}bg-green-100 text-green-700{% endif %}">
-                        {% if alumno.estado == 'ausencia_avisada' %}Avisó ausencia
-                        {% elif alumno.estado == 'inasistente' %}Ausente s/aviso
-                        {% else %}Presente{% endif %}
-                    </span>
-                    {% if alumno.reserva.fecha_unica == fecha_seleccionada %}
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-0.5 ml-1
-                        {% if alumno.reserva.es_recupero %}bg-blue-100 text-blue-700
-                        {% else %}bg-purple-100 text-purple-700{% endif %}">
-                        {% if alumno.reserva.es_recupero %}Recupero{% else %}Clase única{% endif %}
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="shrink-0">
-                {% if alumno.estado == 'ausencia_avisada' %}
-                <span class="text-xs text-gray-300">—</span>
-                {% elif alumno.estado == 'inasistente' %}
-                <button
-                    class="btn bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg"
-                    onclick="toggleInasistencia({{ alumno.reserva.id }}, '{{ fecha_seleccionada|date:'Y-m-d' }}', false, this)">
-                    Revertir
-                </button>
-                {% else %}
-                <button
-                    class="btn bg-red-50 hover:bg-red-100 text-red-700 text-xs px-3 py-1.5 rounded-lg border border-red-200"
-                    onclick="toggleInasistencia({{ alumno.reserva.id }}, '{{ fecha_seleccionada|date:'Y-m-d' }}', true, this)">
-                    Ausente
-                </button>
-                {% endif %}
-            </div>
-        </div>
+<div class="as-filtros">
+    <nav class="ad-chips" aria-label="Elegir día">
+        {% for chip in chips %}
+        <a class="ad-chip{% if chip.activo %} is-active{% endif %}{% if not chip.con_clases %} hy-dia--vacio{% endif %}"
+           href="?fecha={{ chip.fecha|date:'Y-m-d' }}{% if sede_filtro %}&sede={{ sede_filtro }}{% endif %}"{% if chip.activo %} aria-current="date"{% endif %}>{{ chip.texto }}</a>
         {% endfor %}
-    </div>
-
-    {% else %}
-    <div class="p-8 text-center text-gray-400 text-sm">
-        No hay alumnos reservados para esta clase en esta fecha.
-    </div>
+        <button type="button" class="ad-chip{% if otra_fecha %} is-active{% endif %}" data-as-otra aria-expanded="{% if otra_fecha %}true{% else %}false{% endif %}" aria-controls="as-otra">Otra fecha</button>
+    </nav>
+    <form method="get" class="as-otra" id="as-otra"{% if not otra_fecha %} hidden{% endif %}>
+        {% if sede_filtro %}<input type="hidden" name="sede" value="{{ sede_filtro }}">{% endif %}
+        <label class="ad-field">
+            <span class="ad-label">Fecha</span>
+            <input class="ad-input" type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}" required>
+        </label>
+        <button type="submit" class="ad-btn ad-btn--blue">Ver</button>
+    </form>
+    {% if sedes|length > 1 %}
+    <nav class="ad-chips" aria-label="Sede">
+        <a class="ad-chip{% if not sede_filtro %} is-active{% endif %}" href="?fecha={{ fecha|date:'Y-m-d' }}">Todas las sedes</a>
+        {% for valor, texto in sedes %}
+        <a class="ad-chip{% if sede_filtro == valor %} is-active{% endif %}" href="?fecha={{ fecha|date:'Y-m-d' }}&sede={{ valor }}">{{ texto }}</a>
+        {% endfor %}
+    </nav>
     {% endif %}
-    </div>
 </div>
-{% endfor %}
+
+{% if solo_lectura %}
+<div class="ad-alert ad-alert--warn as-aviso">
+    {% include 'gravity/admin/_icono.html' with i='reloj' %}
+    <p>La asistencia se puede marcar o corregir hasta {{ dias_para_marcar }} días atrás (desde el {{ fecha_minima|date:"d/m" }}). Esta lista es solo para consultar.</p>
+</div>
+{% elif es_futura %}
+<div class="ad-alert as-aviso">
+    {% include 'gravity/admin/_icono.html' with i='info' %}
+    <p>Vas a poder marcar quién no vino desde que empiece cada clase.</p>
+</div>
 {% endif %}
 
-<!-- Toast de feedback -->
-<div id="toast"
-    class="fixed bottom-6 right-6 z-50 hidden max-w-xs w-full bg-white rounded-xl shadow-lg border px-4 py-3 flex items-center gap-3 transition-all duration-300">
-    <div id="toast-icon" class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center"></div>
-    <p id="toast-msg" class="text-sm text-gray-700 flex-1"></p>
+{% if clases %}
+<div class="ad-kpis as-kpis">
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">Clases</p>
+        <p class="ad-kpi__value">{{ totales.clases }}</p>
+    </div>
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">Anotados</p>
+        <p class="ad-kpi__value">{{ totales.anotados }}</p>
+    </div>
+    <div class="ad-kpi{% if totales.avisaron %} ad-kpi--warn{% endif %}">
+        <p class="ad-kpi__label">Avisaron que faltan</p>
+        <p class="ad-kpi__value">{{ totales.avisaron }}</p>
+    </div>
+    <div class="ad-kpi{% if totales.no_vino %} ad-kpi--danger{% endif %}" data-as-kpi>
+        <p class="ad-kpi__label">No vinieron</p>
+        <p class="ad-kpi__value" data-as-total-nv>{{ totales.no_vino }}</p>
+    </div>
 </div>
 
+<div class="as-lista">
+    {% for item in clases %}
+    <details class="hy-clase hy-clase--{{ item.momento }} as-clase" id="clase-{{ item.clase.id }}"{% if item.momento != 'proxima' or es_futura %} open{% endif %}>
+        <summary class="hy-clase__sum">
+            <span class="hy-clase__hora">{{ item.clase.horario|time:"H:i" }}</span>
+            <span class="hy-clase__info">
+                <span class="hy-clase__nombre">{{ item.nombre }}</span>
+                <span class="hy-clase__sede">{{ item.sede }}{% if item.momento == 'en_curso' %} · <strong>En curso</strong>{% elif item.momento == 'proxima' and es_hoy %} · Todavía no empezó{% endif %}{% if not item.clase.activa %} · En pausa{% endif %}</span>
+                <span class="as-clase__resumen" data-as-resumen>
+                    {% if item.momento == 'proxima' %}
+                    {{ item.anotados }} anotado{{ item.anotados|pluralize }}
+                    {% else %}
+                    Vinieron <span data-as-vinieron>{{ item.vinieron }}</span> de {{ item.anotados }}
+                    {% endif %}
+                    {% if item.avisaron %}· {{ item.avisaron }} avis{{ item.avisaron|pluralize:"ó,aron" }}{% endif %}
+                </span>
+            </span>
+            <span class="as-clase__nv{% if not item.no_vino %} is-cero{% endif %}" data-as-nv-badge>
+                <span class="ad-badge ad-badge--danger" data-as-nv>{{ item.no_vino }} no vin{% if item.no_vino == 1 %}o{% else %}ieron{% endif %}</span>
+            </span>
+            <span class="hy-clase__chev">{% include 'gravity/admin/_icono.html' with i='abajo' %}</span>
+        </summary>
+        <div class="hy-clase__body">
+            {% if item.alumnos %}
+            <ul class="as-alumnos">
+                {% for a in item.alumnos %}
+                <li class="as-alumno{% if a.avisaron %} hy-alumno--falta{% endif %}{% if a.no_vino %} is-no-vino{% endif %}" data-as-alumno>
+                    {% include 'gravity/admin/_avatar.html' with persona=a.usuario %}
+                    <span class="as-alumno__body">
+                        <a href="{{ a.url }}" class="hy-alumno__nombre">{{ a.nombre }}</a>
+                        <span class="hy-alumno__marcas">
+                            <span class="ad-badge ad-badge--danger" data-as-marca{% if not a.no_vino %} hidden{% endif %}>No vino</span>
+                            {% for texto, tono in a.marcas %}<span class="ad-badge ad-badge--{{ tono }}">{{ texto }}</span>{% endfor %}
+                        </span>
+                    </span>
+                    {% if a.marcable %}
+                    <form method="post" action="{% url 'gravity:admin_asistencia_marcar' %}" class="as-marcar" data-as-form>
+                        {% csrf_token %}
+                        <input type="hidden" name="reserva_id" value="{{ a.reserva_id }}">
+                        <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">
+                        <input type="hidden" name="marcar" value="{% if a.no_vino %}0{% else %}1{% endif %}">
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}#clase-{{ item.clase.id }}">
+                        <button type="submit" class="ad-btn ad-btn--sm {% if a.no_vino %}ad-btn--ghost{% else %}ad-btn--danger-ghost{% endif %}" aria-label="{% if a.no_vino %}Deshacer: {{ a.nombre }} vino{% else %}Marcar que {{ a.nombre }} no vino{% endif %}">{% if a.no_vino %}Deshacer{% else %}No vino{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="hy-vacio">No había alumnos anotados.</p>
+            {% endif %}
+            <div class="hy-clase__acciones">
+                <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_clase_detalle' item.clase.id %}">
+                    Ver clase {% include 'gravity/admin/_icono.html' with i='flecha' %}
+                </a>
+            </div>
+        </div>
+    </details>
+    {% endfor %}
+</div>
+<p class="ad-sr" aria-live="polite" data-as-vivo></p>
+{% else %}
+<div class="ad-card">
+    <div class="ad-empty">
+        {% include 'gravity/admin/_icono.html' with i='calendario' %}
+        <p class="ad-empty__title">No hubo clases {% if es_hoy %}hoy{% else %}este día{% endif %}</p>
+        <p class="ad-empty__text">{% if sede_filtro %}Probá con todas las sedes u otro día.{% else %}Elegí otro día arriba.{% endif %}</p>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    const MARCAR_URL = "{% url 'gravity:admin_asistencia_marcar' %}";
-    const CSRF = "{{ csrf_token }}";
-    const HOY = "{{ hoy|date:'Y-m-d' }}";
-
-    function toggleCard(id) {
-        const content = document.getElementById(id);
-        const chevron = document.getElementById('chevron-' + id);
-        content.classList.toggle('hidden');
-        if (chevron) chevron.classList.toggle('rotate-180');
-    }
-
-    function navegarFecha(delta) {
-        const input = document.getElementById('fecha-input');
-        const d = new Date(input.value + 'T12:00:00');
-        d.setDate(d.getDate() + delta);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const nueva = `${yyyy}-${mm}-${dd}`;
-        if (nueva <= HOY) {
-            input.value = nueva;
-            document.getElementById('filtros-form').submit();
-        }
-    }
-
-    function showToast(tipo, mensaje) {
-        const toast = document.getElementById('toast');
-        const icon = document.getElementById('toast-icon');
-        const msg = document.getElementById('toast-msg');
-
-        if (tipo === 'exito') {
-            icon.className = 'shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-green-100';
-            icon.innerHTML = '<svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
-            toast.className = toast.className.replace(/border-\S+/g, '') + ' border-green-200';
-        } else {
-            icon.className = 'shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-100';
-            icon.innerHTML = '<svg class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
-            toast.className = toast.className.replace(/border-\S+/g, '') + ' border-red-200';
-        }
-
-        msg.textContent = mensaje;
-        toast.classList.remove('hidden');
-        toast.classList.add('flex');
-        clearTimeout(toast._t);
-        toast._t = setTimeout(function () {
-            toast.classList.add('hidden');
-            toast.classList.remove('flex');
-        }, 3500);
-    }
-
-    function actualizarUI(reservaId, nuevoEstado) {
-        const badge = document.getElementById('badge-' + reservaId);
-        const badgeMob = document.getElementById('badge-' + reservaId + '-mob');
-
-        const configs = {
-            inasistente: {
-                cls: 'bg-red-100 text-red-700 border border-red-200',
-                clsMob: 'bg-red-100 text-red-700',
-                texto: '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Ausente s/aviso',
-                textoMob: 'Ausente s/aviso',
-                btnCls: 'btn bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg transition-colors duration-200 inline-flex items-center gap-1',
-                btnHtml: '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg> Revertir',
-                btnMobCls: 'btn bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-lg',
-                btnMobHtml: 'Revertir',
-                marcar: false,
-            },
-            presente: {
-                cls: 'bg-green-100 text-green-700 border border-green-200',
-                clsMob: 'bg-green-100 text-green-700',
-                texto: '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Presente',
-                textoMob: 'Presente',
-                btnCls: 'btn bg-red-50 hover:bg-red-100 text-red-700 text-xs px-3 py-1.5 rounded-lg transition-colors duration-200 inline-flex items-center gap-1 border border-red-200',
-                btnHtml: '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Marcar ausente',
-                btnMobCls: 'btn bg-red-50 hover:bg-red-100 text-red-700 text-xs px-3 py-1.5 rounded-lg border border-red-200',
-                btnMobHtml: 'Ausente',
-                marcar: true,
-            },
-        };
-
-        const cfg = configs[nuevoEstado];
-        if (!cfg) return;
-
-        if (badge) {
-            badge.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ' + cfg.cls;
-            badge.innerHTML = cfg.texto;
-        }
-        if (badgeMob) {
-            badgeMob.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-0.5 ' + cfg.clsMob;
-            badgeMob.textContent = cfg.textoMob;
-        }
-
-        if (badge) {
-            const td = badge.closest('td');
-            if (td) {
-                const btn = td.parentElement.querySelector('td:last-child button');
-                if (btn) {
-                    const fecha = btn.onclick.toString().match(/'(\d{4}-\d{2}-\d{2})'/)?.[1];
-                    btn.className = cfg.btnCls;
-                    btn.innerHTML = cfg.btnHtml;
-                    btn.onclick = function () { toggleInasistencia(reservaId, fecha, cfg.marcar, btn); };
-                }
-            }
-        }
-
-        if (badgeMob) {
-            const cardDiv = badgeMob.closest('[id^="card-"]');
-            if (cardDiv) {
-                const btn = cardDiv.querySelector('button');
-                if (btn) {
-                    const fecha = btn.onclick.toString().match(/'(\d{4}-\d{2}-\d{2})'/)?.[1];
-                    btn.className = cfg.btnMobCls;
-                    btn.innerHTML = cfg.btnMobHtml;
-                    btn.onclick = function () { toggleInasistencia(reservaId, fecha, cfg.marcar, btn); };
-                }
-            }
-        }
-    }
-
-    function toggleInasistencia(reservaId, fecha, marcar, btn) {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-
-        fetch(MARCAR_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': CSRF,
-            },
-            body: JSON.stringify({ reserva_id: reservaId, fecha: fecha, marcar: marcar }),
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            btn.disabled = false;
-            btn.style.opacity = '';
-            if (data.success) {
-                showToast('exito', data.message);
-                actualizarUI(reservaId, data.estado);
-            } else {
-                showToast('error', data.error || 'Error inesperado.');
-            }
-        })
-        .catch(function () {
-            btn.disabled = false;
-            btn.style.opacity = '';
-            showToast('error', 'Error de conexión. Intentá de nuevo.');
-        });
-    }
-</script>
+<script src="{% static 'js/admin_asistencia.js' %}?v=20261012a"></script>
 {% endblock %}

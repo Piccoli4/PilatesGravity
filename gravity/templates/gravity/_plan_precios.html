@@ -1,0 +1,11 @@
+{# Precio de lista y en efectivo de un plan anotado con anotar_planes(). Uso: include con plan=... #}
+<span class="pl-prices">
+    <span class="pl-prices__row">
+        <span class="pl-prices__label">Precio de lista</span>
+        <span class="pl-prices__value">${{ plan.precio_fmt }}<small>/mes</small></span>
+    </span>
+    <span class="pl-prices__row pl-prices__row--cash">
+        <span class="pl-prices__label">En efectivo <small>del 1 al 10</small></span>
+        <span class="pl-prices__value">${{ plan.efectivo_fmt }}<small>/mes</small></span>
+    </span>
+</span>

@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - Pilates Gravity</title>
+    {% include 'components/base/seo_meta.html' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261013a">
+    <link rel="stylesheet" href="{% static 'css/accounts/auth.css' %}?v=20261011c">
+    <meta name="theme-color" content="#4A5F73">
+</head>
+{# Páginas de una sola tarjeta de vidrio sobre la foto del estudio: logout y recuperar contraseña #}
+<body class="auth-body">
+
+    <a href="{% block back_url %}{% url 'gravity:home' %}{% endblock %}" class="auth-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        {% block back_text %}Volver al inicio{% endblock %}
+    </a>
+
+    {% if messages %}
+    <div class="auth-toasts" id="authToasts">
+        {% for message in messages %}
+            <div class="auth-toast auth-toast--{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="auth-card {% block card_class %}{% endblock %}">
+        <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="Pilates Gravity" class="auth-card__logo">
+
+        {% block card %}{% endblock %}
+
+        <!-- Velo de carga: aparece si el servidor tarda en responder -->
+        <div class="auth-loader" id="authLoader" role="status" aria-live="polite" aria-hidden="true">
+            <div class="auth-loader__mark">
+                <span class="auth-loader__ring"></span>
+                <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="">
+            </div>
+            <p class="auth-loader__text" id="authLoaderText">Un momento…</p>
+            <span class="auth-loader__bar"></span>
+        </div>
+    </main>
+
+    <script src="{% static 'js/form_submit.js' %}?v=20261011a"></script>
+    <script>
+        (function () {
+            // Velo de carga al enviar (usa el data-loading-text del botón)
+            const loader = document.getElementById('authLoader');
+            let timer = null;
+            document.addEventListener('submit', e => {
+                if (e.defaultPrevented) return;
+                const btn = e.target.querySelector('[type=submit]');
+                document.getElementById('authLoaderText').textContent =
+                    (btn && btn.dataset.loadingText || 'Un momento...').replace('...', '…');
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    loader.classList.add('is-on');
+                    loader.parentElement.classList.add('is-loading');
+                    loader.setAttribute('aria-hidden', 'false');
+                }, 350);
+            });
+            window.addEventListener('pageshow', e => {
+                if (!e.persisted) return;
+                clearTimeout(timer);
+                loader.classList.remove('is-on');
+                loader.parentElement.classList.remove('is-loading');
+                loader.setAttribute('aria-hidden', 'true');
+            });
+
+            // Mostrar / ocultar contraseña
+            document.querySelectorAll('[data-toggle-password]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const input = document.getElementById(btn.dataset.togglePassword);
+                    const visible = input.type === 'text';
+                    input.type = visible ? 'password' : 'text';
+                    btn.classList.toggle('is-on', !visible);
+                    btn.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+                });
+            });
+
+            // Los mensajes se ocultan solos
+            const toasts = document.getElementById('authToasts');
+            if (toasts) setTimeout(() => toasts.classList.add('is-gone'), 6000);
+        })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

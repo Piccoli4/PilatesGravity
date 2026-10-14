@@ -1,0 +1,83 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>Te damos la bienvenida a Pilates Gravity</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F8EFE5; font-family:'Segoe UI', Helvetica, Arial, sans-serif; color:#2F3B47;">
+    <div style="display:none; max-height:0; overflow:hidden;">{% if usuario.is_staff %}Elegí tu contraseña para entrar al panel del estudio.{% else %}Elegí tu contraseña para empezar a reservar tus clases.{% endif %}</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F8EFE5;">
+        <tr>
+            <td align="center" style="padding:32px 16px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px; background-color:#FDFDFD; border-radius:20px; overflow:hidden; box-shadow:0 12px 32px rgba(47,59,71,0.10);">
+
+                    <!-- Encabezado -->
+                    <tr>
+                        <td align="center" style="background-color:#4A5F73; background-image:linear-gradient(150deg,#5D768B 0%,#4A5F73 60%,#7d6a57 100%); padding:30px 24px 26px;">
+                            <img src="{{ domain_url }}/static/img/logo_email.png" alt="Pilates Gravity" width="72" style="display:block; width:72px; height:auto; margin:0 auto 14px;">
+                            <p style="margin:0; font-family:Georgia, 'Times New Roman', serif; font-size:13px; letter-spacing:3px; text-transform:uppercase; color:#C8B39B;">Bienvenida</p>
+                            <h1 style="margin:8px 0 0; font-family:Georgia, 'Times New Roman', serif; font-size:24px; font-weight:bold; color:#FFFFFF;">Ya tenés tu cuenta</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Cuerpo -->
+                    <tr>
+                        <td style="padding:30px 32px 8px;">
+                            <p style="margin:0 0 14px; font-size:16px; line-height:1.6;">Hola {{ usuario.first_name|default:usuario.username }},</p>
+                            <p style="margin:0 0 22px; font-size:15px; line-height:1.6; color:#5f6b76;">
+                                {% if usuario.is_staff %}Te sumamos al equipo de Pilates Gravity. Elegí tu contraseña y entrá al panel: ahí vas a ver las clases del día, pasar lista y tus horarios.{% else %}Te creamos una cuenta en Pilates Gravity. Elegí tu contraseña y desde ahí vas a poder ver tus clases, avisar si no venís y reservar recuperos.{% endif %}
+                            </p>
+
+                            <!-- Usuario -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px; background-color:#F8EFE5; border-radius:14px;">
+                                <tr>
+                                    <td style="padding:14px 18px;">
+                                        <p style="margin:0; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#A79178;">Tu usuario</p>
+                                        <p style="margin:4px 0 0; font-family:'Courier New', monospace; font-size:18px; font-weight:bold; color:#2F3B47;">{{ usuario.username }}</p>
+                                        <p style="margin:4px 0 0; font-size:12px; color:#5f6b76;">Distingue mayúsculas: escribilo tal cual.</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Botón -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 18px;">
+                                <tr>
+                                    <td align="center" style="border-radius:999px; background-color:#5D768B;">
+                                        <a href="{{ enlace }}" style="display:inline-block; padding:14px 32px; font-size:15px; font-weight:bold; color:#FFFFFF; text-decoration:none; border-radius:999px;">Crear mi contraseña</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:0 0 22px; font-size:13px; line-height:1.6; color:#5f6b76; text-align:center;">
+                                El enlace vale <strong style="color:#2F3B47;">{{ dias }} días</strong> y sirve una sola vez. Si se vence, pedí uno nuevo con «Olvidé mi contraseña».
+                            </p>
+
+                            <p style="margin:0 0 6px; font-size:12px; color:#8a949d;">¿El botón no funciona? Copiá este enlace en el navegador:</p>
+                            <p style="margin:0 0 24px; font-size:12px; line-height:1.5; word-break:break-all;">
+                                <a href="{{ enlace }}" style="color:#4A5F73;">{{ enlace }}</a>
+                            </p>
+
+                            <p style="margin:0 0 24px; padding:12px 14px; border-radius:12px; background-color:#f3f5f7; font-size:13px; line-height:1.55; color:#5f6b76;">
+                                ¿No sos alumno de Pilates Gravity? Ignorá este email o escribinos por WhatsApp.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Pie -->
+                    <tr>
+                        <td align="center" style="padding:18px 24px 26px; border-top:1px solid #eeeeee;">
+                            <p style="margin:0; font-size:13px; line-height:1.7; color:#8a949d;">
+                                Pilates Gravity · Santa Fe Capital<br>
+                                WhatsApp +54 342 511 4448 · pilatesgravity@gmail.com
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

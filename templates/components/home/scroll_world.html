@@ -37,7 +37,7 @@
 <header class="sr-only">
     <h1>Pilates Gravity: estudio de Pilates Reformer y Cadillac en Santa Fe</h1>
     <p>
-        Dos sedes en Santa Fe Capital, La Rioja 3044 y 9 de Julio 3698, y un mismo método:
+        Dos sedes en Santa Fe Capital, La Rioja 3044 y 9 de Julio 3696, y un mismo método:
         grupos reducidos, instructores certificados y atención personalizada.
         Clases de Pilates Reformer y Cadillac de 50 minutos para todos los niveles,
         con reserva online de sede, día y horario.
@@ -46,7 +46,7 @@
 
 <div id="gravity-world"></div>
 
-<script src="{% static 'js/scroll_world.js' %}?v=20261010d"></script>
+<script src="{% static 'js/scroll_world.js' %}?v=20261012a"></script>
 <script>
     mountScrollWorld(document.getElementById('gravity-world'), {
         nav: false,
@@ -125,6 +125,7 @@
                 cta: {
                     primary: { label: 'Reservar clase', href: "{% url 'gravity:reservar_clase' %}" },
                     secondary: { label: 'Ver precios', href: "{% url 'gravity:precios_publicos' %}" },
+                    link: { label: 'Conocé el estudio', href: "{% url 'gravity:conoce_mas' %}" },
                 },
             },
         ],

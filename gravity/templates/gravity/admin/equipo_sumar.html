@@ -1,0 +1,81 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Sumar al equipo{% endblock %}
+
+{% block content %}
+<a class="ad-back" href="{% url 'gravity:admin_profesoras_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Equipo</a>
+<header class="ad-head">
+    <div class="ad-head__text">
+        <h1 class="ad-head__title">Sumar al equipo</h1>
+        <p class="ad-head__sub">Va a poder ver las clases del día, pasar lista, reservar, cargar alumnos y cobrar. No ve los ingresos del estudio ni configura planes o el equipo.</p>
+    </div>
+</header>
+
+<nav class="ad-tabs" aria-label="A quién sumar">
+    <a class="ad-tabs__item{% if modo != 'alumna' %} is-active{% endif %}" href="?">{% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %} Persona nueva</a>
+    <a class="ad-tabs__item{% if modo == 'alumna' %} is-active{% endif %}" href="?buscar=">{% include 'gravity/admin/_icono.html' with i='alumnos' %} Ya tiene cuenta</a>
+</nav>
+
+{% if modo == 'alumna' %}
+<section class="ad-card" aria-labelledby="eq-buscar-t">
+    <div class="ad-card__head"><div><h2 class="ad-card__title" id="eq-buscar-t">Buscar su cuenta</h2>
+        <p class="ad-card__sub">Por ejemplo, una alumna que empieza a dar clases. Entra con su usuario y contraseña de siempre.</p></div></div>
+    <div class="ad-card__body ad-form">
+        <form method="get" role="search">
+            <label class="ad-search">
+                <span class="ad-sr">Nombre, usuario o email</span>
+                {% include 'gravity/admin/_icono.html' with i='buscar' %}
+                <input class="ad-input" type="search" name="buscar" value="{{ buscar }}" placeholder="Nombre, usuario o email" autocomplete="off" autofocus>
+            </label>
+        </form>
+        {% if buscar|length >= 2 %}
+            {% if alumnas %}
+            <ul class="ad-list eq-candidatas">
+                {% for u in alumnas %}
+                <li class="ad-row">
+                    {% include 'gravity/admin/_avatar.html' with persona=u %}
+                    <span class="ad-row__body">
+                        <span class="ad-row__title">{{ u.get_full_name|default:u.username }}</span>
+                        <span class="ad-row__sub">{{ u.username }}{% if u.email %} · {{ u.email }}{% endif %}</span>
+                    </span>
+                    <form method="post" class="ad-row__end"
+                          data-confirm="{{ u.get_full_name|default:u.username }} va a entrar al panel con su usuario {{ u.username }}. Si tiene plan o reservas, siguen funcionando, pero deja de figurar en Alumnos y en Pagos." data-confirm-titulo="¿Sumarla al equipo?" data-confirm-boton="Sumar al equipo">
+                        {% csrf_token %}
+                        <input type="hidden" name="modo" value="alumna">
+                        <input type="hidden" name="usuario_id" value="{{ u.id }}">
+                        <button type="submit" class="ad-btn ad-btn--sm">Sumar</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="hy-vacio">No encontramos cuentas de alumnos con «{{ buscar }}».</p>
+            {% endif %}
+        {% else %}
+        <p class="ad-help">Escribí al menos dos letras.</p>
+        {% endif %}
+    </div>
+</section>
+{% else %}
+<form method="post" class="ad-form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="modo" value="nueva">
+    <section class="ad-card">
+        <div class="ad-card__head"><h2 class="ad-card__title">Sus datos</h2></div>
+        <div class="ad-card__body ad-form">
+            <div class="ad-form__row ad-form__row--2">
+                {% include 'gravity/admin/_campo.html' with campo=form.nombre %}
+                {% include 'gravity/admin/_campo.html' with campo=form.apellido %}
+                {% include 'gravity/admin/_campo.html' with campo=form.email ayuda='Le mandamos una invitación para que elija su contraseña. Sin email, te damos una contraseña inicial para pasarle.' %}
+                {% include 'gravity/admin/_campo.html' with campo=form.telefono %}
+            </div>
+            <p class="ad-help">El usuario para entrar se arma solo, sin acentos ni espacios (por ejemplo, «mariajoseperez»).</p>
+        </div>
+    </section>
+    <div class="ad-form__actions">
+        <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_profesoras_lista' %}">Cancelar</a>
+        <button type="submit" class="ad-btn" data-loading-text="Sumando...">Sumar al equipo</button>
+    </div>
+</form>
+{% endif %}
+{% endblock %}

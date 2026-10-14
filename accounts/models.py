@@ -193,13 +193,13 @@ class UserProfile(models.Model):
             edad = (timezone.now().date() - self.fecha_nacimiento).days // 365
             if edad < 16:
                 raise ValidationError({
-                    'fecha_nacimiento': 'Debes tener al menos 16 años para registrarte.'
+                    'fecha_nacimiento': 'Tenés que tener al menos 16 años.'
                 })
         
         # Validar que si tiene lesiones, debe describir
         if self.tiene_lesiones and not self.descripcion_lesiones.strip():
             raise ValidationError({
-                'descripcion_lesiones': 'Si tienes lesiones o condiciones médicas, por favor descríbelas brevemente.'
+                'descripcion_lesiones': 'Contanos brevemente qué lesión o condición tenés.'
             })
         
         # Validar fecha de primera clase
@@ -550,7 +550,7 @@ class ConfiguracionEstudio(models.Model):
         if self.sede_principal_activa:
             sedes.append(('sede_principal', 'Sede Principal - La Rioja 3044'))
         if self.sede_2_activa:
-            sedes.append(('sede_2', 'Sede 2 - 9 de julio 3696'))
+            sedes.append(('sede_2', 'Sede 2 - 9 de Julio 3696'))
         return sedes
 
     def get_telefono_sede(self, sede):
@@ -616,8 +616,8 @@ class ConfiguracionEstudio(models.Model):
             }
         elif sede == 'sede_2':
             return {
-                'nombre': 'Sede 2 - 9 de julio 3696',
-                'direccion': '9 de julio 3696',
+                'nombre': 'Sede 2 - 9 de Julio 3696',
+                'direccion': '9 de Julio 3696',
                 'telefono': self.get_telefono_sede('sede_2'),
                 'email': self.get_email_sede('sede_2'),
                 'horarios': self.get_horarios_sede('sede_2'),

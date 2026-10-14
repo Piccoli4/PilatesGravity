@@ -1,0 +1,71 @@
+{% extends 'accounts/auth_simple.html' %}
+
+{% block title %}{% if validlink %}Creá tu contraseña{% else %}Invitación vencida{% endif %}{% endblock %}
+{% block back_url %}{% url 'accounts:login' %}{% endblock %}
+{% block back_text %}Volver a iniciar sesión{% endblock %}
+
+{% block card %}
+{% if validlink %}
+    <span class="auth-eyebrow">Bienvenida</span>
+    <h1 class="auth-title">Creá tu contraseña</h1>
+    <p class="auth-sub">
+        {% if usuario.first_name %}{{ usuario.first_name }}, tu{% else %}Tu{% endif %} usuario es
+        <strong>{{ usuario.username }}</strong>. Elegí una contraseña para entrar a tu cuenta de Pilates Gravity.
+    </p>
+
+    <form method="post" class="ac-form" id="acForm" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="input-group {% if field.errors %}has-error{% endif %}">
+            <svg class="ig-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 9h-1V7a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 1 1 4 0v2h-4V7Z"/></svg>
+            {{ field }}
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <button type="button" class="ig-eye" data-toggle-password="{{ field.id_for_label }}" aria-label="Mostrar contraseña">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            {% for error in field.errors %}<small class="ig-error">{{ error }}</small>{% endfor %}
+        </div>
+        {% endfor %}
+
+        <ul class="ac-rules" id="acReglas" aria-live="polite">
+            <li data-regla="largo">6 caracteres o más</li>
+            <li data-regla="numeros">No solo números</li>
+            <li data-regla="coinciden">Que coincidan</li>
+        </ul>
+
+        <button type="submit" class="auth-btn" data-loading-text="Guardando...">Crear contraseña</button>
+    </form>
+{% else %}
+    <span class="auth-eyebrow">Invitación vencida</span>
+    <h1 class="auth-title">Este enlace ya no sirve</h1>
+    <p class="auth-sub">La invitación dura 7 días y se usa una sola vez. Pedí un enlace nuevo con tu email y creá tu contraseña desde ahí.</p>
+    <div class="auth-card__actions">
+        <a href="{% url 'accounts:password_reset' %}" class="auth-btn">Pedir un enlace nuevo</a>
+        <a href="{% url 'accounts:login' %}" class="auth-ghost">Volver a iniciar sesión</a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if validlink %}
+<script>
+    (function () {
+        const nueva = document.getElementById('{{ form.new_password1.id_for_label }}');
+        const repetida = document.getElementById('{{ form.new_password2.id_for_label }}');
+        const reglas = document.getElementById('acReglas');
+        function revisar() {
+            const v = nueva.value;
+            const estado = {
+                largo: v.length >= 6,
+                numeros: v.length > 0 && !/^\d+$/.test(v),
+                coinciden: v.length > 0 && repetida.value === v,
+            };
+            reglas.querySelectorAll('li').forEach(li => li.classList.toggle('is-ok', !!estado[li.dataset.regla]));
+            reglas.querySelector('[data-regla="coinciden"]').classList.toggle('is-bad', repetida.value.length > 0 && repetida.value !== v);
+        }
+        [nueva, repetida].forEach(i => i.addEventListener('input', revisar));
+        revisar();
+    })();
+</script>
+{% endif %}
+{% endblock %}

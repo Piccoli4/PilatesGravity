@@ -22,7 +22,7 @@
                           // (exactly where the copy peaks) and moves quicker at the
                           // edges. 0 = linear (default). Keep ≤ 0.6; 1 = full pause.
            eyebrow, title, body, tags:[…],
-           cta:{ primary:{label,href}, secondary:{label,href} } }, // last section only
+           cta:{ primary:{label,href}, secondary:{label,href}, link:{label,href} } }, // last section only
          …
        ],
        connectors: [clipUrl, …],          // length = sections.length - 1 (nulls allowed)
@@ -357,6 +357,8 @@ function mountScrollWorld(container, config) {
     let h = '';
     if (cta.primary) h += `<a class="sw-btn sw-btn--primary" href="${esc(cta.primary.href || '#')}">${esc(cta.primary.label)}</a>`;
     if (cta.secondary) h += `<a class="sw-btn sw-btn--ghost" href="${esc(cta.secondary.href || '#')}">${esc(cta.secondary.label)}</a>`;
+    // Gravity: tercer enlace, más liviano (texto subrayado) para no saturar la escena
+    if (cta.link) h += `<a class="sw-btn sw-btn--link" href="${esc(cta.link.href || '#')}">${esc(cta.link.label)} →</a>`;
     return h;
   }
 }
@@ -431,6 +433,7 @@ function injectCSS() {
   .sw-btn{text-decoration:none;font-weight:600;font-size:.95rem;padding:13px 24px;border-radius:999px;transition:transform .2s;}
   .sw-btn--primary{color:#fff;background:var(--sw-ink);} .sw-btn--primary:hover{transform:translateY(-2px);}
   .sw-btn--ghost{color:var(--sw-ink);border:1.5px solid color-mix(in srgb,var(--sw-ink) 25%,transparent);} .sw-btn--ghost:hover{transform:translateY(-2px);}
+  .sw-btn--link{color:var(--sw-ink);padding-left:6px;padding-right:6px;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px;} .sw-btn--link:hover{transform:translateX(3px);}
   .sw-route{position:fixed;right:clamp(14px,2.4vw,30px);top:50%;z-index:40;transform:translateY(-50%);display:flex;flex-direction:column;gap:22px;padding:18px 10px;}
   .sw-route::before{content:"";position:absolute;left:50%;top:22px;bottom:22px;width:2px;transform:translateX(-50%);background:var(--sw-accent);opacity:.28;}
   .sw-route__dot{position:relative;border:0;background:transparent;cursor:pointer;width:14px;height:14px;display:grid;place-items:center;}

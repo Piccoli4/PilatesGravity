@@ -212,7 +212,7 @@ class AccesoPantallasTest(BaseHorariosTest):
         self.client.force_login(self.profesora)
         respuesta = self.client.get(reverse('gravity:mis_horarios'), {'mes': '2026-09'})
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, 'Mis Horarios')
+        self.assertContains(respuesta, 'Mis horarios')
         self.assertContains(respuesta, '36 h')
 
 

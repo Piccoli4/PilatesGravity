@@ -47,12 +47,13 @@
                             <span class="pr-price__value">{{ plan.precio_fmt }}</span>
                             <span class="pr-price__period">/ mes</span>
                         </div>
-                        <span class="pr-per-class">≈ ${{ plan.por_clase_fmt }} por clase</span>
+                        <span class="pr-cash"><strong>${{ plan.efectivo_fmt }}</strong> en efectivo del 1 al 10</span>
+                        <span class="pr-per-class">≈ ${{ plan.por_clase_fmt }} por clase (precio de lista)</span>
 
                         <ul class="pr-features">
                             <li>Acceso a las dos sedes</li>
-                            <li>Reservás y modificás desde la web</li>
-                            <li>Recuperás clases dentro de los 7 días</li>
+                            <li>Reservás y avisás si faltás desde la web</li>
+                            <li>Recuperás las clases que avisás con 3 h</li>
                             {% if plan.descripcion %}<li>{{ plan.descripcion }}</li>{% endif %}
                         </ul>
 

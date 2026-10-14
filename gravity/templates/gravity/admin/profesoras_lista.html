@@ -1,279 +1,141 @@
 {% extends 'gravity/admin/base_admin.html' %}
 {% load formato %}
 
-{% block title %}Profesoras - Panel de Administración{% endblock %}
-
-{% block breadcrumb %}
-<li class="flex items-center">
-    <span class="text-gray-400">/</span>
-    <span class="ml-1 text-gray-500">Profesoras</span>
-</li>
-{% endblock %}
+{% block title %}Equipo{% endblock %}
 
 {% block content %}
-
-<!-- Header -->
-<div class="mb-4">
-    <div class="p-4 bg-blanco rounded-lg shadow-sm">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-xl md:text-2xl font-bold text-principal mb-2 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8 mb-1 shrink-0">
-                        <path fill-rule="evenodd"
-                            d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z"
-                            clip-rule="evenodd" />
-                    </svg>
-                    Horarios de Profesoras
-                </h2>
-                <p class="text-gray-500 text-sm mb-0">
-                    Horas trabajadas y costo del período seleccionado.
-                    {% if periodo == 'dia' %}
-                        Día {{ desde|date:"l d/m/Y" }}.
-                    {% elif periodo == 'semana' %}
-                        Semana del {{ desde|date:"d/m" }} al {{ hasta|date:"d/m/Y" }}.
-                    {% elif periodo == 'mes' %}
-                        {{ desde|date:"F Y"|capfirst }}.
-                    {% else %}
-                        Del {{ desde|date:"d/m/Y" }} al {{ hasta|date:"d/m/Y" }}.
-                    {% endif %}
-                </p>
-            </div>
-            <div class="grid grid-cols-3 gap-4 lg:flex lg:items-center shrink-0">
-                <div class="text-center">
-                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">{{ total_horas|horas }}</div>
-                    <div class="text-xs text-gray-400 mt-1">horas totales</div>
-                </div>
-                <div class="w-px h-8 bg-gray-200 hidden lg:block"></div>
-                <div class="text-center">
-                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">${{ total_monto|pesos }}</div>
-                    <div class="text-xs text-gray-400 mt-1">costo del período</div>
-                </div>
-                <div class="w-px h-8 bg-gray-200 hidden lg:block"></div>
-                <div class="text-center">
-                    <div class="text-xl md:text-2xl font-bold text-principal leading-none">{{ cantidad_profesoras }}</div>
-                    <div class="text-xs text-gray-400 mt-1">profesora{{ cantidad_profesoras|pluralize }}</div>
-                </div>
-            </div>
-        </div>
+<header class="ad-head">
+    <div class="ad-head__text">
+        <h1 class="ad-head__title">Equipo</h1>
+        <p class="ad-head__sub">Horas, pagos y acceso al panel de quienes trabajan en el estudio.</p>
     </div>
-</div>
-
-<!-- Filtro de período -->
-<div class="mb-4 p-4 bg-blanco rounded-lg shadow-sm">
-    <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-4">
-        <a href="?periodo=dia&fecha={{ hoy|date:'Y-m-d' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'dia' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
-            Por día
-        </a>
-        <a href="?periodo=semana&fecha={{ fecha|date:'Y-m-d' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'semana' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
-            Por semana
-        </a>
-        <a href="?periodo=mes&mes={{ mes_seleccionado|date:'Y-m' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'mes' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
-            Por mes
-        </a>
-        <a href="?periodo=personalizado&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}"
-            class="px-4 py-2 rounded-lg text-sm font-medium text-center {% if periodo == 'personalizado' %}bg-principal text-white{% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-200{% endif %}">
-            Rango
-        </a>
+    <div class="ad-head__actions">
+        <a class="ad-btn" href="{% url 'gravity:admin_equipo_sumar' %}">{% include 'gravity/admin/_icono.html' with i='alumno_nuevo' %} Sumar al equipo</a>
     </div>
+</header>
 
-    <form method="get" class="grid grid-cols-1 sm:flex sm:flex-wrap sm:items-end gap-3">
-        <input type="hidden" name="periodo" value="{{ periodo }}">
-
-        {% if periodo == 'dia' or periodo == 'semana' %}
-        <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">
-                {% if periodo == 'dia' %}Fecha{% else %}Semana que contiene a{% endif %}
-            </label>
-            <input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        {% elif periodo == 'mes' %}
-        <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Mes</label>
-            <input type="month" name="mes" value="{{ mes_seleccionado|date:'Y-m' }}"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        {% else %}
-        <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
-            <input type="date" name="desde" value="{{ desde|date:'Y-m-d' }}"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
-            <input type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-principal/40 focus:border-principal">
-        </div>
-        {% endif %}
-
-        <button type="submit"
-            class="w-full sm:w-auto bg-principal text-blanco px-5 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
-            Ver
-        </button>
+{% with sa=ver_sin_acceso|yesno:'&estado=sin_acceso,' %}
+<div class="eq-periodo">
+    <nav class="ad-chips" aria-label="Período">
+        <a class="ad-chip{% if periodo == 'mes' %} is-active{% endif %}" href="?periodo=mes&mes={{ mes_seleccionado|date:'Y-m' }}{{ sa }}">Mes</a>
+        <a class="ad-chip{% if periodo == 'semana' %} is-active{% endif %}" href="?periodo=semana&fecha={% if periodo == 'mes' %}{{ hoy|date:'Y-m-d' }}{% else %}{{ desde|date:'Y-m-d' }}{% endif %}{{ sa }}">Semana</a>
+        <a class="ad-chip{% if periodo == 'dia' %} is-active{% endif %}" href="?periodo=dia&fecha={{ hoy|date:'Y-m-d' }}{{ sa }}">Día</a>
+        <a class="ad-chip{% if periodo == 'personalizado' %} is-active{% endif %}" href="?periodo=personalizado&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{{ sa }}">Fechas</a>
+    </nav>
+    {% if periodo == 'personalizado' %}
+    <form method="get" class="eq-rango">
+        <input type="hidden" name="periodo" value="personalizado">
+        {% if ver_sin_acceso %}<input type="hidden" name="estado" value="sin_acceso">{% endif %}
+        <label class="ad-field"><span class="ad-label">Desde</span><input class="ad-input" type="date" name="desde" value="{{ desde|date:'Y-m-d' }}" required></label>
+        <label class="ad-field"><span class="ad-label">Hasta</span><input class="ad-input" type="date" name="hasta" value="{{ hasta|date:'Y-m-d' }}" required></label>
+        <button type="submit" class="ad-btn ad-btn--blue">Ver</button>
     </form>
+    {% else %}
+    <div class="eq-nav">
+        <a class="ad-btn ad-btn--ghost ad-btn--sm eq-nav__btn" href="{{ anterior }}{{ sa }}" aria-label="Período anterior">{% include 'gravity/admin/_icono.html' with i='volver' %}</a>
+        <p class="eq-nav__titulo">{{ titulo_periodo }}</p>
+        <a class="ad-btn ad-btn--ghost ad-btn--sm eq-nav__btn" href="{{ siguiente }}{{ sa }}" aria-label="Período siguiente">{% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
+    </div>
+    {% endif %}
+</div>
+{% endwith %}
+
+<div class="ad-kpis eq-kpis">
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">Horas{% if en_curso %} hasta hoy{% endif %}</p>
+        <p class="ad-kpi__value">{{ total_horas|horas }} h</p>
+    </div>
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">Costo{% if en_curso %} hasta hoy{% endif %}</p>
+        <p class="ad-kpi__value">${{ total_monto|pesos }}</p>
+    </div>
+    {% if en_curso %}
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">A fin de {% if periodo == 'mes' %}mes{% elif periodo == 'semana' %}semana{% else %}período{% endif %}</p>
+        <p class="ad-kpi__value">${{ total_proyeccion|pesos }}</p>
+        <p class="ad-kpi__detail">Si se cumple el horario</p>
+    </div>
+    {% endif %}
+    {% if es_mes_completo %}
+    <div class="ad-kpi{% if falta_pagar %} ad-kpi--warn{% endif %}">
+        <p class="ad-kpi__label">Falta pagar</p>
+        <p class="ad-kpi__value">{{ falta_pagar }}</p>
+        <p class="ad-kpi__detail">{% if en_curso %}El mes todavía no terminó{% else %}persona{{ falta_pagar|pluralize }}{% endif %}</p>
+    </div>
+    {% endif %}
 </div>
 
 {% if alguna_sin_valor_hora %}
-<div class="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-3">
-    <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-    </svg>
-    <p class="text-sm text-amber-700 mb-0">
-        Hay profesoras con horas trabajadas y sin valor por hora cargado para esas fechas.
-        El costo de esos días figura en $0 hasta que les cargues el valor hora.
-    </p>
+<div class="ad-alert ad-alert--warn eq-aviso">
+    {% include 'gravity/admin/_icono.html' with i='alerta' %}
+    <p>Hay horas sin valor por hora cargado: esos días figuran en $0 hasta que lo cargues en su ficha (pestaña Horario).</p>
+</div>
+{% endif %}
+
+{% if ver_sin_acceso %}
+<div class="ad-alert eq-aviso">
+    {% include 'gravity/admin/_icono.html' with i='info' %}
+    <p>Quienes ya no tienen acceso al panel, con su historial. <a href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% endif %}">Ver el equipo actual</a></p>
 </div>
 {% endif %}
 
 {% if filas %}
-
-<!-- Tarjetas (móvil) -->
-<div class="lg:hidden space-y-3">
-    {% for fila in filas %}
-    <a href="{% url 'gravity:admin_profesora_detalle' fila.profesora.id %}?mes={{ mes_seleccionado|date:'Y-m' }}"
-        class="block bg-blanco rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-
-        <div class="flex items-center justify-between gap-3 px-4 pt-4 pb-3">
-            <div class="min-w-0">
-                <p class="font-semibold text-gray-900 truncate mb-1">
-                    {{ fila.profesora.get_full_name|default:fila.profesora.username }}
-                </p>
-                <p class="text-xs text-gray-500 mb-0">
-                    {% if fila.horas_semanales %}{{ fila.horas_semanales|horas }} h por semana{% else %}sin horario cargado{% endif %}
-                    {% if fila.valor_hora %} · ${{ fila.valor_hora|pesos }} la hora{% endif %}
-                </p>
-            </div>
-            {% if es_mes_completo %}
-            {% if fila.liquidacion %}
-            <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
-                Pagado
-            </span>
-            {% elif fila.horas %}
-            <span class="shrink-0 inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700">
-                Pendiente
-            </span>
-            {% endif %}
-            {% endif %}
-        </div>
-
-        <div class="grid grid-cols-2 divide-x divide-gray-100 border-t border-gray-100 bg-gray-50">
-            <div class="px-3 py-2">
-                <p class="text-xs text-gray-500 mb-1">Horas del período</p>
-                <p class="text-sm font-semibold text-principal mb-0">{{ fila.horas|horas }} h</p>
-            </div>
-            <div class="px-3 py-2">
-                <p class="text-xs text-gray-500 mb-1">Costo</p>
-                <p class="text-sm font-semibold text-gray-900 mb-0">
-                    ${{ fila.monto|pesos }}
-                    {% if fila.sin_valor_hora %}
-                    <span class="block text-xs text-amber-600 font-normal">falta el valor hora</span>
+<section class="ad-card">
+    <ul class="ad-list">
+        {% for fila in filas %}
+        <li>
+            <a class="ad-row eq-fila" href="{% url 'gravity:admin_profesora_detalle' fila.persona.id %}{% if es_mes_completo %}?mes={{ mes_seleccionado|date:'Y-m' }}{% endif %}">
+                {% include 'gravity/admin/_avatar.html' with persona=fila.persona %}
+                <span class="ad-row__body">
+                    <span class="ad-row__title">{{ fila.persona.get_full_name|default:fila.persona.username }}</span>
+                    <span class="ad-row__sub">
+                        {% if fila.horas_semanales %}{{ fila.horas_semanales|horas }} h por semana{% else %}Sin horario cargado{% endif %}
+                        {% if fila.valor_hora %} · ${{ fila.valor_hora.valor_hora|pesos }} la hora{% endif %}
+                    </span>
+                    {% if fila.estado.0 != 'activo' or fila.pago or fila.sin_valor_hora %}
+                    <span class="eq-fila__marcas">
+                        {% if fila.estado.0 != 'activo' %}<span class="ad-badge ad-badge--{{ fila.estado.2 }}">{{ fila.estado.1 }}</span>{% endif %}
+                        {% if fila.pago %}<span class="ad-badge ad-badge--{{ fila.pago.1 }}">{{ fila.pago.0 }}</span>{% endif %}
+                        {% if fila.sin_valor_hora %}<span class="ad-badge ad-badge--warn">Falta el valor hora</span>{% endif %}
+                    </span>
                     {% endif %}
-                </p>
-            </div>
-        </div>
-
-        <div class="px-4 py-2 border-t border-gray-100 text-right">
-            <span class="text-principal text-xs font-medium">Ver ficha →</span>
-        </div>
-    </a>
-    {% endfor %}
-
-    <div class="bg-blanco rounded-xl border border-secundario/30 shadow-sm px-4 py-3 flex items-center justify-between gap-3">
-        <span class="text-sm font-semibold text-gray-800">Total del estudio</span>
-        <span class="text-sm font-bold text-principal text-right">
-            {{ total_horas|horas }} h · ${{ total_monto|pesos }}
-        </span>
+                </span>
+                <span class="eq-fila__num">
+                    <strong>{{ fila.horas|horas }} h</strong>
+                    <span>${{ fila.monto|pesos }}</span>
+                    {% if fila.en_curso and fila.proyeccion_horas != fila.horas %}<small>de {{ fila.proyeccion_horas|horas }} h</small>{% endif %}
+                </span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="ad-card__foot eq-total">
+        <span>Total{% if en_curso %} hasta hoy{% endif %}</span>
+        <strong>{{ total_horas|horas }} h · ${{ total_monto|pesos }}</strong>
     </div>
-</div>
-
-<!-- Tabla (escritorio) -->
-<div class="hidden lg:block bg-blanco rounded-lg shadow-sm p-4">
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-secundario/30">
-                <th class="text-left font-semibold text-gray-600 py-2 pr-4">Profesora</th>
-                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas semanales</th>
-                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Horas del período</th>
-                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Valor hora</th>
-                <th class="text-right font-semibold text-gray-600 py-2 pr-4">Costo</th>
-                {% if es_mes_completo %}
-                <th class="text-center font-semibold text-gray-600 py-2 pr-4">Pago del mes</th>
-                {% endif %}
-                <th class="text-right font-semibold text-gray-600 py-2"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for fila in filas %}
-            <tr class="border-b border-gray-100 hover:bg-fondo/50 transition-colors">
-                <td class="py-3 pr-4 font-medium text-gray-800">
-                    {{ fila.profesora.get_full_name|default:fila.profesora.username }}
-                    {% if fila.sin_valor_hora %}
-                    <span class="ml-1 text-xs text-amber-600">sin valor hora</span>
-                    {% endif %}
-                </td>
-                <td class="py-3 pr-4 text-right text-gray-600">
-                    {% if fila.horas_semanales %}{{ fila.horas_semanales|horas }} h{% else %}—{% endif %}
-                </td>
-                <td class="py-3 pr-4 text-right font-semibold text-principal">{{ fila.horas|horas }} h</td>
-                <td class="py-3 pr-4 text-right text-gray-600">
-                    {% if fila.valor_hora %}${{ fila.valor_hora|pesos }}{% else %}—{% endif %}
-                </td>
-                <td class="py-3 pr-4 text-right font-semibold text-gray-800">${{ fila.monto|pesos }}</td>
-                {% if es_mes_completo %}
-                <td class="py-3 pr-4 text-center">
-                    {% if fila.liquidacion %}
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-600">
-                        Pagado {{ fila.liquidacion.fecha_pago|date:"d/m" }}
-                    </span>
-                    {% elif fila.horas %}
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-700">
-                        Pendiente
-                    </span>
-                    {% else %}
-                    <span class="text-gray-300">—</span>
-                    {% endif %}
-                </td>
-                {% endif %}
-                <td class="py-3 text-right">
-                    <a href="{% url 'gravity:admin_profesora_detalle' fila.profesora.id %}?mes={{ mes_seleccionado|date:'Y-m' }}"
-                        class="text-principal hover:underline text-sm font-medium whitespace-nowrap">
-                        Ver ficha
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr class="border-t-2 border-secundario/30">
-                <td class="py-3 pr-4 font-semibold text-gray-800">Total del estudio</td>
-                <td class="py-3 pr-4"></td>
-                <td class="py-3 pr-4 text-right font-bold text-principal">{{ total_horas|horas }} h</td>
-                <td class="py-3 pr-4"></td>
-                <td class="py-3 pr-4 text-right font-bold text-principal">${{ total_monto|pesos }}</td>
-                {% if es_mes_completo %}<td></td>{% endif %}
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
-</div>
-
+</section>
 {% else %}
-<div class="bg-blanco rounded-lg shadow-sm p-4">
-    <div class="text-center py-12">
-        <p class="text-gray-500 mb-2">Todavía no hay profesoras cargadas en el sistema.</p>
-        <p class="text-gray-400 text-sm mb-4">
-            Las profesoras son las administradoras que se crean desde "Gestionar Admins".
-        </p>
-        <a href="{% url 'gravity:admin_gestionar_admins' %}"
-            class="inline-block bg-principal text-blanco px-5 py-2 rounded-lg text-sm font-medium hover:bg-principal/90 transition-colors">
-            Ir a Gestionar Admins
-        </a>
+<div class="ad-card">
+    <div class="ad-empty">
+        {% include 'gravity/admin/_icono.html' with i='alumnos' %}
+        {% if ver_sin_acceso %}
+        <p class="ad-empty__title">No hay nadie sin acceso</p>
+        <p class="ad-empty__text">Cuando le quites el acceso a alguien, su historial va a quedar acá.</p>
+        {% else %}
+        <p class="ad-empty__title">Todavía no hay nadie en el equipo</p>
+        <p class="ad-empty__text">Sumá a quienes dan clases o atienden el estudio: van a poder pasar lista, reservar y cobrar.</p>
+        <a class="ad-btn" href="{% url 'gravity:admin_equipo_sumar' %}">Sumar al equipo</a>
+        {% endif %}
     </div>
 </div>
 {% endif %}
 
+<div class="eq-pie">
+    {% if not ver_sin_acceso and cantidad_sin_acceso %}
+    <a class="ad-btn ad-btn--quiet" href="?periodo={{ periodo }}{% if periodo == 'mes' %}&mes={{ mes_seleccionado|date:'Y-m' }}{% elif periodo == 'personalizado' %}&desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}{% else %}&fecha={{ desde|date:'Y-m-d' }}{% endif %}&estado=sin_acceso">Ver quienes ya no tienen acceso ({{ cantidad_sin_acceso }}) {% include 'gravity/admin/_icono.html' with i='flecha' %}</a>
+    {% endif %}
+    {% if superadmins %}
+    <p class="eq-super">{% include 'gravity/admin/_icono.html' with i='escudo' %} Con acceso total (superadmin): {% for s in superadmins %}{{ s.get_full_name|default:s.username }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+    {% endif %}
+</div>
 {% endblock %}

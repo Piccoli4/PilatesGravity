@@ -8,8 +8,9 @@ from django.contrib.auth.views import (
 )
 from django.contrib import messages
 from django.urls import reverse_lazy
-from .forms import SignUpForm, ProfileUpdateForm, UserProfileForm, CambiarPasswordForm, CustomPasswordResetForm, CustomSetPasswordForm, TestimonioForm
+from .forms import SignUpForm, ProfileUpdateForm, UserProfileForm, CambiarPasswordForm, EliminarCuentaForm, CustomPasswordResetForm, CustomSetPasswordForm, TestimonioForm
 from .models import UserProfile, Testimonio
+from .mi_espacio import resumen_alumno, reservas_alumno, SEDE_PREFERIDA
 from gravity.email_service import enviar_email_bienvenida_completo, enviar_email_despedida_completo
 from gravity.models import AusenciaTemporal
 from datetime import date, timedelta
@@ -57,7 +58,7 @@ def custom_logout_view(request):
     if request.method == 'POST':
         # Realizar logout
         logout(request)
-        messages.success(request, '¡Has cerrado sesión exitosamente!')
+        messages.success(request, 'Cerraste sesión. ¡Te esperamos en la próxima clase!')
         return redirect('gravity:home')
     else:
         # Mostrar página de confirmación
@@ -86,7 +87,7 @@ def signup(request):
             messages.success(
                 request,
                 f'¡Cuenta creada exitosamente para {username}! '
-                'Ya puedes empezar a reservar tus clases de Pilates.'
+                'Ya podés empezar a reservar tus clases de Pilates.'
             )
             
             # Iniciar sesión automáticamente después del registro
@@ -126,10 +127,10 @@ def profile(request):
         form = ProfileUpdateForm(request.user, request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Tu información básica ha sido actualizada exitosamente')
+            messages.success(request, 'Tus datos se guardaron correctamente.')
             return redirect('accounts:profile')
         else:
-            messages.error(request, 'Por favor corrige los errores en el formulario')
+            messages.error(request, 'Revisá los datos marcados e intentá de nuevo.')
     else:
         form = ProfileUpdateForm(request.user)
 
@@ -143,46 +144,67 @@ def profile(request):
         fecha__lt=hoy - timedelta(days=6),
     ).select_related('reserva__clase')
 
+    me = resumen_alumno(request.user)
     context = {
         'form': form,
+        # Si los datos no se pudieron guardar, el formulario se muestra abierto con los errores
+        'editar_abierto': request.method == 'POST',
         'user_profile': user_profile,
         'testimonio': testimonio,
         'testimonio_form': testimonio_form,
         'ausencias_vencidas_sin_ver': ausencias_vencidas_sin_ver,
+        'me': me,
+        'hay_avisos': bool(
+            me['n_recuperos'] or me['solicitud'] or not user_profile.perfil_completado
+            or (not me['plan'] and not request.user.is_staff)
+        ),
+        'sede_preferida': SEDE_PREFERIDA.get(user_profile.sede_preferida, 'Cualquier sede'),
     }
     return render(request, 'accounts/profile.html', context)
 
+# Paso del recorrido guiado en el que se pide cada campo de la ficha
+PASOS_FICHA = {
+    'telefono': 1, 'fecha_nacimiento': 1, 'nivel_experiencia': 1,
+    'tiene_lesiones': 2, 'descripcion_lesiones': 2,
+    'avatar': 3, 'acepta_recordatorios': 3, 'sede_preferida': 3,
+}
+
+
 @login_required
 def profile_complete(request):
-    """Vista para completar el perfil extendido del usuario"""
-    # Obtener o crear el perfil del usuario
-    profile, created = request.user.profile, False
-    if not hasattr(request.user, 'profile'):
-        from .models import UserProfile
+    """
+    Ficha del alumno. La primera vez (perfil sin completar) es un recorrido guiado
+    de 3 pasos; después, una sola página para editar.
+    """
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
         profile = UserProfile.objects.create(user=request.user)
-        created = True
-    
+
+    es_primera_vez = not profile.perfil_completado
+
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             profile = form.save(commit=False)
             profile.perfil_completado = True
             profile.save()
-            
-            messages.success(
-                request, 
-                '¡Tu perfil ha sido completado exitosamente! '
-                'Ahora puedes empezar a reservar tus clases.'
-            )
+            if es_primera_vez:
+                messages.success(request, '¡Listo! Tu ficha quedó completa. Ya podés reservar tus clases.')
+            else:
+                messages.success(request, 'Tus cambios se guardaron.')
             return redirect('accounts:profile')
-        else:
-            messages.error(request, 'Por favor corrige los errores en el formulario')
+        messages.error(request, 'Revisá los datos marcados e intentá de nuevo.')
     else:
         form = UserProfileForm(instance=profile)
-    
+
+    # Si hubo errores, el recorrido arranca en el primer paso que falló
+    pasos_con_error = [PASOS_FICHA.get(campo, 1) for campo in form.errors]
     context = {
         'form': form,
-        'is_new_profile': created or not profile.perfil_completado
+        'es_primera_vez': es_primera_vez,
+        'paso_inicial': min(pasos_con_error) if pasos_con_error else 1,
+        'profile': profile,
     }
     return render(request, 'accounts/profile_complete.html', context)
 
@@ -195,10 +217,10 @@ def cambiar_password(request):
             form.save()
             # Mantener la sesión activa después del cambio de contraseña
             update_session_auth_hash(request, request.user)
-            messages.success(request, '¡Tu contraseña ha sido cambiada exitosamente!')
+            messages.success(request, 'Listo, cambiaste tu contraseña. Usala la próxima vez que entres.')
             return redirect('accounts:profile')
         else:
-            messages.error(request, 'Por favor corrige los errores en el formulario')
+            messages.error(request, 'Revisá los datos marcados e intentá de nuevo.')
     else:
         form = CambiarPasswordForm(request.user)
     
@@ -206,26 +228,13 @@ def cambiar_password(request):
 
 @login_required
 def mis_reservas(request):
-    """Vista para mostrar las reservas del usuario actual"""
-    from gravity.models import Reserva
-
-    reservas_activas = request.user.reservas_pilates.filter(activa=True).select_related('clase')
-    reservas_inactivas = request.user.reservas_pilates.filter(activa=False).select_related('clase')[:10]
-
-    puede_recuperar, n_recuperos_disponibles, ausencias_recupero = Reserva.usuario_puede_hacer_recupero(request.user)
-
-    reserva_exitosa = request.session.get('reserva_exitosa', None)
-    ausencia_registrada = request.session.get('ausencia_registrada', None)
-
+    """Agenda, horarios fijos, recuperos e historial del alumno."""
     context = {
-        'reservas_activas': reservas_activas,
-        'reservas_inactivas': reservas_inactivas,
-        'total_reservas': request.user.reservas_pilates.count(),
-        'puede_recuperar': puede_recuperar,
-        'n_recuperos_disponibles': n_recuperos_disponibles,
-        'ausencias_recupero': ausencias_recupero,
-        'reserva_exitosa': reserva_exitosa,
-        'ausencia_registrada': ausencia_registrada,
+        'me': resumen_alumno(request.user),
+        'r': reservas_alumno(request.user),
+        # Avisos de una sola vez que deja la acción anterior (se cierran por AJAX)
+        'reserva_exitosa': request.session.get('reserva_exitosa'),
+        'ausencia_registrada': request.session.get('ausencia_registrada'),
     }
     return render(request, 'accounts/mis_reservas.html', context)
 
@@ -253,115 +262,106 @@ def guardar_testimonio(request):
 
 @login_required
 def eliminar_cuenta(request):
-    """Vista para que el usuario pueda eliminar su propia cuenta"""
-    if request.method == 'POST':
-        # Confirmar eliminación
-        confirmacion = request.POST.get('confirmar_eliminacion')
-        if confirmacion == 'confirmar':
-            username = request.user.username
-            
-            # Obtener estadísticas antes de eliminar
-            total_reservas = request.user.reservas_pilates.count()
-            reservas_activas = request.user.reservas_pilates.filter(activa=True).count()
+    """
+    El alumno elimina su cuenta: se anonimiza (ver accounts/baja.py). No se permite
+    con deuda pendiente ni para cuentas del equipo.
+    """
+    from .baja import anonimizar_cuenta, motivo_bloqueo
+    from gravity.models import PlanUsuario
 
-            # 📧 ENVIAR EMAIL DE DESPEDIDA
+    bloqueo = motivo_bloqueo(request.user)
+
+    if request.method == 'POST' and not bloqueo:
+        form = EliminarCuentaForm(request.user, request.POST)
+        if form.is_valid():
+            usuario = request.user
+            # El email de despedida sale antes de borrar el email y el nombre
             try:
-                enviar_email_despedida_completo(request.user)
-                logger.info(f"Email de despedida enviado a {request.user.username}")
+                enviar_email_despedida_completo(usuario)
             except Exception as e:
                 logger.error(f"Error enviando email de despedida: {str(e)}")
-            
-            # Eliminar usuario (esto eliminará automáticamente todas las reservas por CASCADE)
-            request.user.delete()
-            
-            messages.success(
-                request,
-                f'La cuenta de {username} ha sido eliminada exitosamente junto con {total_reservas} reservas. '
-                '¡Esperamos verte de nuevo pronto!'
-            )
+            anonimizar_cuenta(usuario)
+            logout(request)
+            messages.success(request, 'Eliminamos tu cuenta. Gracias por haber sido parte de Pilates Gravity.')
             return redirect('gravity:home')
-        else:
-            messages.error(request, 'Error en la confirmación. Por favor, intenta nuevamente.')
-    
-    # Obtener información para mostrar en la confirmación
-    reservas_activas = request.user.reservas_pilates.filter(activa=True).select_related('clase')
-    reservas_historicas = request.user.reservas_pilates.filter(activa=False).select_related('clase')
-    total_reservas = request.user.reservas_pilates.count()
-    
-    # Obtener información del perfil si existe
-    try:
-        user_profile = request.user.profile
-    except:
-        user_profile = None
-    
+        messages.error(request, 'Revisá los datos marcados e intentá de nuevo.')
+    else:
+        form = EliminarCuentaForm(request.user)
+
     context = {
-        'reservas_activas': reservas_activas,
-        'reservas_historicas': reservas_historicas,
-        'total_reservas': total_reservas,
-        'user_profile': user_profile,
-        'tiempo_en_estudio': user_profile.get_tiempo_en_estudio() if user_profile else None
+        'form': form,
+        'bloqueo': bloqueo[0] if bloqueo else None,
+        'deuda': bloqueo[1] if bloqueo else None,
+        'reservas_activas': request.user.reservas_pilates.filter(activa=True).count(),
+        'plan': PlanUsuario.objects.filter(usuario=request.user, activo=True).select_related('plan').first(),
     }
     return render(request, 'accounts/eliminar_cuenta.html', context)
 
 class CustomPasswordResetView(PasswordResetView):
-    """Vista personalizada para solicitar reset de contraseña"""
+    """Pedir el enlace por email. El mensaje es el mismo exista o no la cuenta."""
     template_name = 'accounts/password_reset_form.html'
     form_class = CustomPasswordResetForm
     email_template_name = 'accounts/password_reset_email.txt'
     subject_template_name = 'accounts/password_reset_subject.txt'
     html_email_template_name = 'accounts/password_reset_email.html'
     success_url = reverse_lazy('accounts:password_reset_done')
-    
+
     def form_valid(self, form):
-        """Agregar mensaje de éxito personalizado"""
-        messages.success(
-            self.request,
-            '¡Perfecto! Hemos enviado las instrucciones para restablecer tu contraseña '
-            'a tu correo electrónico. Revisa tu bandeja de entrada y spam.'
-        )
+        # Para mostrarlo en "Revisá tu correo" y poder reenviar
+        self.request.session['reset_email'] = form.cleaned_data['email']
         return super().form_valid(form)
-    
-    def form_invalid(self, form):
-        """Agregar mensaje de error personalizado"""
-        messages.error(
-            self.request,
-            'Por favor corrige los errores en el formulario.'
-        )
-        return super().form_invalid(form)
+
 
 class CustomPasswordResetDoneView(PasswordResetDoneView):
-    """Vista que confirma que se envió el email de reset"""
+    """Confirma que se envió el email (si la cuenta existe)."""
     template_name = 'accounts/password_reset_done.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['email'] = self.request.session.get('reset_email', '')
+        return context
+
+
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
-    """Vista para confirmar el token y establecer nueva contraseña"""
+    """Elegir la contraseña nueva desde el enlace del email."""
     template_name = 'accounts/password_reset_confirm.html'
     form_class = CustomSetPasswordForm
     success_url = reverse_lazy('accounts:password_reset_complete')
-    
+
     def form_valid(self, form):
-        """Agregar mensaje de éxito personalizado"""
-        messages.success(
-            self.request,
-            '¡Excelente! Tu contraseña ha sido cambiada exitosamente. '
-            'Ya puedes iniciar sesión con tu nueva contraseña.'
-        )
+        self.request.session.pop('reset_email', None)
         return super().form_valid(form)
-    
-    def form_invalid(self, form):
-        """Agregar mensaje de error personalizado"""
-        if self.validlink:
-            messages.error(
-                self.request,
-                'Por favor corrige los errores en el formulario.'
-            )
-        else:
-            messages.error(
-                self.request,
-                'El enlace de restablecimiento es inválido o ha expirado. '
-                'Por favor solicita un nuevo enlace.'
-            )
-        return super().form_invalid(form)
+
+def invitacion(request, uidb64, token):
+    """
+    Crear la contraseña desde la invitación que manda el estudio al crear la cuenta.
+    Al guardarla, entra directo: un alumno va a completar su ficha; alguien del
+    equipo, al panel.
+    """
+    from django.contrib.auth.models import User
+    from django.utils.encoding import force_str
+    from django.utils.http import urlsafe_base64_decode
+    from .invitacion import invitacion_token
+
+    try:
+        usuario = User.objects.get(pk=force_str(urlsafe_base64_decode(uidb64)), is_active=True)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        usuario = None
+    valido = usuario is not None and invitacion_token.check_token(usuario, token)
+
+    form = CustomSetPasswordForm(usuario, request.POST or None) if valido else None
+    if valido and request.method == 'POST' and form.is_valid():
+        form.save()
+        if request.user.is_authenticated:
+            logout(request)
+        login(request, usuario, backend='django.contrib.auth.backends.ModelBackend')
+        if usuario.is_staff:
+            messages.success(request, f'¡Listo, {usuario.first_name or usuario.username}! Ya tenés tu contraseña. Te damos la bienvenida al panel.')
+            return redirect('gravity:admin_dashboard')
+        messages.success(request, f'¡Listo, {usuario.first_name or usuario.username}! Ya tenés tu contraseña. Completá tu ficha para empezar.')
+        return redirect('accounts:profile_complete')
+    return render(request, 'accounts/invitacion.html', {'form': form, 'validlink': valido, 'usuario': usuario if valido else None})
+
 
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     """Vista que confirma que el reset fue exitoso"""

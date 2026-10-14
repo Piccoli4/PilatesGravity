@@ -1,0 +1,14 @@
+Hola {{ usuario.first_name|default:usuario.username }},
+
+{% if usuario.is_staff %}Te sumamos al equipo de Pilates Gravity. Elegí tu contraseña y entrá al panel: ahí vas a ver las clases del día, pasar lista y tus horarios.{% else %}Te creamos una cuenta en Pilates Gravity. Elegí tu contraseña y desde ahí vas a poder ver tus clases, avisar si no venís y reservar recuperos.{% endif %}
+
+Tu usuario es: {{ usuario.username }}
+(distingue mayúsculas: escribilo tal cual)
+
+Creá tu contraseña con este enlace:
+{{ enlace }}
+
+El enlace vale {{ dias }} días y sirve una sola vez. Si se vence, pedí uno nuevo con "Olvidé mi contraseña".
+
+---
+Pilates Gravity · WhatsApp +54 342 511 4448 · pilatesgravity@gmail.com

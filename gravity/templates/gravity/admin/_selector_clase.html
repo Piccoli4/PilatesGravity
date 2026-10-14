@@ -1,0 +1,42 @@
+{% comment %}
+Selector de clase (y de fecha, para recuperos y clases únicas). Lo usan "Reservar para
+un alumno" y "Cambiar reserva". Recibe:
+  campo    nombre del input de la clase ("clase" o "nueva_clase")
+  grupos   clases por día (views._opciones_clases)
+  elegida  id de la clase marcada (texto)
+  modo     "fijo" o "puntual"; si no viene, lo decide el campo tipo_reserva del formulario
+  fecha    fecha marcada (AAAA-MM-DD), opcional
+Los lugares libres y las fechas los arma static/js/admin_reservas.js con datos_js.
+{% endcomment %}<div class="rs-picker" data-picker data-campo="{{ campo }}"{% if modo %} data-modo="{{ modo }}"{% endif %} data-fecha="{{ fecha }}">
+    <div class="ad-chips rs-sedes" role="group" aria-label="Sede">
+        <button type="button" class="ad-chip is-active" data-sede="">Las dos sedes</button>
+        <button type="button" class="ad-chip" data-sede="sede_principal">La Rioja 3044</button>
+        <button type="button" class="ad-chip" data-sede="sede_2">9 de Julio 3696</button>
+    </div>
+    {% for g in grupos %}
+    <fieldset class="rs-dia" data-dia>
+        <legend class="rs-dia__titulo">{{ g.dia }}</legend>
+        <div class="rs-opciones">
+            {% for c in g.clases %}
+            <label class="rs-op" data-sede="{{ c.clase.direccion }}">
+                <input type="radio" name="{{ campo }}" value="{{ c.id }}"{% if elegida == c.id|stringformat:'s' %} checked{% endif %}>
+                <span class="rs-op__box">
+                    <span class="rs-op__hora">{{ c.clase.horario|time:"H:i" }}</span>
+                    <span class="rs-op__info"><strong>{{ c.clase.get_nombre_display }}</strong><small>{{ c.clase.get_direccion_corta }}</small></span>
+                    <span class="rs-op__libres" data-libres></span>
+                </span>
+            </label>
+            {% endfor %}
+        </div>
+    </fieldset>
+    {% empty %}
+    <p class="hy-vacio">No hay clases activas.</p>
+    {% endfor %}
+    <p class="hy-vacio rs-sin-clases" data-sin-clases hidden>No hay clases en esta sede.</p>
+</div>
+
+<div class="ad-field rs-fechas" data-fechas hidden>
+    <span class="ad-label">Fecha</span>
+    <div class="rs-fechas__lista" data-fechas-lista role="radiogroup" aria-label="Fecha"></div>
+    <p class="ad-help" data-fechas-ayuda>Elegí primero la clase.</p>
+</div>

@@ -1,353 +1,180 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Mis Planes - Pilates Gravity{% endblock %}
+{% block title %}Mis planes - Pilates Gravity{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261011o">
+{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-fondo py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-principal mb-4 font-cinzel">
-                Mis Planes de Pilates
-            </h1>
-            <p class="text-xl text-gris-oscuro max-w-3xl mx-auto">
-                Gestiona tus planes, revisa tu estado actual y consulta tu historial de membresías.
-            </p>
-        </div>
+<section class="me pl">
+    <div class="g-container me__wrap">
 
-        <!-- Estadísticas de la semana actual -->
-        <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6 mb-8">
-            <h2 class="text-xl font-bold text-principal mb-6 font-cinzel flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="w-10 h-10 text-secundario mr-3" fill="currentColor" stroke="currentColor">
-                    <path d="M424 64C437.3 64 448 74.7 448 88L448 128L480 128C515.3 128 544 156.7 544 192L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 192C96 156.7 124.7 128 160 128L192 128L192 88C192 74.7 202.7 64 216 64C229.3 64 240 74.7 240 88L240 128L400 128L400 88C400 74.7 410.7 64 424 64zM160 176C151.2 176 144 183.2 144 192L144 480C144 488.8 151.2 496 160 496L480 496C488.8 496 496 488.8 496 480L496 192C496 183.2 488.8 176 480 176L160 176zM390.7 241.9C398.5 231.2 413.5 228.8 424.2 236.6C434.9 244.4 437.3 259.4 429.5 270.1L307.4 438.1C303.3 443.8 296.9 447.4 289.9 447.9C282.9 448.4 276 445.9 271.1 441L215.2 385.1C205.8 375.7 205.8 360.5 215.2 351.2C224.6 341.9 239.8 341.8 249.1 351.2L285.1 387.2L390.7 242z"/>
-                </svg>
-                Estado Semanal
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="bg-fondo rounded-xl p-5 border border-principal/20 text-center">
-                    <div class="text-3xl font-black text-principal mb-2">{{ clases_disponibles }}</div>
-                    <div class="text-sm font-medium text-gris-medio">Clases Disponibles</div>
-                    <div class="text-xs text-gris-medio mt-1">Esta semana</div>
-                </div>
-                <div class="bg-fondo rounded-xl p-5 border border-principal/20 text-center">
-                    <div class="text-3xl font-black text-exito mb-2">{{ reservas_actuales }}</div>
-                    <div class="text-sm font-medium text-gris-medio">Clases Reservadas</div>
-                    <div class="text-xs text-gris-medio mt-1">Actualmente</div>
-                </div>
-                <div class="bg-fondo rounded-xl p-5 border border-principal/20 text-center">
-                    <div class="text-3xl font-black text-secundario mb-2">{{ clases_restantes }}</div>
-                    <div class="text-sm font-medium text-gris-medio">Clases Restantes</div>
-                    <div class="text-xs text-gris-medio mt-1">Por usar</div>
-                </div>
-                <div class="bg-fondo rounded-xl p-5 border border-principal/20 text-center">
-                    <div class="text-3xl font-black text-info mb-2">{{ planes_activos|length }}</div>
-                    <div class="text-sm font-medium text-gris-medio">Planes Activos</div>
-                    <div class="text-xs text-gris-medio mt-1">Vigentes</div>
-                </div>
+        <header class="mr-head me-in">
+            <div class="mr-head__text">
+                <a href="{% url 'accounts:profile' %}" class="pc-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    Mi espacio
+                </a>
+                <h1 class="mr-head__title">Mis planes</h1>
             </div>
-        </div>
+            <a href="{% url 'gravity:precios_publicos' %}" class="g-btn g-btn--ghost">Ver todos los planes</a>
+        </header>
 
-        <!-- Solicitud de cambio de plan pendiente -->
+        <!-- ================= Solicitud en revisión ================= -->
         {% if solicitud_pendiente %}
-        <div class="bg-blanco rounded-2xl shadow-lg border-2 border-advertencia/40 p-6 mb-8">
-            <h2 class="text-lg font-bold text-principal mb-3 font-cinzel flex items-center">
-                <svg class="w-6 h-6 text-advertencia mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Solicitud de cambio de plan pendiente
-            </h2>
-            <p class="text-gris-oscuro mb-3">
-                {% if solicitud_pendiente.plan_actual %}
-                    Solicitaste cambiar de <strong>{{ solicitud_pendiente.plan_actual.nombre }}</strong> a
-                    <strong>{{ solicitud_pendiente.plan_solicitado.nombre }}</strong>.
-                {% else %}
-                    Solicitaste el plan <strong>{{ solicitud_pendiente.plan_solicitado.nombre }}</strong>.
-                {% endif %}
-                Mientras se aprueba, seguís con tu situación actual sin cambios.
-            </p>
-            {% if solicitud_pendiente.reservas_a_cancelar.exists %}
-            <div class="bg-error/5 border border-error/20 rounded-lg p-4">
-                <p class="text-sm font-semibold text-gris-oscuro mb-2">
-                    Si se aprueba, se cancelarán estas reservas:
+        <article class="me-card pl-request me-in">
+            <span class="pl-request__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </span>
+            <div class="pl-request__body">
+                <strong>Tu solicitud está en revisión</strong>
+                <p>
+                    {% if solicitud_pendiente.plan_actual %}
+                        Pediste pasar de <b>{{ solicitud_pendiente.plan_actual.nombre }}</b> a <b>{{ solicitud_pendiente.plan_solicitado.nombre }}</b>.
+                        Mientras tanto seguís con tu plan actual sin cambios.
+                    {% else %}
+                        Pediste el plan <b>{{ solicitud_pendiente.plan_solicitado.nombre }}</b>. Te avisamos cuando quede aprobado y ahí ya podés reservar tus horarios.
+                    {% endif %}
                 </p>
-                <ul class="text-sm text-gris-medio space-y-1">
-                    {% for reserva in solicitud_pendiente.reservas_a_cancelar.all %}
-                    <li>{{ reserva.clase.get_nombre_display }} — {{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }}</li>
-                    {% endfor %}
-                </ul>
+                {% if solicitud_pendiente.reservas_a_cancelar.all %}
+                <div class="pl-request__free">
+                    <small>Cuando se apruebe, se liberan estos horarios:</small>
+                    <ul>
+                        {% for reserva in solicitud_pendiente.reservas_a_cancelar.all %}
+                        <li>{{ reserva.clase.dia }} {{ reserva.clase.horario|time:"H:i" }} · {{ reserva.clase.get_tipo_display }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
+        </article>
         {% endif %}
 
-        <!-- Contenido principal en dos columnas -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Columna izquierda: Planes Activos -->
-            <div class="lg:col-span-2">
-                <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-                        <h2 class="text-xl font-bold text-principal font-cinzel flex items-center">
-                            <svg class="w-6 h-6 text-exito mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Planes Activos
-                        </h2>
-                        {% if puede_cambiar_plan %}
-                        <a href="{% url 'gravity:modificar_plan' %}" class="inline-flex items-center justify-center bg-principal text-blanco px-4 py-2 rounded-lg text-sm font-semibold hover:bg-principal-dark transition-colors duration-200 shadow-md w-full sm:w-auto">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"></path>
-                            </svg>
-                            Cambiar de Plan
-                        </a>
-                        {% endif %}
-                    </div>
-
-                    {% if planes_activos %}
-                        <div class="space-y-4">
-                            {% for plan_usuario in planes_activos %}
-                            <div class="border border-secundario/30 rounded-xl p-5 hover:shadow-md transition-all duration-300 hover:border-principal/50">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center">
-                                        <div class="w-3 h-3 bg-exito rounded-full mr-3"></div>
-                                        <h3 class="text-lg font-bold text-principal">{{ plan_usuario.plan.nombre }}</h3>
-                                        {% if plan_usuario.tipo_plan == 'temporal' %}
-                                        <span class="ml-3 bg-info/20 text-info px-2 py-1 rounded-full text-xs font-medium">
-                                            Temporal
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-lg font-bold text-exito precio-formato">${{ plan_usuario.plan.precio_mensual }}</div>
-                                        <div class="text-xs text-gris-medio">por mes</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                    <div class="text-center">
-                                        <div class="text-xl font-bold text-principal">{{ plan_usuario.plan.clases_por_semana }}</div>
-                                        <div class="text-xs text-gris-medio">Clases/semana</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-sm font-semibold text-gris-oscuro">{{ plan_usuario.get_estado_display }}</div>
-                                        <div class="text-xs text-gris-medio">Estado</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-sm font-semibold text-gris-oscuro">{{ plan_usuario.dias_restantes }}</div>
-                                        <div class="text-xs text-gris-medio">Días restantes</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-sm font-semibold text-gris-oscuro">{{ plan_usuario.fecha_fin|date:"d/m" }}</div>
-                                        <div class="text-xs text-gris-medio">Vence</div>
-                                    </div>
-                                </div>
-
-                                <!-- Barra de progreso temporal -->
-                                {% if plan_usuario.dias_restantes <= 7 %}
-                                    <div class="mb-3">
-                                        <div class="flex justify-between text-xs text-gris-medio mb-1">
-                                            <span>Tiempo restante</span>
-                                            <span>{{ plan_usuario.dias_restantes }} días</span>
-                                        </div>
-                                        <div class="w-full bg-gris-claro rounded-full h-2">
-                                            {% if plan_usuario.dias_restantes <= 1 %}
-                                                <div class="h-2 rounded-full bg-error w-1/12"></div>
-                                            {% elif plan_usuario.dias_restantes <= 2 %}
-                                                <div class="h-2 rounded-full bg-error w-2/12"></div>
-                                            {% elif plan_usuario.dias_restantes <= 3 %}
-                                                <div class="h-2 rounded-full bg-advertencia w-3/12"></div>
-                                            {% elif plan_usuario.dias_restantes <= 5 %}
-                                                <div class="h-2 rounded-full bg-advertencia w-5/12"></div>
-                                            {% else %}
-                                                <div class="h-2 rounded-full bg-exito w-full"></div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                {% endif %}
-
-                                <div class="flex justify-end items-center space-x-3 mt-2">
-                                    {% now "j" as dia_hoy %}
-                                    {% if dia_hoy|add:"0" <= 4 %}
-                                        <span class="text-xs text-exito bg-exito/10 px-2 py-1 rounded-full">
-                                            Si cancelás hoy, no se te cobra el mes
-                                        </span>
-                                    {% elif dia_hoy|add:"0" <= 9 %}
-                                        <span class="text-xs text-advertencia bg-advertencia/10 px-2 py-1 rounded-full">
-                                            Si cancelás hoy, se cobra medio mes
-                                        </span>
-                                    {% else %}
-                                        <span class="text-xs text-error bg-error/10 px-2 py-1 rounded-full">
-                                            Si cancelás hoy, se cobra el mes completo
-                                        </span>
-                                    {% endif %}
-                                    <a href="{% url 'gravity:cancelar_plan' plan_usuario.id %}" class="text-error hover:text-error/80 text-sm font-medium transition-colors duration-200">
-                                        Cancelar Plan
-                                    </a>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-12">
-                            <svg class="w-16 h-16 text-gris-medio mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                            </svg>
-                            <h3 class="text-lg font-medium text-principal mb-2">No tienes planes activos</h3>
-                            <p class="text-gris-medio mb-6">Selecciona un plan para empezar a reservar tus clases de Pilates.</p>
-                            <a href="{% url 'gravity:seleccionar_plan' %}" class="inline-block bg-principal text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-principal-dark transition-colors duration-200 shadow-md">
-                                Seleccionar Plan
-                            </a>
-                        </div>
-                    {% endif %}
+        <!-- ================= Plan actual ================= -->
+        {% if plan_vigente %}
+        {% with p=plan_vigente.plan %}
+        <article class="me-card pl-current me-in">
+            <div class="pl-current__main">
+                <span class="me-label">Tu plan{% if plan_vigente.tipo_plan == 'temporal' %} · temporal{% endif %}</span>
+                <h2 class="pl-current__name">{{ p.nombre }}</h2>
+                <div class="pl-current__rhythm">
+                    <span class="pl-current__count">{{ p.clases_por_semana }}</span>
+                    <span>clase{{ p.clases_por_semana|pluralize }}<br>por semana</span>
+                </div>
+                <div class="pr-week" aria-hidden="true">
+                    {% for dia, activo in p.semana %}<span class="pr-week__day{% if activo %} is-on{% endif %}">{{ dia }}</span>{% endfor %}
                 </div>
             </div>
 
-            <!-- Columna derecha: Reservas Actuales e Historial -->
-            <div class="space-y-6">
-                <!-- Reservas Actuales -->
-                <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
-                    <h3 class="text-lg font-bold text-principal mb-4 font-cinzel flex items-center">
-                        <svg class="w-5 h-5 text-secundario mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-2"></path>
-                        </svg>
-                        Mis Reservas
-                    </h3>
-                    
-                    {% if reservas_activas %}
-                        <div class="space-y-3">
-                            {% for reserva in reservas_activas %}
-                            <div class="border border-secundario/20 rounded-lg p-3 text-sm">
-                                <div class="font-semibold text-principal">{{ reserva.clase.get_nombre_display }}</div>
-                                <div class="text-gris-medio">{{ reserva.clase.dia }} - {{ reserva.clase.horario|time:"H:i" }}</div>
-                                <div class="text-xs text-gris-medio">{{ reserva.clase.get_direccion_corta }}</div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <div class="mt-4 pt-3 border-t border-secundario/20">
-                            <a href="{% url 'gravity:reservar_clase' %}" class="text-principal hover:text-principal-dark text-sm font-medium">
-                                Ver todas las reservas →
-                            </a>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-8">
-                            <svg class="w-12 h-12 text-gris-medio mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-2"></path>
-                            </svg>
-                            <p class="text-gris-medio text-sm">No tienes reservas activas</p>
-                            {% if tiene_planes_activos %}
-                            <a href="{% url 'gravity:reservar_clase' %}" class="inline-block mt-3 text-principal hover:text-principal-dark text-sm font-medium">
-                                Reservar Clase →
-                            </a>
-                            {% endif %}
-                        </div>
-                    {% endif %}
+            <div class="pl-current__side">
+                {% include 'gravity/_plan_precios.html' with plan=p %}
+
+                <div class="pl-usage">
+                    <div class="me-meter" role="img" aria-label="{{ uso.fijas }} de {{ uso.clases }} horarios fijos reservados"><span style="width: {{ uso.porcentaje }}%"></span></div>
+                    <p><strong>{{ uso.fijas }} de {{ uso.clases }}</strong> horario{{ uso.clases|pluralize }} fijo{{ uso.clases|pluralize }} reservado{{ uso.clases|pluralize }}</p>
+                    {% if uso.libres %}<a href="{% url 'gravity:reservar_clase' %}" class="me-link">Reservá {{ uso.libres }} horario{{ uso.libres|pluralize }} más →</a>{% endif %}
                 </div>
 
-                <!-- Historial de Planes -->
-                {% if planes_vencidos %}
-                    <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
-                        <h3 class="text-lg font-bold text-principal mb-4 font-cinzel flex items-center">
-                            <svg class="w-5 h-5 text-gris-medio mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Historial
-                        </h3>
-                        
-                        <div class="space-y-3">
-                            {% for plan_vencido in planes_vencidos %}
-                            <div class="border border-gris-claro rounded-lg p-3 text-sm opacity-75">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="font-medium text-gris-oscuro">{{ plan_vencido.plan.nombre }}</div>
-                                        <div class="text-xs text-gris-medio">
-                                            {{ plan_vencido.fecha_inicio|date:"d/m/Y" }} - {{ plan_vencido.fecha_fin|date:"d/m/Y" }}
-                                        </div>
-                                    </div>
-                                    <div class="text-xs bg-gris-claro text-gris-medio px-2 py-1 rounded">
-                                        Vencido
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endif %}
-
-                <!-- Política de Cancelación -->
-                {% if tiene_planes_activos %}
-                    <div class="bg-blanco rounded-2xl shadow-lg border border-secundario/30 p-6">
-                        <h3 class="text-lg font-bold text-principal mb-4 font-cinzel flex items-center">
-                            <svg class="w-5 h-5 text-advertencia mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Política de Cancelación
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex items-start p-3 bg-exito/5 rounded-lg border border-exito/20">
-                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-exito mt-1 mr-3 flex-shrink-0"></span>
-                                <div>
-                                    <p class="text-sm font-semibold text-gris-oscuro">Días 1 al 4</p>
-                                    <p class="text-xs text-gris-medio">No se cobra el mes en curso.</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start p-3 bg-advertencia/5 rounded-lg border border-advertencia/20">
-                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-advertencia mt-1 mr-3 flex-shrink-0"></span>
-                                <div>
-                                    <p class="text-sm font-semibold text-gris-oscuro">Días 5 al 9</p>
-                                    <p class="text-xs text-gris-medio">Se cobra la mitad del mes.</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start p-3 bg-error/5 rounded-lg border border-error/20">
-                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-error mt-1 mr-3 flex-shrink-0"></span>
-                                <div>
-                                    <p class="text-sm font-semibold text-gris-oscuro">Día 10 en adelante</p>
-                                    <p class="text-xs text-gris-medio">Se cobra el mes completo.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-
+                <p class="pl-due {% if not uso.renueva and uso.dias_restantes <= 7 %}is-warn{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                    {% if uso.renueva %}
+                        Se renueva automáticamente el {{ uso.renueva_el|date:"d/m" }}
+                    {% elif uso.dias_restantes == 0 %}
+                        Vence hoy
+                    {% else %}
+                        Vence el {{ plan_vigente.fecha_fin|date:"d/m/Y" }}{% if uso.dias_restantes <= 7 %} · quedan {{ uso.dias_restantes }} día{{ uso.dias_restantes|pluralize }}{% endif %}
+                    {% endif %}
+                </p>
             </div>
-        </div>
 
-        <!-- Botones de acción -->
-        <div class="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <a href="{% url 'gravity:reservar_clase' %}" class="flex items-center justify-center bg-principal text-fondo py-3 px-6 rounded-lg font-semibold hover:bg-principal/90 transition-colors duration-200 shadow-md">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Reservar Clase
-            </a>
-            {% if puede_cambiar_plan %}
-            <a href="{% url 'gravity:modificar_plan' %}" class="flex items-center justify-center bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"></path>
-                </svg>
-                Cambiar Plan
-            </a>
-            {% elif not tiene_planes_activos %}
-            <a href="{% url 'gravity:seleccionar_plan' %}" class="flex items-center justify-center bg-gris-oscuro text-blanco py-3 px-6 rounded-lg font-semibold hover:bg-gris-medio transition-colors duration-200 shadow-md">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012 2v2M7 7h10"></path>
-                </svg>
-                Seleccionar Plan
-            </a>
-            {% endif %}
-        </div>
+            <div class="pl-current__actions">
+                {% if puede_cambiar_plan %}
+                    <a href="{% url 'gravity:modificar_plan' %}" class="g-btn g-btn--primary g-btn--sm">Cambiar de plan</a>
+                {% endif %}
+                <a href="{% url 'accounts:mis_reservas' %}" class="g-btn g-btn--ghost g-btn--sm">Mis reservas</a>
+                <a href="{% url 'gravity:cancelar_plan' plan_vigente.id %}" class="mr-danger pl-current__cancel">Dar de baja el plan</a>
+            </div>
+        </article>
+        {% endwith %}
+        {% elif not solicitud_pendiente %}
+        <article class="me-card mr-empty me-in">
+            <p class="me-empty__title">Todavía no tenés un plan activo</p>
+            <p class="me-empty__text">Elegí cuántas veces por semana querés venir. Lo aprobamos y ya podés reservar tus horarios.</p>
+            <a href="{% url 'gravity:seleccionar_plan' %}" class="g-btn g-btn--primary g-btn--sm">Elegir mi plan</a>
+        </article>
+        {% endif %}
+
+        <!-- ================= Otros planes (próximos o adicionales) ================= -->
+        {% for otro in otros_planes %}
+        <article class="me-card pl-other me-in">
+            <div>
+                <strong>{{ otro.plan.nombre }}</strong>
+                <small>{{ otro.get_estado_display }} · del {{ otro.fecha_inicio|date:"d/m" }} al {{ otro.fecha_fin|date:"d/m" }}</small>
+            </div>
+            <a href="{% url 'gravity:cancelar_plan' otro.id %}" class="mr-danger">Dar de baja</a>
+        </article>
+        {% endfor %}
+
+        <!-- ================= Si lo das de baja hoy ================= -->
+        {% if plan_vigente %}
+        <article class="me-card pl-policy me-in">
+            <div class="me-card__head">
+                <span class="me-label">Si das de baja tu plan hoy</span>
+                <small class="mr-muted">Hoy es {{ dia_hoy }} del mes</small>
+            </div>
+            <p class="pl-policy__now pl-policy__now--{{ politica.tipo }}"><strong>{{ politica.titulo }}:</strong> {{ politica.texto }}</p>
+            {% include 'gravity/_politica_baja.html' %}
+            <small class="mr-muted">Al dar de baja el plan se cancelan todas tus reservas en ese momento.</small>
+        </article>
+        {% endif %}
+
+        <!-- ================= Historial ================= -->
+        {% if historial %}
+        <details class="me-card me-review mr-history me-in">
+            <summary>
+                <span class="me-row__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+                </span>
+                <span class="me-row__text">
+                    <strong>Planes anteriores</strong>
+                    <small>Tus últimos {{ historial|length }} plan{{ historial|length|pluralize:"es" }}</small>
+                </span>
+                <svg class="me-chevron me-chevron--down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="mr-history__list">
+                {% for h in historial %}
+                <li>
+                    <span class="mr-history__main">
+                        <strong>{{ h.plan.nombre }}</strong>
+                        <small>Del {{ h.fecha_inicio|date:"d/m/Y" }} al {{ h.fecha_fin|date:"d/m/Y" }}</small>
+                    </span>
+                    <span class="me-badge mr-badge--off">Finalizado</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </details>
+        {% endif %}
+
+        <!-- ================= Bueno saber ================= -->
+        <article class="me-card mr-rules me-in">
+            <span class="me-label">Cómo funcionan los planes</span>
+            <ul>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+                    <span><strong>Mes a mes</strong><small>El plan vale hasta el último día del mes. Las clases que no usás no se acumulan.</small></span>
+                </li>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/></svg></span>
+                    <span><strong>Pagás del 1 al 10</strong><small>En efectivo dentro de ese período tenés 10% de descuento.</small></span>
+                </li>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+                    <span><strong>Lo aprobamos nosotros</strong><small>Cada plan nuevo o cambio de plan queda en revisión hasta que el estudio lo confirma.</small></span>
+                </li>
+            </ul>
+        </article>
     </div>
-</div>
-
-<!-- Script para formatear precios -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const precios = document.querySelectorAll('.precio-formato');
-    precios.forEach(function(precio) {
-        const valor = precio.textContent.replace('$', '');
-        const formateado = parseInt(valor).toLocaleString('es-AR');
-        precio.textContent = '$' + formateado;
-    });
-});
-</script>
+</section>
 {% endblock %}

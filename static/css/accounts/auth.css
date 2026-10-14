@@ -281,6 +281,7 @@
 }
 .auth-btn:hover { background-position: 100% 0; transform: translateY(-1px); box-shadow: 0 14px 30px rgba(200, 179, 155, 0.35); }
 .auth-btn:active { transform: translateY(0); }
+a.auth-btn { display: block; text-align: center; text-decoration: none; }
 .auth-btn:disabled { opacity: 0.75; cursor: wait; }
 
 .auth-switch { display: none; margin: 22px 0 0; text-align: center; font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); }
@@ -357,6 +358,143 @@
 }
 .auth-ghost:hover { background: rgba(255, 255, 255, 0.18); transform: translateY(-1px); }
 
+/* ---------- Velo de carga al enviar (login, registro, logout) ---------- */
+.auth-loader {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    border-radius: inherit;
+    background:
+        radial-gradient(60% 50% at 50% 42%, rgba(93, 118, 139, 0.35), transparent 70%),
+        rgba(31, 42, 51, 0.62);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.45s ease, visibility 0s linear 0.45s;
+}
+.auth-loader.is-on { opacity: 1; visibility: visible; transition: opacity 0.45s ease; }
+/* El contenido de abajo se desenfoca (el backdrop-filter anidado no alcanza) */
+.is-loading > :not(.auth-loader) { filter: blur(6px); transition: filter 0.45s ease; pointer-events: none; }
+.auth-loader__mark {
+    position: relative;
+    width: 128px;
+    height: 128px;
+    display: grid;
+    place-items: center;
+}
+.auth-loader__mark img {
+    width: 74px;
+    height: auto;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.25));
+    animation: auth-breathe 2.2s ease-in-out infinite;
+}
+/* Aro fino que gira alrededor del logo (azul → arena) */
+.auth-loader__ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 55%, rgba(200, 179, 155, 0.15) 62%, var(--g-sand) 92%, #fff 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+            mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+    animation: auth-rotate 1.4s linear infinite;
+}
+.auth-loader__mark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+}
+.auth-loader__text {
+    margin: 0;
+    font-family: var(--g-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+.auth-loader__bar {
+    position: relative;
+    width: 120px;
+    height: 2px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.16);
+}
+.auth-loader__bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, var(--g-sand), transparent);
+    animation: auth-slide 1.3s ease-in-out infinite;
+}
+@keyframes auth-rotate { to { transform: rotate(360deg); } }
+@keyframes auth-breathe { 0%, 100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes auth-slide { from { left: -40%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+    .auth-loader__mark img, .auth-loader__bar::after { animation: none; }
+    .auth-loader__ring { animation-duration: 3s; }
+}
+
+/* ---------- Tarjeta simple (cerrar sesión) ---------- */
+.auth-card {
+    position: relative;
+    z-index: 1;
+    width: min(460px, 100%);
+    padding: 44px 44px 34px;
+    border-radius: 26px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    animation: auth-in 0.6s ease both;
+}
+.auth-card__logo { width: 96px; height: auto; margin: 0 auto 14px; display: block; opacity: 0.95; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.25)); }
+.auth-card .auth-sub { margin-bottom: 26px; line-height: 1.6; }
+.auth-card .auth-sub strong { color: #fff; font-weight: 500; }
+.auth-card__list {
+    list-style: none;
+    margin: 0 0 28px;
+    padding: 16px 18px;
+    display: grid;
+    gap: 10px;
+    text-align: left;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.86rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+.auth-card__list li { display: flex; align-items: flex-start; gap: 10px; }
+.auth-card__list svg { flex: none; width: 18px; height: 18px; margin-top: 1px; color: var(--g-sand); }
+.auth-card__actions { display: grid; gap: 12px; }
+.auth-card__actions .auth-ghost {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    text-align: center;
+    text-decoration: none;
+}
+.auth-card__help {
+    margin: 26px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
 /* ---------- Móvil: un formulario a la vez ---------- */
 @media (max-width: 860px) {
     .auth-body { padding: 84px 14px 32px; align-items: flex-start; background-attachment: scroll; }
@@ -371,6 +509,7 @@
     .auth-switch { display: block; }
 }
 @media (max-width: 480px) {
+    .auth-card { padding: 36px 22px 28px; }
     .auth-grid { grid-template-columns: 1fr; }
     .auth-row { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
@@ -400,3 +539,39 @@
     .input-group input { padding-top: 9px; padding-bottom: 8px; }
     .auth-btn { padding: 12px; }
 }
+
+/* ---------- Recuperar contraseña (tarjeta simple con formulario) ---------- */
+.auth-card .auth-sub strong { overflow-wrap: anywhere; }
+.ac-form { text-align: left; margin-top: 6px; }
+.ac-form .input-group:last-of-type { margin-bottom: 24px; }
+.ac-full { width: 100%; padding: 13px; }
+.ac-rules { list-style: none; margin: -12px 0 22px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.ac-rules li { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.7); transition: color 0.2s ease; }
+.ac-rules li::before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    transition: all 0.2s ease;
+}
+.ac-rules li.is-ok { color: #b9e4c9; font-weight: 600; }
+.ac-rules li.is-ok::before {
+    border-color: #6fbf8e;
+    background: #6fbf8e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 9px no-repeat;
+}
+.ac-rules li.is-bad { color: #ffc2c2; font-weight: 600; }
+.ac-rules li.is-bad::before { border-color: #ffc2c2; }
+.ac-ok {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(111, 191, 142, 0.25);
+    border: 1px solid rgba(185, 228, 201, 0.5);
+    color: #b9e4c9;
+}
+.ac-ok svg { width: 28px; height: 28px; }

@@ -4,7 +4,7 @@ from django.utils.crypto import get_random_string
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -136,7 +136,7 @@ class Clase(models.Model):
         """Devuelve una versión corta de la dirección para mostrar"""
         direcciones_cortas = {
             'sede_principal': 'La Rioja 3044',
-            'sede_2': '9 de julio 3696'
+            'sede_2': '9 de Julio 3696'
         }
         return direcciones_cortas.get(self.direccion, self.get_direccion_display())
 
@@ -219,6 +219,21 @@ class Clase(models.Model):
                 'fecha_str': fecha_clase.strftime('%Y-%m-%d'),
             }
         return None
+
+    def proxima_fecha_reservable(self, ahora=None):
+        """
+        Próxima fecha en la que se puede tomar esta clase al reservar: la de esta
+        semana si faltan más de 3 horas para que empiece; si no, la siguiente.
+        """
+        ahora = timezone.localtime(ahora or timezone.now())
+        hoy = ahora.date()
+        dias_map = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
+        dias_hasta = (dias_map.get(self.dia, 0) - hoy.weekday()) % 7
+        if dias_hasta == 0:
+            inicio = ahora.replace(hour=self.horario.hour, minute=self.horario.minute, second=0, microsecond=0)
+            if ahora >= inicio - timedelta(hours=3):
+                dias_hasta = 7
+        return hoy + timedelta(days=dias_hasta)
 
     def esta_completa(self):
         """Verifica si la clase está completa"""
@@ -340,11 +355,16 @@ class Reserva(models.Model):
         """Validaciones personalizadas del modelo"""
         super().clean()
         
-        # Validar que la clase esté activa
+        # Validar que la clase esté activa (solo al reservar o al pasarse a otra clase:
+        # una clase en pausa conserva sus reservas y se tienen que poder cancelar)
         if self.clase and not self.clase.activa:
-            raise ValidationError({
-                'clase': 'No se puede reservar una clase inactiva'
-            })
+            clase_original = None
+            if self.pk:
+                clase_original = Reserva.objects.filter(pk=self.pk).values_list('clase_id', flat=True).first()
+            if clase_original != self.clase_id:
+                raise ValidationError({
+                    'clase': 'No se puede reservar una clase inactiva'
+                })
         
         # Validar duplicados (las reservas de fecha única se permiten mientras no choquen con otra del mismo día o con una permanente)
         if self.activa and self.usuario and self.clase:
@@ -408,6 +428,16 @@ class Reserva(models.Model):
         
         # Obtener el día de la semana actual
         hoy = timezone.localtime(timezone.now())
+
+        # Recuperos y clases únicas: la ventana se calcula sobre su fecha real
+        if self.fecha_unica:
+            inicio = timezone.make_aware(datetime.combine(self.fecha_unica, self.clase.horario))
+            if hoy >= inicio:
+                return False, "La clase ya pasó."
+            if hoy >= inicio - timedelta(hours=3):
+                horas_restantes = (inicio - hoy).total_seconds() / 3600
+                return False, f"Solo se puede hasta 3 horas antes de la clase (faltan {horas_restantes:.1f} h)."
+            return True, "Puedes modificar tu reserva"
         dias_semana = {
             'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5
         }
@@ -449,7 +479,7 @@ class Reserva(models.Model):
         
         if hoy >= tiempo_limite:
             horas_restantes = (proxima_fecha_clase - hoy).total_seconds() / 3600
-            return False, f"Solo puedes modificar tu reserva con 3 horas de anticipación. Próxima clase en {horas_restantes:.1f} horas."
+            return False, f"Solo se puede hasta 3 horas antes de la clase (faltan {horas_restantes:.1f} h)."
         
         return True, "Puedes modificar tu reserva"
 
@@ -626,22 +656,26 @@ class Reserva(models.Model):
         return permanentes + temporales
 
     @staticmethod
-    def usuario_puede_reservar(usuario, nueva_clase=None):
+    def usuario_puede_reservar(usuario, nueva_clase=None, fecha=None):
         """
-        Verifica si un usuario puede hacer una nueva reserva según sus planes
+        Verifica si un usuario puede hacer una nueva reserva según sus planes.
+        'fecha': para reservas de una sola vez, el límite se mira en la semana de esa fecha.
         """
         # Verificar si tiene planes activos
         clases_disponibles, planes = PlanUsuario.obtener_clases_disponibles_usuario(usuario)
         
         if clases_disponibles == 0:
-            return False, "No tienes un plan activo. Debes seleccionar un plan antes de reservar."
+            return False, "Todavía no tenés un plan activo. Elegí uno para poder reservar."
         
-        # Contar reservas actuales de la semana
-        reservas_actuales = Reserva.contar_reservas_usuario_semana(usuario)
+        # Contar reservas de la semana (la de 'fecha' si se indicó; los domingos, la que arranca el lunes)
+        inicio_semana = None
+        if fecha:
+            inicio_semana = fecha + timedelta(days=1) if fecha.weekday() == 6 else fecha - timedelta(days=fecha.weekday())
+        reservas_actuales = Reserva.contar_reservas_usuario_semana(usuario, inicio_semana)
         
         # Si ya tiene el máximo de reservas
         if reservas_actuales >= clases_disponibles:
-            return False, f"Ya tienes {reservas_actuales} reservas esta semana. Tu plan permite máximo {clases_disponibles} clases semanales."
+            return False, f"Ya reservaste las {clases_disponibles} clases semanales de tu plan."
         
         # Si es una modificación, verificar que no sea la misma clase
         if nueva_clase:
@@ -652,36 +686,20 @@ class Reserva(models.Model):
             ).exists()
             
             if reserva_existente:
-                return False, "Ya tienes una reserva para esta clase."
+                return False, "Ya tenés una reserva para esta clase."
         
         return True, f"Puedes reservar. Tienes {clases_disponibles - reservas_actuales} clases disponibles esta semana."
 
     @staticmethod
     def usuario_puede_hacer_recupero(usuario):
-        hoy = timezone.localtime(timezone.now()).date()
-
-        # Ausencias vigentes: cuya ventana de recupero no venció (fecha + 6 días >= hoy)
-        ausencias = AusenciaTemporal.objects.filter(
-            reserva__usuario=usuario,
-            reserva__activa=True,
-            reserva__fecha_unica__isnull=True,
-            fecha__gte=hoy - timedelta(days=6),
-        ).select_related('reserva__clase')
-
-        n_ausencias = ausencias.count()
-        if n_ausencias == 0:
-            return False, 0, ausencias
-
-        # Recuperos ya reservados activos a partir de hoy
-        recuperos_usados = Reserva.objects.filter(
-            usuario=usuario,
-            activa=True,
-            es_recupero=True,
-            fecha_unica__gte=hoy,
-        ).count()
-
-        disponibles = n_ausencias - recuperos_usados
-        return disponibles > 0, disponibles, ausencias
+        """
+        (puede, cantidad, ausencias pendientes de recuperar).
+        Las reglas (tipo de clase, plazo y qué recupero cubre cada ausencia) están en
+        gravity/recuperos.py.
+        """
+        from .recuperos import EstadoRecuperos
+        estado = EstadoRecuperos(usuario)
+        return estado.disponibles > 0, estado.disponibles, estado.pendientes
 
 class AusenciaTemporal(models.Model):
     """

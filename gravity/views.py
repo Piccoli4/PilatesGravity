@@ -23,15 +23,22 @@ from .forms import (
     ReservaForm, 
     ModificarReservaForm, 
     BuscarReservaForm, 
-    AjusteDeudaForm
+    AjusteDeudaForm,
+    ClaseAdminForm,
+    AlumnoNuevoForm,
+    AlumnoDatosForm,
+    normalizar_telefono,
+    estilo_panel,
 )
 import csv
 import json
 import calendar
 from accounts.models import UserProfile
-from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from django.utils import formats
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.urls import reverse
+from urllib.parse import urlencode
 from datetime import datetime, timedelta, date
 from accounts.models import UserProfile, ConfiguracionEstudio, Testimonio
 from django.contrib.auth.models import User
@@ -46,13 +53,27 @@ from .email_service import (
     enviar_email_bienvenida_completo,
     enviar_email_bienvenida,
     enviar_email_modificacion_reserva,
-    enviar_email_cambio_plan_aprobado
+    enviar_email_cambio_plan_aprobado,
+    enviar_email_solicitud_rechazada,
 )
 from .models import (
     PlanPago, EstadoPagoCliente, RegistroPago, DeudaMensual, SolicitudCambioPlan,
     AjusteSaldo, recalcular_estado_pagos, aplicar_precio_a_cuotas_del_mes
 )
 from .templatetags.formato import pesos
+from .panel import ve_ingresos_estudio, puede_corregir_cuentas
+from .hoy import datos_hoy, fecha_larga, clases_del_dia
+from .asistencia_admin import (datos_pasar_lista, puede_marcar_fecha, reserva_en_fecha, inicio_clase,
+                               faltas, completar_filas, DIAS_PARA_MARCAR, TIPOS_FALTA,
+                               PERIODOS as PERIODOS_FALTAS)
+from .clases_admin import alumnos_afectados, guardar_cambios, se_puede_eliminar
+from .horarios import turnos_de_la_clase
+from .reservas_admin import proximas_fechas, fecha_corta, ocupacion, info_alumno, estado_reserva
+from .alumnos_admin import (crear_alumno, agregar_nota, notas_lista, whatsapp_url, estado_cuenta,
+                            que_se_cancela, desactivar_alumno)
+from accounts.invitacion import enviar_invitacion, tiene_invitacion_pendiente
+from accounts.mi_espacio import reservas_alumno
+from .actividad import eventos_actividad, rango_por_defecto, sueltas_no_canceladas, dar_de_baja_reservas, TIPOS as TIPOS_ACTIVIDAD
 from .forms import (
     PlanPagoForm, RegistroPagoForm, EstadoPagoClienteForm, FiltrosPagosForm,
     CorregirSaldoForm, EditarPagoForm, AnularPagoForm
@@ -68,147 +89,167 @@ def home(request):
     """Vista pública de la página principal"""
     return render(request, 'gravity/home.html')
 
+DIAS_GRILLA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+DIAS_CORTOS_GRILLA = {'Lunes': 'Lun', 'Martes': 'Mar', 'Miércoles': 'Mié', 'Jueves': 'Jue', 'Viernes': 'Vie', 'Sábado': 'Sáb'}
+SEDES_GRILLA = {'sede_principal': 'Sede Central', 'sede_2': 'Sede 2'}
+
+
+def grilla_reservas(usuario, recuperos=None):
+    """
+    Horarios de la semana para la grilla de "Reservar clase": cada clase activa con
+    su próxima fecha reservable, los lugares libres y el estado para este usuario.
+
+    Estados: 'tuya' (ya la tiene), 'libre' (se puede como horario fijo o una sola vez),
+    'solo_fecha' (sin lugares fijos, pero esa fecha se liberó un lugar) y 'completa'.
+    'recupero': si reservarla una sola vez cubriría una ausencia pendiente (no usa el plan).
+    """
+    if recuperos is None:
+        from .recuperos import EstadoRecuperos
+        recuperos = EstadoRecuperos(usuario)
+    ahora = timezone.localtime(timezone.now())
+    hoy = ahora.date()
+    mias = {
+        r.clase_id: r for r in Reserva.objects.filter(usuario=usuario, activa=True)
+        if not r.fecha_unica or r.fecha_unica >= hoy
+    }
+
+    clases = Clase.objects.filter(activa=True, dia__in=DIAS_GRILLA)
+    dias = {dia: [] for dia in DIAS_GRILLA}
+    for clase in clases:
+        fecha = clase.proxima_fecha_reservable(ahora)
+        libres_fecha = clase.cupos_disponibles(fecha=fecha)
+        libres_fijos = clase.cupos_disponibles()
+        if clase.id in mias:
+            estado = 'tuya'
+        elif libres_fijos > 0 and libres_fecha > 0:
+            estado = 'libre'
+        elif libres_fecha > 0:
+            estado = 'solo_fecha'
+        else:
+            estado = 'completa'
+        dias[clase.dia].append({
+            'clase': clase,
+            'tipo': clase.tipo,
+            'nombre': clase.nombre_personalizado if clase.tipo == 'Especial' and clase.nombre_personalizado else clase.tipo,
+            'sede': clase.direccion,
+            'sede_nombre': SEDES_GRILLA.get(clase.direccion, clase.get_direccion_display()),
+            'hora': clase.horario.strftime('%H:%M'),
+            'fecha': fecha,
+            'estado': estado,
+            'libres': libres_fijos if estado == 'libre' else libres_fecha,
+            'es_puntual_mia': bool(estado == 'tuya' and mias[clase.id].fecha_unica),
+            'recupero': estado in ('libre', 'solo_fecha') and recuperos.puede_recuperar_en(clase, fecha),
+        })
+
+    columnas = []
+    for dia in DIAS_GRILLA:
+        slots = sorted(dias[dia], key=lambda s: (s['hora'], s['sede']))
+        if slots:
+            columnas.append({'dia': dia, 'corto': DIAS_CORTOS_GRILLA[dia], 'slots': slots})
+
+    tipos = sorted({(c.tipo, c.get_tipo_display()) for c in clases}, key=lambda t: ['Reformer', 'Cadillac', 'Especial'].index(t[0]) if t[0] in ('Reformer', 'Cadillac', 'Especial') else 9)
+    sedes = [(k, v) for k, v in SEDES_GRILLA.items() if any(c.direccion == k for c in clases)]
+    return {'columnas': columnas, 'tipos': tipos, 'sedes': sedes}
+
+
 # Vista para reservar una clase (solo usuarios autenticados)
 @login_required
 def reservar_clase(request):
     """
-    Permite a un usuario autenticado crear una nueva reserva.
-    Utiliza ReservaForm que ya tiene todas las validaciones necesarias.
+    Grilla semanal para elegir un horario y reservarlo como horario fijo
+    (todas las semanas) o una sola vez. ReservaForm hace todas las validaciones.
     """
-
     try:
         estado_pago = request.user.estado_pago
         if not estado_pago.puede_reservar:
-            # Calcular días de atraso
             dias_atraso = 0
             if estado_pago.fecha_limite_pago:
                 dias_atraso = (timezone.now().date() - estado_pago.fecha_limite_pago).days
-            
             messages.error(
                 request,
-                f'❌ No puedes reservar clases porque tienes una deuda vencida de ${estado_pago.monto_deuda_mensual:,.0f}. '
-                f'La fecha límite de pago era el {estado_pago.fecha_limite_pago.strftime("%d/%m/%Y")} '
-                f'({dias_atraso} {"día" if dias_atraso == 1 else "días"} de atraso). '
-                f'Por favor, realiza el pago o contacta a la administración para regularizar tu situación.'
+                f'No podés reservar porque tenés una cuota vencida de ${estado_pago.monto_deuda_mensual:,.0f} '
+                f'(venció el {estado_pago.fecha_limite_pago.strftime("%d/%m/%Y")}, hace {dias_atraso} '
+                f'{"día" if dias_atraso == 1 else "días"}). Escribinos para regularizarla.'
             )
             return redirect('accounts:profile')
     except EstadoPagoCliente.DoesNotExist:
-        # Usuario sin estado de pago, permitir reservar
         pass
 
-    # Obtener o crear el perfil del usuario
     try:
-        user_profile = request.user.profile
+        request.user.profile
     except UserProfile.DoesNotExist:
-        user_profile = UserProfile.objects.create(user=request.user)
+        UserProfile.objects.create(user=request.user)
 
-    # Obtener tipo preseleccionado ANTES del bloque if/else
-    tipo_preseleccionado = request.GET.get('tipo', '')
-    
-    # **NUEVA LÓGICA DE PLANES**
-    planes_activos = PlanUsuario.objects.filter(
-        usuario=request.user,
-        activo=True,
-        fecha_fin__gte=timezone.localtime(timezone.now()).date()
-    ).select_related('plan')
-    
-    # Calcular clases disponibles según planes
-    clases_disponibles, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    
-    # Contar reservas de esta semana
-    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
-    
-    # Calcular clases restantes
-    clases_restantes = max(0, clases_disponibles - reservas_actuales)
-    
+    clases_plan, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
+    reservas_semana = Reserva.contar_reservas_usuario_semana(request.user)
+    clases_restantes = max(0, clases_plan - reservas_semana)
+
     if request.method == 'POST':
         form = ReservaForm(request.POST, user=request.user)
-        
         if form.is_valid():
+            clase = form.cleaned_data['clase']
+            es_temporal = form.cleaned_data.get('es_temporal')
+            es_recupero = form.cleaned_data.get('es_recupero', False)
+            fecha_unica = form.cleaned_data['proxima_fecha'] if es_temporal else None
             try:
-                # El formulario ya validó todo y nos devuelve la clase en cleaned_data
-                clase = form.cleaned_data['clase']
-                
-                # Crear la reserva
-                es_temporal = request.POST.get('es_temporal') == 'true'
-                fecha_unica = None
-
-                if es_temporal:
-                    ahora = timezone.localtime(timezone.now())
-                    hoy = ahora.date()
-                    dias_map = {
-                        'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
-                        'Jueves': 3, 'Viernes': 4, 'Sábado': 5
-                    }
-                    dia_clase = dias_map.get(clase.dia, 0)
-                    dias_hasta = (dia_clase - hoy.weekday()) % 7
-                    if dias_hasta == 0:
-                        clase_hoy = ahora.replace(
-                            hour=clase.horario.hour,
-                            minute=clase.horario.minute,
-                            second=0, microsecond=0
-                        )
-                        if ahora >= clase_hoy:
-                            dias_hasta = 7
-                    fecha_unica = hoy + timedelta(days=dias_hasta)
-
                 reserva = Reserva.objects.create(
                     usuario=request.user,
                     clase=clase,
                     fecha_unica=fecha_unica,
+                    es_recupero=es_recupero,
+                    notas=f'Recupero por ausencia temporal — {fecha_unica.strftime("%d/%m/%Y")}' if es_recupero else '',
                     creado_por=request.user,
                 )
-
-                # 📧 ENVIAR EMAIL DE CONFIRMACIÓN DE RESERVA
-                try:
-                    email_enviado = enviar_email_confirmacion_reserva_detallado(reserva)
-                    if email_enviado:
-                        logger.info(f"Email de confirmación enviado para reserva {reserva.numero_reserva}")
-                except Exception as e:
-                    logger.error(f"Error enviando email de confirmación: {str(e)}")
-                
-                request.session['reserva_exitosa'] = {
-                    'tipo': 'temporal' if es_temporal else 'recurrente',
-                    'clase': clase.get_nombre_display(),
-                    'dia': clase.dia,
-                    'horario': clase.horario.strftime('%H:%M'),
-                    'sede': clase.get_direccion_corta(),
-                    'fecha_unica': fecha_unica.strftime('%d/%m/%Y') if fecha_unica else None,
-                }
-                return redirect('accounts:mis_reservas')
-                
             except (IntegrityError, ValidationError):
-                # Duplicado por doble envío del formulario (el form valida antes, pero
-                # dos POST simultáneos pueden pasar esa validación)
-                messages.error(
-                    request,
-                    'Ya tenés una reserva para esta clase. '
-                    'Revisá "Mis reservas" antes de intentar nuevamente.'
-                )
-    else:
-        # Permitir preseleccionar tipo de clase desde URL
-        initial_data = {'tipo_clase': tipo_preseleccionado} if tipo_preseleccionado else None
-        form = ReservaForm(user=request.user, initial=initial_data)
+                # Doble envío: dos POST simultáneos pueden pasar la validación del form
+                messages.error(request, 'Ya tenés una reserva para esta clase. Revisá "Mis reservas".')
+                return redirect('accounts:mis_reservas')
 
-    # Preparar información del usuario para mostrar en el template
-    user_info = {
-        'username': request.user.username,
-        'first_name': request.user.first_name,
-        'last_name': request.user.last_name,
-        'email': request.user.email,
-        'telefono': user_profile.telefono if user_profile.telefono else '',
-        'nombre_completo': user_profile.get_nombre_completo()
+            try:
+                if enviar_email_confirmacion_reserva_detallado(reserva):
+                    logger.info(f"Email de confirmación enviado para reserva {reserva.numero_reserva}")
+            except Exception as e:
+                logger.error(f"Error enviando email de confirmación: {str(e)}")
+
+            request.session['reserva_exitosa'] = {
+                'tipo': 'recupero' if es_recupero else 'temporal' if es_temporal else 'recurrente',
+                'clase': clase.get_nombre_display(),
+                'dia': clase.dia,
+                'horario': clase.horario.strftime('%H:%M'),
+                'sede': clase.get_direccion_corta(),
+                'fecha_unica': fecha_unica.strftime('%d/%m/%Y') if fecha_unica else None,
+            }
+            return redirect('accounts:mis_reservas')
+    else:
+        form = ReservaForm(user=request.user)
+
+    # Horario a preseleccionar: el del POST con error o el que llega desde Clases disponibles
+    origen = request.POST if request.method == 'POST' else request.GET
+    preseleccion = {
+        'tipo': origen.get('tipo_clase') or origen.get('tipo', ''),
+        'sede': origen.get('sede', ''),
+        'dia': origen.get('dia', ''),
+        'horario': origen.get('horario', ''),
+        'temporal': origen.get('es_temporal') in ('true', 'on', '1'),
     }
+
+    solicitud_pendiente = SolicitudCambioPlan.objects.filter(
+        usuario=request.user, estado='pendiente'
+    ).select_related('plan_solicitado').first()
+    from .recuperos import EstadoRecuperos
+    recuperos = EstadoRecuperos(request.user)
 
     return render(request, 'gravity/reservar_clase.html', {
         'form': form,
-        'user_info': user_info,
-        'tipo_preseleccionado': tipo_preseleccionado,
-        # **NUEVOS DATOS DE PLANES**
-        'planes_activos': planes_activos,
-        'clases_disponibles': clases_disponibles,
-        'reservas_actuales': reservas_actuales,
+        'grilla': grilla_reservas(request.user, recuperos),
+        'preseleccion': preseleccion,
+        'clases_plan': clases_plan,
+        'reservas_semana': reservas_semana,
         'clases_restantes': clases_restantes,
+        'porcentaje_plan': min(100, round(reservas_semana * 100 / clases_plan)) if clases_plan else 0,
+        'puede_reservar': clases_plan > 0 and clases_restantes > 0,
+        'solicitud_pendiente': solicitud_pendiente,
+        'n_recuperos': recuperos.disponibles,
     })
 
 # Vista para modificar una reserva existente
@@ -294,6 +335,19 @@ def modificar_reserva(request, numero_reserva):
         'mensaje_restriccion': mensaje if not puede_modificar else None
     })
 
+def _volver_a(request, numero_reserva):
+    """
+    Destino después de una acción sobre una reserva: el 'next' del formulario
+    (por ejemplo, Mis reservas) si es una URL de este sitio, o el detalle.
+    """
+    destino = request.POST.get('next') or request.GET.get('next')
+    if destino and url_has_allowed_host_and_scheme(
+        destino, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return redirect(destino)
+    return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+
+
 # Vista para eliminar/cancelar una reserva
 @login_required
 def cancelar_reserva(request, numero_reserva):
@@ -316,8 +370,8 @@ def cancelar_reserva(request, numero_reserva):
     puede_cancelar, mensaje = reserva.puede_modificarse()
 
     if not puede_cancelar:
-        messages.error(request, f'No puedes cancelar esta reserva: {mensaje}')
-        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+        messages.error(request, f'No podés cancelar esta reserva: {mensaje}')
+        return _volver_a(request, numero_reserva)
 
     if request.method == 'POST':
         confirmar = request.POST.get('confirmar_cancelacion')
@@ -325,7 +379,7 @@ def cancelar_reserva(request, numero_reserva):
 
         if confirmar != 'confirmar':
             messages.error(request, 'Debes confirmar la cancelación.')
-            return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+            return _volver_a(request, numero_reserva)
 
         try:
             if tipo == 'temporal':
@@ -333,7 +387,7 @@ def cancelar_reserva(request, numero_reserva):
 
                 if not proxima_fecha:
                     messages.error(request, 'No se pudo determinar la próxima fecha de clase.')
-                    return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+                    return _volver_a(request, numero_reserva)
 
                 # Verificar que no exista ya una ausencia para esa fecha
                 ausencia, creada = AusenciaTemporal.objects.get_or_create(
@@ -381,10 +435,10 @@ def cancelar_reserva(request, numero_reserva):
         # no redirigir a detalle_reserva (causaría 404)
         if not reserva.activa:
             return redirect('accounts:mis_reservas')
-        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+        return _volver_a(request, numero_reserva)
 
     # GET: redirigir al detalle (el modal está ahí)
-    return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+    return _volver_a(request, numero_reserva)
 
 def notificar_admins_cancelacion(reserva, tipo, fecha=None):
     """
@@ -438,7 +492,7 @@ def cancelar_ausencia(request, ausencia_id):
     numero_reserva = reserva.numero_reserva
 
     if request.method != 'POST':
-        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+        return _volver_a(request, numero_reserva)
 
     # 1. Verificar ventana de 3 horas
     puede_modificar, mensaje = reserva.puede_modificarse()
@@ -447,7 +501,7 @@ def cancelar_ausencia(request, ausencia_id):
             request,
             f'No podés cancelar la ausencia: {mensaje}'
         )
-        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+        return _volver_a(request, numero_reserva)
 
     # 2. Verificar que no haya un recupero ya reservado en la ventana de esta ausencia
     hoy = timezone.now().date()
@@ -468,7 +522,7 @@ def cancelar_ausencia(request, ausencia_id):
             f'en {recupero_existente.clase.get_direccion_corta()}). '
             f'Primero cancelá ese recupero desde "Mis Reservas".'
         )
-        return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+        return _volver_a(request, numero_reserva)
 
     # 3. Todo ok: eliminar la ausencia
     fecha_str = ausencia.fecha.strftime('%d/%m/%Y')
@@ -478,7 +532,7 @@ def cancelar_ausencia(request, ausencia_id):
         request,
         f'Ausencia cancelada. Tu lugar para el {fecha_str} está confirmado nuevamente.'
     )
-    return redirect('gravity:detalle_reserva', numero_reserva=numero_reserva)
+    return _volver_a(request, numero_reserva)
 
 # Vista para buscar reservas de usuario (pública)
 def buscar_reservas_usuario(request):
@@ -512,45 +566,25 @@ def buscar_reservas_usuario(request):
     })
 
 # Vista para mostrar detalle de una reserva
+@login_required
 def detalle_reserva(request, numero_reserva):
     """
-    Muestra el detalle de una reserva específica.
-    Solo el dueño de la reserva puede verla (o admin más adelante).
+    Detalle de una reserva del alumno: tipo, próxima clase, próximas fechas y las
+    mismas acciones que Mis reservas (avisar que no voy, deshacer, dar de baja).
     """
-    reserva = get_object_or_404(Reserva, numero_reserva=numero_reserva, activa=True)
-    
-    # Verificar permisos: solo el dueño puede ver su reserva
-    if request.user.is_authenticated and request.user == reserva.usuario:
-        puede_ver = True
-        es_propietario = True
-    else:
-        # Para usuarios no autenticados o que no son dueños, no mostrar
-        puede_ver = False
-        es_propietario = False
-    
-    if not puede_ver:
-        messages.error(request, 'No tienes permisos para ver esta reserva.')
-        return redirect('gravity:home')
-    
-    # Obtener información sobre si puede modificarse
-    puede_modificar, mensaje_modificacion = reserva.puede_modificarse()
-    
-     # Ausencia registrada para la próxima clase (filtrando por fecha exacta)
-    proxima_fecha = reserva.get_proxima_fecha()
-    ausencia_proxima = None
-    if proxima_fecha:
-        ausencia_proxima = AusenciaTemporal.objects.filter(
-            reserva=reserva,
-            fecha=proxima_fecha,
-        ).first()
+    from accounts.mi_espacio import detalle_reserva_alumno
+
+    reserva = Reserva.objects.filter(numero_reserva=numero_reserva, usuario=request.user).select_related('clase').first()
+    if not reserva:
+        messages.error(request, 'No encontramos esa reserva entre las tuyas.')
+        return redirect('accounts:mis_reservas')
+    if not reserva.activa:
+        messages.info(request, 'Esa reserva ya no está activa. Acá están tus reservas actuales.')
+        return redirect('accounts:mis_reservas')
 
     return render(request, 'gravity/detalle_reserva.html', {
         'reserva': reserva,
-        'puede_modificar': puede_modificar,
-        'mensaje_modificacion': mensaje_modificacion,
-        'proxima_clase_info': reserva.get_proxima_clase_info(),
-        'es_propietario': es_propietario,
-        'ausencia_proxima': ausencia_proxima,
+        'd': detalle_reserva_alumno(reserva),
     })
 
 # Vista para mostrar clases disponibles (pública)
@@ -622,85 +656,79 @@ def clases_disponibles(request):
 
 # Vista para el botón de "Conoce más" (pública)
 def conoce_mas(request):
-    """Vista informativa sobre el estudio"""
-    testimonios = Testimonio.objects.filter(aprobado=True).select_related('usuario').order_by('-fecha_actualizacion')
-    return render(request, 'gravity/conoce_mas.html', {'testimonios': testimonios})
+    """El estudio: método, equipos, instructores, sedes y testimonios."""
+    from accounts.mi_espacio import SEDES
+
+    testimonios = []
+    for t in (Testimonio.objects.filter(aprobado=True, usuario__is_active=True)
+              .select_related('usuario').order_by('-fecha_actualizacion')[:9]):
+        nombre = (t.usuario.first_name or t.usuario.username).strip().split(' ')[0]
+        inicial = t.usuario.last_name.strip()[:1]
+        testimonios.append({
+            'texto': t.texto,
+            # Nombre e inicial del apellido ("Lucía G."): real pero cuidando la privacidad
+            'nombre': f'{nombre} {inicial.upper()}.' if inicial else nombre,
+            'iniciales': (nombre[:1] + inicial).upper(),
+        })
+
+    sedes = [
+        dict(SEDES['sede_principal'], foto='img/estudio/sede-central.webp', clave='sede_principal'),
+        dict(SEDES['sede_2'], foto='img/estudio/sede-2.webp', clave='sede_2'),
+    ]
+    return render(request, 'gravity/conoce_mas.html', {'testimonios': testimonios, 'sedes': sedes})
 
 # Vista para mostrar planes y precios (pública)
+def anotar_planes(planes):
+    """
+    Agrega a cada PlanPago los datos que muestran las tarjetas de planes
+    (/precios/, elegir y cambiar de plan): precios formateados (lista, efectivo
+    y por clase), si es de Reformer, si es el destacado y los días de su semana.
+    """
+    planes = list(planes)
+
+    # El más elegido: el que más alumnos activos tienen vigente hoy (si empatan, el más barato)
+    hoy = timezone.localdate()
+    alumnos_por_plan = dict(
+        PlanUsuario.objects.filter(
+            plan__in=planes, activo=True, fecha_inicio__lte=hoy, fecha_fin__gte=hoy, usuario__is_active=True,
+        ).values_list('plan').annotate(n=Count('usuario', distinct=True))
+    )
+    mas_elegido = max(
+        (p for p in planes if alumnos_por_plan.get(p.id)),
+        key=lambda p: (alumnos_por_plan[p.id], -p.precio_mensual),
+        default=None,
+    )
+
+    # Días de la semana (L a S) que se marcan en la tarjeta según las clases semanales
+    ritmo_por_clases = {1: {2}, 2: {1, 3}, 3: {0, 2, 4}, 4: {0, 1, 3, 4}, 5: {0, 1, 2, 3, 4}}
+    for plan in planes:
+        clases = plan.clases_por_semana or 1
+        plan.precio_fmt = pesos(plan.precio_mensual)
+        plan.efectivo_fmt = pesos(plan.calcular_precio_efectivo())
+        plan.por_clase_fmt = pesos(plan.precio_mensual / (clases * 4))
+        plan.es_reformer = 'reformer' in plan.nombre.lower()
+        marcados = ritmo_por_clases.get(clases, set(range(min(clases, 6))))
+        plan.semana = [(dia, i in marcados) for i, dia in enumerate(['L', 'M', 'M', 'J', 'V', 'S'])]
+        plan.destacado = plan is mas_elegido
+
+    # Primero los planes generales y después los de Reformer
+    planes.sort(key=lambda p: (p.es_reformer, p.clases_por_semana, p.precio_mensual))
+    return planes
+
+
 def precios_publicos(request):
     """
     Vista pública para mostrar los planes y precios sin necesidad de login.
     """
-    planes_disponibles = list(PlanPago.objects.filter(activo=True).order_by('clases_por_semana', 'precio_mensual'))
-
-    def formato_ars(valor):
-        return f"{int(round(valor)):,}".replace(',', '.')
-
-    # Días de la semana (L a S) que se marcan en la tarjeta según las clases semanales
-    ritmo_por_clases = {1: {2}, 2: {1, 3}, 3: {0, 2, 4}, 4: {0, 1, 3, 4}, 5: {0, 1, 2, 3, 4}}
-    destacado_asignado = False
-    for plan in planes_disponibles:
-        clases = plan.clases_por_semana or 1
-        plan.precio_fmt = formato_ars(plan.precio_mensual)
-        plan.por_clase_fmt = formato_ars(plan.precio_mensual / (clases * 4))
-        plan.es_reformer = 'reformer' in plan.nombre.lower()
-        marcados = ritmo_por_clases.get(clases, set(range(min(clases, 6))))
-        plan.semana = [(dia, i in marcados) for i, dia in enumerate(['L', 'M', 'M', 'J', 'V', 'S'])]
-        # El plan más elegido: el primero de 2 clases semanales
-        plan.destacado = not destacado_asignado and clases == 2 and not plan.es_reformer
-        destacado_asignado = destacado_asignado or plan.destacado
-
-    # Primero los planes generales y después los de Reformer
-    planes_disponibles.sort(key=lambda p: (p.es_reformer, p.clases_por_semana, p.precio_mensual))
-
+    planes_disponibles = anotar_planes(
+        PlanPago.objects.filter(activo=True).order_by('clases_por_semana', 'precio_mensual')
+    )
     context = {
         'planes_disponibles': planes_disponibles,
     }
     return render(request, 'gravity/precios_publicos.html', context)
 
-# API Endpoints para funcionalidad AJAX
-@require_http_methods(["POST"])
-def sedes_disponibles(request):
-    """
-    API que devuelve las sedes únicas disponibles para un tipo de clase específico
-    """
-    try:
-        data = json.loads(request.body)
-        tipo_clase = data.get('tipo')
-        
-        if not tipo_clase:
-            return JsonResponse({'error': 'Tipo de clase requerido'}, status=400)
-
-        # Obtener sedes únicas para el tipo de clase (solo clases activas)
-        # Usar distinct() correctamente con order_by
-        sedes_disponibles = Clase.objects.filter(
-            tipo=tipo_clase, 
-            activa=True
-        ).values('direccion').distinct().order_by('direccion')
-
-        # Convertir a formato legible, asegurándonos de que sean únicas
-        sedes_info = []
-        sedes_agregadas = set()  # Para evitar duplicados
-        
-        for sede_dict in sedes_disponibles:
-            sede = sede_dict['direccion']
-            if sede not in sedes_agregadas:
-                sede_display = dict(Clase.DIRECCIONES).get(sede, sede)
-                sedes_info.append({
-                    'value': sede,
-                    'text': sede_display
-                })
-                sedes_agregadas.add(sede)
-
-        return JsonResponse({
-            'sedes': sedes_info
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Datos JSON inválidos'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
+# API Endpoints para funcionalidad AJAX (las usa el panel de administración)
 @require_http_methods(["POST"])
 def dias_disponibles(request):
     """
@@ -793,55 +821,6 @@ def horarios_disponibles(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-@require_http_methods(["POST"])
-def verificar_disponibilidad(request):
-    """
-    API que verifica la disponibilidad de una combinación específica tipo-sede-día-horario
-    """
-    try:
-        data = json.loads(request.body)
-        tipo_clase = data.get('tipo')
-        sede = data.get('sede')
-        dia_clase = data.get('dia')
-        horario_str = data.get('horario')
-        
-        if not all([tipo_clase, sede, dia_clase, horario_str]):
-            return JsonResponse({'error': 'Todos los campos son requeridos'}, status=400)
-        
-        from datetime import datetime
-        horario_time = datetime.strptime(horario_str, '%H:%M').time()
-        
-        try:
-            clase = Clase.objects.get(
-                tipo=tipo_clase,
-                direccion=sede,
-                dia=dia_clase, 
-                horario=horario_time,
-                activa=True
-            )
-            cupos_disponibles = clase.cupos_disponibles()
-            
-            return JsonResponse({
-                'disponible': cupos_disponibles > 0,
-                'cupos_disponibles': cupos_disponibles,
-                'cupo_maximo': clase.cupo_maximo,
-                'sede': clase.get_direccion_corta(),
-                'mensaje': f'Quedan {cupos_disponibles} cupos disponibles en {clase.get_direccion_corta()}' if cupos_disponibles > 0 else 'Clase completa'
-            })
-            
-        except Clase.DoesNotExist:
-            return JsonResponse({
-                'disponible': False,
-                'mensaje': 'Esta combinación de clase no existe o no está activa'
-            })
-            
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Datos JSON inválidos'}, status=400)
-    except ValueError:
-        return JsonResponse({'error': 'Formato de horario inválido'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
 @require_http_methods(["GET"])
 def clases_disponibles_api(request):
     """
@@ -913,15 +892,9 @@ def superadmin_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-def get_puede_ver_pagos(user):
-    """
-    Retorna True si el usuario tiene permiso para ver información financiera.
-    Por defecto True (acceso completo). Solo False si se configuró explícitamente.
-    """
-    try:
-        return user.profile.puede_ver_pagos
-    except Exception:
-        return True
+# Quién ve qué en el panel: reglas en gravity/panel.py (ve_ingresos_estudio,
+# puede_corregir_cuentas). El equipo ve los montos de cada alumno para poder cobrar;
+# los ingresos del estudio son solo del superadmin.
 
 # ==============================================================================
 # DASHBOARD PRINCIPAL DEL ADMINISTRADOR
@@ -930,141 +903,11 @@ def get_puede_ver_pagos(user):
 @admin_required
 def admin_dashboard(request):
     """
-    Panel principal del administrador con estadísticas y resumen general
-    Ahora incluye estadísticas por sede
+    "Hoy": las clases del día con quién viene (se puede mirar hasta 6 días para
+    adelante), lo que hay para resolver y las últimas novedades.
+    Los datos se arman en gravity/hoy.py.
     """
-    # Estadísticas generales
-    total_clases = Clase.objects.filter(activa=True).count()
-    total_reservas_activas = Reserva.objects.filter(activa=True).count()
-    total_usuarios = User.objects.filter(is_active=True, is_staff=False).count()
-    
-    # Estadísticas por sede
-    stats_por_sede = []
-    for direccion_key, direccion_display in Clase.DIRECCIONES:
-        clases_sede = Clase.objects.filter(direccion=direccion_key, activa=True)
-        total_clases_sede = clases_sede.count()
-        total_reservas_sede = Reserva.objects.filter(
-            clase__direccion=direccion_key,
-            activa=True
-        ).count()
-        
-        stats_por_sede.append({
-            'sede': direccion_display,
-            'total_clases': total_clases_sede,
-            'total_reservas': total_reservas_sede,
-            'porcentaje_reservas': round((total_reservas_sede / total_reservas_activas * 100), 2) if total_reservas_activas > 0 else 0
-        })
-    
-    # Clases más populares
-    clases_populares = Clase.objects.filter(activa=True).annotate(
-        total_reservas=Count('reserva', filter=Q(reserva__activa=True))
-    ).order_by('-total_reservas')[:5]
-    
-    # Reservas recientes (últimas 10)
-    reservas_recientes = Reserva.objects.filter(activa=True).select_related(
-        'usuario', 'clase'
-    ).order_by('-fecha_reserva')[:10]
-    
-    # Usuarios registrados recientemente (últimos 7 días)
-    hace_una_semana = timezone.now() - timedelta(days=7)
-    usuarios_nuevos = User.objects.filter(
-        date_joined__gte=hace_una_semana,
-        is_staff=False
-    ).count()
-    
-    # Clases con poco cupo disponible (menos del 20%)
-    clases_casi_llenas = []
-    for clase in Clase.objects.filter(activa=True):
-        cupos_disponibles = clase.cupos_disponibles()
-        porcentaje_ocupacion = clase.get_porcentaje_ocupacion()
-        if porcentaje_ocupacion >= 80:  # Más del 80% ocupado
-            clases_casi_llenas.append({
-                'clase': clase,
-                'cupos_disponibles': cupos_disponibles,
-                'porcentaje_ocupacion': porcentaje_ocupacion
-            })
-    
-    # Configuración del estudio
-    configuracion = ConfiguracionEstudio.get_configuracion()
-
-    # Notificaciones de cancelaciones de reservas (últimos 7 días, no leídas)
-    try:
-        notificaciones_cancelacion = NotificacionCancelacion.objects.filter(
-            fecha_creacion__gte=hace_una_semana
-        ).exclude(
-            leida_por=request.user
-        ).select_related('reserva', 'reserva__clase', 'reserva__usuario').order_by('-fecha_creacion')
-    except Exception:
-        notificaciones_cancelacion = NotificacionCancelacion.objects.none()
-
-    # Notificaciones de cancelaciones de planes (últimos 30 días, no leídas)
-    desde_30_dias = timezone.now() - timedelta(days=30)
-    try:
-        notificaciones_cancelacion_plan = NotificacionCancelacionPlan.objects.filter(
-            fecha_creacion__gte=desde_30_dias
-        ).exclude(
-            leida_por=request.user
-        ).select_related('usuario', 'plan').order_by('-fecha_creacion')
-    except Exception:
-        notificaciones_cancelacion_plan = NotificacionCancelacionPlan.objects.none()
-
-    # Notificaciones de planes adicionales (últimos 30 días, no leídas)
-    try:
-        notificaciones_plan_adicional = NotificacionPlanAdicional.objects.filter(
-            fecha_creacion__gte=desde_30_dias
-        ).exclude(
-            leida_por=request.user
-        ).select_related('usuario', 'plan').order_by('-fecha_creacion')
-    except Exception:
-        notificaciones_plan_adicional = NotificacionPlanAdicional.objects.none()
-
-    # Solicitudes de cambio de plan pendientes de aprobación
-    solicitudes_plan_pendientes = SolicitudCambioPlan.objects.filter(
-        estado='pendiente'
-    ).select_related('usuario', 'plan_actual', 'plan_solicitado').order_by('-fecha_solicitud')
-
-    # Reservas de cupos temporales recientes (últimos 7 días, no vistas en sesión)
-    recuperos_vistos = request.session.get('recuperos_vistos', [])
-    reservas_temporales_recientes = Reserva.objects.filter(
-        activa=True,
-        fecha_unica__isnull=False,
-        fecha_reserva__gte=hace_una_semana,
-    ).exclude(
-        id__in=recuperos_vistos
-    ).select_related('usuario', 'clase').order_by('-fecha_reserva')
-    hay_reservas_temporales = reservas_temporales_recientes.exists()
-
-    context = {
-        'total_clases': total_clases,
-        'total_reservas_activas': total_reservas_activas,
-        'total_usuarios': total_usuarios,
-        'usuarios_nuevos': usuarios_nuevos,
-        'stats_por_sede': stats_por_sede,
-        'clases_populares': clases_populares,
-        'reservas_recientes': reservas_recientes,
-        'clases_casi_llenas': clases_casi_llenas,
-        'configuracion': configuracion,
-        'notificaciones_cancelacion': notificaciones_cancelacion,
-        'hay_notificaciones': notificaciones_cancelacion.exists(),
-        'notificaciones_cancelacion_plan': notificaciones_cancelacion_plan,
-        'hay_notificaciones_plan': notificaciones_cancelacion_plan.exists(),
-        'reservas_temporales_recientes': reservas_temporales_recientes,
-        'hay_reservas_temporales': hay_reservas_temporales,
-        'notificaciones_plan_adicional': notificaciones_plan_adicional,
-        'hay_notificaciones_plan_adicional': notificaciones_plan_adicional.exists(),
-        'solicitudes_plan_pendientes': solicitudes_plan_pendientes,
-        'hay_solicitudes_plan_pendientes': solicitudes_plan_pendientes.exists(),
-        'total_notificaciones': (
-            notificaciones_cancelacion.count() +
-            notificaciones_cancelacion_plan.count() +
-            reservas_temporales_recientes.count() +
-            notificaciones_plan_adicional.count() +
-            solicitudes_plan_pendientes.count()
-        ),
-        'puede_ver_pagos': get_puede_ver_pagos(request.user),
-    }
-
-    return render(request, 'gravity/admin/dashboard.html', context)
+    return render(request, 'gravity/admin/dashboard.html', datos_hoy(request))
 
 @admin_required
 def admin_marcar_notificaciones_leidas(request):
@@ -1122,751 +965,424 @@ def admin_marcar_notificaciones_leidas(request):
 @admin_required
 def admin_clases_lista(request):
     """
-    Lista todas las clases con opciones de filtrado y paginación
-    Ahora incluye filtros por sede
+    Todas las clases en una página, agrupadas por día, con su ocupación de
+    horarios fijos. Filtros por sede, tipo y estado (por defecto, activas).
     """
-    clases = Clase.objects.all().order_by('direccion', 'tipo', 'dia', 'horario')
-    
-    # Filtros
-    tipo_filtro = request.GET.get('tipo', '')
-    dia_filtro = request.GET.get('dia', '')
-    estado_filtro = request.GET.get('estado', '')
-    sede_filtro = request.GET.get('sede', '')
-    
-    if tipo_filtro:
-        clases = clases.filter(tipo=tipo_filtro)
-    
-    if dia_filtro:
-        clases = clases.filter(dia=dia_filtro)
-    
-    if sede_filtro:
-        clases = clases.filter(direccion=sede_filtro)
-    
-    if estado_filtro == 'activas':
-        clases = clases.filter(activa=True)
-    elif estado_filtro == 'inactivas':
-        clases = clases.filter(activa=False)
-    
-    # Agregar información de reservas a cada clase
-    clases_info = []
-    for clase in clases:
-        clases_info.append({
-            'clase': clase,
-            'total_reservas': clase.reserva_set.filter(activa=True).count(),
-            'cupos_disponibles': clase.cupos_disponibles(),
-            'porcentaje_ocupacion': clase.get_porcentaje_ocupacion(),
-            'puede_eliminarse': clase.puede_eliminarse()
-        })
-    
-    # Paginación
-    paginator = Paginator(clases_info, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'tipo_filtro': tipo_filtro,
-        'dia_filtro': dia_filtro,
-        'estado_filtro': estado_filtro,
-        'sede_filtro': sede_filtro,
-        'tipos_clases': Clase.TIPO_CLASES,
-        'dias_semana': DIAS_SEMANA_COMPLETOS,
-        'sedes': Clase.DIRECCIONES,
+    sede = request.GET.get('sede', '')
+    if sede not in dict(Clase.DIRECCIONES):
+        sede = ''
+    tipo = request.GET.get('tipo', '')
+    if tipo not in dict(Clase.TIPO_CLASES):
+        tipo = ''
+    estado = request.GET.get('estado', 'activas')
+    if estado == 'inactivas':
+        estado = 'pausadas'
+    if estado not in ('activas', 'pausadas', 'todas'):
+        estado = 'activas'
+
+    clases = Clase.objects.annotate(
+        fijos=Count('reserva', filter=Q(reserva__activa=True, reserva__fecha_unica__isnull=True))
+    ).order_by('horario', 'direccion')
+    if sede:
+        clases = clases.filter(direccion=sede)
+    if tipo:
+        clases = clases.filter(tipo=tipo)
+    conteo = {
+        'activas': clases.filter(activa=True).count(),
+        'pausadas': clases.filter(activa=False).count(),
     }
-    
+    conteo['todas'] = conteo['activas'] + conteo['pausadas']
+    if estado == 'activas':
+        clases = clases.filter(activa=True)
+    elif estado == 'pausadas':
+        clases = clases.filter(activa=False)
+
+    por_dia = {dia: [] for dia, _ in DIAS_SEMANA_COMPLETOS}
+    total_fijos = total_cupo = 0
+    for clase in clases:
+        cupo = clase.cupo_maximo or 0
+        porcentaje = round(clase.fijos / cupo * 100) if cupo else 0
+        por_dia.setdefault(clase.dia, []).append({
+            'clase': clase,
+            'fijos': clase.fijos,
+            'libres': max(cupo - clase.fijos, 0),
+            'porcentaje': min(porcentaje, 100),
+            'nivel': 'lleno' if clase.fijos >= cupo else ('alto' if porcentaje >= 80 else ''),
+        })
+        if clase.activa:
+            total_fijos += clase.fijos
+            total_cupo += cupo
+    dias = [{'dia': dia, 'clases': items} for dia, items in por_dia.items() if items]
+
+    def url_con(**cambios):
+        params = request.GET.copy()
+        for clave, valor in cambios.items():
+            if valor and not (clave == 'estado' and valor == 'activas'):
+                params[clave] = valor
+            else:
+                params.pop(clave, None)
+        return '?' + params.urlencode()
+
+    chips_estado = [
+        {'texto': texto, 'url': url_con(estado=clave), 'activo': estado == clave, 'cantidad': conteo[clave]}
+        for clave, texto in (('activas', 'Activas'), ('pausadas', 'Pausadas'), ('todas', 'Todas'))
+    ]
+    chips_sede = [{'texto': 'Las dos sedes', 'url': url_con(sede=''), 'activo': not sede}] + [
+        {'texto': Clase(direccion=clave).get_direccion_corta(), 'url': url_con(sede=clave), 'activo': sede == clave}
+        for clave, _ in Clase.DIRECCIONES
+    ]
+    chips_tipo = [{'texto': 'Todos los tipos', 'url': url_con(tipo=''), 'activo': not tipo}] + [
+        {'texto': clave, 'url': url_con(tipo=clave), 'activo': tipo == clave}
+        for clave, _ in Clase.TIPO_CLASES
+    ]
+
+    context = {
+        'dias': dias,
+        'chips_estado': chips_estado,
+        'chips_sede': chips_sede,
+        'chips_tipo': chips_tipo,
+        'total': sum(len(d['clases']) for d in dias),
+        'conteo': conteo,
+        'total_fijos': total_fijos,
+        'total_cupo': total_cupo,
+        'sede_filtro': sede,
+        'tipo_filtro': tipo,
+        'estado_filtro': estado,
+        'sedes': Clase.DIRECCIONES,
+        'tipos': Clase.TIPO_CLASES,
+        'hay_filtros': bool(sede or tipo or estado != 'activas'),
+    }
     return render(request, 'gravity/admin/clases_lista.html', context)
+
 
 @admin_required
 def admin_clase_crear(request):
     """
-    Crear una nueva clase - Actualizado para incluir direccion
+    Crear una clase. Acepta datos iniciales por GET (?tipo&direccion&dia&horario&cupo_maximo)
+    para "Crear otra igual" desde el detalle de una clase.
     """
-    if request.method == 'POST':
-        # Obtener datos del formulario
-        tipo = request.POST.get('tipo')
-        nombre_personalizado = request.POST.get('nombre_personalizado', '').strip() or None
-        direccion = request.POST.get('direccion')
-        dia = request.POST.get('dia')
-        horario_str = request.POST.get('horario')
-        cupo_maximo = request.POST.get('cupo_maximo')
-        
-        try:
-            # Validar horario
-            horario = datetime.strptime(horario_str, '%H:%M').time()
-            
-            # Validaciones específicas para clases especiales
-            if tipo == 'Especial':
-                if not nombre_personalizado:
-                    messages.error(request, 'Las clases especiales deben tener un nombre personalizado.')
-                    return render(request, 'gravity/admin/clase_form.html', {
-                        'tipos_clases': Clase.TIPO_CLASES,
-                        'dias_semana': DIAS_SEMANA_COMPLETOS,
-                        'direcciones': Clase.DIRECCIONES,
-                        'form_data': request.POST
-                    })
-            elif nombre_personalizado:
-                messages.error(request, 'Solo las clases especiales pueden tener nombre personalizado.')
-                return render(request, 'gravity/admin/clase_form.html', {
-                    'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA_COMPLETOS,
-                    'direcciones': Clase.DIRECCIONES,
-                    'form_data': request.POST
-                })
-            
-            # Validar día para clases no especiales
-            if dia == 'Sábado' and tipo != 'Especial':
-                messages.error(request, 'Solo las clases especiales pueden programarse los sábados.')
-                return render(request, 'gravity/admin/clase_form.html', {
-                    'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA_COMPLETOS,
-                    'direcciones': Clase.DIRECCIONES,
-                    'form_data': request.POST
-                })
-            
-            # Construir filtro para verificar duplicados
-            duplicate_filter = {
-                'tipo': tipo,
-                'direccion': direccion,
-                'dia': dia,
-                'horario': horario
-            }
-            
-            if tipo == 'Especial':
-                duplicate_filter['nombre_personalizado'] = nombre_personalizado
-            else:
-                duplicate_filter['nombre_personalizado__isnull'] = True
-            
-            # Verificar que no exista una clase igual
-            if Clase.objects.filter(**duplicate_filter).exists():
-                direccion_display = dict(Clase.DIRECCIONES).get(direccion, direccion)
-                if tipo == 'Especial':
-                    error_msg = f'Ya existe una clase especial "{nombre_personalizado}" los {dia} a las {horario_str} en {direccion_display}.'
-                else:
-                    tipo_display = dict(Clase.TIPO_CLASES).get(tipo, tipo)
-                    error_msg = f'Ya existe una clase de {tipo_display} los {dia} a las {horario_str} en {direccion_display}.'
-                
-                messages.error(request, error_msg)
-                return render(request, 'gravity/admin/clase_form.html', {
-                    'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA_COMPLETOS,
-                    'direcciones': Clase.DIRECCIONES,
-                    'form_data': request.POST
-                })
-            
-            # Crear la clase
-            clase = Clase.objects.create(
-                tipo=tipo,
-                nombre_personalizado=nombre_personalizado,
-                direccion=direccion,
-                dia=dia,
-                horario=horario,
-                cupo_maximo=int(cupo_maximo),
-                activa=True
-            )
-            
-            messages.success(request, f'Clase creada exitosamente: {clase}')
-            return redirect('gravity:admin_clases_lista')
-            
-        except ValueError as e:
-            messages.error(request, f'Error en los datos: {str(e)}')
-        except Exception as e:
-            messages.error(request, f'Error al crear la clase: {str(e)}')
-    
-    context = {
-        'tipos_clases': Clase.TIPO_CLASES,
-        'dias_semana': DIAS_SEMANA_COMPLETOS,
-        'direcciones': Clase.DIRECCIONES,
-        'accion': 'Crear'
-    }
-    
-    return render(request, 'gravity/admin/clase_form.html', context)
+    inicial = {k: request.GET[k] for k in ('tipo', 'direccion', 'dia', 'horario', 'cupo_maximo', 'nombre_personalizado')
+               if request.GET.get(k)}
+    form = ClaseAdminForm(request.POST or None, initial=inicial)
+    if request.method == 'POST' and form.is_valid():
+        clase = form.save()
+        messages.success(
+            request,
+            f'Listo: creaste {clase.get_nombre_display()} los {clase.dia} a las {clase.horario:%H:%M} '
+            f'en {clase.get_direccion_corta()}.'
+        )
+        return redirect('gravity:admin_clase_detalle', clase_id=clase.id)
+    return render(request, 'gravity/admin/clase_form.html', {'form': form, 'accion': 'crear'})
+
 
 @admin_required
 def admin_clase_editar(request, clase_id):
     """
-    Editar una clase existente - Actualizado para incluir direccion
+    Editar una clase. Si cambia el día, el horario o la sede, se mueve a los
+    alumnos con horario fijo (con email opcional) y, si cambia el día, se cancelan
+    los recuperos y clases únicas ya reservados (ver gravity/clases_admin.py).
     """
     clase = get_object_or_404(Clase, id=clase_id)
-    
-    if request.method == 'POST':
-        tipo = request.POST.get('tipo')
-        nombre_personalizado = request.POST.get('nombre_personalizado', '').strip() or None
-        direccion = request.POST.get('direccion')
-        dia = request.POST.get('dia')
-        horario_str = request.POST.get('horario')
-        cupo_maximo = request.POST.get('cupo_maximo')
-        activa = request.POST.get('activa') == 'on'
-        
-        try:
-            horario = datetime.strptime(horario_str, '%H:%M').time()
-            
-            # Validaciones específicas para clases especiales
-            if tipo == 'Especial':
-                if not nombre_personalizado:
-                    messages.error(request, 'Las clases especiales deben tener un nombre personalizado.')
-                    return render(request, 'gravity/admin/clase_form.html', {
-                        'clase': clase,
-                        'tipos_clases': Clase.TIPO_CLASES,
-                        'dias_semana': DIAS_SEMANA_COMPLETOS,
-                        'direcciones': Clase.DIRECCIONES,
-                        'accion': 'Editar'
-                    })
-            elif nombre_personalizado:
-                messages.error(request, 'Solo las clases especiales pueden tener nombre personalizado.')
-                return render(request, 'gravity/admin/clase_form.html', {
-                    'clase': clase,
-                    'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA_COMPLETOS,
-                    'direcciones': Clase.DIRECCIONES,
-                    'accion': 'Editar'
-                })
-            
-            # Validar día para clases no especiales
-            if dia == 'Sábado' and tipo != 'Especial':
-                messages.error(request, 'Solo las clases especiales pueden programarse los sábados.')
-                return render(request, 'gravity/admin/clase_form.html', {
-                    'clase': clase,
-                    'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA_COMPLETOS,
-                    'direcciones': Clase.DIRECCIONES,
-                    'accion': 'Editar'
-                })
-            
-            # Construir filtro para verificar duplicados
-            duplicate_filter = {
-                'tipo': tipo,
-                'direccion': direccion,
-                'dia': dia,
-                'horario': horario
-            }
-            
-            if tipo == 'Especial':
-                duplicate_filter['nombre_personalizado'] = nombre_personalizado
-            else:
-                duplicate_filter['nombre_personalizado__isnull'] = True
-            
-            # Verificar duplicados (excluyendo la clase actual)
-            if Clase.objects.filter(**duplicate_filter).exclude(id=clase.id).exists():
-                direccion_display = dict(Clase.DIRECCIONES).get(direccion, direccion)
-                if tipo == 'Especial':
-                    error_msg = f'Ya existe otra clase especial "{nombre_personalizado}" los {dia} a las {horario_str} en {direccion_display}.'
-                else:
-                    tipo_display = dict(Clase.TIPO_CLASES).get(tipo, tipo)
-                    error_msg = f'Ya existe otra clase de {tipo_display} los {dia} a las {horario_str} en {direccion_display}.'
-                
-                messages.error(request, error_msg)
-                return render(request, 'gravity/admin/clase_form.html', {
-                    'clase': clase,
-                    'tipos_clases': Clase.TIPO_CLASES,
-                    'dias_semana': DIAS_SEMANA_COMPLETOS,
-                    'direcciones': Clase.DIRECCIONES,
-                    'accion': 'Editar'
-                })
-            
-            # Actualizar la clase
-            clase.tipo = tipo
-            clase.nombre_personalizado = nombre_personalizado
-            clase.direccion = direccion
-            clase.dia = dia
-            clase.horario = horario
-            clase.cupo_maximo = int(cupo_maximo)
-            clase.activa = activa
-            clase.save()
-            
-            messages.success(request, f'Clase actualizada exitosamente: {clase}')
-            return redirect('gravity:admin_clases_lista')
-            
-        except ValueError as e:
-            messages.error(request, f'Error en los datos: {str(e)}')
-        except Exception as e:
-            messages.error(request, f'Error al actualizar la clase: {str(e)}')
-    
-    context = {
-        'clase': clase,
-        'tipos_clases': Clase.TIPO_CLASES,
-        'dias_semana': DIAS_SEMANA_COMPLETOS,
-        'direcciones': Clase.DIRECCIONES,
-        'accion': 'Editar'
-    }
-    
-    return render(request, 'gravity/admin/clase_form.html', context)
+    fijas, sueltas = alumnos_afectados(clase)
+    form = ClaseAdminForm(request.POST or None, instance=clase)
+    if request.method == 'POST' and form.is_valid():
+        resumen = guardar_cambios(form, request.user, avisar=request.POST.get('avisar') == 'on')
+        clase.refresh_from_db()
+        texto = f'Guardaste los cambios de {clase.get_nombre_display()} ({clase.dia} {clase.horario:%H:%M}).'
+        if resumen['avisados']:
+            texto += f' Les avisamos por email a {resumen["avisados"]} alumno{"s" if resumen["avisados"] != 1 else ""}.'
+        if resumen['sueltas_canceladas']:
+            n = resumen['sueltas_canceladas']
+            texto += f' Se cancelaron {n} recupero{"s" if n != 1 else ""} o {"clases únicas" if n != 1 else "clase única"} reservado{"s" if n != 1 else ""} para el día anterior.'
+        if resumen['profesoras']:
+            nombres = ', '.join(p.get_full_name() or p.username for p in resumen['profesoras'])
+            texto += f' El turno de {nombres} pasó al horario nuevo.'
+        messages.success(request, texto)
+        return redirect('gravity:admin_clase_detalle', clase_id=clase.id)
+    return render(request, 'gravity/admin/clase_form.html', {
+        'form': form,
+        'accion': 'editar',
+        'clase': Clase.objects.get(pk=clase.pk),  # la guardada, por si el formulario tiene errores
+        'fijos': len(fijas),
+        'sueltas': len(sueltas),
+        'fijos_con_email': sum(1 for r in fijas if r.usuario.email),
+        'profesoras': [b.profesora.get_full_name() or b.profesora.username for b in turnos_de_la_clase(clase)],
+    })
+
 
 @admin_required
 def admin_clase_eliminar(request, clase_id):
     """
-    Eliminar una clase (solo si no tiene reservas activas)
+    Eliminar una clase solo si nunca tuvo reservas. Si tuvo, se ofrece pausarla:
+    borrarla eliminaría en cascada su historia (reservas, asistencia, recuperos).
     """
     clase = get_object_or_404(Clase, id=clase_id)
-    
+    puede = se_puede_eliminar(clase)
+
     if request.method == 'POST':
-        if clase.puede_eliminarse():
-            nombre_display = clase.get_nombre_display()
-            dia = clase.dia
-            horario = clase.horario.strftime('%H:%M')
-            sede = clase.get_direccion_corta()
-            
-            clase.delete()
-            messages.success(
-                request, 
-                f'Clase eliminada exitosamente: {nombre_display} - {dia} {horario} - {sede}'
-            )
-        else:
-            messages.error(
-                request, 
-                'No se puede eliminar esta clase porque tiene reservas activas.'
-            )
-        
+        if not puede:
+            messages.error(request, 'Esta clase ya tuvo alumnos: no se puede eliminar, pero podés pausarla.')
+            return redirect('gravity:admin_clase_eliminar', clase_id=clase.id)
+        nombre = f'{clase.get_nombre_display()} ({clase.dia} {clase.horario:%H:%M}, {clase.get_direccion_corta()})'
+        clase.delete()
+        messages.success(request, f'Eliminaste la clase {nombre}.')
         return redirect('gravity:admin_clases_lista')
-    
-    context = {
+
+    return render(request, 'gravity/admin/clase_eliminar.html', {
         'clase': clase,
-        'reservas_activas': clase.get_reservas_activas()
-    }
-    
-    return render(request, 'gravity/admin/clase_eliminar.html', context)
+        'puede': puede,
+        'fijos': clase.reserva_set.filter(activa=True, fecha_unica__isnull=True).count(),
+        'historial': clase.reserva_set.count(),
+    })
+
+
+def _proxima_fecha_clase(clase, ahora):
+    """La próxima vez que se dicta la clase (hoy si todavía no terminó)."""
+    hoy = ahora.date()
+    indice = [d for d, _ in DIAS_SEMANA_COMPLETOS].index(clase.dia)
+    dias_hasta = (indice - hoy.weekday()) % 7
+    if dias_hasta == 0:
+        fin = ahora.replace(hour=clase.horario.hour, minute=clase.horario.minute, second=0, microsecond=0) + timedelta(hours=1)
+        if ahora >= fin:
+            dias_hasta = 7
+    return hoy + timedelta(days=dias_hasta)
+
 
 @admin_required
 def admin_clase_detalle(request, clase_id):
     """
-    Ver detalle completo de una clase con todas sus reservas
+    Una clase: quién viene la próxima vez, los alumnos con horario fijo, los
+    recuperos y clases únicas reservados y la ocupación de las próximas semanas.
     """
     clase = get_object_or_404(Clase, id=clase_id)
-
-    # Calcular próxima fecha de esta clase
-    hoy = timezone.localtime(timezone.now())
-    dias_semana = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
-    dia_num = dias_semana.get(clase.dia, 0)
-    dias_hasta = (dia_num - hoy.weekday()) % 7
-    if dias_hasta == 0:
-        proxima_hoy = hoy.replace(hour=clase.horario.hour, minute=clase.horario.minute, second=0, microsecond=0)
-        if proxima_hoy <= hoy:
-            dias_hasta = 7
-    proxima_fecha_clase = (hoy + timedelta(days=dias_hasta)).date()
-
-    # Reservas permanentes (asisten todas las semanas)
-    reservas_permanentes = clase.reserva_set.filter(
-        activa=True,
-        fecha_unica__isnull=True,
-    ).select_related('usuario', 'usuario__profile', 'creado_por')
-
-    # Reservas de fecha única SOLO para la próxima clase
-    reservas_fecha_unica = clase.reserva_set.filter(
-        activa=True,
-        fecha_unica=proxima_fecha_clase,
-    ).select_related('usuario', 'usuario__profile', 'creado_por')
-
-    # IDs de ausencias para la próxima clase
-    reservas_con_ausencia = set(
-        AusenciaTemporal.objects.filter(
-            reserva__clase=clase,
-            reserva__activa=True,
-            fecha=proxima_fecha_clase
-        ).values_list('reserva_id', flat=True)
+    ahora = timezone.localtime(timezone.now())
+    hoy = ahora.date()
+    fijas = list(
+        clase.reserva_set.filter(activa=True, fecha_unica__isnull=True)
+        .select_related('usuario__profile', 'creado_por')
+        .order_by('usuario__first_name', 'usuario__last_name')
+    )
+    sueltas = list(
+        clase.reserva_set.filter(activa=True, fecha_unica__gte=hoy)
+        .select_related('usuario', 'creado_por').order_by('fecha_unica')
     )
 
-    # Badge "Recupera clase": fue a su propia clase y recupera aquí
-    ids_recupero = set(
-        reservas_fecha_unica.filter(es_recupero=True).values_list('id', flat=True)
-    )
+    proxima = semanas = None
+    if clase.activa:
+        fecha = _proxima_fecha_clase(clase, ahora)
+        proxima = next((c for c in clases_del_dia(fecha, timezone.now()) if c['clase'].id == clase.id), None)
+        if proxima:
+            proxima['fecha'] = fecha
+            proxima['fecha_larga'] = fecha_larga(fecha)
+            proxima['es_hoy'] = fecha == hoy
+        semanas = []
+        for i in range(4):
+            dia = fecha + timedelta(days=7 * i)
+            libres = clase.cupos_disponibles(fecha=dia)
+            vienen = clase.cupo_maximo - libres
+            semanas.append({
+                'fecha': dia,
+                'vienen': vienen,
+                'libres': libres,
+                'porcentaje': min(round(vienen / clase.cupo_maximo * 100), 100) if clase.cupo_maximo else 0,
+            })
 
-    # Badge "Clase única": eligió venir solo esta vez (cupo temporal)
-    ids_cupo_temporal = set(
-        reservas_fecha_unica.filter(es_recupero=False).values_list('id', flat=True)
-    )
-
-    # Lista unificada ordenada por nombre
-    from itertools import chain
-    reservas = sorted(
-        chain(reservas_permanentes, reservas_fecha_unica),
-        key=lambda r: (r.usuario.first_name or '', r.usuario.last_name or '')
-    )
-
-    total_reservas = reservas_permanentes.count() + reservas_fecha_unica.count()
-
-    # Estadísticas reales para la próxima clase (descuenta ausencias, suma fecha única)
-    cupos_disponibles_proxima = clase.cupos_disponibles(fecha=proxima_fecha_clase)
-    asistentes_proxima = clase.cupo_maximo - cupos_disponibles_proxima
-    porcentaje_proxima = round((asistentes_proxima / clase.cupo_maximo) * 100) if clase.cupo_maximo > 0 else 0
-
+    cupo = clase.cupo_maximo or 0
     context = {
         'clase': clase,
-        'reservas': reservas,
-        'total_reservas': total_reservas,
-        'cupos_disponibles': clase.cupos_disponibles(),
-        'porcentaje_ocupacion': clase.get_porcentaje_ocupacion(),
-        'proxima_fecha_clase': proxima_fecha_clase,
-        'reservas_con_ausencia': reservas_con_ausencia,
-        'ids_recupero': ids_recupero,
-        'ids_cupo_temporal': ids_cupo_temporal,
-        'cupos_disponibles_proxima': cupos_disponibles_proxima,
-        'asistentes_proxima': asistentes_proxima,
-        'porcentaje_proxima': porcentaje_proxima,
+        'fijas': fijas,
+        'sueltas': sueltas,
+        'proxima': proxima,
+        'semanas': semanas,
+        'fijos': len(fijas),
+        'libres_fijos': max(cupo - len(fijas), 0),
+        'porcentaje_fijos': min(round(len(fijas) / cupo * 100), 100) if cupo else 0,
+        'puede_eliminar': se_puede_eliminar(clase),
+        'profesoras': [b.profesora.get_full_name() or b.profesora.username for b in turnos_de_la_clase(clase)],
     }
-
     return render(request, 'gravity/admin/clase_detalle.html', context)
 
+
 @admin_required
+@require_http_methods(["POST"])
 def admin_clase_toggle_status(request, clase_id):
     """
-    Activa o desactiva una clase (AJAX)
+    Pausar o reactivar una clase. En pausa los alumnos conservan su lugar, pero la
+    clase no se dicta ni acepta reservas nuevas.
     """
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
-    
     clase = get_object_or_404(Clase, id=clase_id)
-    
-    try:
-        import json
-        data = json.loads(request.body)
-        activate = data.get('activate', False)
-        
-        # Cambiar el estado de la clase
-        clase.activa = activate
-        clase.save()
-        
-        action = 'activada' if activate else 'desactivada'
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Clase {clase.get_nombre_display()} - {clase.dia} {clase.horario.strftime("%H:%M")} {action} exitosamente.',
-            'new_status': clase.activa
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    clase.activa = not clase.activa
+    clase.save(update_fields=['activa', 'fecha_modificacion'])
+    nombre = f'{clase.get_nombre_display()} ({clase.dia} {clase.horario:%H:%M})'
+    if clase.activa:
+        messages.success(request, f'{nombre} vuelve a estar activa.')
+    else:
+        fijos = clase.reserva_set.filter(activa=True, fecha_unica__isnull=True).count()
+        extra = f' Los {fijos} alumnos con horario fijo conservan su lugar.' if fijos else ''
+        messages.success(request, f'Pausaste {nombre}: no se dicta ni acepta reservas nuevas.{extra}')
+
+    destino = request.POST.get('next', '')
+    if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}):
+        return redirect(destino)
+    return redirect('gravity:admin_clase_detalle', clase_id=clase.id)
 
 # ==============================================================================
-# REGISTRO DE ASISTENCIAS
+# ASISTENCIA
 # ==============================================================================
+
+def _sedes_cortas():
+    return [(valor, Clase(direccion=valor).get_direccion_corta()) for valor, _ in Clase.DIRECCIONES]
+
 
 @admin_required
 def admin_asistencia(request):
     """
-    Vista principal de registro de asistencia.
-    Muestra la nómina de alumnos por fecha y sede,
-    permitiendo marcar/revertir inasistencias sin aviso (sin límite de días).
+    Pasar lista: las clases de un día con sus alumnos. Se marca "No vino" desde que
+    empieza la clase y hasta 7 días atrás; las fechas más viejas son de consulta.
+    La lista se arma con lo que había ese día (gravity/asistencia_admin.py).
     """
-    hoy = timezone.localtime(timezone.now()).date()
-
-    # Obtener fecha seleccionada del GET, sin restricción histórica
-    fecha_str = request.GET.get('fecha', hoy.isoformat())
+    hoy = timezone.localdate()
     try:
-        from datetime import date as date_type
-        fecha_seleccionada = date_type.fromisoformat(fecha_str)
+        fecha = date.fromisoformat(request.GET.get('fecha', ''))
     except ValueError:
-        fecha_seleccionada = hoy
-    if fecha_seleccionada > hoy:
-        fecha_seleccionada = hoy
+        fecha = hoy
+    sede = request.GET.get('sede', '')
+    if sede not in dict(Clase.DIRECCIONES):
+        sede = ''
 
-    # Obtener sede seleccionada
-    sede_seleccionada = request.GET.get('sede', '')
-    sedes = Clase.DIRECCIONES
-
-    # Día de la semana para la fecha seleccionada
-    dias_semana_nombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-    dia_nombre = dias_semana_nombres[fecha_seleccionada.weekday()]
-
-    # Clases del día seleccionado
-    clases_qs = Clase.objects.filter(activa=True, dia=dia_nombre).order_by('direccion', 'horario')
-    if sede_seleccionada:
-        clases_qs = clases_qs.filter(direccion=sede_seleccionada)
-
-    # Precargar inasistencias y ausencias temporales de esa fecha de una sola vez
-    ids_clases = list(clases_qs.values_list('id', flat=True))
-    inasistencias_fecha = set(
-        Inasistencia.objects.filter(
-            reserva__clase_id__in=ids_clases,
-            reserva__activa=True,
-            fecha=fecha_seleccionada,
-        ).values_list('reserva_id', flat=True)
-    )
-    ausencias_fecha = set(
-        AusenciaTemporal.objects.filter(
-            reserva__clase_id__in=ids_clases,
-            reserva__activa=True,
-            fecha=fecha_seleccionada,
-        ).values_list('reserva_id', flat=True)
-    )
-
-    clases_con_nomina = []
-    from itertools import chain
-    for clase in clases_qs:
-        reservas_permanentes = clase.reserva_set.filter(
-            activa=True,
-            fecha_unica__isnull=True,
-        ).select_related('usuario', 'usuario__profile')
-
-        reservas_fecha_unica = clase.reserva_set.filter(
-            activa=True,
-            fecha_unica=fecha_seleccionada,
-        ).select_related('usuario', 'usuario__profile')
-
-        reservas = sorted(
-            chain(reservas_permanentes, reservas_fecha_unica),
-            key=lambda r: (r.usuario.first_name or '', r.usuario.last_name or '')
-        )
-
-        alumnos = []
-        for reserva in reservas:
-            if reserva.id in ausencias_fecha:
-                estado = 'ausencia_avisada'
-            elif reserva.id in inasistencias_fecha:
-                estado = 'inasistente'
-            else:
-                estado = 'presente'
-            alumnos.append({'reserva': reserva, 'estado': estado})
-
-        ausentes_clase = sum(1 for alumno in alumnos if alumno['estado'] == 'inasistente')
-
-        clases_con_nomina.append({
-            'clase': clase,
-            'alumnos': alumnos,
-            'total': len(alumnos),
-            'ausentes': ausentes_clase,   # <-- nuevo
-        })
-
-    total_alumnos = sum(item['total'] for item in clases_con_nomina)
-    total_inasistentes = sum(
-        1 for item in clases_con_nomina
-        for alumno in item['alumnos']
-        if alumno['estado'] == 'inasistente'
-    )
-
-    context = {
-        'fecha_seleccionada': fecha_seleccionada,
-        'sede_seleccionada': sede_seleccionada,
-        'sedes': sedes,
-        'clases_con_nomina': clases_con_nomina,
-        'dia_nombre': dia_nombre,
-        'hoy': hoy,
-        'es_historico': fecha_seleccionada < hoy,
-        'total_alumnos': total_alumnos,
-        'total_inasistentes': total_inasistentes,
-    }
+    context = datos_pasar_lista(fecha, sede)
+    context.update({'sede_filtro': sede, 'sedes': _sedes_cortas()})
     return render(request, 'gravity/admin/asistencia.html', context)
 
 
+def _marcar_inasistencia(user, datos):
+    """Marca o deshace un "No vino". Devuelve (error, mensaje, estado)."""
+    try:
+        reserva_id = int(datos.get('reserva_id'))
+        fecha = date.fromisoformat(str(datos.get('fecha')))
+    except (TypeError, ValueError):
+        return 'Faltan datos para marcar la asistencia.', None, None
+    marcar = datos.get('marcar') in (True, 1, '1', 'true')
+
+    ahora = timezone.now()
+    if not puede_marcar_fecha(fecha, timezone.localdate(ahora)):
+        return f'Solo se puede marcar la asistencia de hoy y de los últimos {DIAS_PARA_MARCAR} días.', None, None
+    reserva = Reserva.objects.select_related('usuario', 'clase').filter(id=reserva_id).first()
+    if not reserva or not reserva_en_fecha(reserva, fecha, ahora):
+        return 'Ese alumno no estaba anotado en esa clase ese día.', None, None
+    inicio = inicio_clase(reserva.clase, fecha)
+    if ahora < inicio:
+        return f'La clase todavía no empezó: vas a poder marcarlo desde las {timezone.localtime(inicio):%H:%M}.', None, None
+    if AusenciaTemporal.objects.filter(reserva=reserva, fecha=fecha).exists():
+        return 'Ese alumno avisó que no venía: no hace falta marcarlo.', None, None
+
+    nombre = reserva.usuario.get_full_name() or reserva.usuario.username
+    if marcar:
+        Inasistencia.objects.get_or_create(reserva=reserva, fecha=fecha, defaults={'registrado_por': user})
+        return None, f'Marcaste que {nombre} no vino.', 'no_vino'
+    Inasistencia.objects.filter(reserva=reserva, fecha=fecha).delete()
+    return None, f'Listo: {nombre} figura como que vino.', 'vino'
+
+
 @admin_required
+@require_http_methods(['POST'])
 def admin_asistencia_marcar(request):
     """
-    AJAX: marca o revierte una inasistencia para una reserva+fecha.
-    Acepta POST con JSON: { "reserva_id": int, "fecha": "YYYY-MM-DD", "marcar": true/false }
+    Marca o deshace un "No vino". Desde la lista llega en JSON (sin recargar la
+    página); sin JavaScript, como formulario común (vuelve a la lista con un aviso).
     """
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
-
-    try:
-        data = json.loads(request.body)
-        reserva_id = data.get('reserva_id')
-        fecha_str = data.get('fecha')
-        marcar = data.get('marcar', True)
-
-        if not reserva_id or not fecha_str:
-            return JsonResponse({'success': False, 'error': 'Faltan parámetros'}, status=400)
-
-        from datetime import date as date_type
+    es_json = request.content_type == 'application/json'
+    if es_json:
         try:
-            fecha = date_type.fromisoformat(fecha_str)
-        except ValueError:
-            return JsonResponse({'success': False, 'error': 'Fecha inválida'}, status=400)
+            datos = json.loads(request.body or b'{}')
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            datos = {}
+        if not isinstance(datos, dict):
+            datos = {}
+    else:
+        datos = request.POST
 
-        hoy = timezone.localtime(timezone.now()).date()
-        fecha_minima = hoy - timedelta(days=7)
-        if fecha > hoy or fecha < fecha_minima:
-            return JsonResponse(
-                {'success': False, 'error': 'La fecha está fuera de la ventana permitida (hoy y hasta 7 días atrás)'},
-                status=400
-            )
+    error, mensaje, estado = _marcar_inasistencia(request.user, datos)
+    if es_json:
+        if error:
+            return JsonResponse({'success': False, 'error': error}, status=400)
+        return JsonResponse({'success': True, 'message': mensaje, 'estado': estado})
 
-        reserva = get_object_or_404(Reserva, id=reserva_id, activa=True)
+    if error:
+        messages.error(request, error)
+    else:
+        messages.success(request, mensaje)
+    return _volver(request, reverse('gravity:admin_asistencia'))
 
-        # No permitir marcar si ya hay una AusenciaTemporal para esa reserva+fecha
-        if AusenciaTemporal.objects.filter(reserva=reserva, fecha=fecha).exists():
-            return JsonResponse(
-                {'success': False, 'error': 'El alumno ya avisó su ausencia para esa fecha'},
-                status=400
-            )
-
-        if marcar:
-            _, creada = Inasistencia.objects.get_or_create(
-                reserva=reserva,
-                fecha=fecha,
-                defaults={'registrado_por': request.user},
-            )
-            nombre = reserva.usuario.get_full_name() or reserva.usuario.username
-            mensaje = f'Inasistencia de {nombre} registrada.' if creada else 'Ya estaba marcado como ausente.'
-            return JsonResponse({'success': True, 'message': mensaje, 'estado': 'inasistente'})
-        else:
-            eliminadas, _ = Inasistencia.objects.filter(reserva=reserva, fecha=fecha).delete()
-            nombre = reserva.usuario.get_full_name() or reserva.usuario.username
-            if eliminadas:
-                mensaje = f'Inasistencia de {nombre} revertida.'
-            else:
-                mensaje = 'No había inasistencia registrada.'
-            return JsonResponse({'success': True, 'message': mensaje, 'estado': 'presente'})
-
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'JSON inválido'}, status=400)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-@admin_required
-def admin_asistencia_buscar_alumno(request):
-    """
-    Búsqueda AJAX de alumnos por nombre, username o email.
-    Usado por el buscador en la pantalla de asistencia.
-    """
-    q = request.GET.get('q', '').strip()
-    if len(q) < 2:
-        return JsonResponse({'resultados': []})
-
-    usuarios = User.objects.filter(
-        is_active=True, is_staff=False
-    ).filter(
-        Q(first_name__icontains=q) |
-        Q(last_name__icontains=q) |
-        Q(username__icontains=q) |
-        Q(email__icontains=q)
-    ).order_by('last_name', 'first_name')[:10]
-
-    resultados = [{
-        'id': u.id,
-        'nombre': u.get_full_name() or u.username,
-        'username': u.username,
-        'email': u.email,
-    } for u in usuarios]
-
-    return JsonResponse({'resultados': resultados})
-
-@admin_required
-def admin_asistencia_historial_alumno(request, usuario_id):
-    """
-    Historial combinado de AusenciaTemporal + Inasistencia de un alumno,
-    ordenado por fecha descendente. Usado por el buscador en asistencia.
-    """
-    usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
-
-    ausencias = AusenciaTemporal.objects.filter(
-        reserva__usuario=usuario
-    ).select_related('reserva__clase')
-
-    inasistencias = Inasistencia.objects.filter(
-        reserva__usuario=usuario
-    ).select_related('reserva__clase')
-
-    historial = []
-    for a in ausencias:
-        historial.append({
-            'fecha': a.fecha,
-            'clase': a.reserva.clase.get_nombre_display(),
-            'sede': a.reserva.clase.get_direccion_display(),
-            'horario': a.reserva.clase.horario.strftime('%H:%M'),
-            'tipo': 'avisada',
-        })
-    for i in inasistencias:
-        historial.append({
-            'fecha': i.fecha,
-            'clase': i.reserva.clase.get_nombre_display(),
-            'sede': i.reserva.clase.get_direccion_display(),
-            'horario': i.reserva.clase.horario.strftime('%H:%M'),
-            'tipo': 'sin_aviso',
-        })
-
-    historial.sort(key=lambda x: x['fecha'], reverse=True)
-
-    for h in historial:
-        h['fecha'] = h['fecha'].strftime('%d/%m/%Y')
-
-    return JsonResponse({
-        'usuario': usuario.get_full_name() or usuario.username,
-        'historial': historial,
-    })
 
 @admin_required
 def admin_asistencia_ausencias(request):
     """
-    Vista standalone (sub-tab de Asistencia) que lista TODAS las ausencias
-    (AusenciaTemporal + Inasistencia) en un rango de fechas, con filtros
-    opcionales por sede, clase y día de la semana. Orden fijo: fecha desc.
+    Faltas: avisos de ausencia (con el estado del recupero) y "No vino" sin aviso,
+    agrupados por día. Por defecto, los últimos 7 días; "Próximas" muestra los
+    avisos de hoy en adelante.
     """
-    hoy = timezone.localtime(timezone.now()).date()
+    hoy = timezone.localdate()
 
-    # Rango de fechas: default últimos 7 días
-    desde_str = request.GET.get('desde', (hoy - timedelta(days=7)).isoformat())
-    hasta_str = request.GET.get('hasta', hoy.isoformat())
-    try:
-        desde = date.fromisoformat(desde_str)
-    except ValueError:
-        desde = hoy - timedelta(days=7)
-    try:
-        hasta = date.fromisoformat(hasta_str)
-    except ValueError:
-        hasta = hoy
-    if desde > hasta:
+    def fecha_get(clave):
+        try:
+            return date.fromisoformat(request.GET.get(clave, ''))
+        except ValueError:
+            return None
+
+    desde, hasta = fecha_get('desde'), fecha_get('hasta')
+    personalizado = bool(desde or hasta)
+    if desde and hasta and desde > hasta:
         desde, hasta = hasta, desde
+    periodo = request.GET.get('periodo', '')
+    if personalizado:
+        periodo = ''
+    else:
+        periodo = periodo if periodo in PERIODOS_FALTAS else '7'
+        if periodo == 'proximas':
+            desde, hasta = hoy, None
+        else:
+            desde, hasta = hoy - timedelta(days=int(periodo) - 1), hoy
 
-    sede_seleccionada = request.GET.get('sede', '')
-    clase_seleccionada = request.GET.get('clase', '')
-    dia_seleccionado = request.GET.get('dia_semana', '')
+    tipo = request.GET.get('tipo', '')
+    if tipo not in dict(TIPOS_FALTA):
+        tipo = ''
+    sede = request.GET.get('sede', '')
+    if sede not in dict(Clase.DIRECCIONES):
+        sede = ''
+    buscar = request.GET.get('buscar', '').strip()
+    alumno = None
+    if request.GET.get('alumno', '').isdigit():
+        alumno = User.objects.filter(id=request.GET['alumno']).first()
 
-    sedes = Clase.DIRECCIONES
-    clases_choices = Clase.objects.filter(activa=True).order_by('direccion', 'dia', 'horario')
+    filas, conteo = faltas(desde=desde, hasta=hasta, sede=sede, buscar=buscar, tipo=tipo,
+                           usuario=alumno, proximas=periodo == 'proximas')
+    page_obj = Paginator(filas, 30).get_page(request.GET.get('page'))
+    completar_filas(page_obj.object_list, hoy)
 
-    ausencias_qs = AusenciaTemporal.objects.filter(
-        fecha__gte=desde, fecha__lte=hasta
-    ).select_related('reserva__usuario', 'reserva__clase')
-
-    inasistencias_qs = Inasistencia.objects.filter(
-        fecha__gte=desde, fecha__lte=hasta
-    ).select_related('reserva__usuario', 'reserva__clase')
-
-    if sede_seleccionada:
-        ausencias_qs = ausencias_qs.filter(reserva__clase__direccion=sede_seleccionada)
-        inasistencias_qs = inasistencias_qs.filter(reserva__clase__direccion=sede_seleccionada)
-
-    if clase_seleccionada:
-        ausencias_qs = ausencias_qs.filter(reserva__clase_id=clase_seleccionada)
-        inasistencias_qs = inasistencias_qs.filter(reserva__clase_id=clase_seleccionada)
-
-    if dia_seleccionado:
-        ausencias_qs = ausencias_qs.filter(reserva__clase__dia=dia_seleccionado)
-        inasistencias_qs = inasistencias_qs.filter(reserva__clase__dia=dia_seleccionado)
-
-    filas = []
-    for a in ausencias_qs:
-        filas.append({
-            'fecha': a.fecha,
-            'alumno': a.reserva.usuario.get_full_name() or a.reserva.usuario.username,
-            'clase': a.reserva.clase.get_nombre_display(),
-            'sede': a.reserva.clase.get_direccion_corta(),
-            'horario': a.reserva.clase.horario,
-            'tipo': 'avisada',
-        })
-    for i in inasistencias_qs:
-        filas.append({
-            'fecha': i.fecha,
-            'alumno': i.reserva.usuario.get_full_name() or i.reserva.usuario.username,
-            'clase': i.reserva.clase.get_nombre_display(),
-            'sede': i.reserva.clase.get_direccion_corta(),
-            'horario': i.reserva.clase.horario,
-            'tipo': 'sin_aviso',
-        })
-
-    filas.sort(key=lambda x: x['fecha'], reverse=True)
+    # Filtros actuales sin el tipo ni la página, para armar los enlaces de los chips
+    params = request.GET.copy()
+    for clave in ('tipo', 'page'):
+        params.pop(clave, None)
+    params_pagina = request.GET.copy()
+    params_pagina.pop('page', None)
 
     context = {
+        'page_obj': page_obj,
+        'total_filas': len(filas),
+        'total_todos': sum(conteo.values()),
+        'tipos': [{'clave': c, 'texto': t, 'cantidad': conteo[c]} for c, t in TIPOS_FALTA],
+        'tipo_filtro': tipo,
+        'sede_filtro': sede,
+        'sedes': _sedes_cortas(),
+        'buscar': buscar,
+        'alumno': alumno,
+        'periodo': periodo,
+        'personalizado': personalizado,
         'desde': desde,
         'hasta': hasta,
-        'sede_seleccionada': sede_seleccionada,
-        'clase_seleccionada': clase_seleccionada,
-        'dia_seleccionado': dia_seleccionado,
-        'sedes': sedes,
-        'clases_choices': clases_choices,
-        'dias_semana': DIAS_SEMANA_COMPLETOS,
-        'filas': filas,
-        'total_filas': len(filas),
+        'qs_sin_tipo': params.urlencode(),
+        'qs_pagina': params_pagina.urlencode(),
         'hoy': hoy,
     }
     return render(request, 'gravity/admin/asistencia_ausencias.html', context)
@@ -1875,408 +1391,479 @@ def admin_asistencia_ausencias(request):
 # GESTIÓN DE RESERVAS
 # ==============================================================================
 
+def _next_seguro(request):
+    """El `next` pedido, solo si es una dirección del propio sitio (si no, vacío)."""
+    destino = request.POST.get('next') or request.GET.get('next') or ''
+    if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()},
+                                                   require_https=request.is_secure()):
+        return destino
+    return ''
+
+
+def _volver(request, defecto):
+    """A `next` si es una dirección del sitio; si no, al destino por defecto."""
+    return redirect(_next_seguro(request) or defecto)
+
+
+def _opciones_clases(ahora, excluir_id=None):
+    """
+    Clases activas agrupadas por día, con lugares fijos libres y las próximas 4
+    fechas con sus lugares libres (para reservar o cambiar una reserva).
+    """
+    hoy = timezone.localtime(ahora).date()
+    clases = [c for c in Clase.objects.filter(activa=True).order_by('horario', 'direccion') if c.id != excluir_id]
+    fechas = {c.id: proximas_fechas(c, ahora) for c in clases}
+    libres = ocupacion(clases, fechas)
+    grupos = {dia: [] for dia, _ in DIAS_SEMANA_COMPLETOS}
+    datos_js = {}
+    for c in clases:
+        info = libres[c.id]
+        item = {
+            'clase': c,
+            'id': c.id,
+            'libres_fijos': info['libres_fijos'],
+            'fechas': [
+                {'iso': f.isoformat(), 'texto': fecha_corta(f, hoy), 'libres': info['fechas'][f]}
+                for f in fechas[c.id]
+            ],
+        }
+        grupos.setdefault(c.dia, []).append(item)
+        datos_js[c.id] = {'fijos': info['libres_fijos'], 'fechas': item['fechas'], 'tipo': c.tipo}
+    return [{'dia': d, 'clases': cs} for d, cs in grupos.items() if cs], datos_js
+
+
+def _fecha_post(request, clase, ahora):
+    """La fecha elegida para una reserva de una sola vez, si es una de las próximas de la clase."""
+    posibles = proximas_fechas(clase, ahora)
+    valor = request.POST.get('fecha', '')
+    for f in posibles:
+        if f.isoformat() == valor:
+            return f
+    return posibles[0] if not valor and posibles else None
+
+
 @admin_required
 def admin_reservas_lista(request):
     """
-    Lista todas las reservas con filtros y paginación
-    Ahora incluye filtro por sede
+    Reservas en tres pestañas: horarios fijos, recuperos y clases únicas desde hoy,
+    e historial con el estado real (realizada, cancelada por el alumno o por el
+    estudio, dada de baja). Buscador por alumno y filtros de sede, tipo y día.
     """
-    reservas = Reserva.objects.select_related(
-        'usuario', 'clase', 'usuario__profile'
-    ).order_by('-fecha_reserva')
-    
-    # Filtros
-    estado_filtro = request.GET.get('estado', '')
-    tipo_clase_filtro = request.GET.get('tipo_clase', '')
-    sede_filtro = request.GET.get('sede', '')
-    dia_filtro = request.GET.get('dia', '')
-    usuario_filtro = request.GET.get('usuario', '')
-    
-    if estado_filtro == 'activas':
-        reservas = reservas.filter(activa=True)
-    elif estado_filtro == 'canceladas':
-        reservas = reservas.filter(activa=False)
-    
-    if tipo_clase_filtro:
-        reservas = reservas.filter(clase__tipo=tipo_clase_filtro)
-    
-    if sede_filtro:
-        reservas = reservas.filter(clase__direccion=sede_filtro)
-    
-    if dia_filtro:
-        reservas = reservas.filter(clase__dia=dia_filtro)
-    
-    if usuario_filtro:
-        reservas = reservas.filter(
-            Q(usuario__username__icontains=usuario_filtro) |
-            Q(usuario__first_name__icontains=usuario_filtro) |
-            Q(usuario__last_name__icontains=usuario_filtro)
+    hoy = timezone.localdate()
+    ver = request.GET.get('ver', 'fijos')
+    if ver not in ('fijos', 'sueltas', 'historial'):
+        ver = 'fijos'
+    buscar = request.GET.get('usuario', '').strip()
+    sede = request.GET.get('sede', '')
+    if sede not in dict(Clase.DIRECCIONES):
+        sede = ''
+    tipo = request.GET.get('tipo_clase', '')
+    if tipo not in dict(Clase.TIPO_CLASES):
+        tipo = ''
+    dia = request.GET.get('dia', '')
+    if dia not in dict(DIAS_SEMANA_COMPLETOS):
+        dia = ''
+
+    base = Reserva.objects.select_related('usuario', 'clase', 'creado_por')
+    if buscar:
+        base = base.filter(
+            Q(usuario__username__icontains=buscar) | Q(usuario__first_name__icontains=buscar)
+            | Q(usuario__last_name__icontains=buscar) | Q(usuario__email__icontains=buscar)
         )
-    
-    # Paginación
-    paginator = Paginator(reservas, 15)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
+    if sede:
+        base = base.filter(clase__direccion=sede)
+    if tipo:
+        base = base.filter(clase__tipo=tipo)
+    if dia:
+        base = base.filter(clase__dia=dia)
+
+    consultas = {
+        'fijos': base.filter(activa=True, fecha_unica__isnull=True)
+                     .order_by('usuario__first_name', 'usuario__last_name', 'clase__horario'),
+        'sueltas': base.filter(activa=True, fecha_unica__gte=hoy).order_by('fecha_unica', 'clase__horario'),
+        'historial': base.filter(Q(activa=False) | Q(fecha_unica__lt=hoy))
+                         .prefetch_related('cancelaciones_admin', 'notificaciones_cancelacion')
+                         .order_by('-fecha_modificacion'),
+    }
+    conteo = {clave: qs.count() for clave, qs in consultas.items()}
+    page_obj = Paginator(consultas[ver], 25).get_page(request.GET.get('page'))
+    filas = []
+    for r in page_obj:
+        filas.append({
+            'reserva': r,
+            'estado': estado_reserva(r, hoy) if ver == 'historial' else None,
+            'tipo': 'Recupero' if r.es_recupero else ('Clase única' if r.fecha_unica else 'Horario fijo'),
+        })
+
+    params = request.GET.copy()
+    params.pop('page', None)
+    sin_ver = params.copy()
+    sin_ver.pop('ver', None)
     context = {
         'page_obj': page_obj,
-        'estado_filtro': estado_filtro,
-        'tipo_clase_filtro': tipo_clase_filtro,
-        'sede_filtro': sede_filtro,
-        'dia_filtro': dia_filtro,
-        'usuario_filtro': usuario_filtro,
-        'tipos_clases': Clase.TIPO_CLASES,
+        'filas': filas,
+        'ver': ver,
+        'pestanas': [
+            {'clave': 'fijos', 'texto': 'Horarios fijos', 'cantidad': conteo['fijos']},
+            {'clave': 'sueltas', 'texto': 'Recuperos y clases únicas', 'cantidad': conteo['sueltas']},
+            {'clave': 'historial', 'texto': 'Historial', 'cantidad': conteo['historial']},
+        ],
+        'qs_pagina': params.urlencode(),
+        'qs_sin_ver': sin_ver.urlencode(),
+        'usuario_filtro': buscar,
+        'sede_filtro': sede,
+        'tipo_filtro': tipo,
+        'dia_filtro': dia,
         'sedes': Clase.DIRECCIONES,
-        'dias_semana': DIAS_SEMANA,
+        'tipos': Clase.TIPO_CLASES,
+        'dias': DIAS_SEMANA_COMPLETOS,
+        'hay_filtros': bool(buscar or sede or tipo or dia),
+        'hoy': hoy,
+        'aqui': request.get_full_path(),
     }
-    
     return render(request, 'gravity/admin/reservas_lista.html', context)
+
 
 @admin_required
 def admin_reserva_cancelar(request, reserva_id):
     """
-    Cancelar una reserva como administrador (sin restricciones de tiempo)
-    Ahora con sistema de emails automático
+    Cancelar desde el panel (sin la restricción de horario del alumno).
+    En un horario fijo se puede elegir avisar la ausencia de una sola fecha (el
+    alumno queda con su recupero, como si lo hubiera avisado él) o dar de baja el
+    horario. Un recupero o una clase única se cancela entero.
     """
-    reserva = get_object_or_404(Reserva, id=reserva_id)
+    reserva = get_object_or_404(Reserva.objects.select_related('usuario', 'clase'), id=reserva_id)
+    ficha = reverse('gravity:admin_usuario_detalle', args=[reserva.usuario_id]) if not reserva.usuario.is_staff \
+        else reverse('gravity:admin_reservas_lista')
 
-    # Protección contra doble envío: si ya fue cancelada, volver al listado
+    # Protección contra doble envío: si ya fue cancelada, volver
     if not reserva.activa:
         messages.info(request, f'La reserva {reserva.numero_reserva} ya estaba cancelada.')
-        return redirect('gravity:admin_reservas_lista')
-    
+        return _volver(request, ficha)
+
+    ahora = timezone.now()
+    ausentes = set(reserva.ausencias_temporales.values_list('fecha', flat=True))
+    fechas = []
+    if not reserva.fecha_unica and reserva.clase.activa:
+        fechas = [
+            {'fecha': f, 'iso': f.isoformat(), 'texto': fecha_corta(f), 'avisada': f in ausentes}
+            for f in proximas_fechas(reserva.clase, ahora)
+        ]
+
     if request.method == 'POST':
-        # Obtener datos del formulario
-        motivo = request.POST.get('motivo', '').strip()
-        motivo_detalle = request.POST.get('motivo_detalle', '').strip()
-        notificar_usuario = request.POST.get('notificar_usuario') == 'on'
-        ofrecer_reemplazo = request.POST.get('ofrecer_reemplazo') == 'on'
-        ofrecer_otras_sedes = request.POST.get('ofrecer_otras_sedes') == 'on'
-        registrar_incidencia = request.POST.get('registrar_incidencia') == 'on'
-        
-        # Validar que se haya seleccionado un motivo
-        if not motivo:
-            messages.error(request, 'Debes seleccionar un motivo para la cancelación.')
-            return render(request, 'gravity/admin/reserva_cancelar.html', {'reserva': reserva})
-        
-        cancelacion = None
-        try:
-            # Solo los cambios en la base van en la transacción; el email se envía
-            # después del commit para no dejar la página esperando al SMTP.
-            with transaction.atomic():
-                # Bloquear la fila: si llegan dos POST a la vez, el segundo espera
-                # al primero y ve la reserva ya cancelada.
-                reserva = Reserva.objects.select_for_update().get(pk=reserva.pk)
-                if not reserva.activa:
-                    messages.info(request, f'La reserva {reserva.numero_reserva} ya estaba cancelada.')
-                    return redirect('gravity:admin_reservas_lista')
+        alcance = request.POST.get('alcance', 'baja')
+        nombre = reserva.get_nombre_completo_usuario()
 
-                # Guardar información adicional en las notas antes de cancelar
-                notas_cancelacion = f"Cancelada por administrador - Motivo: {motivo}"
-                if motivo_detalle:
-                    notas_cancelacion += f" - Detalle: {motivo_detalle}"
-                
-                # Actualizar las notas de la reserva
-                if reserva.notas:
-                    reserva.notas += f"\n{notas_cancelacion}"
-                else:
-                    reserva.notas = notas_cancelacion
-                
-                # Cancelar la reserva
-                reserva.activa = False
-                reserva.save()
-
-                # Registrar cancelación por admin en historial
-                try:
-                    cancelacion = CancelacionAdmin.objects.create(
-                        reserva=reserva,
-                        admin_user=request.user,
-                        motivo=motivo,
-                        motivo_detalle=motivo_detalle,
-                        email_enviado=False,  # se actualiza abajo si corresponde
-                    )
-                except Exception as e:
-                    logger.error(f"Error registrando CancelacionAdmin: {e}")
-                
-                # Registrar incidencia si se solicitó
-                if registrar_incidencia:
-                    registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, request.user)
-                
-        except Exception as e:
-            messages.error(
-                request, 
-                f'Error al cancelar la reserva: {str(e)}. '
-                'La cancelación no se completó.'
-            )
-            return render(request, 'gravity/admin/reserva_cancelar.html', {'reserva': reserva})
-
-        # Enviar email de notificación si se solicitó (la cancelación ya está confirmada)
-        email_enviado = False
-        if notificar_usuario and reserva.usuario.email:
-            try:
-                email_enviado = enviar_email_cancelacion_reserva(
-                    reserva=reserva,
-                    motivo=motivo,
-                    motivo_detalle=motivo_detalle,
-                    ofrecer_reemplazo=ofrecer_reemplazo,
-                    ofrecer_otras_sedes=ofrecer_otras_sedes
-                )
-            except Exception as e:
-                logger.error(f"Error enviando email de cancelación: {str(e)}")
-                email_enviado = False
-
-        if email_enviado and cancelacion:
-            CancelacionAdmin.objects.filter(pk=cancelacion.pk).update(email_enviado=True)
-        
-        # Mensaje de éxito
-        mensaje_exito = (
-            f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
-            f'cancelada exitosamente.'
-        )
-        
-        if notificar_usuario:
-            if email_enviado:
-                mensaje_exito += f' Se envió notificación por email a {reserva.usuario.email}.'
-            elif reserva.usuario.email:
-                mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
+        if alcance == 'fecha' and fechas:
+            elegida = next((f for f in fechas if f['iso'] == request.POST.get('fecha') and not f['avisada']), None)
+            if not elegida:
+                messages.error(request, 'Elegí una fecha en la que el alumno todavía no avisó que falta.')
             else:
-                mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
-        
-        if registrar_incidencia:
-            mensaje_exito += ' Se registró como incidencia para seguimiento.'
-        
-        messages.success(request, mensaje_exito)
-        return redirect('gravity:admin_reservas_lista')
-    
-    # GET request - mostrar formulario
-    context = {
-        'reserva': reserva
-    }
-    
-    return render(request, 'gravity/admin/reserva_cancelar.html', context)
+                ausencia, creada = AusenciaTemporal.objects.get_or_create(reserva=reserva, fecha=elegida['fecha'])
+                if creada:
+                    aviso = NotificacionCancelacion.objects.create(
+                        reserva=reserva, tipo='temporal', fecha_ausencia=elegida['fecha']
+                    )
+                    aviso.leida_por.add(request.user)
+                messages.success(
+                    request,
+                    f'Listo: {nombre} no va el {elegida["fecha"]:%d/%m}. Su lugar queda libre ese día y '
+                    f'puede recuperar la clase hasta el {ausencia.fecha_limite_recupero:%d/%m}.'
+                )
+                return _volver(request, ficha)
+
+        else:
+            motivo = request.POST.get('motivo', '').strip()
+            motivo_detalle = request.POST.get('motivo_detalle', '').strip()
+            notificar_usuario = request.POST.get('notificar_usuario') == 'on'
+            ofrecer_reemplazo = request.POST.get('ofrecer_reemplazo') == 'on'
+
+            if not motivo:
+                messages.error(request, 'Elegí el motivo de la cancelación.')
+            else:
+                cancelacion = None
+                try:
+                    # Solo los cambios en la base van en la transacción; el email sale después
+                    with transaction.atomic():
+                        # Bloquear la fila: si llegan dos POST a la vez, el segundo ve la reserva cancelada
+                        reserva = Reserva.objects.select_for_update().get(pk=reserva.pk)
+                        if not reserva.activa:
+                            messages.info(request, f'La reserva {reserva.numero_reserva} ya estaba cancelada.')
+                            return _volver(request, ficha)
+                        nota = f'Cancelada por el estudio - Motivo: {motivo}' + (f' - Detalle: {motivo_detalle}' if motivo_detalle else '')
+                        reserva.notas = f'{reserva.notas}\n{nota}' if reserva.notas else nota
+                        reserva.activa = False
+                        reserva.save()
+                        cancelacion = CancelacionAdmin.objects.create(
+                            reserva=reserva, admin_user=request.user, motivo=motivo,
+                            motivo_detalle=motivo_detalle, email_enviado=False,
+                        )
+                except Exception as e:
+                    logger.error(f'Error cancelando la reserva {reserva.numero_reserva}: {e}')
+                    messages.error(request, 'No se pudo cancelar la reserva. Probá de nuevo.')
+                else:
+                    email_enviado = False
+                    if notificar_usuario and reserva.usuario.email:
+                        try:
+                            email_enviado = enviar_email_cancelacion_reserva(
+                                reserva=reserva, motivo=motivo, motivo_detalle=motivo_detalle,
+                                ofrecer_reemplazo=ofrecer_reemplazo, ofrecer_otras_sedes=False,
+                            )
+                        except Exception as e:
+                            logger.error(f'Error enviando email de cancelación: {e}')
+                    if email_enviado and cancelacion:
+                        CancelacionAdmin.objects.filter(pk=cancelacion.pk).update(email_enviado=True)
+
+                    que = 'el horario fijo' if not reserva.fecha_unica else (
+                        f'el recupero del {reserva.fecha_unica:%d/%m}' if reserva.es_recupero
+                        else f'la clase única del {reserva.fecha_unica:%d/%m}')
+                    texto = f'Cancelaste {que} de {nombre} ({reserva.clase.get_nombre_display()} {reserva.clase.dia} {reserva.clase.horario:%H:%M}).'
+                    if notificar_usuario:
+                        if email_enviado:
+                            texto += f' Le avisamos a {reserva.usuario.email}.'
+                        elif reserva.usuario.email:
+                            texto += f' No se pudo mandar el email a {reserva.usuario.email}.'
+                        else:
+                            texto += ' No tiene email cargado para avisarle.'
+                    messages.success(request, texto)
+                    return _volver(request, ficha)
+
+    return render(request, 'gravity/admin/reserva_cancelar.html', {
+        'reserva': reserva,
+        'fechas': fechas,
+        'motivos': MOTIVOS_CANCELACION_ADMIN,
+        'alcance': request.POST.get('alcance', 'fecha' if fechas else 'baja'),
+        'fecha_defecto': request.POST.get('fecha') or next((f['iso'] for f in fechas if not f['avisada']), ''),
+        'next': _next_seguro(request),
+    })
+
+
+MOTIVOS_CANCELACION_ADMIN = [
+    'Pedido del alumno',
+    'Clase suspendida por el estudio',
+    'Cambio de horario de la clase',
+    'Problema de salud del alumno',
+    'Falta de pago',
+    'Incumplimiento de normas',
+    'Error al cargar la reserva',
+    'Otro',
+]
+
 
 @admin_required
 def admin_reserva_modificar(request, reserva_id):
     """
-    Modificar una reserva como administrador (sin restricciones de tiempo).
+    Pasar una reserva a otra clase desde el panel. No mira el límite del plan
+    (lo maneja el estudio) pero sí el cupo. Un recupero o una clase única elige
+    también la fecha nueva.
     """
-    reserva = get_object_or_404(Reserva, id=reserva_id, activa=True)
+    reserva = get_object_or_404(Reserva.objects.select_related('usuario', 'clase'), id=reserva_id, activa=True)
+    ficha = reverse('gravity:admin_usuario_detalle', args=[reserva.usuario_id])
+    ahora = timezone.now()
+    puntual = bool(reserva.fecha_unica)
+    # Un horario fijo cambia de clase; uno puntual puede quedarse en la misma clase con otra fecha
+    grupos, datos_js = _opciones_clases(ahora, excluir_id=None if puntual else reserva.clase_id)
 
     if request.method == 'POST':
-        notificar_usuario = request.POST.get('notificar_usuario') == 'on'
+        nueva = Clase.objects.filter(id=request.POST.get('nueva_clase'), activa=True).first()
+        notificar = request.POST.get('notificar_usuario') == 'on'
+        error = None
+        fecha = None
+        if not nueva:
+            error = 'Elegí la clase nueva.'
+        elif puntual:
+            fecha = _fecha_post(request, nueva, ahora)
+            if not fecha:
+                error = 'Elegí una de las fechas de la clase nueva.'
+            elif nueva.id == reserva.clase_id and fecha == reserva.fecha_unica:
+                error = 'Es la misma clase y la misma fecha que ya tiene.'
+            elif nueva.cupos_disponibles(fecha=fecha) <= 0:
+                error = f'{nueva.get_nombre_display()} del {fecha:%d/%m} no tiene lugar.'
+            elif Reserva.objects.filter(usuario=reserva.usuario, clase=nueva, activa=True).filter(
+                    Q(fecha_unica=fecha) | Q(fecha_unica__isnull=True)).exclude(pk=reserva.pk).exists():
+                error = 'El alumno ya tiene esa clase ese día.'
+        else:
+            if nueva.cupos_disponibles() <= 0:
+                error = f'{nueva.get_nombre_display()} {nueva.dia} {nueva.horario:%H:%M} no tiene lugares fijos libres.'
+            elif Reserva.objects.filter(usuario=reserva.usuario, clase=nueva, activa=True).exclude(pk=reserva.pk).exists():
+                error = 'El alumno ya tiene una reserva en esa clase.'
 
-        form = ModificarReservaForm(
-            request.POST,
-            reserva_actual=reserva,
-            user=reserva.usuario
-        )
-
-        if form.is_valid():
+        if error:
+            messages.error(request, error)
+        else:
+            clase_anterior = reserva.clase
+            fecha_anterior = reserva.fecha_unica
             try:
-                nueva_clase = form.cleaned_data['nueva_clase']
-                clase_anterior = reserva.clase
-
-                # Solo el cambio va en la transacción; el email se envía después del commit
                 with transaction.atomic():
-                    reserva.clase = nueva_clase
+                    reserva.clase = nueva
+                    if puntual:
+                        reserva.fecha_unica = fecha
                     reserva.save()
-
-                # Enviar email de notificación si se solicitó
+                    borradas = 0
+                    if not puntual and clase_anterior.dia != nueva.dia:
+                        # Los avisos de ausencia futuros eran para el día viejo
+                        borradas, _ = reserva.ausencias_temporales.filter(fecha__gte=ahora.date()).delete()
+            except (IntegrityError, ValidationError) as e:
+                reserva.clase, reserva.fecha_unica = clase_anterior, fecha_anterior
+                messages.error(request, ' '.join(getattr(e, 'messages', [])) or 'El alumno ya tiene una reserva en esa clase.')
+            else:
                 email_enviado = False
-                if notificar_usuario and reserva.usuario.email:
+                if notificar and reserva.usuario.email:
                     try:
-                        email_enviado = enviar_email_modificacion_reserva(
-                            reserva=reserva,
-                            clase_anterior=clase_anterior,
-                        )
+                        email_enviado = enviar_email_modificacion_reserva(reserva=reserva, clase_anterior=clase_anterior)
                     except Exception as e:
-                        logger.error(f"Error enviando email de modificación: {str(e)}")
-
-                mensaje_exito = (
-                    f'Reserva {reserva.numero_reserva} de {reserva.get_nombre_completo_usuario()} '
-                    f'modificada: {clase_anterior.get_nombre_display()} ({clase_anterior.dia} '
-                    f'{clase_anterior.horario.strftime("%H:%M")}) → '
-                    f'{nueva_clase.get_nombre_display()} ({nueva_clase.dia} '
-                    f'{nueva_clase.horario.strftime("%H:%M")}).'
-                )
-
-                if notificar_usuario:
-                    if email_enviado:
-                        mensaje_exito += f' Notificación enviada a {reserva.usuario.email}.'
-                    elif reserva.usuario.email:
-                        mensaje_exito += f' ⚠️ No se pudo enviar el email a {reserva.usuario.email}.'
-                    else:
-                        mensaje_exito += ' ⚠️ El usuario no tiene email configurado.'
-
-                messages.success(request, mensaje_exito)
-                return redirect('gravity:admin_reservas_lista')
-
-            except IntegrityError:
-                reserva.clase = clase_anterior
-                messages.error(request, 'Error: el alumno ya tiene una reserva en esa clase.')
-            except ValidationError as e:
-                reserva.clase = clase_anterior
-                messages.error(request, ' '.join(e.messages))
-            except Exception as e:
-                messages.error(request, f'Error al modificar la reserva: {str(e)}')
-    else:
-        form = ModificarReservaForm(
-            reserva_actual=reserva,
-            user=reserva.usuario
-        )
+                        logger.error(f'Error enviando email de modificación: {e}')
+                cuando = f' el {fecha:%d/%m}' if puntual else ''
+                texto = (f'{reserva.get_nombre_completo_usuario()} pasó de {clase_anterior.get_nombre_display()} '
+                         f'{clase_anterior.dia} {clase_anterior.horario:%H:%M} a {nueva.get_nombre_display()} '
+                         f'{nueva.dia} {nueva.horario:%H:%M}{cuando} ({nueva.get_direccion_corta()}).')
+                if borradas:
+                    texto += f' Se borraron {borradas} aviso{"s" if borradas != 1 else ""} de ausencia del día anterior.'
+                if notificar:
+                    texto += f' Le avisamos a {reserva.usuario.email}.' if email_enviado else ' No se pudo mandar el email.'
+                messages.success(request, texto)
+                return _volver(request, ficha)
 
     return render(request, 'gravity/admin/reserva_modificar.html', {
-        'form': form,
         'reserva': reserva,
+        'puntual': puntual,
+        'grupos': grupos,
+        'datos_js': datos_js,
+        'info': info_alumno(reserva.usuario),
+        'elegida': request.POST.get('nueva_clase', ''),
+        'next': _next_seguro(request),
     })
 
-def registrar_incidencia_cancelacion(reserva, motivo, motivo_detalle, admin_user):
+def grilla_recuperos(usuario, estado):
     """
-    Registra una incidencia cuando una cancelación es marcada para seguimiento.
-    
-    Args:
-        reserva: Reserva cancelada
-        motivo: Motivo de la cancelación
-        motivo_detalle: Detalle adicional
-        admin_user: Usuario administrador que realizó la cancelación
+    Columnas por fecha (de hoy al plazo de recupero) con las clases donde se puede
+    recuperar: tipo permitido según la clase que faltó, con lugar esa fecha y que
+    todavía no empezaron. No se ofrece la propia clase fija del alumno.
     """
-    try:
-        # Por ahora, vamos a registrar la incidencia en los logs
-        # En el futuro, podrías crear un modelo IncidenciaCancelacion
-        
-        incidencia_info = {
-            'tipo': 'cancelacion_reserva',
-            'reserva_numero': reserva.numero_reserva,
-            'usuario': reserva.usuario.username,
-            'usuario_email': reserva.usuario.email,
-            'clase_tipo': reserva.clase.tipo,
-            'clase_dia': reserva.clase.dia,
-            'clase_horario': reserva.clase.horario.strftime('%H:%M'),
-            'clase_sede': reserva.clase.direccion,
-            'motivo': motivo,
-            'motivo_detalle': motivo_detalle,
-            'admin_user': admin_user.username,
-            'fecha_cancelacion': timezone.now(),
-        }
-        
-        logger.info(f"INCIDENCIA_CANCELACION: {incidencia_info}")
-        
-        # Aquí podrías agregar lógica adicional como:
-        # - Enviar email al gerente
-        # - Guardar en base de datos específica
-        # - Enviar notificación a Slack
-        # - Crear ticket en sistema de soporte
-        
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error registrando incidencia de cancelación: {str(e)}")
-        return False
+    hoy = estado.ahora.date()
+    if not estado.fecha_limite:
+        return {'columnas': [], 'tipos': [], 'sedes': []}
+
+    tipos = estado.tipos_disponibles
+    propias = set(Reserva.objects.filter(usuario=usuario, activa=True, fecha_unica__isnull=True).values_list('clase_id', flat=True))
+    puntuales = set(Reserva.objects.filter(usuario=usuario, activa=True, fecha_unica__gte=hoy).values_list('clase_id', 'fecha_unica'))
+    clases = list(Clase.objects.filter(activa=True, tipo__in=tipos, dia__in=DIAS_GRILLA))
+
+    columnas = []
+    fecha = hoy
+    while fecha <= estado.fecha_limite:
+        dia = (DIAS_GRILLA + ['Domingo'])[fecha.weekday()]
+        slots = []
+        for clase in clases:
+            if clase.dia != dia or clase.id in propias or (clase.id, fecha) in puntuales:
+                continue
+            if not estado.puede_recuperar_en(clase, fecha):
+                continue
+            libres = clase.cupos_disponibles(fecha=fecha)
+            slots.append({
+                'clase': clase,
+                'tipo': clase.tipo,
+                'nombre': clase.nombre_personalizado if clase.tipo == 'Especial' and clase.nombre_personalizado else clase.tipo,
+                'sede': clase.direccion,
+                'sede_nombre': SEDES_GRILLA.get(clase.direccion, clase.get_direccion_display()),
+                'hora': clase.horario.strftime('%H:%M'),
+                'estado': 'libre' if libres > 0 else 'completa',
+                'libres': libres,
+            })
+        if slots:
+            dias_hasta = (fecha - hoy).days
+            columnas.append({
+                'fecha': fecha,
+                'fecha_iso': fecha.isoformat(),
+                'corto': DIAS_CORTOS_GRILLA.get(dia, dia[:3]),
+                'relativo': 'Hoy' if dias_hasta == 0 else 'Mañana' if dias_hasta == 1 else '',
+                'slots': sorted(slots, key=lambda x: (x['hora'], x['sede'])),
+            })
+        fecha += timedelta(days=1)
+
+    orden_tipos = ['Reformer', 'Cadillac', 'Especial']
+    tipos_lista = sorted({(c.tipo, c.get_tipo_display()) for c in clases},
+                         key=lambda t: orden_tipos.index(t[0]) if t[0] in orden_tipos else 9)
+    sedes = [(k, v) for k, v in SEDES_GRILLA.items() if any(c.direccion == k for c in clases)]
+    return {'columnas': columnas, 'tipos': tipos_lista, 'sedes': sedes}
+
 
 @login_required
 def reservar_recupero(request):
     """
-    Permite reservar una clase de recupero por ausencia temporal registrada esta semana.
-    La reserva es solo para esa fecha. No consume clases del plan.
+    Recuperar una clase que se avisó que se faltaba. Es solo para esa fecha y no usa
+    clases del plan. Reglas (tipo, plazo y qué recupero cubre cada ausencia) en
+    gravity/recuperos.py.
     """
-    puede, n_disponibles, ausencias = Reserva.usuario_puede_hacer_recupero(request.user)
+    from datetime import date as date_type
+    from .recuperos import EstadoRecuperos, tipos_permitidos
 
-    if not puede:
-        messages.error(request, 'No tenés ausencias disponibles para recuperar esta semana.')
+    estado = EstadoRecuperos(request.user)
+    if not estado.disponibles:
+        messages.info(request, 'No tenés clases para recuperar en este momento.')
         return redirect('accounts:mis_reservas')
 
-    hoy = timezone.localtime(timezone.now()).date()
-    # El plazo máximo es la fecha_limite_recupero más lejana entre las ausencias vigentes
-    fin_ventana = max((a.fecha_limite_recupero for a in ausencias), default=hoy)
-
-    clases_para_recupero = []
-    dias_totales = (fin_ventana - hoy).days + 1
-    for offset in range(dias_totales):
-        fecha_dia = hoy + timedelta(days=offset)
-        dia_nombre = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][fecha_dia.weekday()]
-        for clase in Clase.objects.filter(activa=True, dia=dia_nombre).order_by('horario'):
-            cupos = clase.cupos_disponibles(fecha=fecha_dia)
-            if cupos <= 0:
-                continue
-            ya_tiene = Reserva.objects.filter(
-                usuario=request.user,
-                clase=clase,
-                activa=True
-            ).filter(
-                fecha_unica=fecha_dia
-            ).exists()
-            ya_tiene_permanente = Reserva.objects.filter(
-                usuario=request.user,
-                clase=clase,
-                activa=True,
-                fecha_unica__isnull=True
-            ).exists()
-            if ya_tiene or ya_tiene_permanente:
-                continue
-            clases_para_recupero.append({
-                'clase': clase,
-                'fecha': fecha_dia,
-                'fecha_str': fecha_dia.strftime('%Y-%m-%d'),
-                'cupos': cupos,
-            })
-
     if request.method == 'POST':
-        clase_id = request.POST.get('clase_id')
-        fecha_str = request.POST.get('fecha')
         try:
-            from datetime import date as date_type
-            fecha_recupero = date_type.fromisoformat(fecha_str)
-            clase = get_object_or_404(Clase, id=clase_id, activa=True)
+            fecha_recupero = date_type.fromisoformat(request.POST.get('fecha', ''))
+            clase = Clase.objects.get(id=request.POST.get('clase_id'), activa=True)
+        except (ValueError, Clase.DoesNotExist):
+            messages.error(request, 'Ese horario ya no está disponible. Elegí otro.')
+            return redirect('gravity:reservar_recupero')
 
-            if fecha_recupero < hoy or fecha_recupero > fin_ventana:
-                messages.error(request, 'Fecha inválida para el recupero.')
-                return redirect('gravity:reservar_recupero')
+        error = None
+        dia_de_la_fecha = (DIAS_GRILLA + ['Domingo'])[fecha_recupero.weekday()]
+        if dia_de_la_fecha != clase.dia:
+            error = 'Ese horario ya no está disponible. Elegí otro.'
+        elif Reserva.objects.filter(usuario=request.user, clase=clase, activa=True).filter(
+                Q(fecha_unica__isnull=True) | Q(fecha_unica=fecha_recupero)).exists():
+            error = 'Ya tenés una reserva para esa clase.'
+        elif not estado.puede_recuperar_en(clase, fecha_recupero):
+            error = 'Ese horario no está disponible para recuperar (ya empezó, pasa tu plazo o no corresponde al tipo de clase que faltaste).'
+        elif clase.cupos_disponibles(fecha=fecha_recupero) <= 0:
+            error = 'Se ocupó el último lugar de esa clase. Elegí otro horario.'
 
-            if clase.cupos_disponibles(fecha=fecha_recupero) <= 0:
-                messages.error(request, 'Ya no hay cupos disponibles para esa clase en esa fecha.')
-                return redirect('gravity:reservar_recupero')
+        if error:
+            messages.error(request, error)
+            return redirect('gravity:reservar_recupero')
 
-            puede, _, _ = Reserva.usuario_puede_hacer_recupero(request.user)
-            if not puede:
-                messages.error(request, 'Ya no tenés recuperos disponibles esta semana.')
-                return redirect('accounts:mis_reservas')
-
-            reserva = Reserva(
+        try:
+            Reserva(
                 usuario=request.user,
                 clase=clase,
                 es_recupero=True,
                 fecha_unica=fecha_recupero,
                 notas=f'Recupero por ausencia temporal — {fecha_recupero.strftime("%d/%m/%Y")}',
                 creado_por=request.user,
-            )
-            reserva.save()  # save() ya ejecuta full_clean()
-
-            request.session['reserva_exitosa'] = {
-                'tipo': 'recupero',
-                'clase': clase.get_nombre_display(),
-                'dia': clase.dia,
-                'horario': clase.horario.strftime('%H:%M'),
-                'sede': clase.get_direccion_corta(),
-                'fecha': fecha_recupero.strftime('%d/%m/%Y'),
-            }
-            return redirect('accounts:mis_reservas')
-
+            ).save()  # save() ya ejecuta full_clean()
         except IntegrityError:
             messages.error(request, 'Ya tenés una reserva para esa clase en esa fecha.')
             return redirect('accounts:mis_reservas')
         except ValidationError as e:
             messages.error(request, ' '.join(e.messages))
             return redirect('gravity:reservar_recupero')
-        except Exception as e:
-            messages.error(request, f'Error al procesar el recupero: {str(e)}')
-            return redirect('gravity:reservar_recupero')
+
+        request.session['reserva_exitosa'] = {
+            'tipo': 'recupero',
+            'clase': clase.get_nombre_display(),
+            'dia': clase.dia,
+            'horario': clase.horario.strftime('%H:%M'),
+            'sede': clase.get_direccion_corta(),
+            'fecha': fecha_recupero.strftime('%d/%m/%Y'),
+        }
+        return redirect('accounts:mis_reservas')
+
+    pendientes = [{
+        'ausencia': a,
+        'clase': a.reserva.clase,
+        'permitidos': sorted(tipos_permitidos(a.reserva.clase.tipo), key=lambda t: t != a.reserva.clase.tipo),
+    } for a in estado.pendientes]
 
     context = {
-        'clases_para_recupero': clases_para_recupero,
-        'ausencias': ausencias,
-        'n_disponibles': n_disponibles,
-        'hoy': hoy,
-        'fin_ventana': fin_ventana,
+        'pendientes': pendientes,
+        'n_disponibles': estado.disponibles,
+        'fecha_limite': estado.fecha_limite,
+        'grilla': grilla_recuperos(request.user, estado),
     }
     return render(request, 'gravity/reservar_recupero.html', context)
 
@@ -2313,312 +1900,120 @@ def cerrar_modal_ausencia_registrada(request):
 @login_required
 def reservar_cupo_temporal(request, clase_id, fecha_str):
     """
-    Permite tomar un cupo temporal liberado por la ausencia de otro usuario.
-    La reserva es solo para esa fecha y cuenta contra el límite semanal del plan.
+    Los lugares sueltos (clase llena con alguien que avisó que falta) se reservan desde
+    la grilla de Reservar clase como "una sola vez". Se conserva la URL por enlaces viejos.
     """
-    from datetime import date as date_type
-
-    clase = get_object_or_404(Clase, id=clase_id, activa=True)
-
-    try:
-        fecha = date_type.fromisoformat(fecha_str)
-    except ValueError:
-        messages.error(request, 'Fecha inválida.')
-        return redirect('gravity:clases_disponibles')
-
-    ahora = timezone.localtime(timezone.now())
-    hoy = ahora.date()
-
-    if fecha < hoy:
-        messages.error(request, 'El cupo temporal ya no está disponible.')
-        return redirect('gravity:clases_disponibles')
-
-    # Si la clase es hoy, verificar que todavía no haya comenzado
-    if fecha == hoy:
-        clase_datetime = ahora.replace(
-            hour=clase.horario.hour,
-            minute=clase.horario.minute,
-            second=0,
-            microsecond=0
-        )
-        if ahora >= clase_datetime:
-            messages.error(request, 'El cupo temporal ya no está disponible (la clase ya comenzó).')
-            return redirect('gravity:clases_disponibles')
-
-    cupos = clase.cupos_disponibles(fecha=fecha)
-    if cupos <= 0:
-        messages.error(request, 'Ya no hay cupos disponibles para esta clase en esa fecha.')
-        return redirect('gravity:clases_disponibles')
-
-    clases_disponibles_usuario, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    if clases_disponibles_usuario == 0:
-        messages.error(request, 'Necesitás un plan activo para reservar.')
-        return redirect('gravity:mis_planes')
-
-    # Detectar si el usuario tiene una ausencia disponible para usar como recupero
-    puede_recupero, _, _ = Reserva.usuario_puede_hacer_recupero(request.user)
-
-    if not puede_recupero:
-        # Sin ausencia disponible: verificar límite semanal normal
-        reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
-        if reservas_actuales >= clases_disponibles_usuario:
-            messages.error(
-                request,
-                'Ya usaste todas tus clases disponibles esta semana.'
-            )
-            return redirect('accounts:mis_reservas')
-
-    ya_tiene = Reserva.objects.filter(
-        usuario=request.user, clase=clase, activa=True
-    ).exists()
-    if ya_tiene:
-        messages.error(request, 'Ya tenés una reserva para esta clase.')
-        return redirect('gravity:clases_disponibles')
-
-    if request.method == 'POST':
-        try:
-            tipo_nota = 'Recupero' if puede_recupero else 'Cupo temporal'
-            reserva = Reserva(
-                usuario=request.user,
-                clase=clase,
-                es_recupero=puede_recupero,
-                fecha_unica=fecha,
-                notas=f'{tipo_nota} — {fecha.strftime("%d/%m/%Y")}',
-                creado_por=request.user,
-            )
-            reserva.save()  # save() ya ejecuta full_clean()
-
-            request.session['reserva_exitosa'] = {
-                'tipo': 'recupero' if puede_recupero else 'temporal',
-                'clase': clase.get_nombre_display(),
-                'dia': clase.dia,
-                'horario': clase.horario.strftime('%H:%M'),
-                'sede': clase.get_direccion_corta(),
-                'fecha': fecha.strftime('%d/%m/%Y'),
-            }
-            return redirect('accounts:mis_reservas')
-
-        except IntegrityError:
-            messages.error(request, 'Ya tenés una reserva para esta clase en esa fecha.')
-            return redirect('accounts:mis_reservas')
-        except ValidationError as e:
-            messages.error(request, ' '.join(e.messages))
-        except Exception as e:
-            messages.error(request, f'Error al procesar la reserva: {str(e)}')
-
-    context = {
-        'clase': clase,
-        'fecha': fecha,
-        'cupos': cupos,
-        'es_recupero': puede_recupero,
+    clase = get_object_or_404(Clase, id=clase_id)
+    params = {
+        'tipo': clase.tipo,
+        'sede': clase.direccion,
+        'dia': clase.dia,
+        'horario': clase.horario.strftime('%H:%M'),
+        'es_temporal': '1',
     }
-    return render(request, 'gravity/reservar_cupo_temporal.html', context)
-
-# ==============================================================================
-# RESERVA DE CLASE POR ADMINISTRADOR
-# ==============================================================================
+    return redirect(f"{reverse('gravity:reservar_clase')}?{urlencode(params)}")
 
 @admin_required
 def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
     """
-    Permite al administrador crear una reserva para cualquier usuario.
-    - Si viene con clase_id: la clase está preseleccionada (desde lista de clases)
-    - Si viene con usuario_id: el usuario está preseleccionado (desde ficha de cliente)
-    - Bypasea validaciones de plan/saldo del usuario
-    - Respeta cupo máximo y duplicados
+    Reservar para un alumno desde el panel: horario fijo, clase única o recupero
+    (estas dos con fecha a elegir entre las próximas cuatro). Respeta el cupo y los
+    duplicados; el plan y los recuperos disponibles se muestran como aviso, pero el
+    estudio puede cargarla igual. La clase y el alumno pueden venir preseleccionados
+    (por la URL o por ?clase / ?alumno).
     """
-    # Preselecciones opcionales
-    clase_preseleccionada = None
-    usuario_preseleccionado = None
+    ahora = timezone.now()
     if clase_id:
-        clase_preseleccionada = get_object_or_404(Clase, id=clase_id, activa=True)
+        get_object_or_404(Clase, id=clase_id, activa=True)
+    else:
+        clase_id = request.GET.get('clase') if str(request.GET.get('clase', '')).isdigit() else None
     if usuario_id:
-        usuario_preseleccionado = get_object_or_404(User, id=usuario_id, is_staff=False)
-
-    # Cupos reales de la clase preseleccionada (considera ausencias del día)
-    cupos_proxima_preseleccionada = None
-    if clase_preseleccionada:
-        _ahora = timezone.localtime(timezone.now())
-        _hoy = _ahora.date()
-        _dias_map = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
-        _dia_num = _dias_map.get(clase_preseleccionada.dia, 0)
-        _dias_hasta = (_dia_num - _hoy.weekday()) % 7
-        if _dias_hasta == 0:
-            _clase_hoy = _ahora.replace(
-                hour=clase_preseleccionada.horario.hour,
-                minute=clase_preseleccionada.horario.minute,
-                second=0, microsecond=0
-            )
-            if _clase_hoy <= _ahora:
-                _dias_hasta = 7
-        _fecha_proxima = _hoy + timedelta(days=_dias_hasta)
-        cupos_proxima_preseleccionada = clase_preseleccionada.cupos_disponibles(fecha=_fecha_proxima)
-
-    hoy_iso = timezone.localtime(timezone.now()).date().isoformat()
-
-    # Datos para los selectores
-    clases_disponibles = Clase.objects.filter(activa=True).order_by(
-        'direccion', 'tipo', 'dia', 'horario'
-    )
-    todos_los_usuarios = User.objects.filter(
-        is_active=True, is_staff=False
-    ).order_by('last_name', 'first_name', 'username')
+        get_object_or_404(User, id=usuario_id, is_staff=False)
+    else:
+        usuario_id = request.GET.get('alumno') if str(request.GET.get('alumno', '')).isdigit() else None
 
     if request.method == 'POST':
-        clase_id_post = request.POST.get('clase')
-        usuario_id_post = request.POST.get('usuario')
-        notificar = request.POST.get('notificar_usuario') == 'on'
+        alumno = User.objects.filter(id=request.POST.get('usuario') or 0, is_staff=False, is_active=True).first()
+        clase = Clase.objects.filter(id=request.POST.get('clase') or 0, activa=True).first()
         tipo_reserva = request.POST.get('tipo_reserva', 'recurrente')
+        if tipo_reserva not in ('recurrente', 'temporal', 'recupero'):
+            tipo_reserva = 'recurrente'
+        notificar = request.POST.get('notificar_usuario') == 'on'
+        usuario_id = alumno.id if alumno else usuario_id
+        clase_id = clase.id if clase else clase_id
 
-        # Validar que se seleccionaron ambos
-        if not clase_id_post or not usuario_id_post:
-            messages.error(request, 'Debés seleccionar un alumno y una clase.')
-            return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
-                'clases_disponibles': clases_disponibles,
-                'todos_los_usuarios': todos_los_usuarios,
-                'clase_preseleccionada': clase_preseleccionada,
-                'usuario_preseleccionado': usuario_preseleccionado,
-                'hoy_iso': hoy_iso,
-                'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
-            })
-
-        clase = get_object_or_404(Clase, id=clase_id_post, activa=True)
-        usuario = get_object_or_404(User, id=usuario_id_post, is_staff=False)
-
-        # Para recurrente: no puede haber ninguna reserva activa en esa clase
-        # Para temporal/recupero: el modelo valida duplicados de fecha_unica
-        if tipo_reserva == 'recurrente' and Reserva.objects.filter(usuario=usuario, clase=clase, activa=True).exists():
-            messages.error(
-                request,
-                f'{usuario.get_full_name() or usuario.username} ya tiene una reserva activa '
-                f'en {clase.get_nombre_display()} - {clase.dia} {clase.horario.strftime("%H:%M")}.'
-            )
-            return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
-                'clases_disponibles': clases_disponibles,
-                'todos_los_usuarios': todos_los_usuarios,
-                'clase_preseleccionada': clase_preseleccionada,
-                'usuario_preseleccionado': usuario_preseleccionado,
-                'hoy_iso': hoy_iso,
-                'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
-            })
-
-        # Validar cupo disponible (para temporal/recupero se usa la fecha real de la clase)
-        if tipo_reserva in ('temporal', 'recupero'):
-            _ahora = timezone.localtime(timezone.now())
-            _hoy = _ahora.date()
-            _dias_map = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4, 'Sábado': 5}
-            _dia_num = _dias_map.get(clase.dia, 0)
-            _dias_hasta = (_dia_num - _hoy.weekday()) % 7
-            if _dias_hasta == 0:
-                _clase_hoy = _ahora.replace(hour=clase.horario.hour, minute=clase.horario.minute, second=0, microsecond=0)
-                if _clase_hoy <= _ahora:
-                    _dias_hasta = 7
-            _fecha_validacion = _hoy + timedelta(days=_dias_hasta)
-            _cupos_check = clase.cupos_disponibles(fecha=_fecha_validacion)
-        # Nota: el admin no tiene restricción de 3 horas — puede crear reservas retroactivas
+        error = None
+        fecha = None
+        if not alumno or not clase:
+            error = 'Elegí un alumno y una clase.'
+        elif tipo_reserva == 'recurrente':
+            if Reserva.objects.filter(usuario=alumno, clase=clase, activa=True, fecha_unica__isnull=True).exists():
+                error = (f'{alumno.get_full_name() or alumno.username} ya tiene una reserva activa en '
+                         f'{clase.get_nombre_display()} {clase.dia} {clase.horario:%H:%M}.')
+            elif clase.cupos_disponibles() <= 0:
+                error = f'{clase.get_nombre_display()} {clase.dia} {clase.horario:%H:%M} no tiene lugares fijos libres.'
         else:
-            _cupos_check = clase.cupos_disponibles()
+            fecha = _fecha_post(request, clase, ahora)
+            if not fecha:
+                error = 'Elegí una de las fechas de la clase.'
+            elif Reserva.objects.filter(usuario=alumno, clase=clase, activa=True).filter(
+                    Q(fecha_unica=fecha) | Q(fecha_unica__isnull=True)).exists():
+                error = (f'{alumno.get_full_name() or alumno.username} ya tiene una reserva activa en esa '
+                         f'clase el {fecha:%d/%m}.')
+            elif clase.cupos_disponibles(fecha=fecha) <= 0:
+                error = f'{clase.get_nombre_display()} del {fecha:%d/%m} no tiene lugar.'
 
-        if _cupos_check <= 0:
-            messages.error(
-                request,
-                f'La clase {clase.get_nombre_display()} - {clase.dia} {clase.horario.strftime("%H:%M")} '
-                f'no tiene cupos disponibles.'
-            )
-            return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
-                'clases_disponibles': clases_disponibles,
-                'todos_los_usuarios': todos_los_usuarios,
-                'clase_preseleccionada': clase_preseleccionada,
-                'usuario_preseleccionado': usuario_preseleccionado,
-                'hoy_iso': hoy_iso,
-                'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
-            })
-
-        try:
-            # Calcular fecha_unica y es_recupero según tipo
-            fecha_unica = None
-            es_recupero = False
-            if tipo_reserva in ('temporal', 'recupero'):
-                ahora = timezone.localtime(timezone.now())
-                hoy = ahora.date()
-                dias_map = {
-                    'Lunes': 0, 'Martes': 1, 'Miércoles': 2,
-                    'Jueves': 3, 'Viernes': 4, 'Sábado': 5
-                }
-                dia_num = dias_map.get(clase.dia, 0)
-                dias_hasta = (dia_num - hoy.weekday()) % 7
-                if dias_hasta == 0:
-                    clase_hoy = ahora.replace(
-                        hour=clase.horario.hour,
-                        minute=clase.horario.minute,
-                        second=0, microsecond=0
+        if error:
+            messages.error(request, error)
+        else:
+            try:
+                # Solo la creación va en la transacción: el email sale después del commit
+                with transaction.atomic():
+                    reserva = Reserva.objects.create(
+                        usuario=alumno, clase=clase, fecha_unica=fecha,
+                        es_recupero=tipo_reserva == 'recupero', creado_por=request.user,
                     )
-                    if clase_hoy <= ahora:
-                        dias_hasta = 7
-                fecha_unica = hoy + timedelta(days=dias_hasta)
-                es_recupero = (tipo_reserva == 'recupero')
+            except IntegrityError:
+                messages.error(request, 'Ese alumno ya tiene una reserva en esa clase.')
+            except ValidationError as e:
+                messages.error(request, ' '.join(e.messages))
+            else:
+                email_enviado = False
+                if notificar and alumno.email:
+                    try:
+                        email_enviado = enviar_email_confirmacion_reserva_detallado(reserva)
+                    except Exception as e:
+                        logger.error(f'Error enviando email de confirmación (panel): {e}')
+                que = {'recurrente': 'el horario fijo', 'temporal': f'una clase única el {fecha:%d/%m}' if fecha else '',
+                       'recupero': f'un recupero el {fecha:%d/%m}' if fecha else ''}[tipo_reserva]
+                texto = (f'Listo: reservaste {que} de {alumno.get_full_name() or alumno.username} en '
+                         f'{clase.get_nombre_display()} {clase.dia} {clase.horario:%H:%M} ({clase.get_direccion_corta()}).')
+                if notificar:
+                    if email_enviado:
+                        texto += f' Le avisamos a {alumno.email}.'
+                    elif alumno.email:
+                        texto += f' No se pudo mandar el email a {alumno.email}.'
+                    else:
+                        texto += ' No tiene email cargado para avisarle.'
+                messages.success(request, texto)
+                return _volver(request, reverse('gravity:admin_usuario_detalle', args=[alumno.id]))
 
-            # Solo la creación va en la transacción: el email se envía después del commit.
-            # Si el email tarda dentro de la transacción, la reserva no es visible para un
-            # segundo envío del formulario y se crea un duplicado.
-            with transaction.atomic():
-                reserva = Reserva.objects.create(
-                    usuario=usuario,
-                    clase=clase,
-                    fecha_unica=fecha_unica,
-                    es_recupero=es_recupero,
-                    creado_por=request.user,
-                )
-
-            # Email opcional
-            email_enviado = False
-            if notificar and usuario.email:
-                try:
-                    email_enviado = enviar_email_confirmacion_reserva_detallado(reserva)
-                except Exception as e:
-                    logger.error(f"Error enviando email de confirmación (admin): {str(e)}")
-
-            tipo_label = {
-                'recurrente': 'recurrente',
-                'temporal': 'una sola vez',
-                'recupero': 'recupero',
-            }.get(tipo_reserva, 'recurrente')
-
-            mensaje = (
-                f'✅ Reserva {reserva.numero_reserva} ({tipo_label}) creada para '
-                f'{usuario.get_full_name() or usuario.username} en '
-                f'{clase.get_nombre_display()} - {clase.dia} '
-                f'{clase.horario.strftime("%H:%M")} ({clase.get_direccion_corta()}).'
-            )
-            if notificar:
-                if email_enviado:
-                    mensaje += f' Email de confirmación enviado a {usuario.email}.'
-                elif usuario.email:
-                    mensaje += f' ⚠️ No se pudo enviar el email a {usuario.email}.'
-                else:
-                    mensaje += ' ⚠️ El alumno no tiene email configurado.'
-
-            messages.success(request, mensaje)
-
-            # Redirigir según el origen
-            if usuario_id:
-                return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
-            return redirect('gravity:admin_clases_lista')
-
-        except IntegrityError:
-            messages.error(request, 'Error: ya existe una reserva para ese alumno en esa clase.')
-        except ValidationError as e:
-            messages.error(request, ' '.join(e.messages))
-        except Exception as e:
-            messages.error(request, f'Error al crear la reserva: {str(e)}')
-
+    alumno = User.objects.filter(id=usuario_id, is_staff=False).first() if usuario_id else None
+    grupos, datos_js = _opciones_clases(ahora)
+    alumnos = [
+        {'id': u.id, 'nombre': u.get_full_name() or u.username, 'email': u.email}
+        for u in User.objects.filter(is_active=True, is_staff=False).order_by('first_name', 'last_name', 'username')
+    ]
     return render(request, 'gravity/admin/admin_reservar_para_usuario.html', {
-        'clases_disponibles': clases_disponibles,
-        'todos_los_usuarios': todos_los_usuarios,
-        'clase_preseleccionada': clase_preseleccionada,
-        'usuario_preseleccionado': usuario_preseleccionado,
-        'hoy_iso': hoy_iso,
-        'cupos_proxima_preseleccionada': cupos_proxima_preseleccionada,
+        'alumno': alumno,
+        'info': info_alumno(alumno) if alumno else None,
+        'alumnos': alumnos,
+        'grupos': grupos,
+        'datos_js': datos_js,
+        'clase_elegida': str(request.POST.get('clase') or clase_id or ''),
+        'tipo_elegido': request.POST.get('tipo_reserva', 'recurrente'),
+        'fecha_elegida': request.POST.get('fecha', ''),
+        'next': _next_seguro(request),
     })
 
 # ==============================================================================
@@ -2628,253 +2023,216 @@ def admin_reservar_para_usuario(request, clase_id=None, usuario_id=None):
 @admin_required
 def admin_usuarios_lista(request):
     """
-    Lista todos los usuarios registrados con sus perfiles
+    Alumnos con buscador y filtros: activos (por defecto, sin los eliminados ni los
+    desactivados), nuevos, sin plan, con deuda, desactivados y cuentas eliminadas.
     """
-    usuarios = User.objects.filter(is_staff=False).select_related(
-        'profile'
-    ).order_by('-date_joined')
-    
-    # Filtros
-    busqueda = request.GET.get('busqueda', '')
-    filtro = request.GET.get('filtro', '')
-    
-    if busqueda:
-        usuarios = usuarios.filter(
-            Q(username__icontains=busqueda) |
-            Q(first_name__icontains=busqueda) |
-            Q(last_name__icontains=busqueda) |
-            Q(email__icontains=busqueda)
-        )
-    
-    # Aplicar filtros específicos
+    filtro = request.GET.get('filtro', 'activos')
     if filtro == 'con_reservas':
-        usuarios = usuarios.filter(reservas_pilates__activa=True).distinct()
-    elif filtro == 'nuevos':
-        hace_7_dias = timezone.now() - timedelta(days=7)
-        usuarios = usuarios.filter(date_joined__gte=hace_7_dias)
-    elif filtro == 'activos':
-        usuarios = usuarios.filter(is_active=True)
-    
-    # Agregar información adicional a cada usuario
-    usuarios_info = []
-    for usuario in usuarios:
-        try:
-            profile = usuario.profile
-        except UserProfile.DoesNotExist:
-            profile = UserProfile.objects.create(user=usuario)
-        
-        usuarios_info.append({
-            'usuario': usuario,
-            'profile': profile,
-            'total_reservas': usuario.reservas_pilates.filter(activa=True).count(),
-            'fecha_ultima_reserva': usuario.reservas_pilates.filter(
-                activa=True
-            ).order_by('-fecha_reserva').first()
-        })
-    
-    # Paginación
-    paginator = Paginator(usuarios_info, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'busqueda': busqueda,
-        'filtro': filtro,
+        filtro = 'activos'
+    buscar = request.GET.get('busqueda', '').strip()
+
+    base = User.objects.filter(is_staff=False)
+    if buscar:
+        base = base.filter(
+            Q(username__icontains=buscar) | Q(first_name__icontains=buscar) | Q(last_name__icontains=buscar)
+            | Q(email__icontains=buscar) | Q(profile__telefono__icontains=normalizar_telefono(buscar) or buscar)
+        )
+    activos = base.filter(is_active=True)
+    con_plan = PlanUsuario.objects.filter(activo=True).values('usuario_id')
+    consultas = {
+        'activos': activos,
+        'nuevos': activos.filter(date_joined__gte=timezone.now() - timedelta(days=7)),
+        'sin_plan': activos.exclude(id__in=con_plan),
+        'con_deuda': activos.filter(estado_pago__saldo_actual__lt=0),
+        'desactivados': base.filter(is_active=False).exclude(username__startswith='eliminado-'),
+        'eliminados': base.filter(is_active=False, username__startswith='eliminado-'),
     }
-    
-    return render(request, 'gravity/admin/usuarios_lista.html', context)
+    if filtro not in consultas:
+        filtro = 'activos'
+    textos = {'activos': 'Activos', 'nuevos': 'Nuevos', 'sin_plan': 'Sin plan', 'con_deuda': 'Con deuda',
+              'desactivados': 'Desactivados', 'eliminados': 'Eliminados'}
+
+    qs = consultas[filtro].select_related('profile', 'estado_pago').annotate(
+        fijos=Count('reservas_pilates', filter=Q(reservas_pilates__activa=True, reservas_pilates__fecha_unica__isnull=True))
+    ).order_by('-date_joined' if filtro == 'nuevos' else 'first_name', 'last_name', 'username')
+    page_obj = Paginator(qs, 30).get_page(request.GET.get('page'))
+
+    ids = [u.id for u in page_obj]
+    planes = {}
+    for pu in PlanUsuario.objects.filter(usuario_id__in=ids, activo=True).select_related('plan'):
+        planes.setdefault(pu.usuario_id, pu.plan.nombre)
+    filas = []
+    for u in page_obj:
+        perfil = getattr(u, 'profile', None)
+        estado_pago = getattr(u, 'estado_pago', None)
+        filas.append({
+            'usuario': u,
+            'plan': planes.get(u.id),
+            'fijos': u.fijos,
+            'saldo': estado_pago.saldo_actual if estado_pago else None,
+            'salud': bool(perfil and perfil.tiene_lesiones),
+            'telefono': perfil.telefono if perfil else '',
+            'whatsapp': whatsapp_url(perfil.telefono) if perfil else '',
+            'estado': estado_cuenta(u),
+            'nuevo': u.date_joined >= timezone.now() - timedelta(days=7),
+        })
+
+    params = request.GET.copy()
+    params.pop('page', None)
+    sin_filtro = params.copy()
+    sin_filtro.pop('filtro', None)
+    chips = [{'clave': c, 'texto': textos[c], 'cantidad': consultas[c].count(), 'activo': c == filtro} for c in consultas]
+    return render(request, 'gravity/admin/usuarios_lista.html', {
+        'page_obj': page_obj,
+        'filas': filas,
+        'chips': chips,
+        'filtro': filtro,
+        'busqueda': buscar,
+        'qs_pagina': params.urlencode(),
+        'qs_sin_filtro': sin_filtro.urlencode(),
+        'aqui': request.get_full_path(),
+    })
+
 
 @admin_required
 def admin_usuario_detalle(request, usuario_id):
     """
-    Ver detalle completo de un usuario con todas sus reservas
+    Ficha del alumno: contacto, plan y cuenta, próximas clases, horarios fijos,
+    recuperos, asistencia, notas internas e historial. Lo que hace en su espacio
+    lo calcula accounts/mi_espacio.py (el mismo cálculo que ve el alumno).
     """
-    usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
-    
-    try:
-        profile = usuario.profile
-    except UserProfile.DoesNotExist:
-        profile = UserProfile.objects.create(user=usuario)
-    
-    # Obtener todas las reservas del usuario, ordenadas por sede
-    reservas_activas = usuario.reservas_pilates.filter(activa=True).select_related(
-        'clase'
-    ).order_by('clase__direccion', 'clase__dia', 'clase__horario')
-    
-    reservas_canceladas = usuario.reservas_pilates.filter(activa=False).select_related(
-        'clase'
-    ).order_by('-fecha_modificacion')[:10]  # Últimas 10 canceladas
+    usuario = get_object_or_404(User.objects.select_related('estado_pago'), id=usuario_id, is_staff=False)
+    perfil, _ = UserProfile.objects.get_or_create(user=usuario)
+    hoy = timezone.localdate()
 
-    planes_activos_usuario = PlanUsuario.objects.filter(
-        usuario=usuario,
-        activo=True
-    ).select_related('plan').order_by('fecha_inicio')
+    activa = usuario.is_active
+    mis = reservas_alumno(usuario) if activa else {'agenda': [], 'horarios': [], 'extras': []}
+    historial = [
+        {'reserva': r, 'estado': estado_reserva(r, hoy)}
+        for r in usuario.reservas_pilates.filter(Q(activa=False) | Q(fecha_unica__lt=hoy))
+        .select_related('clase').prefetch_related('cancelaciones_admin', 'notificaciones_cancelacion')
+        .order_by('-fecha_modificacion')[:10]
+    ]
 
-    # Historial unificado de ausencias (avisadas + inasistencias sin aviso)
-    ids_reservas_usuario = usuario.reservas_pilates.values_list('id', flat=True)
+    ids_reservas = usuario.reservas_pilates.values_list('id', flat=True)
+    ausencias = sorted(
+        [{'tipo': 'avisada', 'fecha': a.fecha, 'clase': a.reserva.clase}
+         for a in AusenciaTemporal.objects.filter(reserva_id__in=ids_reservas).select_related('reserva__clase').order_by('-fecha')[:10]]
+        + [{'tipo': 'sin_aviso', 'fecha': i.fecha, 'clase': i.reserva.clase}
+           for i in Inasistencia.objects.filter(reserva_id__in=ids_reservas).select_related('reserva__clase').order_by('-fecha')[:10]],
+        key=lambda x: x['fecha'], reverse=True,
+    )[:10]
+    hace_30 = hoy - timedelta(days=30)
+    faltas_30 = (AusenciaTemporal.objects.filter(reserva_id__in=ids_reservas, fecha__gte=hace_30, fecha__lte=hoy).count()
+                 + Inasistencia.objects.filter(reserva_id__in=ids_reservas, fecha__gte=hace_30).count())
 
-    ausencias_avisadas = list(
-        AusenciaTemporal.objects.filter(reserva_id__in=ids_reservas_usuario)
-        .select_related('reserva__clase')
-        .order_by('-fecha')[:50]
-    )
-    inasistencias_sin_aviso = list(
-        Inasistencia.objects.filter(reserva_id__in=ids_reservas_usuario)
-        .select_related('reserva__clase', 'registrado_por')
-        .order_by('-fecha')[:50]
-    )
-
-    # Combinar y ordenar por fecha desc
-    historial_ausencias = sorted(
-        [{'tipo': 'avisada', 'fecha': a.fecha, 'obj': a} for a in ausencias_avisadas] +
-        [{'tipo': 'inasistencia', 'fecha': i.fecha, 'obj': i} for i in inasistencias_sin_aviso],
-        key=lambda x: x['fecha'],
-        reverse=True
-    )[:50]
-
-    # Contador de ausencias (cualquier tipo) en los últimos 30 días
-    hace_30_dias = timezone.localtime(timezone.now()).date() - timedelta(days=30)
-    ausencias_30d = AusenciaTemporal.objects.filter(
-        reserva_id__in=ids_reservas_usuario,
-        fecha__gte=hace_30_dias,
-    ).count()
-    inasistencias_30d = Inasistencia.objects.filter(
-        reserva_id__in=ids_reservas_usuario,
-        fecha__gte=hace_30_dias,
-    ).count()
-    total_ausencias_30d = ausencias_30d + inasistencias_30d
-
-    context = {
+    estado_pago = getattr(usuario, 'estado_pago', None)
+    return render(request, 'gravity/admin/usuario_detalle.html', {
         'usuario': usuario,
-        'profile': profile,
-        'reservas_activas': reservas_activas,
-        'reservas_canceladas': reservas_canceladas,
-        'total_reservas_activas': reservas_activas.count(),
-        'total_reservas_historicas': usuario.reservas_pilates.count(),
-        'planes_activos_usuario': planes_activos_usuario,
-        'historial_ausencias': historial_ausencias,
-        'total_ausencias_30d': total_ausencias_30d,
-    }
+        'perfil': perfil,
+        'estado': estado_cuenta(usuario),
+        'info': info_alumno(usuario),
+        'proximas': mis['agenda'][:6],
+        'horarios': mis['horarios'],
+        'extras': mis['extras'],
+        'historial': historial,
+        'ausencias': ausencias,
+        'faltas_30': faltas_30,
+        'planes': PlanUsuario.objects.filter(usuario=usuario, activo=True).select_related('plan', 'creado_por'),
+        'saldo': estado_pago.saldo_actual if estado_pago else None,
+        'notas': notas_lista(perfil),
+        'whatsapp': whatsapp_url(perfil.telefono),
+        'invitacion_pendiente': tiene_invitacion_pendiente(usuario),
+        'clave_inicial': request.session.pop(f'clave_inicial_{usuario.id}', None),
+        'aqui': request.get_full_path(),
+    })
 
-    return render(request, 'gravity/admin/usuario_detalle.html', context)
 
 @admin_required
+def admin_usuario_editar(request, usuario_id):
+    """Editar los datos del alumno (contacto, nacimiento, salud y primera clase)."""
+    usuario = get_object_or_404(User, id=usuario_id, is_staff=False, is_active=True)
+    UserProfile.objects.get_or_create(user=usuario)
+    form = AlumnoDatosForm(request.POST, usuario=usuario) if request.method == 'POST' else AlumnoDatosForm(usuario=usuario)
+    if request.method == 'POST' and form.is_valid():
+        email_anterior = usuario.email
+        form.guardar()
+        texto = f'Guardaste los datos de {usuario.get_full_name() or usuario.username}.'
+        if usuario.email and usuario.email != email_anterior and tiene_invitacion_pendiente(usuario):
+            if enviar_invitacion(usuario):
+                texto += f' Le mandamos la invitación a {usuario.email}.'
+        messages.success(request, texto)
+        return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
+    return render(request, 'gravity/admin/usuario_editar.html', {'form': form, 'usuario': usuario})
+
+
+@admin_required
+@require_http_methods(["POST"])
+def admin_usuario_reenviar_invitacion(request, usuario_id):
+    """Reenvía el email para crear la contraseña a un alumno que todavía no la eligió."""
+    usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
+    if not tiene_invitacion_pendiente(usuario):
+        messages.info(request, 'Este alumno ya tiene su contraseña.')
+    elif not usuario.email:
+        messages.error(request, 'No tiene email cargado. Agregalo en "Editar datos" para mandarle la invitación.')
+    elif enviar_invitacion(usuario):
+        messages.success(request, f'Le reenviamos la invitación a {usuario.email}. El enlace vale 7 días.')
+    else:
+        messages.error(request, 'No se pudo mandar el email. Probá de nuevo en un rato.')
+    return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
+
+
+@superadmin_required
 def admin_usuario_toggle_status(request, usuario_id):
     """
-    Activa o desactiva un usuario (AJAX).
-    Al desactivar: cancela reservas, quita plan, desactiva estado de pago.
-    Al activar: solo reactiva el login (el plan se asigna manualmente después).
+    Desactivar o reactivar la cuenta de un alumno (solo superadmin). Desactivar
+    cancela sus reservas y planes; las deudas y los pagos se conservan. Primero se
+    muestra qué se va a cancelar.
     """
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
+    usuario = get_object_or_404(User.objects.select_related('estado_pago'), id=usuario_id, is_staff=False)
+    clave, _, _ = estado_cuenta(usuario)
+    if clave == 'eliminado':
+        messages.error(request, 'Es una cuenta que el alumno eliminó: no se puede reactivar.')
+        return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
+    nombre = usuario.get_full_name() or usuario.username
 
-    usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
+    if request.method == 'POST':
+        if usuario.is_active:
+            canceladas = desactivar_alumno(usuario, request.user, avisar=request.POST.get('avisar') == 'on')
+            messages.success(request, f'Desactivaste la cuenta de {nombre}.'
+                             + (f' Se cancelaron {canceladas} reserva{"s" if canceladas != 1 else ""}.' if canceladas else ''))
+        else:
+            usuario.is_active = True
+            usuario.save(update_fields=['is_active'])
+            EstadoPagoCliente.objects.filter(usuario=usuario).update(activo=True)
+            messages.success(request, f'{nombre} vuelve a estar activo. Asignale un plan desde Pagos para que pueda reservar.')
+        return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
 
-    try:
-        data = json.loads(request.body)
-        activate = data.get('activate', False)
+    estado_pago = getattr(usuario, 'estado_pago', None)
+    return render(request, 'gravity/admin/usuario_estado.html', {
+        'usuario': usuario,
+        'cancela': que_se_cancela(usuario) if usuario.is_active else None,
+        'saldo': estado_pago.saldo_actual if estado_pago else None,
+    })
 
-        usuario.is_active = activate
-        usuario.save()
-
-        if not activate:
-            with transaction.atomic():
-                # 1. Cancelar reservas activas y enviar emails
-                reservas_activas = Reserva.objects.filter(usuario=usuario, activa=True)
-                for reserva in reservas_activas:
-                    reserva.activa = False
-                    reserva.save()
-                    if usuario.email:
-                        # Los emails salen después del commit, no dentro de la transacción
-                        def _enviar_cancelacion(reserva=reserva):
-                            try:
-                                enviar_email_cancelacion_reserva(
-                                    reserva=reserva,
-                                    motivo='Baja del estudio',
-                                    motivo_detalle='Tu reserva fue cancelada porque tu cuenta fue desactivada.',
-                                    ofrecer_reemplazo=False,
-                                    ofrecer_otras_sedes=False
-                                )
-                            except Exception as e:
-                                logger.error(f"Error enviando email de cancelación a {usuario.email}: {str(e)}")
-                        transaction.on_commit(_enviar_cancelacion)
-
-                # 2. Desactivar planes activos
-                PlanUsuario.objects.filter(usuario=usuario, activo=True).update(activo=False)
-
-                # 3. Actualizar EstadoPagoCliente (conserva deudas/créditos)
-                try:
-                    estado = usuario.estado_pago
-                    estado.plan_actual = None
-                    estado.activo = False
-                    estado.save()
-                except EstadoPagoCliente.DoesNotExist:
-                    pass
-
-        action = 'activado' if activate else 'desactivado'
-        nombre = usuario.get_full_name() or usuario.username
-
-        return JsonResponse({
-            'success': True,
-            'message': f'Usuario {nombre} {action} exitosamente.',
-            'new_status': usuario.is_active
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
-    except Exception as e:
-        logger.error(f"Error en toggle_status usuario {usuario_id}: {str(e)}")
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @admin_required
 def admin_usuario_add_note(request, usuario_id):
-    """
-    Agregar una nota administrativa a un usuario (AJAX)
-    """
+    """Agregar una nota interna al alumno (con fecha y hora de Argentina y quién la escribió)."""
     if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
-    
+        return redirect('gravity:admin_usuario_detalle', usuario_id=usuario_id)
     usuario = get_object_or_404(User, id=usuario_id, is_staff=False)
-    
-    try:
-        import json
-        data = json.loads(request.body)
-        nota = data.get('nota', '').strip()
-        
-        if not nota:
-            return JsonResponse({'success': False, 'error': 'La nota no puede estar vacía'}, status=400)
-        
-        # Obtener o crear el perfil del usuario
-        try:
-            profile = usuario.profile
-        except UserProfile.DoesNotExist:
-            profile = UserProfile.objects.create(user=usuario)
-        
-        # Agregar la nueva nota con timestamp y usuario admin
-        fecha_actual = timezone.now().strftime('%d/%m/%Y %H:%M')
-        admin_name = request.user.get_full_name() or request.user.username
-        
-        nueva_nota = f"[{fecha_actual} - {admin_name}]: {nota}"
-        
-        if profile.notas_admin:
-            profile.notas_admin = f"{profile.notas_admin}\n\n{nueva_nota}"
-        else:
-            profile.notas_admin = nueva_nota
-        
-        profile.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Nota agregada exitosamente al perfil de {usuario.get_full_name() or usuario.username}.',
-            'nueva_nota': nueva_nota,
-            'notas_completas': profile.notas_admin
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'}, status=400)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    perfil, _ = UserProfile.objects.get_or_create(user=usuario)
+    texto = request.POST.get('nota', '').strip()
+    if not texto:
+        messages.error(request, 'Escribí la nota.')
+    elif len(texto) > 500:
+        messages.error(request, 'La nota es muy larga (hasta 500 caracteres).')
+    else:
+        agregar_nota(perfil, texto, request.user)
+        messages.success(request, 'Guardaste la nota.')
+    return redirect(reverse('gravity:admin_usuario_detalle', args=[usuario.id]) + '#notas')
+
 
 # ==============================================================================
 # AGREGAR USUARIOS AL SISTEMA
@@ -2883,146 +2241,23 @@ def admin_usuario_add_note(request, usuario_id):
 @admin_required
 def admin_agregar_usuario(request):
     """
-    Agregar un usuario directamente al sistema.
-    La reserva en una clase es opcional.
+    Alta de un alumno. Con email, le llega una invitación para crear su contraseña;
+    sin email, se genera una contraseña inicial que se muestra una sola vez en su
+    ficha para pasársela por WhatsApp. Después se le asigna el plan y se reserva.
     """
-    if request.method == 'POST':
-        # Obtener datos del formulario
-        nombre = request.POST.get('nombre', '').strip().title()
-        apellido = request.POST.get('apellido', '').strip().title()
-        email = request.POST.get('email', '').strip()
-        telefono = request.POST.get('telefono', '').strip()
-        password = request.POST.get('password', '').strip()
-        clase_id = request.POST.get('clase_id', '').strip()
-        incluir_credenciales = request.POST.get('incluir_credenciales') == 'on'
-
-        # Validaciones básicas (clase ya no es obligatoria)
-        if not nombre or not apellido or not password or not telefono:
-            messages.error(request, 'Nombre, apellido, contraseña y teléfono son obligatorios.')
-            return render(request, 'gravity/admin/agregar_cliente_form.html', {
-                'clases_disponibles': Clase.objects.filter(activa=True).order_by(
-                    'direccion', 'tipo', 'dia', 'horario'
-                ),
-                'form_data': request.POST
-            })
-
-        # Si se seleccionó clase, verificar que existe y tiene cupos
-        clase = None
-        if clase_id:
-            clase = get_object_or_404(Clase, id=clase_id, activa=True)
-            if clase.cupos_disponibles() <= 0:
-                messages.error(request, 'La clase seleccionada no tiene cupos disponibles.')
-                return render(request, 'gravity/admin/agregar_cliente_form.html', {
-                    'clases_disponibles': Clase.objects.filter(activa=True).order_by(
-                        'direccion', 'tipo', 'dia', 'horario'
-                    ),
-                    'form_data': request.POST
-                })
-
-        try:
-            # Generar username único
-            base_username = f"{nombre.lower()}{apellido.lower()}"
-            username = base_username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
-
-            with transaction.atomic():
-                # Crear usuario
-                user = User.objects.create_user(
-                    username=username,
-                    email=email if email else '',
-                    first_name=nombre,
-                    last_name=apellido,
-                    password=password,
-                )
-
-                # Obtener o actualizar el perfil
-                profile, created = UserProfile.objects.get_or_create(
-                    user=user,
-                    defaults={
-                        'telefono': telefono,
-                        'sede_preferida': 'cualquiera'
-                    }
-                )
-                if not created:
-                    profile.telefono = telefono
-                    profile.sede_preferida = 'cualquiera'
-                    profile.save()
-
-                # Enviar email de bienvenida (siempre, si tiene email).
-                # Los emails se envían con on_commit: si se mandan dentro de la transacción,
-                # la página queda esperando el SMTP y un segundo envío del formulario
-                # no ve lo que todavía no se confirmó.
-                if email:
-                    def _enviar_bienvenida(user=user):
-                        try:
-                            enviar_email_bienvenida(
-                                usuario=user,
-                                is_admin_created=incluir_credenciales,
-                                password_temporal=password if incluir_credenciales else None,
-                            )
-                            logger.info(f"Email de bienvenida enviado a {user.email}")
-                        except Exception as e:
-                            logger.error(f"Error enviando email de bienvenida: {str(e)}")
-                    transaction.on_commit(_enviar_bienvenida)
-
-                # Si se seleccionó clase, crear la reserva
-                if clase:
-                    reserva = Reserva.objects.create(
-                        usuario=user,
-                        clase=clase,
-                        creado_por=request.user,
-                    )
-
-                    # Enviar email de confirmación de reserva si se marcó la opción
-                    if request.POST.get('enviar_confirmacion') and email:
-                        def _enviar_confirmacion(reserva=reserva):
-                            try:
-                                enviar_email_confirmacion_reserva_detallado(reserva)
-                                logger.info(f"Email de confirmación de reserva enviado para {reserva.numero_reserva}")
-                            except Exception as e:
-                                logger.error(f"Error enviando email de confirmación de reserva: {str(e)}")
-                        transaction.on_commit(_enviar_confirmacion)
-
-                    messages.success(
-                        request,
-                        f'Usuario {nombre} {apellido} creado y reservado en '
-                        f'{clase.get_nombre_display()} del {clase.dia} a las {clase.horario.strftime("%H:%M")} '
-                        f'en {clase.get_direccion_corta()}. '
-                        f'Credenciales: usuario={username}, contraseña={password}. '
-                        f'Reserva: {reserva.numero_reserva}'
-                    )
-                else:
-                    messages.success(
-                        request,
-                        f'Usuario {nombre} {apellido} creado exitosamente. '
-                        f'Credenciales: usuario={username}, contraseña={password}.'
-                    )
-
-                return redirect('gravity:admin_usuarios_lista')
-
-        except IntegrityError as e:
-            messages.error(request, f'Error de integridad en la base de datos: {str(e)}')
-        except Exception as e:
-            messages.error(request, f'Error al crear usuario: {str(e)}')
-
-    # Obtener clases disponibles con cupos, organizadas por sede
-    clases_disponibles = []
-    for clase in Clase.objects.filter(activa=True).order_by('direccion', 'tipo', 'dia', 'horario'):
-        cupos = clase.cupos_disponibles()
-        if cupos > 0:
-            clases_disponibles.append({
-                'clase': clase,
-                'cupos_disponibles': cupos
-            })
-
-    context = {
-        'clases_disponibles': clases_disponibles
-    }
-
-    return render(request, 'gravity/admin/agregar_cliente_form.html', context)
+    form = AlumnoNuevoForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        usuario, clave, invitado = crear_alumno(form.cleaned_data, request.user)
+        nombre = usuario.get_full_name()
+        if clave:
+            request.session[f'clave_inicial_{usuario.id}'] = clave
+            messages.success(request, f'Creaste la cuenta de {nombre}. Pasale su usuario y contraseña inicial por WhatsApp.')
+        elif invitado:
+            messages.success(request, f'Creaste la cuenta de {nombre}. Le mandamos la invitación a {usuario.email} para que cree su contraseña.')
+        else:
+            messages.warning(request, f'Creaste la cuenta de {nombre}, pero no se pudo mandar la invitación. Reenviala desde su ficha.')
+        return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
+    return render(request, 'gravity/admin/agregar_cliente_form.html', {'form': form})
 
 # ==============================================================================
 # REPORTES Y ESTADÍSTICAS
@@ -3177,7 +2412,7 @@ def _calcular_reportes(request):
     periodo, desde, hasta, periodo_label = _reportes_rango(request)
     desde_prev, hasta_prev = _reportes_periodo_anterior(desde, hasta)
     dias_periodo = (hasta - desde).days + 1
-    puede_ver_pagos = get_puede_ver_pagos(request.user)
+    puede_ver_pagos = ve_ingresos_estudio(request.user)
 
     # ===== FILTRO DE SEDE =====
     sedes = list(Clase.DIRECCIONES)
@@ -3347,25 +2582,32 @@ def _calcular_reportes(request):
         **f_reserva
     ).count()
 
+    # Bajas: solo horarios fijos. Los recuperos y clases únicas que ya pasaron también
+    # quedan inactivos (los limpia un comando), pero no son bajas.
     bajas = Reserva.objects.filter(
         activa=False,
+        fecha_unica__isnull=True,
         fecha_modificacion__date__gte=desde,
         fecha_modificacion__date__lte=hasta,
         **f_reserva
     ).count()
     bajas_prev = Reserva.objects.filter(
         activa=False,
+        fecha_unica__isnull=True,
         fecha_modificacion__date__gte=desde_prev,
         fecha_modificacion__date__lte=hasta_prev,
         **f_reserva
     ).count()
 
-    recuperos = Reserva.objects.filter(
-        activa=True,
+    # Recuperos y clases únicas del período: los que siguen en pie o ya se hicieron
+    # (inactivos sin cancelación registrada), contados por la fecha de la clase.
+    sueltas_periodo = sueltas_no_canceladas(Reserva.objects.filter(
         fecha_unica__gte=desde,
         fecha_unica__lte=hasta,
         **f_reserva
-    ).count()
+    )).filter(Q(activa=True) | Q(fecha_unica__lte=hoy)).distinct()
+    recuperos = sueltas_periodo.filter(es_recupero=True).count()
+    clases_extra = sueltas_periodo.filter(es_recupero=False).count()
 
     ausencias = AusenciaTemporal.objects.filter(
         fecha__gte=desde, fecha__lte=hasta, **f_ausencia
@@ -3386,7 +2628,7 @@ def _calcular_reportes(request):
     # Asistencia estimada: se cuentan las veces que cada reserva activa tuvo
     # clase dentro del período y se descuentan ausencias e inasistencias.
     hasta_asistencia = min(hasta, hoy)
-    clases_previstas = recuperos
+    clases_previstas = sueltas_periodo.filter(fecha_unica__lte=hasta_asistencia).count()
     for reserva in Reserva.objects.filter(
         activa=True, fecha_unica__isnull=True, **f_reserva
     ).select_related('clase'):
@@ -3416,7 +2658,9 @@ def _calcular_reportes(request):
         q_reserva_activa
     ).distinct().count()
     clientes_sin_reserva = max(total_clientes - clientes_activos, 0)
-    clientes_desactivados = clientes_qs.filter(is_active=False).count()
+    # Las cuentas eliminadas por el alumno quedan inactivas como "eliminado-<id>"
+    clientes_eliminados = clientes_qs.filter(is_active=False, username__startswith='eliminado-').count()
+    clientes_desactivados = clientes_qs.filter(is_active=False).count() - clientes_eliminados
 
     nuevos_clientes = clientes_qs.filter(
         date_joined__date__gte=desde, date_joined__date__lte=hasta
@@ -3663,7 +2907,8 @@ def _calcular_reportes(request):
             'asistencia', sufijo='%'
         ),
         _kpi(
-            'Recuperos usados', recuperos,
+            'Recuperos', recuperos,
+            f'{clases_extra} {_plural(clases_extra, "clase única", "clases únicas")} · '
             f'{ausencias} {_plural(ausencias, "ausencia avisada", "ausencias avisadas")}',
             'recuperos'
         ),
@@ -3711,7 +2956,7 @@ def _calcular_reportes(request):
             'detalle': f'{horarios_completos}. Hay demanda para abrir un horario nuevo o sumar cupos.',
         })
 
-    if solicitudes['pendientes']:
+    if solicitudes['pendientes'] and request.user.is_superuser:
         alertas.append({
             'nivel': 'atencion',
             'titulo': (
@@ -3816,6 +3061,7 @@ def _calcular_reportes(request):
         'bajas_prev': bajas_prev,
         'saldo_neto_reservas': reservas_nuevas - bajas,
         'recuperos': recuperos,
+        'clases_extra': clases_extra,
         'ausencias': ausencias,
         'ausencias_prev': ausencias_prev,
         'inasistencias': inasistencias,
@@ -3829,6 +3075,7 @@ def _calcular_reportes(request):
         'clientes_activos': clientes_activos,
         'clientes_sin_reserva': clientes_sin_reserva,
         'clientes_desactivados': clientes_desactivados,
+        'clientes_eliminados': clientes_eliminados,
         'nuevos_clientes': nuevos_clientes,
         'nuevos_clientes_prev': nuevos_clientes_prev,
         'antiguedad_promedio': antiguedad_promedio,
@@ -3889,7 +3136,8 @@ def admin_reportes_exportar(request):
         ('Ocupación general (%)', datos['ocupacion_general']),
         ('Reservas nuevas', datos['reservas_nuevas']),
         ('Reservas dadas de baja', datos['bajas']),
-        ('Recuperos usados', datos['recuperos']),
+        ('Recuperos', datos['recuperos']),
+        ('Clases únicas', datos['clases_extra']),
         ('Ausencias avisadas', datos['ausencias']),
         ('Inasistencias sin aviso', datos['inasistencias']),
         ('Asistencia estimada (%)', datos['tasa_asistencia']),
@@ -3977,178 +3225,152 @@ def admin_reportes_exportar(request):
 # VISTAS DEL SISTEMA DE PAGOS
 # ==============================================================================
 
+MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
+                'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+
 @admin_required
 def admin_pagos_vista_principal(request):
     """
-    VISTA ÚNICA CENTRALIZADA para todo el sistema de pagos.
-    Contiene: configuración de costos, lista de clientes, resumen general, filtros.
+    Pagos "para cobrar": alumnos activos con su saldo. Por defecto, los que deben,
+    de mayor a menor deuda; también al día, a favor, sin plan y todos. Arriba, lo
+    que falta cobrar del mes (todo el equipo) y lo cobrado (solo superadmin).
     """
-    # ===== FILTROS =====
-    filtro_estado = request.GET.get('estado', '')
-    filtro_mes = request.GET.get('mes', '')
-    buscar_nombre = request.GET.get('buscar', '')
-    
-    # ===== OBTENER TODOS LOS CLIENTES CON ESTADO DE PAGO =====
-    # Crear estados para usuarios que no los tengan
-    usuarios_sin_estado = User.objects.filter(
-        is_staff=False,
-        estado_pago__isnull=True
-    )
-    for usuario in usuarios_sin_estado:
-        EstadoPagoCliente.objects.get_or_create(
-            usuario=usuario,
-            defaults={'activo': True}
-        )
-    
-    # Obtener todos los estados de pago
-    clientes_pagos = EstadoPagoCliente.objects.select_related(
-        'usuario', 'plan_actual'
-    ).prefetch_related('usuario__pagos_realizados')
-    
-    # ===== ACTUALIZAR SALDOS Y OBTENER ÚLTIMO PAGO =====
-    clientes_procesados = []
-    
-    for cliente_estado in clientes_pagos:
-        # Obtener último pago para mostrar en la tabla
-        ultimo_pago = RegistroPago.objects.filter(
-            cliente=cliente_estado.usuario,
-            estado='confirmado'
-        ).order_by('-fecha_pago').first()
-        
-        cliente_estado.ultimo_pago_obj = ultimo_pago
-        cliente_estado.planes_activos_lista = list(
-            PlanUsuario.objects.filter(
-                usuario=cliente_estado.usuario,
-                activo=True
-            ).select_related('plan').order_by('fecha_inicio')
-        )
-        cliente_estado.costo_mensual_total = sum(
-            pu.plan.precio_mensual for pu in cliente_estado.planes_activos_lista
-        )
-        clientes_procesados.append(cliente_estado)
-    
-    # ===== APLICAR FILTROS =====
-    if filtro_estado == 'al_dia':
-        clientes_procesados = [c for c in clientes_procesados if c.saldo_actual >= 0 and c.plan_actual]
-    elif filtro_estado == 'debe':
-        clientes_procesados = [c for c in clientes_procesados if c.saldo_actual < 0]
-    elif filtro_estado == 'sin_plan':
-        clientes_procesados = [c for c in clientes_procesados if not c.plan_actual]
-    
-    # Filtro por búsqueda de nombre
-    if buscar_nombre:
-        clientes_procesados = [c for c in clientes_procesados if (
-            buscar_nombre.lower() in (c.usuario.first_name or '').lower() or
-            buscar_nombre.lower() in (c.usuario.last_name or '').lower() or
-            buscar_nombre.lower() in c.usuario.username.lower()
-        )]
-    
-    # Ordenar por estado (deudores primero, luego por apellido)
-    clientes_procesados.sort(key=lambda x: (x.saldo_actual, x.usuario.last_name or x.usuario.username))
-    
-    # ===== RESUMEN GENERAL =====
-    mes_actual = timezone.localtime(timezone.now()).date().replace(day=1)
-    
-    total_clientes = len(clientes_procesados)
-    clientes_al_dia = len([c for c in clientes_procesados if c.saldo_actual >= 0 and c.plan_actual])
-    clientes_con_deuda = len([c for c in clientes_procesados if c.saldo_actual < 0])
-    clientes_sin_plan = len([c for c in clientes_procesados if not c.plan_actual])
-    
-    ingresos_mes = RegistroPago.objects.filter(
-        fecha_pago__gte=mes_actual,
-        estado='confirmado'
-    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
-    
-    total_deuda = sum([abs(c.saldo_actual) for c in clientes_procesados if c.saldo_actual < 0])
-    
-    # ===== PLANES DE PAGO =====
-    planes_activos = PlanPago.objects.filter(activo=True).order_by('clases_por_semana')
-    
-    # ===== CREAR PAGINADOR MANUAL =====
-    from django.core.paginator import Paginator
-    
-    # Crear paginador con la lista procesada
-    paginator = Paginator(clientes_procesados, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    puede_ver = get_puede_ver_pagos(request.user)
+    from django.db.models.functions import Coalesce
+    from django.db.models import Value, DecimalField
 
-    context = {
-        'page_obj': page_obj,
-        'planes_activos': planes_activos,
-        'filtro_estado': filtro_estado,
-        'filtro_mes': filtro_mes,
-        'buscar_nombre': buscar_nombre,
-        'total_clientes': total_clientes,
-        'clientes_al_dia': clientes_al_dia,
-        'clientes_con_deuda': clientes_con_deuda,
-        'clientes_sin_plan': clientes_sin_plan,
-        'ingresos_mes': ingresos_mes if puede_ver else None,
-        'total_deuda': total_deuda if puede_ver else None,
-        'mes_actual': mes_actual,
-        'puede_ver_pagos': puede_ver,
+    hoy = timezone.localdate()
+    mes_actual = hoy.replace(day=1)
+    ve_ingresos = ve_ingresos_estudio(request.user)
+    buscar = request.GET.get('buscar', '').strip()
+    filtro = request.GET.get('estado', 'debe')
+
+    alumnos = User.objects.filter(is_staff=False, is_active=True).annotate(
+        saldo=Coalesce('estado_pago__saldo_actual', Value(Decimal('0')), output_field=DecimalField())
+    )
+    if buscar:
+        alumnos = alumnos.filter(
+            Q(first_name__icontains=buscar) | Q(last_name__icontains=buscar)
+            | Q(username__icontains=buscar) | Q(email__icontains=buscar)
+        )
+    con_plan = PlanUsuario.objects.filter(activo=True).values('usuario_id')
+    consultas = {
+        'debe': alumnos.filter(saldo__lt=0).order_by('saldo', 'first_name'),
+        'al_dia': alumnos.filter(saldo=0, id__in=con_plan).order_by('first_name', 'last_name'),
+        'a_favor': alumnos.filter(saldo__gt=0).order_by('-saldo', 'first_name'),
+        'sin_plan': alumnos.exclude(id__in=con_plan).order_by('first_name', 'last_name'),
+        'todos': alumnos.order_by('first_name', 'last_name'),
     }
-    
-    return render(request, 'gravity/admin/pagos_principal.html', context)
+    if filtro not in consultas:
+        filtro = 'debe'
+    textos = {'debe': 'Deben', 'al_dia': 'Al día', 'a_favor': 'A favor', 'sin_plan': 'Sin plan', 'todos': 'Todos'}
+    chips = [{'clave': c, 'texto': textos[c], 'cantidad': consultas[c].count(), 'activo': c == filtro} for c in consultas]
+
+    page_obj = Paginator(consultas[filtro].select_related('profile'), 30).get_page(request.GET.get('page'))
+    ids = [u.id for u in page_obj]
+    planes = {}
+    for pu in PlanUsuario.objects.filter(usuario_id__in=ids, activo=True).select_related('plan'):
+        planes.setdefault(pu.usuario_id, []).append(pu.plan)
+    ultimos = {}
+    for pago in RegistroPago.objects.filter(cliente_id__in=ids, estado='confirmado').order_by('cliente_id', '-fecha_pago', '-id'):
+        ultimos.setdefault(pago.cliente_id, pago)
+    filas = [{
+        'usuario': u,
+        'saldo': u.saldo,
+        'deuda': -u.saldo if u.saldo < 0 else Decimal('0'),
+        'planes': planes.get(u.id, []),
+        'cuota': sum((p.precio_mensual for p in planes.get(u.id, [])), Decimal('0')),
+        'ultimo_pago': ultimos.get(u.id),
+    } for u in page_obj]
+
+    deudores = User.objects.filter(is_staff=False, is_active=True, estado_pago__saldo_actual__lt=0)
+    total_deuda = deudores.aggregate(t=Sum('estado_pago__saldo_actual'))['t'] or Decimal('0')
+    falta_mes = DeudaMensual.objects.filter(
+        mes_año=mes_actual, usuario__is_active=True, usuario__is_staff=False
+    ).aggregate(t=Sum('monto_pendiente'))['t'] or Decimal('0')
+    ingresos_mes = RegistroPago.objects.filter(
+        fecha_pago__gte=mes_actual, estado='confirmado'
+    ).aggregate(t=Sum('monto'))['t'] or Decimal('0')
+
+    params = request.GET.copy()
+    params.pop('page', None)
+    sin_estado = params.copy()
+    sin_estado.pop('estado', None)
+    return render(request, 'gravity/admin/pagos_principal.html', {
+        'page_obj': page_obj,
+        'filas': filas,
+        'chips': chips,
+        'filtro_estado': filtro,
+        'buscar_nombre': buscar,
+        'qs_pagina': params.urlencode(),
+        'qs_sin_estado': sin_estado.urlencode(),
+        'mes_texto': MESES_LARGOS[hoy.month - 1],
+        'falta_mes': falta_mes,
+        'clientes_con_deuda': deudores.count(),
+        'total_deuda': -total_deuda,
+        'ingresos_mes': ingresos_mes if ve_ingresos else None,
+        've_ingresos': ve_ingresos,
+        'puede_configurar_planes': puede_corregir_cuentas(request.user),
+        'planes_activos': PlanPago.objects.filter(activo=True).order_by('clases_por_semana'),
+        'aqui': request.get_full_path(),
+    })
+
 
 @admin_required
 def admin_pagos_registrar_pago(request, cliente_id):
     """
-    Modal/página simple para registrar un pago de un cliente específico.
+    Registrar un pago. Sugiere montos (lo que debe, la cuota del plan y la cuota en
+    efectivo con 10% menos) y el recibo por email es opcional. El saldo y las
+    cuotas se actualizan solos al guardar (RegistroPago.save).
     """
     cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
-    estado_pago, created = EstadoPagoCliente.objects.get_or_create(
-        usuario=cliente,
-        defaults={'activo': True}
-    )
-    
+    estado_pago, _ = EstadoPagoCliente.objects.get_or_create(usuario=cliente, defaults={'activo': True})
+    hoy = timezone.localdate()
+    plan = estado_pago.plan_actual
+
     if request.method == 'POST':
-        form = RegistroPagoForm(request.POST)
-        
+        form = estilo_panel(RegistroPagoForm(request.POST))
         if form.is_valid():
             pago = form.save(commit=False)
             pago.cliente = cliente
             pago.registrado_por = request.user
             pago.save()
-
-            # 📧 ENVIAR EMAIL DE CONFIRMACIÓN DE PAGO
-            try:
-                email_enviado = enviar_email_confirmacion_pago_completo(pago)
-                if email_enviado:
-                    logger.info(f"Email de pago enviado para pago ID {pago.id}")
-            except Exception as e:
-                logger.error(f"Error enviando email de pago: {str(e)}")
-            
-            # El saldo, el estado de cada cuota y el último pago ya quedaron
-            # actualizados por el save() de RegistroPago (recalcular_estado_pagos).
-            
-            messages.success(
-                request,
-                f'Pago de ${fmt_pesos(pago.monto)} registrado para {cliente.get_full_name() or cliente.username}. La cuenta quedó actualizada.'
-            )
-            return redirect('gravity:admin_pagos_vista_principal')
+            texto = f'Registraste un pago de ${fmt_pesos(pago.monto)} de {cliente.get_full_name() or cliente.username}.'
+            if request.POST.get('enviar_recibo') == 'on' and cliente.email:
+                try:
+                    if enviar_email_confirmacion_pago_completo(pago):
+                        texto += f' Le mandamos el recibo a {cliente.email}.'
+                except Exception as e:
+                    logger.error(f'Error enviando el recibo del pago {pago.id}: {e}')
+                    texto += ' No se pudo mandar el recibo por email.'
+            estado_pago.refresh_from_db()
+            saldo = estado_pago.saldo_actual
+            texto += f' Su cuenta: {formato_saldo(saldo)}.' if saldo else ' Quedó al día.'
+            messages.success(request, texto)
+            return _volver(request, reverse('gravity:admin_pagos_editar_estado_cliente', args=[cliente.id]))
     else:
-        # Prellenar con datos sugeridos
-        form = RegistroPagoForm(initial={
-            'fecha_pago': timezone.localtime(timezone.now()).date(),
-            'concepto': f'Pago mensual {timezone.localtime(timezone.now()).strftime("%B %Y")}',
-            'monto': estado_pago.plan_actual.precio_mensual if estado_pago.plan_actual else None
-        })
+        deuda = -estado_pago.saldo_actual if estado_pago.saldo_actual < 0 else None
+        form = estilo_panel(RegistroPagoForm(initial={
+            'fecha_pago': hoy,
+            'concepto': f'Cuota {MESES_LARGOS[hoy.month - 1]} {hoy.year}',
+            'monto': deuda or (plan.precio_mensual if plan else None),
+            'tipo_pago': 'efectivo',
+        }))
 
-    # Calcular precio sugerido en efectivo para mostrarlo en el formulario
-    precio_efectivo_sugerido = None
-    if estado_pago.plan_actual:
-        precio_efectivo_sugerido = estado_pago.plan_actual.calcular_precio_efectivo()
+    sugerencias = []
+    if estado_pago.saldo_actual < 0:
+        sugerencias.append({'texto': 'Lo que debe', 'monto': -estado_pago.saldo_actual, 'tipo': ''})
+    if plan:
+        sugerencias.append({'texto': f'Cuota {plan.nombre}', 'monto': plan.precio_mensual, 'tipo': 'transferencia'})
+        sugerencias.append({'texto': 'En efectivo (−10%)', 'monto': plan.calcular_precio_efectivo(), 'tipo': 'efectivo'})
 
-    context = {
+    return render(request, 'gravity/admin/pagos_registrar.html', {
         'form': form,
         'cliente': cliente,
         'estado_pago': estado_pago,
-        'precio_efectivo_sugerido': precio_efectivo_sugerido,
-        'precio_completo': estado_pago.plan_actual.precio_mensual if estado_pago.plan_actual else None,
-    }
-    
-    return render(request, 'gravity/admin/pagos_registrar.html', context)
+        'sugerencias': sugerencias,
+        'next': _next_seguro(request),
+    })
 
 @admin_required
 def admin_pagos_historial_cliente(request, cliente_id):
@@ -4170,48 +3392,46 @@ def admin_pagos_historial_cliente(request, cliente_id):
     
     total_pagos = pagos.filter(estado='confirmado').count()
     
-    puede_ver = get_puede_ver_pagos(request.user)
     context = {
         'cliente': cliente,
         'estado_pago': estado_pago,
-        'pagos': pagos if puede_ver else [],
-        'total_pagado': total_pagado if puede_ver else None,
-        'total_pagos': total_pagos if puede_ver else None,
-        'puede_ver_pagos': puede_ver,
+        'pagos': pagos,
+        'total_pagado': total_pagado,
+        'total_pagos': total_pagos,
+        'puede_ver_pagos': True,  # se va con el rediseño de Pagos
     }
     
     return render(request, 'gravity/admin/pagos_historial.html', context)
 
-@admin_required
+@superadmin_required
 def admin_pagos_configurar_planes(request):
     """
-    Página simple para configurar planes de pago (costos).
+    Planes y precios (solo superadmin): crear, editar (con la opción de aplicar el
+    precio nuevo a las cuotas impagas del mes), pausar y eliminar.
     """
-    planes = PlanPago.objects.all().order_by('clases_por_semana')
-    
-    # Inicializar el formulario SIEMPRE
-    form = PlanPagoForm()
+    planes = list(PlanPago.objects.all().order_by('-activo', 'clases_por_semana'))
+    form = estilo_panel(PlanPagoForm(auto_id='nuevo_%s'))
+    editando_id, form_edicion = None, None
 
     if request.method == 'POST':
         if 'crear_plan' in request.POST:
-            form = PlanPagoForm(request.POST)
+            form = estilo_panel(PlanPagoForm(request.POST, auto_id='nuevo_%s'))
             if form.is_valid():
                 plan = form.save()
-                messages.success(request, f'Plan "{plan.nombre}" creado exitosamente.')
+                messages.success(request, f'Creaste el plan {plan.nombre}.')
                 return redirect('gravity:admin_pagos_configurar_planes')
         elif 'editar_plan' in request.POST:
-            plan_id = request.POST.get('editar_plan')
-            plan = get_object_or_404(PlanPago, id=plan_id)
+            plan = get_object_or_404(PlanPago, id=request.POST.get('editar_plan'))
             # Guardarlo antes de is_valid(), que ya le asigna los datos nuevos a la instancia
             precio_anterior = plan.precio_mensual
-            form = PlanPagoForm(request.POST, instance=plan)
-            if form.is_valid():
+            form_edicion = estilo_panel(PlanPagoForm(request.POST, instance=plan, auto_id=f'p{plan.id}_%s'))
+            if form_edicion.is_valid():
                 with transaction.atomic():
-                    plan = form.save()
+                    plan = form_edicion.save()
                     actualizadas = []
                     if request.POST.get('aplicar_a_cuotas_del_mes'):
                         actualizadas = aplicar_precio_a_cuotas_del_mes(plan, precio_anterior)
-                messages.success(request, f'Plan "{plan.nombre}" actualizado exitosamente.')
+                messages.success(request, f'Guardaste el plan {plan.nombre}.')
                 if actualizadas:
                     messages.success(
                         request,
@@ -4219,36 +3439,42 @@ def admin_pagos_configurar_planes(request):
                         f'de ${pesos(precio_anterior)} a ${pesos(plan.precio_mensual)}.'
                     )
                 return redirect('gravity:admin_pagos_configurar_planes')
+            editando_id = plan.id
         elif 'eliminar_plan' in request.POST:
-            plan_id = request.POST.get('eliminar_plan')
-            plan = get_object_or_404(PlanPago, id=plan_id)
-            
-            # Verificar que no tenga clientes asignados
-            if plan.estadopagocliente_set.count() > 0:
-                messages.error(request, f'No se puede eliminar el plan "{plan.nombre}" porque tiene clientes asignados.')
+            plan = get_object_or_404(PlanPago, id=request.POST.get('eliminar_plan'))
+            if plan.estadopagocliente_set.exists() or PlanUsuario.objects.filter(plan=plan).exists():
+                messages.error(request, f'El plan {plan.nombre} ya tuvo alumnos: no se puede eliminar, pero podés pausarlo.')
             else:
-                plan_nombre = plan.nombre
+                nombre = plan.nombre
                 plan.delete()
-                messages.success(request, f'Plan "{plan_nombre}" eliminado exitosamente.')
-            
+                messages.success(request, f'Eliminaste el plan {nombre}.')
             return redirect('gravity:admin_pagos_configurar_planes')
         elif 'toggle_activo_plan' in request.POST:
-            plan_id = request.POST.get('toggle_activo_plan')
-            plan = get_object_or_404(PlanPago, id=plan_id)
+            plan = get_object_or_404(PlanPago, id=request.POST.get('toggle_activo_plan'))
             plan.activo = not plan.activo
             plan.save()
-            estado = "activado" if plan.activo else "desactivado"
-            
-            messages.success(request, f'Plan "{plan.nombre}" {estado} exitosamente.')
-            
+            messages.success(request, f'El plan {plan.nombre} {"vuelve a estar disponible" if plan.activo else "quedó pausado: no se ofrece a los alumnos"}.')
             return redirect('gravity:admin_pagos_configurar_planes')
-    
-    context = {
-        'planes': planes,
+
+    alumnos_por_plan = dict(
+        PlanUsuario.objects.filter(activo=True, usuario__is_active=True)
+        .values_list('plan_id').annotate(n=Count('usuario', distinct=True))
+    )
+    filas = []
+    for plan in planes:
+        f = form_edicion if plan.id == editando_id else estilo_panel(PlanPagoForm(instance=plan, auto_id=f'p{plan.id}_%s'))
+        filas.append({
+            'plan': plan,
+            'form': f,
+            'alumnos': alumnos_por_plan.get(plan.id, 0),
+            'efectivo': plan.calcular_precio_efectivo(),
+            'abierto': plan.id == editando_id,
+        })
+    return render(request, 'gravity/admin/pagos_configurar_planes.html', {
+        'filas': filas,
         'form': form,
-    }
-    
-    return render(request, 'gravity/admin/pagos_configurar_planes.html', context)
+        'crear_abierto': request.method == 'POST' and 'crear_plan' in request.POST,
+    })
 
 @admin_required
 def admin_pagos_editar_estado_cliente(request, cliente_id):
@@ -4259,17 +3485,17 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
     """
     cliente = get_object_or_404(User, id=cliente_id, is_staff=False)
 
-    if not get_puede_ver_pagos(request.user):
-        messages.error(request, 'No tenés permisos para editar información de pagos.')
-        return redirect('gravity:admin_pagos_vista_principal')
-
     estado_pago, created = EstadoPagoCliente.objects.get_or_create(
         usuario=cliente,
         defaults={'activo': True}
     )
 
+    if request.method == 'POST' and not puede_corregir_cuentas(request.user):
+        messages.error(request, 'Cambiar el plan o la configuración de pagos de un alumno es solo para superadministradores.')
+        return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
+
     if request.method == 'POST':
-        form = EstadoPagoClienteForm(request.POST, instance=estado_pago)
+        form = estilo_panel(EstadoPagoClienteForm(request.POST, instance=estado_pago))
         if form.is_valid():
             estado_actualizado = form.save()
             puede_reservar_elegido = form.cleaned_data.get('puede_reservar')
@@ -4345,7 +3571,7 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
             )
             return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente.id)
     else:
-        form = EstadoPagoClienteForm(instance=estado_pago)
+        form = estilo_panel(EstadoPagoClienteForm(instance=estado_pago))
 
     planes_precios = {
         str(p.id): str(p.precio_mensual)
@@ -4377,7 +3603,7 @@ def admin_pagos_editar_estado_cliente(request, cliente_id):
             usuario=cliente,
             activo=True
         ).select_related('plan').order_by('fecha_inicio'),
-        'puede_corregir': request.user.is_superuser,
+        'puede_corregir': puede_corregir_cuentas(request.user),
         'mes_actual_valor': hoy.strftime('%Y-%m'),
     }
 
@@ -4428,73 +3654,94 @@ def registrar_correccion(cliente, admin, tipo, descripcion, motivo='', monto=Dec
         admin_que_ajusto=admin,
     )
 
-@admin_required
+@superadmin_required
 def admin_cancelar_plan_usuario(request, plan_id):
     """
-    Permite al administrador cancelar un plan específico de un usuario.
-    Cancela el plan inmediatamente y todas sus reservas activas
-    (permanentes y recuperos/cupos temporales).
+    Cancelar un plan de un alumno. Primero se muestra qué reservas se cancelan:
+    si no le queda otro plan, todas; si le queda otro, vienen tildados los horarios
+    fijos que ese plan no cubre (los más nuevos) y el admin puede cambiar la
+    elección. Las reservas canceladas quedan registradas como cancelación del
+    estudio y la cuota del mes se ajusta según el día de la baja.
     """
-    if request.method != 'POST':
-        return redirect('gravity:admin_usuarios_lista')
-
-    plan = get_object_or_404(PlanUsuario, id=plan_id, activo=True)
+    plan = get_object_or_404(PlanUsuario.objects.select_related('plan', 'usuario'), id=plan_id, activo=True)
     usuario = plan.usuario
+    otros = list(PlanUsuario.objects.filter(usuario=usuario, activo=True).exclude(pk=plan.pk).select_related('plan'))
+    cupo_otros = sum(p.plan.clases_por_semana for p in otros)
+    fijas = list(usuario.reservas_pilates.filter(activa=True, fecha_unica__isnull=True)
+                 .select_related('clase').order_by('fecha_reserva'))
+    sueltas = list(usuario.reservas_pilates.filter(activa=True, fecha_unica__isnull=False)
+                   .select_related('clase').order_by('fecha_unica'))
+    if otros:
+        sugeridas = {r.id for r in fijas[cupo_otros:]}
+    else:
+        sugeridas = {r.id for r in fijas + sueltas}
 
-    # Cancelar todas las reservas activas del usuario
-    reservas_canceladas = usuario.reservas_pilates.filter(activa=True)
-    cantidad_canceladas = reservas_canceladas.count()
-    reservas_canceladas.update(activa=False)
+    if request.method == 'POST':
+        validas = {r.id for r in fijas + sueltas}
+        if 'reservas' in request.POST or 'elegir' in request.POST:
+            elegidas = {int(i) for i in request.POST.getlist('reservas') if i.isdigit()} & validas
+        else:
+            elegidas = sugeridas
 
-    # Desactivar el plan
-    plan.activo = False
-    plan.reservas_canceladas = True
-    plan.save()
+        precio_mensual_plan = plan.plan.precio_mensual
+        with transaction.atomic():
+            for reserva in fijas + sueltas:
+                if reserva.id in elegidas:
+                    reserva.activa = False
+                    reserva.save()
+                    CancelacionAdmin.objects.create(
+                        reserva=reserva, admin_user=request.user, motivo='Baja del plan',
+                        motivo_detalle=f'Se canceló el plan {plan.plan.nombre}.', email_enviado=False,
+                    )
+            plan.activo = False
+            plan.reservas_canceladas = bool(elegidas)
+            plan.save()
 
-    # Recalcular plan_actual en EstadoPagoCliente y ajustar deuda si corresponde
-    try:
-        estado = usuario.estado_pago
-        precio_mensual_plan = plan.plan.precio_mensual  # Capturar ANTES de desactivar
+            try:
+                estado = usuario.estado_pago
+            except EstadoPagoCliente.DoesNotExist:
+                estado = None
+            if estado:
+                estado.actualizar_plan_automatico()
+                if not PlanUsuario.objects.filter(usuario=usuario, activo=True).exists():
+                    estado.plan_actual = None
+                    estado.save(update_fields=['plan_actual'])
+                    # Cuota del mes según el día de la baja: hasta el 4 no se cobra,
+                    # del 5 al 9 medio mes, desde el 10 el mes completo
+                    hoy = timezone.localdate()
+                    deuda_mes = DeudaMensual.objects.filter(
+                        usuario=usuario, mes_año=hoy.replace(day=1)
+                    ).exclude(estado='pagado').first()
+                    if deuda_mes:
+                        if hoy.day <= 4:
+                            deuda_mes.delete()
+                        elif hoy.day <= 9:
+                            medio_mes = precio_mensual_plan / 2
+                            if deuda_mes.monto_pendiente > medio_mes:
+                                deuda_mes.monto_original = medio_mes
+                                deuda_mes.monto_pendiente = medio_mes
+                                deuda_mes.es_medio_mes = True
+                                deuda_mes.save()
+                    recalcular_estado_pagos(usuario)
 
-        nuevo_plan = estado.actualizar_plan_automatico()
-        if not PlanUsuario.objects.filter(usuario=usuario, activo=True).exists():
-            estado.plan_actual = None
-            estado.save(update_fields=['plan_actual'])
+        n = len(elegidas)
+        messages.success(
+            request,
+            f'Cancelaste el plan {plan.plan.nombre} de {usuario.get_full_name() or usuario.username}.'
+            + (f' Se cancelaron {n} reserva{"s" if n != 1 else ""}.' if n else ' Sus reservas siguen igual.')
+        )
+        return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
 
-            # Ajustar deuda del mes actual según el día en que se cancela el plan
-            hoy = timezone.localtime(timezone.now()).date()
-            primer_dia_mes = date(hoy.year, hoy.month, 1)
-            deuda_mes = DeudaMensual.objects.filter(
-                usuario=usuario,
-                mes_año=primer_dia_mes
-            ).exclude(estado='pagado').first()
-
-            if deuda_mes:
-                if hoy.day <= 4:
-                    # Baja temprana: eliminar deuda del mes
-                    deuda_mes.delete()
-                elif hoy.day <= 9:
-                    # Baja a mitad de mes: dejar solo la mitad del plan
-                    medio_mes = precio_mensual_plan / 2
-                    if deuda_mes.monto_pendiente > medio_mes:
-                        deuda_mes.monto_original = medio_mes
-                        deuda_mes.monto_pendiente = medio_mes
-                        deuda_mes.es_medio_mes = True
-                        deuda_mes.save()
-                # día >= 10: no tocar la deuda
-
-            # Recalcular toda la cuenta desde cero
-            recalcular_estado_pagos(usuario)
-
-    except EstadoPagoCliente.DoesNotExist:
-        pass
-
-    messages.success(
-        request,
-        f'Plan "{plan.plan.nombre}" cancelado para {usuario.get_full_name() or usuario.username}. '
-        f'{cantidad_canceladas} reserva{"s" if cantidad_canceladas != 1 else ""} cancelada{"s" if cantidad_canceladas != 1 else ""}.'
-    )
-    return redirect('gravity:admin_usuario_detalle', usuario_id=usuario.id)
+    return render(request, 'gravity/admin/plan_cancelar.html', {
+        'plan': plan,
+        'usuario': usuario,
+        'otros': otros,
+        'cupo_otros': cupo_otros,
+        'fijas': fijas,
+        'sueltas': sueltas,
+        'sugeridas': sugeridas,
+        'hoy': timezone.localdate(),
+    })
 
 # ==============================================================================
 # GESTIÓN DE ADMINISTRADORES CON PERMISOS RESTRINGIDOS (solo superadmins)
@@ -4592,97 +3839,6 @@ def admin_generar_deuda_manual(request, cliente_id):
         messages.error(request, 'Datos inválidos. Verificá el mes y el monto ingresados.')
 
     return redirect('gravity:admin_pagos_editar_estado_cliente', cliente_id=cliente_id)
-
-@superadmin_required
-def admin_gestionar_admins(request):
-    """
-    Lista y gestión de usuarios administradores sin acceso a pagos.
-    Solo accesible por superusuarios.
-    """
-    admins_restringidos = User.objects.filter(
-        is_staff=True,
-        is_superuser=False,
-        is_active=True
-    ).select_related('profile').order_by('first_name', 'last_name')
-
-    context = {
-        'admins_restringidos': admins_restringidos,
-    }
-    return render(request, 'gravity/admin/gestionar_admins.html', context)
-
-@superadmin_required
-def admin_crear_admin_restringido(request):
-    """
-    Crear un nuevo usuario administrador sin acceso a información de pagos.
-    Solo accesible por superusuarios.
-    """
-    if request.method == 'POST':
-        nombre = request.POST.get('nombre', '').strip().title()
-        apellido = request.POST.get('apellido', '').strip().title()
-        email = request.POST.get('email', '').strip()
-        password = request.POST.get('password', '').strip()
-
-        if not nombre or not apellido or not password:
-            messages.error(request, 'Nombre, apellido y contraseña son obligatorios.')
-            return redirect('gravity:admin_gestionar_admins')
-
-        base_username = f"{nombre.lower()}{apellido.lower()}"
-        username = base_username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-
-        try:
-            with transaction.atomic():
-                nuevo_admin = User.objects.create_user(
-                    username=username,
-                    email=email if email else '',
-                    first_name=nombre,
-                    last_name=apellido,
-                    password=password,
-                    is_staff=True,
-                    is_superuser=False,
-                )
-                profile, _ = UserProfile.objects.get_or_create(user=nuevo_admin)
-                profile.puede_ver_pagos = False
-                profile.save()
-
-                messages.success(
-                    request,
-                    f'Administrador {nombre} {apellido} creado exitosamente. '
-                    f'Usuario: {username}. No podrá ver información de pagos.'
-                )
-        except Exception as e:
-            messages.error(request, f'Error al crear administrador: {str(e)}')
-
-        return redirect('gravity:admin_gestionar_admins')
-
-    return redirect('gravity:admin_gestionar_admins')
-
-@superadmin_required
-def admin_eliminar_admin_restringido(request, admin_id):
-    """
-    Eliminar (desactivar) un administrador restringido.
-    Solo accesible por superusuarios.
-    """
-    if request.method != 'POST':
-        return redirect('gravity:admin_gestionar_admins')
-
-    admin_a_eliminar = get_object_or_404(
-        User,
-        id=admin_id,
-        is_staff=True,
-        is_superuser=False
-    )
-
-    nombre_completo = admin_a_eliminar.get_full_name() or admin_a_eliminar.username
-    admin_a_eliminar.is_active = False
-    admin_a_eliminar.is_staff = False
-    admin_a_eliminar.save()
-
-    messages.success(request, f'Administrador {nombre_completo} eliminado del sistema.')
-    return redirect('gravity:admin_gestionar_admins')
 
 @superadmin_required
 def admin_ajustar_deuda_especial(request, deuda_id):
@@ -5296,7 +4452,9 @@ def seleccionar_plan(request):
         return redirect('gravity:mis_planes')
 
     # Obtener planes disponibles
-    planes_disponibles = PlanPago.objects.filter(activo=True).order_by('clases_por_semana')
+    planes_disponibles = anotar_planes(
+        PlanPago.objects.filter(activo=True).order_by('clases_por_semana', 'precio_mensual')
+    )
 
     if request.method == 'POST':
         plan_id = request.POST.get('plan_id')
@@ -5319,23 +4477,45 @@ def seleccionar_plan(request):
             return redirect('gravity:mis_planes')
 
         except PlanPago.DoesNotExist:
-            messages.error(request, 'Plan inválido. Por favor selecciona un plan válido.')
-        except Exception as e:
-            messages.error(request, f'Error al enviar la solicitud: {str(e)}')
+            messages.error(request, 'Ese plan ya no está disponible. Elegí otro.')
+        except Exception:
+            logger.exception('Error enviando solicitud de plan')
+            messages.error(request, 'No pudimos enviar la solicitud. Intentá de nuevo en un momento.')
 
     context = {
         'planes_disponibles': planes_disponibles,
-        'es_primer_plan': True,
+        'politica': politica_baja_plan(timezone.localtime(timezone.now()).date()),
     }
 
     return render(request, 'gravity/seleccionar_plan.html', context)
 
+def politica_baja_plan(hoy):
+    """Qué se cobra del mes en curso si el plan se da de baja en la fecha 'hoy'."""
+    if hoy.day <= 4:
+        return {'tipo': 'sin_cargo', 'titulo': 'Sin cargo', 'texto': 'No se cobra el mes en curso.'}
+    if hoy.day <= 9:
+        return {'tipo': 'medio_mes', 'titulo': 'Medio mes', 'texto': 'Se cobra la mitad del mes en curso.'}
+    return {'tipo': 'mes_completo', 'titulo': 'Mes completo', 'texto': 'Se cobra el mes completo.'}
+
+
+def _horarios_fijos(usuario):
+    """Reservas fijas activas del usuario, ordenadas por día y hora."""
+    orden = {d: i for i, d in enumerate(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])}
+    return sorted(
+        usuario.reservas_pilates.filter(activa=True, fecha_unica__isnull=True).select_related('clase'),
+        key=lambda r: (orden.get(r.clase.dia, 9), r.clase.horario),
+    )
+
+
 @login_required
 def modificar_plan(request):
     """
-    Vista para que un usuario con plan activo solicite cambiar a otro plan
-    (más o menos clases por semana). Requiere aprobación de un superadministrador.
+    Cambio de plan en una sola página: el alumno elige el nuevo plan y, si tiene
+    más horarios fijos que las clases del plan nuevo, marca ahí mismo cuáles libera.
+    El cambio queda pendiente hasta que un superadministrador lo apruebe.
     """
+    request.session.pop('downgrade_plan_solicitado_id', None)
+
     plan_usuario_actual = PlanUsuario.objects.filter(
         usuario=request.user,
         activo=True,
@@ -5346,100 +4526,39 @@ def modificar_plan(request):
         messages.info(request, 'No tenés un plan activo todavía. Elegí uno para empezar.')
         return redirect('gravity:seleccionar_plan')
 
-    solicitud_pendiente = SolicitudCambioPlan.objects.filter(
-        usuario=request.user, estado='pendiente'
-    ).exists()
-
-    if solicitud_pendiente:
+    if SolicitudCambioPlan.objects.filter(usuario=request.user, estado='pendiente').exists():
         messages.info(request, 'Ya tenés una solicitud de cambio de plan pendiente de aprobación.')
         return redirect('gravity:mis_planes')
 
     plan_actual = plan_usuario_actual.plan
-    planes_disponibles = PlanPago.objects.filter(activo=True).exclude(id=plan_actual.id).order_by('clases_por_semana')
+    anotar_planes([plan_actual])
+    planes_disponibles = anotar_planes(
+        PlanPago.objects.filter(activo=True).exclude(id=plan_actual.id).order_by('clases_por_semana', 'precio_mensual')
+    )
+    fijas = _horarios_fijos(request.user)
+
+    plan_elegido_id = None
+    reservas_marcadas = []
 
     if request.method == 'POST':
-        plan_id = request.POST.get('plan_id')
-
         try:
-            plan_solicitado = PlanPago.objects.get(id=plan_id, activo=True)
-        except PlanPago.DoesNotExist:
-            messages.error(request, 'Plan inválido. Por favor selecciona un plan válido.')
+            plan_solicitado = PlanPago.objects.get(id=request.POST.get('plan_id'), activo=True)
+        except (PlanPago.DoesNotExist, ValueError):
+            messages.error(request, 'Elegí uno de los planes disponibles.')
             return redirect('gravity:modificar_plan')
 
-        if plan_solicitado.clases_por_semana < plan_actual.clases_por_semana:
-            # Downgrade: primero debe elegir qué reservas ceder
-            request.session['downgrade_plan_solicitado_id'] = plan_solicitado.id
-            return redirect('gravity:elegir_reservas_downgrade')
+        # Solo hay que liberar horarios si los fijos no entran en el plan nuevo
+        minimo_a_ceder = max(0, len(fijas) - plan_solicitado.clases_por_semana)
+        ids = set(request.POST.getlist('reservas'))
+        elegidas = [r for r in fijas if str(r.id) in ids]
 
-        # Upgrade o igual cantidad de clases: se crea la solicitud directamente
-        SolicitudCambioPlan.objects.create(
-            usuario=request.user,
-            plan_actual=plan_actual,
-            plan_solicitado=plan_solicitado,
-            estado='pendiente'
-        )
-
-        messages.success(
-            request,
-            f'Tu solicitud para cambiar al plan "{plan_solicitado.nombre}" fue enviada y '
-            f'está pendiente de aprobación. Mientras tanto seguís con tu plan actual.'
-        )
-        return redirect('gravity:mis_planes')
-
-    context = {
-        'plan_actual': plan_actual,
-        'planes_disponibles': planes_disponibles,
-    }
-    return render(request, 'gravity/modificar_plan.html', context)
-
-@login_required
-def elegir_reservas_downgrade(request):
-    """
-    Paso intermedio para bajar a un plan con menos clases por semana:
-    el usuario elige qué reservas está dispuesto a ceder.
-    Las reservas no se cancelan hasta que el admin apruebe la solicitud.
-    """
-    plan_solicitado_id = request.session.get('downgrade_plan_solicitado_id')
-    if not plan_solicitado_id:
-        return redirect('gravity:modificar_plan')
-
-    plan_usuario_actual = PlanUsuario.objects.filter(
-        usuario=request.user,
-        activo=True,
-        fecha_fin__gte=timezone.localtime(timezone.now()).date()
-    ).select_related('plan').first()
-
-    if not plan_usuario_actual:
-        request.session.pop('downgrade_plan_solicitado_id', None)
-        return redirect('gravity:seleccionar_plan')
-
-    try:
-        plan_solicitado = PlanPago.objects.get(id=plan_solicitado_id, activo=True)
-    except PlanPago.DoesNotExist:
-        request.session.pop('downgrade_plan_solicitado_id', None)
-        messages.error(request, 'El plan solicitado ya no está disponible.')
-        return redirect('gravity:modificar_plan')
-
-    plan_actual = plan_usuario_actual.plan
-    minimo_a_ceder = plan_actual.clases_por_semana - plan_solicitado.clases_por_semana
-
-    reservas_activas = request.user.reservas_pilates.filter(
-        activa=True, fecha_unica__isnull=True
-    ).select_related('clase').order_by('clase__dia', 'clase__horario')
-
-    if request.method == 'POST':
-        if request.POST.get('cancelar') == '1':
-            request.session.pop('downgrade_plan_solicitado_id', None)
-            return redirect('gravity:modificar_plan')
-
-        reservas_ids = request.POST.getlist('reservas')
-        reservas_elegidas = reservas_activas.filter(id__in=reservas_ids)
-
-        if reservas_elegidas.count() < minimo_a_ceder:
+        if len(elegidas) < minimo_a_ceder:
+            plan_elegido_id = plan_solicitado.id
+            reservas_marcadas = [str(r.id) for r in elegidas]
             messages.error(
                 request,
-                f'Para pasar al plan "{plan_solicitado.nombre}" necesitás ceder al menos '
-                f'{minimo_a_ceder} clase{"s" if minimo_a_ceder != 1 else ""}.'
+                f'Para pasar a "{plan_solicitado.nombre}" marcá {minimo_a_ceder} '
+                f'horario{"s" if minimo_a_ceder != 1 else ""} para liberar.'
             )
         else:
             solicitud = SolicitudCambioPlan.objects.create(
@@ -5448,47 +4567,68 @@ def elegir_reservas_downgrade(request):
                 plan_solicitado=plan_solicitado,
                 estado='pendiente'
             )
-            solicitud.reservas_a_cancelar.set(reservas_elegidas)
-
-            request.session.pop('downgrade_plan_solicitado_id', None)
+            if elegidas:
+                solicitud.reservas_a_cancelar.set(elegidas)
             messages.success(
                 request,
-                f'Tu solicitud para cambiar al plan "{plan_solicitado.nombre}" fue enviada y '
-                f'está pendiente de aprobación. Las reservas elegidas seguirán activas hasta que se apruebe.'
+                f'Enviamos tu solicitud para pasar a "{plan_solicitado.nombre}". '
+                f'Mientras la revisamos, seguís con tu plan actual'
+                f'{" y tus horarios" if elegidas else ""} sin cambios.'
             )
             return redirect('gravity:mis_planes')
 
+    for plan in planes_disponibles:
+        plan.a_ceder = max(0, len(fijas) - plan.clases_por_semana)
+        diferencia = plan.clases_por_semana - plan_actual.clases_por_semana
+        plan.cambio = 'mas' if diferencia > 0 else 'menos' if diferencia < 0 else 'igual'
+
     context = {
         'plan_actual': plan_actual,
-        'plan_solicitado': plan_solicitado,
-        'minimo_a_ceder': minimo_a_ceder,
-        'reservas_activas': reservas_activas,
+        'planes_disponibles': planes_disponibles,
+        'fijas': fijas,
+        'plan_elegido_id': plan_elegido_id,
+        'reservas_marcadas': reservas_marcadas,
     }
-    return render(request, 'gravity/elegir_reservas_downgrade.html', context)
+    return render(request, 'gravity/modificar_plan.html', context)
+
+
+@login_required
+def elegir_reservas_downgrade(request):
+    """Paso que quedó integrado en 'Cambiar de plan' (se conserva la URL por enlaces viejos)."""
+    request.session.pop('downgrade_plan_solicitado_id', None)
+    return redirect('gravity:modificar_plan')
 
 @login_required
 def mis_planes(request):
-    """
-    Vista para mostrar los planes actuales del usuario y su estado
-    """
-    # Obtener planes activos - CORREGIR 'activa' por 'activo'
-    planes_activos = PlanUsuario.objects.filter(
-        usuario=request.user,
-        activo=True,
-    ).select_related('plan').order_by('-fecha_creacion')
+    """Plan vigente, solicitud en revisión, qué pasaría si se da de baja hoy e historial."""
+    hoy = timezone.localtime(timezone.now()).date()
 
-    # Planes cancelados explícitamente (historial)
-    planes_vencidos = PlanUsuario.objects.filter(
-        usuario=request.user,
-        activo=False,
-    ).select_related('plan').order_by('-fecha_creacion')[:5]
-    
-    # Calcular estadísticas de la semana actual
-    clases_disponibles, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
-    
-    # Obtener reservas activas
-    reservas_activas = request.user.reservas_pilates.filter(activa=True).select_related('clase')
+    planes_activos = list(
+        PlanUsuario.objects.filter(usuario=request.user, activo=True)
+        .select_related('plan').order_by('fecha_inicio')
+    )
+    plan_vigente = next((p for p in planes_activos if p.fecha_inicio <= hoy <= p.fecha_fin), None)
+    otros_planes = [p for p in planes_activos if p is not plan_vigente]
+    anotar_planes([p.plan for p in planes_activos])
+
+    historial = list(
+        PlanUsuario.objects.filter(usuario=request.user, activo=False)
+        .select_related('plan').order_by('-fecha_fin')[:5]
+    )
+
+    fijas = request.user.reservas_pilates.filter(activa=True, fecha_unica__isnull=True).count()
+    uso = None
+    if plan_vigente:
+        clases = plan_vigente.plan.clases_por_semana
+        uso = {
+            'clases': clases,
+            'fijas': fijas,
+            'libres': max(0, clases - fijas),
+            'porcentaje': min(100, round(fijas * 100 / clases)) if clases else 0,
+            'renueva': plan_vigente.tipo_plan == 'permanente' and plan_vigente.renovacion_automatica,
+            'renueva_el': plan_vigente.fecha_fin + timedelta(days=1),
+            'dias_restantes': plan_vigente.dias_restantes(),
+        }
 
     solicitud_pendiente = SolicitudCambioPlan.objects.filter(
         usuario=request.user, estado='pendiente'
@@ -5497,17 +4637,15 @@ def mis_planes(request):
     ).first()
 
     context = {
-        'planes_activos': planes_activos,
-        'planes_vencidos': planes_vencidos,
-        'clases_disponibles': clases_disponibles,
-        'reservas_actuales': reservas_actuales,
-        'clases_restantes': max(0, clases_disponibles - reservas_actuales),
-        'reservas_activas': reservas_activas,
-        'tiene_planes_activos': planes_activos.exists(),
+        'plan_vigente': plan_vigente,
+        'otros_planes': otros_planes,
+        'historial': historial,
+        'uso': uso,
         'solicitud_pendiente': solicitud_pendiente,
-        'puede_cambiar_plan': planes_activos.exists() and not solicitud_pendiente,
+        'politica': politica_baja_plan(hoy),
+        'dia_hoy': hoy.day,
+        'puede_cambiar_plan': bool(plan_vigente) and not solicitud_pendiente,
     }
-
     return render(request, 'gravity/mis_planes.html', context)
 
 @login_required
@@ -5615,9 +4753,7 @@ def cancelar_plan(request, plan_id):
             # --- Cancelar todas las reservas de inmediato (permanentes y recuperos/cupos temporales) ---
             # La política según el día del mes solo afecta cuánto se le cobra (arriba),
             # no cuándo se cancelan las reservas: al confirmar la baja se cancelan todas ya mismo.
-            reservas_activas = request.user.reservas_pilates.filter(activa=True)
-            canceladas = reservas_activas.count()
-            reservas_activas.update(activa=False)
+            canceladas = dar_de_baja_reservas(request.user.reservas_pilates.all())
             plan.reservas_canceladas = True
 
             # Cancelar el plan
@@ -5669,37 +4805,18 @@ def cancelar_plan(request, plan_id):
         return redirect('gravity:mis_planes')
 
     # --- GET: preparar contexto ---
-    clases_disponibles_sin_plan, _ = PlanUsuario.obtener_clases_disponibles_usuario(request.user)
-    reservas_actuales = Reserva.contar_reservas_usuario_semana(request.user)
-    total_reservas_activas = request.user.reservas_pilates.filter(activa=True).count()
-
     hoy = timezone.localtime(timezone.now()).date()
-    dia_actual = hoy.day
-    if dia_actual <= 4:
-        politica_cancelacion = 'sin_cargo'
-        mensaje_politica = 'Como cancelás antes del día 5, no se te cobrará el mes actual.'
-    elif dia_actual <= 9:
-        politica_cancelacion = 'medio_mes'
-        mensaje_politica = 'Como cancelás entre el día 5 y 9, se te cobrará la mitad del mes actual.'
-    else:
-        politica_cancelacion = 'mes_completo'
-        mensaje_politica = 'Como cancelás a partir del día 10, se te cobrará el mes completo.'
-
-    mensaje_reservas = (
-        f'Se cancelarán inmediatamente tus {total_reservas_activas} '
-        f'reserva{"s" if total_reservas_activas != 1 else ""} activa{"s" if total_reservas_activas != 1 else ""} '
-        f'(incluyendo recuperos o cupos temporales, si tenés).'
+    anotar_planes([plan.plan])
+    reservas_activas = sorted(
+        request.user.reservas_pilates.filter(activa=True).select_related('clase'),
+        key=lambda r: (r.fecha_unica is not None, r.fecha_unica or hoy, r.clase.horario),
     )
 
     context = {
         'plan': plan,
-        'clases_actuales': clases_disponibles_sin_plan,
-        'reservas_actuales': reservas_actuales,
-        'total_reservas_activas': total_reservas_activas,
-        'politica_cancelacion': politica_cancelacion,
-        'mensaje_politica': mensaje_politica,
-        'mensaje_reservas': mensaje_reservas,
-        'dia_actual': dia_actual,
+        'reservas_activas': reservas_activas,
+        'politica': politica_baja_plan(hoy),
+        'dia_actual': hoy.day,
     }
 
     return render(request, 'gravity/cancelar_plan.html', context)
@@ -5708,7 +4825,7 @@ def cancelar_plan(request, plan_id):
 # VISTAS ADMIN — TESTIMONIOS
 # ==============================================================================
 
-@staff_member_required
+@superadmin_required
 def admin_testimonios_lista(request):
     """Lista todos los testimonios con filtros y permite aprobar/rechazar"""
     testimonios = Testimonio.objects.select_related('usuario').all()
@@ -5738,7 +4855,7 @@ def admin_testimonios_lista(request):
     }
     return render(request, 'gravity/admin/testimonios_lista.html', context)
 
-@staff_member_required
+@superadmin_required
 def admin_testimonio_aprobar(request, testimonio_id):
     """Aprueba un testimonio para que sea visible públicamente"""
     if request.method != 'POST':
@@ -5751,7 +4868,7 @@ def admin_testimonio_aprobar(request, testimonio_id):
     return redirect('gravity:admin_testimonios_lista')
 
 
-@staff_member_required
+@superadmin_required
 def admin_testimonio_rechazar(request, testimonio_id):
     """Vuelve un testimonio a estado pendiente"""
     if request.method != 'POST':
@@ -5766,7 +4883,7 @@ def admin_testimonio_rechazar(request, testimonio_id):
     return redirect('gravity:admin_testimonios_lista')
 
 
-@staff_member_required
+@superadmin_required
 def admin_testimonio_eliminar(request, testimonio_id):
     """Elimina un testimonio definitivamente"""
     if request.method != 'POST':
@@ -5789,9 +4906,12 @@ def admin_solicitudes_plan_lista(request):
         'usuario', 'plan_actual', 'plan_solicitado', 'resuelto_por'
     ).prefetch_related('reservas_a_cancelar__clase').all()
 
-    estado_filtro = request.GET.get('estado', '')
+    estado_filtro = request.GET.get('estado', 'pendiente')
     if estado_filtro in ('pendiente', 'aprobada', 'rechazada'):
         solicitudes = solicitudes.filter(estado=estado_filtro)
+    else:
+        estado_filtro = 'todas'
+    solicitudes = solicitudes.order_by('-fecha_solicitud')
 
     busqueda_filtro = request.GET.get('busqueda', '')
     if busqueda_filtro:
@@ -5805,6 +4925,7 @@ def admin_solicitudes_plan_lista(request):
         'solicitudes': solicitudes,
         'total_pendientes': SolicitudCambioPlan.objects.filter(estado='pendiente').count(),
         'total_aprobadas': SolicitudCambioPlan.objects.filter(estado='aprobada').count(),
+        'total_rechazadas': SolicitudCambioPlan.objects.filter(estado='rechazada').count(),
         'estado_filtro': estado_filtro,
         'busqueda_filtro': busqueda_filtro,
     }
@@ -5855,8 +4976,12 @@ def admin_solicitud_plan_aprobar(request, solicitud_id):
             # (mes completo o medio mes según el día de aprobación)
             estado_cliente.generar_deuda_mes_actual()
 
-        if solicitud.reservas_a_cancelar.exists():
-            solicitud.reservas_a_cancelar.update(activa=False)
+        # Los horarios que el alumno eligió liberar: baja suya, con registro (para el historial)
+        for reserva in solicitud.reservas_a_cancelar.filter(activa=True):
+            reserva.activa = False
+            reserva.save()
+            aviso = NotificacionCancelacion.objects.create(reserva=reserva, tipo='permanente')
+            aviso.leida_por.add(request.user)
 
         solicitud.estado = 'aprobada'
         solicitud.fecha_resolucion = timezone.localtime(timezone.now())
@@ -5896,10 +5021,13 @@ def admin_solicitud_plan_rechazar(request, solicitud_id):
         solicitud.observaciones = motivo
     solicitud.save(update_fields=['estado', 'fecha_resolucion', 'resuelto_por', 'observaciones'])
 
-    messages.success(
-        request,
-        f'Solicitud de {solicitud.usuario.get_full_name() or solicitud.usuario.username} rechazada.'
-    )
+    texto = f'Rechazaste la solicitud de {solicitud.usuario.get_full_name() or solicitud.usuario.username}.'
+    if solicitud.usuario.email:
+        if enviar_email_solicitud_rechazada(solicitud):
+            texto += f' Le avisamos a {solicitud.usuario.email}.'
+        else:
+            texto += ' No se pudo mandar el email.'
+    messages.success(request, texto)
     return redirect('gravity:admin_solicitudes_plan_lista')
 
 # ==============================================================================
@@ -5909,243 +5037,81 @@ def admin_solicitud_plan_rechazar(request, solicitud_id):
 @admin_required
 def admin_historial_actividad(request):
     """
-    Vista de historial completo de actividad: cancelaciones de reservas,
-    ausencias temporales, cancelaciones de planes, recuperos, cupos temporales
-    y cancelaciones realizadas por administradores. Con filtros y paginación.
+    Actividad de los alumnos (bajas, avisos, planes, recuperos, clases únicas y
+    cancelaciones del estudio), agrupada por día. Por defecto, los últimos 30 días.
+    Los eventos se arman en gravity/actividad.py.
     """
-    from datetime import datetime
+    hoy = timezone.localdate()
 
-    tipo_filtro   = request.GET.get('tipo', '')
-    usuario_filtro = request.GET.get('usuario', '').strip()
-    sede_filtro   = request.GET.get('sede', '')
-    fecha_desde   = request.GET.get('fecha_desde', '')
-    fecha_hasta   = request.GET.get('fecha_hasta', '')
-    fecha_unica_desde = request.GET.get('fecha_unica_desde', '')
-
-    def parse_date(s):
+    def fecha_get(clave):
         try:
-            return datetime.strptime(s, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
+            return date.fromisoformat(request.GET.get(clave, ''))
+        except ValueError:
             return None
 
-    fecha_desde_obj = parse_date(fecha_desde)
-    fecha_hasta_obj = parse_date(fecha_hasta)
+    tipo = request.GET.get('tipo', '')
+    if tipo not in dict(TIPOS_ACTIVIDAD):
+        tipo = ''
+    buscar = request.GET.get('usuario', '').strip()
+    sede = request.GET.get('sede', '')
+    if sede not in dict(Clase.DIRECCIONES):
+        sede = ''
+    fecha_unica_desde = fecha_get('fecha_unica_desde')
 
-    eventos = []
+    desde, hasta = fecha_get('fecha_desde'), fecha_get('fecha_hasta')
+    dias = request.GET.get('dias', '')
+    personalizado = bool(desde or hasta)
+    if desde and hasta and desde > hasta:
+        desde, hasta = hasta, desde
+    if not personalizado:
+        dias = dias if dias in ('7', '30', '90') else '30'
+        desde, hasta = hoy - timedelta(days=int(dias) - 1), hoy
+    if fecha_unica_desde:
+        # "Próximos recuperos / clases únicas": por fecha de la clase, sin rango de creación
+        desde = hasta = None
 
-    # ------------------------------------------------------------------ #
-    # 1. Cancelaciones de reservas por usuario (permanentes y temporales) #
-    # ------------------------------------------------------------------ #
-    if not tipo_filtro or tipo_filtro in ('cancelacion_permanente', 'ausencia_temporal'):
-        qs = NotificacionCancelacion.objects.select_related(
-            'reserva', 'reserva__clase', 'reserva__usuario'
-        )
-        if tipo_filtro == 'cancelacion_permanente':
-            qs = qs.filter(tipo='permanente')
-        elif tipo_filtro == 'ausencia_temporal':
-            qs = qs.filter(tipo='temporal')
-        if usuario_filtro:
-            qs = qs.filter(
-                Q(reserva__usuario__username__icontains=usuario_filtro) |
-                Q(reserva__usuario__first_name__icontains=usuario_filtro) |
-                Q(reserva__usuario__last_name__icontains=usuario_filtro)
-            )
-        if sede_filtro:
-            qs = qs.filter(reserva__clase__direccion=sede_filtro)
-        if fecha_desde_obj:
-            qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
-        if fecha_hasta_obj:
-            qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
+    todos = eventos_actividad(buscar=buscar, sede=sede, desde=desde, hasta=hasta,
+                              fecha_unica_desde=fecha_unica_desde)
+    conteo = {}
+    for e in todos:
+        conteo[e['tipo']] = conteo.get(e['tipo'], 0) + 1
+    eventos = [e for e in todos if e['tipo'] == tipo] if tipo else todos
 
-        for n in qs:
-            eventos.append({
-                'tipo_evento':    'cancelacion_permanente' if n.tipo == 'permanente' else 'ausencia_temporal',
-                'fecha':          n.fecha_creacion,
-                'usuario':        n.reserva.usuario,
-                'clase':          n.reserva.clase,
-                'sede':           n.reserva.clase.get_direccion_corta(),
-                'fecha_ausencia': n.fecha_ausencia,
-                'iniciado_por':   'usuario',
-                'admin_user':     None,
-                'estado_reserva': 'activa' if n.reserva.activa else 'cancelada',
-                'reserva':        n.reserva,
-                'plan':           None,
-                'motivo':         None,
-                'motivo_detalle': None,
-            })
+    page_obj = Paginator(eventos, 30).get_page(request.GET.get('page'))
+    ayer = hoy - timedelta(days=1)
+    for e in page_obj:
+        if e['dia'] == hoy:
+            e['dia_texto'] = 'Hoy'
+        elif e['dia'] == ayer:
+            e['dia_texto'] = 'Ayer'
+        else:
+            e['dia_texto'] = fecha_larga(e['dia'])
 
-    # --------------------------------- #
-    # 2. Cancelaciones de plan          #
-    # --------------------------------- #
-    if not tipo_filtro or tipo_filtro == 'cancelacion_plan':
-        if not sede_filtro:  # los planes no tienen sede
-            qs = NotificacionCancelacionPlan.objects.select_related('usuario', 'plan')
-            if usuario_filtro:
-                qs = qs.filter(
-                    Q(usuario__username__icontains=usuario_filtro) |
-                    Q(usuario__first_name__icontains=usuario_filtro) |
-                    Q(usuario__last_name__icontains=usuario_filtro)
-                )
-            if fecha_desde_obj:
-                qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
-            if fecha_hasta_obj:
-                qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
-
-            for n in qs:
-                eventos.append({
-                    'tipo_evento':    'cancelacion_plan',
-                    'fecha':          n.fecha_creacion,
-                    'usuario':        n.usuario,
-                    'clase':          None,
-                    'sede':           None,
-                    'fecha_ausencia': None,
-                    'iniciado_por':   'usuario',
-                    'admin_user':     None,
-                    'estado_reserva': None,
-                    'reserva':        None,
-                    'plan':           n.plan,
-                    'motivo':         None,
-                    'motivo_detalle': None,
-                })
-
-    # --------------------------------- #
-    # 3. Planes adicionales             #
-    # --------------------------------- #
-    if not tipo_filtro or tipo_filtro == 'plan_adicional':
-        if not sede_filtro:  # los planes no tienen sede
-            qs = NotificacionPlanAdicional.objects.select_related('usuario', 'plan')
-            if usuario_filtro:
-                qs = qs.filter(
-                    Q(usuario__username__icontains=usuario_filtro) |
-                    Q(usuario__first_name__icontains=usuario_filtro) |
-                    Q(usuario__last_name__icontains=usuario_filtro)
-                )
-            if fecha_desde_obj:
-                qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
-            if fecha_hasta_obj:
-                qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
-
-            for n in qs:
-                eventos.append({
-                    'tipo_evento':    'plan_adicional',
-                    'fecha':          n.fecha_creacion,
-                    'usuario':        n.usuario,
-                    'clase':          None,
-                    'sede':           None,
-                    'fecha_ausencia': None,
-                    'iniciado_por':   'usuario',
-                    'admin_user':     None,
-                    'estado_reserva': None,
-                    'reserva':        None,
-                    'plan':           n.plan,
-                    'motivo':         None,
-                    'motivo_detalle': None,
-                })
-
-    # -------------------------------------------------- #
-    # 4. Recuperos y cupos temporales (Reserva.fecha_unica) #
-    # -------------------------------------------------- #
-    if not tipo_filtro or tipo_filtro in ('recupero', 'clase_unica'):
-        qs = Reserva.objects.filter(
-            fecha_unica__isnull=False
-        ).select_related('usuario', 'clase')
-
-        if tipo_filtro == 'recupero':
-            qs = qs.filter(es_recupero=True)
-        elif tipo_filtro == 'clase_unica':
-            qs = qs.filter(es_recupero=False)
-
-        if usuario_filtro:
-            qs = qs.filter(
-                Q(usuario__username__icontains=usuario_filtro) |
-                Q(usuario__first_name__icontains=usuario_filtro) |
-                Q(usuario__last_name__icontains=usuario_filtro)
-            )
-        if sede_filtro:
-            qs = qs.filter(clase__direccion=sede_filtro)
-        if fecha_desde_obj:
-            qs = qs.filter(fecha_reserva__date__gte=fecha_desde_obj)
-        if fecha_hasta_obj:
-            qs = qs.filter(fecha_reserva__date__lte=fecha_hasta_obj)
-        if fecha_unica_desde:
-            fecha_unica_desde_obj = parse_date(fecha_unica_desde)
-            if fecha_unica_desde_obj:
-                qs = qs.filter(fecha_unica__gte=fecha_unica_desde_obj, activa=True)
-
-        for r in qs:
-            eventos.append({
-                'tipo_evento':    'recupero' if r.es_recupero else 'clase_unica',
-                'fecha':          r.fecha_reserva,
-                'usuario':        r.usuario,
-                'clase':          r.clase,
-                'sede':           r.clase.get_direccion_corta(),
-                'fecha_ausencia': None,
-                'fecha_unica':    r.fecha_unica,
-                'iniciado_por':   'usuario',
-                'admin_user':     None,
-                'estado_reserva': 'activa' if r.activa else 'cancelada',
-                'reserva':        r,
-                'plan':           None,
-                'motivo':         None,
-                'motivo_detalle': None,
-            })
-
-    # ------------------------------------------ #
-    # 5. Cancelaciones realizadas por admin       #
-    # ------------------------------------------ #
-    if not tipo_filtro or tipo_filtro == 'cancelacion_admin':
-        qs = CancelacionAdmin.objects.select_related(
-            'reserva', 'reserva__clase', 'reserva__usuario', 'admin_user'
-        )
-        if usuario_filtro:
-            qs = qs.filter(
-                Q(reserva__usuario__username__icontains=usuario_filtro) |
-                Q(reserva__usuario__first_name__icontains=usuario_filtro) |
-                Q(reserva__usuario__last_name__icontains=usuario_filtro)
-            )
-        if sede_filtro:
-            qs = qs.filter(reserva__clase__direccion=sede_filtro)
-        if fecha_desde_obj:
-            qs = qs.filter(fecha_creacion__date__gte=fecha_desde_obj)
-        if fecha_hasta_obj:
-            qs = qs.filter(fecha_creacion__date__lte=fecha_hasta_obj)
-
-        for c in qs:
-            eventos.append({
-                'tipo_evento':    'cancelacion_admin',
-                'fecha':          c.fecha_creacion,
-                'usuario':        c.reserva.usuario,
-                'clase':          c.reserva.clase,
-                'sede':           c.reserva.clase.get_direccion_corta(),
-                'fecha_ausencia': None,
-                'iniciado_por':   'admin',
-                'admin_user':     c.admin_user,
-                'estado_reserva': 'activa' if c.reserva.activa else 'cancelada',
-                'reserva':        c.reserva,
-                'plan':           None,
-                'motivo':         c.motivo,
-                'motivo_detalle': c.motivo_detalle,
-            })
-
-    # Ordenar por fecha descendente y paginar
-    eventos.sort(key=lambda x: x['fecha'], reverse=True)
-
-    paginator = Paginator(eventos, 25)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Filtros actuales sin el tipo ni la página, para armar los enlaces de los chips
+    params = request.GET.copy()
+    for clave in ('tipo', 'page'):
+        params.pop(clave, None)
+    params_pagina = request.GET.copy()
+    params_pagina.pop('page', None)
 
     context = {
-        'page_obj':       page_obj,
-        'total_eventos':  len(eventos),
-        'tipo_filtro':    tipo_filtro,
-        'usuario_filtro': usuario_filtro,
-        'sede_filtro':    sede_filtro,
-        'fecha_desde':    fecha_desde,
-        'fecha_hasta':    fecha_hasta,
-        'sedes':          Clase.DIRECCIONES,
+        'page_obj': page_obj,
+        'total_eventos': len(eventos),
+        'total_todos': len(todos),
+        'tipos': [{'clave': c, 'texto': t, 'cantidad': conteo.get(c, 0)} for c, t in TIPOS_ACTIVIDAD],
+        'tipo_filtro': tipo,
+        'usuario_filtro': buscar,
+        'sede_filtro': sede,
+        'sedes': Clase.DIRECCIONES,
+        'dias': dias,
+        'personalizado': personalizado,
+        'desde': desde,
+        'hasta': hasta,
         'fecha_unica_desde': fecha_unica_desde,
+        'qs_sin_tipo': params.urlencode(),
+        'qs_pagina': params_pagina.urlencode(),
+        'hoy': hoy,
     }
-
     return render(request, 'gravity/admin/historial_actividad.html', context)
 
 # ==============================================================================

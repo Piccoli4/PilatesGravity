@@ -405,6 +405,7 @@ html {
 .cd-hero { padding-top: clamp(40px, 6vw, 72px); padding-bottom: clamp(110px, 12vw, 150px); }
 .cd-hero__grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(28px, 5vw, 64px); align-items: center; }
 .cd-hero__title { font-size: clamp(2.4rem, 5vw, 3.8rem); }
+.cd-hero__copy .g-lead { margin-left: 0; }
 .cd-hero__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 .cd-hero__media { border-radius: 28px; overflow: hidden; aspect-ratio: 16 / 10; box-shadow: var(--g-shadow-hover); }
 .cd-hero__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -1207,4 +1208,183 @@ html {
 }
 @media (prefers-reduced-motion: reduce) {
     .pr-card::after { display: none; }
+}
+
+/* ==========================================================================
+   Avisos (mensajes de Django) — vidrio crema debajo de la navbar
+   ========================================================================== */
+.g-toasts {
+    position: fixed;
+    top: calc(var(--g-nav-h) + 26px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 950;
+    width: min(460px, calc(100% - 32px));
+    display: grid;
+    gap: 10px;
+    pointer-events: none;
+    font-family: var(--g-body);
+}
+.g-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px 12px 14px;
+    border-radius: 18px;
+    background: rgba(248, 239, 229, 0.82);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 16px 40px rgba(47, 59, 71, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    animation: g-toast-in 0.45s cubic-bezier(.2, .9, .3, 1.1) both;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.g-toast.is-leaving { opacity: 0; transform: translateY(-10px); }
+.g-toast__icon {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: var(--g-blue);
+}
+.g-toast__icon svg { width: 17px; height: 17px; }
+.g-toast--success .g-toast__icon { background: #3f7d5c; }
+.g-toast--error .g-toast__icon { background: #a94a4a; }
+.g-toast--warning .g-toast__icon { background: #c48c28; }
+.g-toast--error { animation: g-toast-in 0.45s cubic-bezier(.2, .9, .3, 1.1) both, g-toast-shake 0.5s ease 0.45s; }
+.g-toast__text { flex: 1; margin: 0; font-size: 0.9rem; font-weight: 500; line-height: 1.45; color: var(--g-ink); }
+.g-toast__close {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    color: var(--g-muted);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+.g-toast__close svg { width: 15px; height: 15px; }
+.g-toast__close:hover { background: rgba(93, 118, 139, 0.12); color: var(--g-ink); }
+@keyframes g-toast-in { from { opacity: 0; transform: translateY(-14px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes g-toast-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+/* Precios: precio en efectivo debajo del de lista */
+.pr-cash {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    color: #2f6448;
+    background: rgba(63, 125, 92, 0.1);
+}
+.pr-cash strong { font-size: 0.95rem; }
+.pr-card--featured .pr-cash { background: rgba(63, 125, 92, 0.14); }
+
+/* ==========================================================================
+   El estudio (/conoce-mas/) — prefijo cm-*
+   ========================================================================== */
+.cm-hero { padding-bottom: clamp(64px, 8vw, 104px); }
+.cm-pills { justify-content: flex-start; margin-top: 22px; }
+
+/* El método */
+.cm-method { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(32px, 6vw, 80px); align-items: center; }
+.cm-method__media { position: relative; padding: 0 48px 48px 0; }
+.cm-method__media > img:first-child { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 28px; box-shadow: var(--g-shadow-hover); display: block; }
+.cm-method__detail {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 42%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 22px;
+    border: 6px solid var(--g-white);
+    box-shadow: var(--g-shadow-hover);
+}
+.cm-method__copy .g-head { margin-bottom: 28px; }
+.cm-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 26px; font-family: var(--g-body); }
+.cm-points li { display: flex; gap: 14px; align-items: flex-start; }
+.cm-points strong { display: block; font-size: 1rem; color: var(--g-ink); margin-bottom: 4px; }
+.cm-points small { display: block; font-size: 0.9rem; line-height: 1.55; color: var(--g-muted); }
+
+/* Los equipos */
+.cm-gear { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.cm-gear__card { overflow: hidden; display: flex; flex-direction: column; font-family: var(--g-body); }
+.cm-gear__media { aspect-ratio: 16 / 10; overflow: hidden; }
+.cm-gear__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.8s ease; }
+.cm-gear__card:hover .cm-gear__media img { transform: scale(1.04); }
+.cm-gear__body { padding: 26px 28px 28px; }
+.cm-gear__body h3, .cm-sede__body h3, .cm-person h3 { font-family: var(--g-display); font-size: 1.4rem; margin: 0 0 10px; color: var(--g-ink); }
+.cm-gear__body p { margin: 0 0 16px; color: var(--g-muted); line-height: 1.65; }
+
+/* El equipo */
+.cm-team { display: flex; justify-content: center; flex-wrap: wrap; gap: 28px; }
+.cm-person {
+    position: relative;
+    width: min(300px, 100%);
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: var(--g-shadow-hover);
+    font-family: var(--g-body);
+}
+.cm-person img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; }
+.cm-person > div {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    padding: 14px 18px;
+    border-radius: 18px;
+    background: rgba(248, 239, 229, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.cm-person h3 { margin: 0; font-size: 1.3rem; }
+.cm-person span { font-size: 0.86rem; color: var(--g-muted); }
+
+/* Las sedes */
+.cm-sedes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.cm-sede { overflow: hidden; display: grid; grid-template-columns: 0.85fr 1fr; font-family: var(--g-body); }
+.cm-sede__media img { width: 100%; height: 100%; min-height: 260px; object-fit: cover; display: block; }
+.cm-sede__body { padding: 26px 26px; display: flex; flex-direction: column; justify-content: center; }
+.cm-sede__body p { margin: 0 0 18px; color: var(--g-muted); }
+.cm-sede__links { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Testimonios */
+.cm-quotes { columns: 3 280px; column-gap: 22px; }
+.cm-quote { break-inside: avoid; margin: 0 0 22px; padding: 26px 26px 22px; font-family: var(--g-body); }
+.cm-quote blockquote { position: relative; margin: 0 0 18px; padding-top: 18px; font-size: 0.98rem; line-height: 1.7; color: var(--g-ink); }
+.cm-quote blockquote::before { content: "\201C"; position: absolute; top: -18px; left: -4px; font-family: var(--g-display); font-size: 3.6rem; line-height: 1; color: var(--g-sand); }
+.cm-quote figcaption { display: flex; align-items: center; gap: 12px; }
+.cm-quote__avatar { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(140deg, var(--g-blue), var(--g-sand)); color: #fff; font-weight: 600; font-size: 0.9rem; }
+.cm-quote figcaption strong { display: block; font-size: 0.95rem; color: var(--g-ink); }
+.cm-quote figcaption small { font-size: 0.8rem; color: var(--g-muted); }
+
+@media (max-width: 960px) {
+    .cm-method, .cm-gear, .cm-sedes { grid-template-columns: 1fr; }
+    .cm-method__media { max-width: 520px; margin: 0 auto; }
+}
+@media (max-width: 560px) {
+    .cm-points { grid-template-columns: 1fr; }
+    .cm-sede { grid-template-columns: 1fr; }
+    .cm-sede__media img { min-height: 0; aspect-ratio: 4 / 3; }
+    .cm-method__media { padding: 0 28px 28px 0; }
 }

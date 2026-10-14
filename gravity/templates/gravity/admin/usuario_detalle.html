@@ -1,1311 +1,279 @@
 {% extends 'gravity/admin/base_admin.html' %}
+{% load formato %}
 
-{% block title %}Detalle de Usuario: {{ usuario.get_full_name|default:usuario.username }} - Panel de Administración{% endblock %}
-
+{% block title %}{{ usuario.get_full_name|default:usuario.username }}{% endblock %}
 {% block breadcrumb %}
-    <li class="flex items-center breadcrumb-item">
-        <span class="text-gray-400">/</span>
-        <a href="{% url 'gravity:admin_usuarios_lista' %}" class="ml-1 text-principal hover:text-principal/80 transition-colors duration-200">
-            Usuarios
-        </a>
-    </li>
-    <li class="flex items-center breadcrumb-item active">
-        <span class="text-gray-400">/</span>
-        <span class="ml-1 text-gray-500">{{ usuario.get_full_name|default:usuario.username }}</span>
-    </li>
-{% endblock %}
-
-{% block extra_css %}
-    <style>
-        :root {
-            --principal: #5D768B;
-            --secundario: #C8B39B;
-            --fondo: #F8EFE5;
-            --principal-claro: #7B94A9;
-            --principal-oscuro: #4A5E6D;
-            --secundario-claro: #D6C7B3;
-            --secundario-oscuro: #B5A084;
-        }
-
-        .user-avatar-large {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 600;
-            margin: 0 auto 1rem auto;
-            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
-        }
-
-        .info-card {
-            background: white;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            margin-bottom: 1.5rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .info-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: var(--principal);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .info-value {
-            color: #495057;
-            text-align: right;
-        }
-
-        .stat-card-user {
-            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
-            color: white;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.3);
-            transition: transform 0.2s ease;
-        }
-
-        .stat-card-user:hover {
-            transform: translateY(-3px);
-        }
-
-        .stat-card-secondary {
-            background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
-            color: white;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.3);
-            transition: transform 0.2s ease;
-        }
-
-        .stat-card-secondary:hover {
-            transform: translateY(-3px);
-        }
-
-        .btn-action-primary {
-            background: linear-gradient(135deg, var(--principal) 0%, var(--principal-claro) 100%);
-            border: none;
-            color: white;
-            padding: 0.55rem 1rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(93, 118, 139, 0.3);
-        }
-
-        .btn-action-primary:hover {
-            background: linear-gradient(135deg, var(--principal-oscuro) 0%, var(--principal) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(93, 118, 139, 0.4);
-            color: white;
-        }
-
-        .btn-action-secondary {
-            background: linear-gradient(135deg, var(--secundario) 0%, var(--secundario-claro) 100%);
-            border: none;
-            color: white;
-            padding: 0.55rem 1rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(200, 179, 155, 0.3);
-        }
-
-        .btn-action-secondary:hover {
-            background: linear-gradient(135deg, var(--secundario-oscuro) 0%, var(--secundario) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(200, 179, 155, 0.4);
-            color: white;
-        }
-
-        .badge-custom-success {
-            background-color: #28a745;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.4rem;
-            font-size: 0.85rem;
-        }
-
-        .badge-custom-warning {
-            background-color: #ffc107;
-            color: #212529;
-            padding: 0.5rem 1rem;
-            border-radius: 0.4rem;
-            font-size: 0.85rem;
-        }
-
-        .badge-custom-danger {
-            background-color: #dc3545;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.4rem;
-            font-size: 0.85rem;
-        }
-
-        .badge-custom-info {
-            background-color: var(--principal);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.4rem;
-            font-size: 0.85rem;
-        }
-
-        .reserva-item {
-            background: var(--fondo);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border-left: 4px solid var(--principal);
-            transition: all 0.2s ease;
-        }
-
-        .reserva-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 2px 8px rgba(93, 118, 139, 0.15);
-        }
-
-        .reserva-cancelada {
-            border-left-color: #dc3545;
-            opacity: 0.7;
-        }
-
-        .health-warning {
-            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-            border: 1px solid #ffc107;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6c757d;
-        }
-
-        .timeline-item {
-            position: relative;
-            padding-left: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0.5rem;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--principal);
-        }
-
-        .timeline-item::after {
-            content: '';
-            position: absolute;
-            left: 4px;
-            top: 1rem;
-            width: 2px;
-            height: calc(100% - 0.5rem);
-            background: #e9ecef;
-        }
-
-        .timeline-item:last-child::after {
-            display: none;
-        }
-    </style>
+<li><span aria-hidden="true">/</span> <a href="{% url 'gravity:admin_usuarios_lista' %}">Alumnos</a></li>
+<li><span aria-hidden="true">/</span> <span>{{ usuario.get_full_name|default:usuario.username }}</span></li>
 {% endblock %}
 
 {% block content %}
-    {% csrf_token %}
-    <!-- Header Section -->
-    <div class="grid grid-cols-1 gap-4 mb-4">
-        <div class="w-full">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div class="p-6">
-                    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div class="flex-1">
-                            <h2 class="text-3xl text-principal flex items-center gap-2">
-                                <svg class="size-10 mb-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                                </svg>
-                                Detalle de Usuario
-                            </h2>
-                            <p class="text-gray-600 mb-0">Información completa del usuario y su actividad</p>
-                        </div>
-                        <div class="flex flex-col sm:flex-row">
-                            <a href="{% url 'gravity:admin_usuarios_lista' %}" 
-                               class="flex items-center gap-1 px-4 py-2 border border-gray-300 rounded-l-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-principal transition-colors">
-                                <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                </svg>
-                                Volver a Lista
-                            </a>
-                            <a href="{% url 'gravity:admin_reservar_para_usuario_cliente' usuario.id %}"
-                               class="flex items-center gap-1 px-4 py-2 border-t border-b border-l border-gray-300 text-sm font-medium text-white bg-principal hover:bg-principal/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-principal transition-colors">
-                                <svg class="size-4 mb-0.5" fill="currentColor" viewBox="0 0 640 512" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M96 128a128 128 0 1 1 256 0A128 128 0 1 1 96 128zM0 482.3C0 383.8 79.8 304 178.3 304l91.4 0C368.2 304 448 383.8 448 482.3c0 16.4-13.3 29.7-29.7 29.7L29.7 512C13.3 512 0 498.7 0 482.3zM504 312l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z"/>
-                                </svg>
-                                Reservar Clase
-                            </a>
-                            <a href="mailto:{{ usuario.email }}" 
-                               class="flex items-center gap-1 px-4 py-2 border border-transparent rounded-r-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                                <svg class="size-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                </svg>
-                                Enviar Email
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Información Personal -->
-        <div class="lg:col-span-4">
-            <div class="info-card">
-                <div class="text-center mb-6">
-                    <div class="user-avatar-large">
-                        {% if profile.avatar %}
-                            <img src="{{ profile.avatar.url }}" alt="Avatar" class="w-full h-full object-cover rounded-full">
-                        {% else %}
-                            {{ usuario.first_name.0|default:usuario.username.0|upper }}{{ usuario.last_name.0|upper }}
-                        {% endif %}
-                    </div>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-1">{{ usuario.get_full_name|default:usuario.username }}</h4>
-                    <p class="text-gray-600 mb-3">@{{ usuario.username }}</p>
-                    
-                    <!-- Estado del Usuario -->
-                    <div class="flex flex-wrap justify-center gap-2 mb-3">
-                        <div>
-                            {% if usuario.is_active %}
-                                <span class="badge-custom-success inline-flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Usuario Activo
-                                </span>
-                            {% else %}
-                                <span class="badge-custom-danger inline-flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Usuario Inactivo
-                                </span>
-                            {% endif %}
-                        </div>
-                        
-                        <div>
-                            {% if profile.perfil_completado %}
-                                <span class="badge-custom-info inline-flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Perfil Completo
-                                </span>
-                            {% else %}
-                                <span class="badge-custom-warning inline-flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Perfil Incompleto
-                                </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Información de Contacto -->
-                <h6 class="text-sm uppercase text-gray-500 font-semibold flex items-center gap-1">
-                    <svg class="size-5 mb-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zM8 6a2 2 0 114 0v1H8V6z" clip-rule="evenodd"/>
-                    </svg>
-                    Información de Contacto
-                </h6>
-                
-                <div class="info-row">
-                    <div class="info-label">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                        Email
-                    </div>
-                    <div class="info-value">{{ usuario.email }}</div>
-                </div>
-                
-                {% if profile.telefono %}
-                    <div class="info-row">
-                        <div class="info-label">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                            </svg>
-                            Teléfono
-                        </div>
-                        <div class="info-value">{{ profile.telefono }}</div>
-                    </div>
-                {% endif %}
-                
-                <div class="info-row">
-                    <div class="info-label">
-                        <svg class="size-4" fill="none" stroke-width="2.5" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                        </svg>
-                        Miembro desde
-                    </div>
-                    <div class="info-value">{{ usuario.date_joined|date:"d/m/Y" }}</div>
-                </div>
-                
-                {% if profile.fecha_nacimiento %}
-                    <div class="info-row">
-                        <div class="info-label">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z"/>
-                            </svg>
-                            Fecha de Nacimiento
-                        </div>
-                        <div class="info-value">
-                            {{ profile.fecha_nacimiento|date:"d/m/Y" }}
-                            {% if profile.get_edad %}
-                                ({{ profile.get_edad }} años)
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- Información de Pilates -->
-            <div class="info-card">
-                <h6 class="text-sm uppercase text-gray-500 font-semibold mb-3 flex items-center gap-1">
-                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                    Información de Pilates
-                </h6>
-                
-                {% if profile.nivel_experiencia %}
-                    <div class="info-row">
-                        <div class="info-label">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                            </svg>
-                            Nivel de Experiencia
-                        </div>
-                        <div class="info-value">{{ profile.get_nivel_experiencia_display }}</div>
-                    </div>
-                {% endif %}
-                
-                {% if profile.fecha_primera_clase %}
-                    <div class="info-row">
-                        <div class="info-label">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
-                            </svg>
-                            Primera Clase
-                        </div>
-                        <div class="info-value">
-                            {{ profile.fecha_primera_clase|date:"d/m/Y" }}
-                            {% if profile.get_tiempo_en_estudio %}
-                                ({{ profile.get_tiempo_en_estudio }})
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endif %}
-                
-                <div class="info-row">
-                    <div class="info-label">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
-                        </svg>
-                        Recordatorios
-                    </div>
-                    <div class="info-value">
-                        {% if profile.acepta_recordatorios %}
-                            <span class="badge-custom-success">Activados</span>
-                        {% else %}
-                            <span class="badge-custom-danger">Desactivados</span>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="info-row">
-                    <div class="info-label">
-                        <svg class="size-4" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M112 128C85.5 128 64 149.5 64 176C64 191.1 71.1 205.3 83.2 214.4L291.2 370.4C308.3 383.2 331.7 383.2 348.8 370.4L556.8 214.4C568.9 205.3 576 191.1 576 176C576 149.5 554.5 128 528 128L112 128zM64 260L64 448C64 483.3 92.7 512 128 512L512 512C547.3 512 576 483.3 576 448L576 260L377.6 408.8C343.5 434.4 296.5 434.4 262.4 408.8L64 260z"/>
-                        </svg>
-                        Marketing
-                    </div>
-                    <div class="info-value">
-                        {% if profile.acepta_marketing %}
-                            <span class="badge-custom-success">Acepta</span>
-                        {% else %}
-                            <span class="badge-custom-danger">No acepta</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alertas de Salud -->
-            {% if profile.tiene_lesiones %}
-                <div class="health-warning">
-                    <h6 class="text-yellow-600 font-semibold mb-2 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                        </svg>
-                        ¡Atención! Usuario con Condiciones Médicas
-                    </h6>
-                    <p class="mb-0">
-                        <strong>Descripción:</strong><br>
-                        {{ profile.descripcion_lesiones|default:"No especificado" }}
-                    </p>
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- Estadísticas y Actividad -->
-        <div class="lg:col-span-8">
-            <!-- Estadísticas Rápidas -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="stat-card-user">
-                    <svg class="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-                    </svg>
-                    <h3 class="text-2xl font-bold mb-1">{{ total_reservas_activas }}</h3>
-                    <p class="text-sm opacity-90 mb-0">Reservas Activas</p>
-                </div>
-                <div class="stat-card-secondary">
-                    <svg class="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M320 128C426 128 512 214 512 320C512 426 426 512 320 512C254.8 512 197.1 479.5 162.4 429.7C152.3 415.2 132.3 411.7 117.8 421.8C103.3 431.9 99.8 451.9 109.9 466.4C156.1 532.6 233 576 320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C234.3 64 158.5 106.1 112 170.7L112 144C112 126.3 97.7 112 80 112C62.3 112 48 126.3 48 144L48 256C48 273.7 62.3 288 80 288L104.6 288C105.1 288 105.6 288 106.1 288L192.1 288C209.8 288 224.1 273.7 224.1 256C224.1 238.3 209.8 224 192.1 224L153.8 224C186.9 166.6 249 128 320 128zM344 216C344 202.7 333.3 192 320 192C306.7 192 296 202.7 296 216L296 320C296 326.4 298.5 332.5 303 337L375 409C384.4 418.4 399.6 418.4 408.9 409C418.2 399.6 418.3 384.4 408.9 375.1L343.9 310.1L343.9 216z"/>
-                    </svg>
-                    <h3 class="text-2xl font-bold mb-1">{{ total_reservas_historicas }}</h3>
-                    <p class="text-sm opacity-90 mb-0">Todas las Reservas</p>
-                </div>
-                <div class="stat-card-user">
-                    <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <h3 class="text-2xl font-bold mb-1" id="tiempo-estudio">Calculando...</h3>
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const joinDate = new Date("{{ usuario.date_joined|date:'Y-m-d' }}");
-                            const now = new Date();
-                            
-                            const totalMonths = (now.getFullYear() - joinDate.getFullYear()) * 12 + 
-                                                (now.getMonth() - joinDate.getMonth());
-                            
-                            let timeText;
-                            if (totalMonths < 1) {
-                                timeText = 'Nuevo';
-                            } else if (totalMonths === 1) {
-                                timeText = '1 mes';
-                            } else if (totalMonths < 12) {
-                                timeText = totalMonths + ' meses';
-                            } else {
-                                const years = Math.floor(totalMonths / 12);
-                                const months = totalMonths % 12;
-                                if (months === 0) {
-                                    timeText = years === 1 ? '1 año' : years + ' años';
-                                } else {
-                                    timeText = `${years} año${years > 1 ? 's' : ''} y ${months} mes${months > 1 ? 'es' : ''}`;
-                                }
-                            }
-                            
-                            document.getElementById('tiempo-estudio').textContent = timeText;
-                        });
-                    </script>
-                    <p class="text-sm opacity-90 mb-0">En el Estudio</p>
-                </div>
-                <div class="stat-card-secondary">
-                    <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                    <h3 class="text-2xl font-bold mb-1">{{ reservas_canceladas|length }}</h3>
-                    <p class="text-sm opacity-90 mb-0">Cancelaciones</p>
-                </div>
-            </div>
-
-            <!-- Acciones Rápidas -->
-            <div class="mb-6">
-                <div class="info-card">
-                    <h6 class="text-sm uppercase text-gray-500 font-semibold mb-3 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"> 
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        Acciones Rápidas
-                    </h6>
-                    <div class="flex flex-wrap gap-2">
-                        <a href="{% url 'gravity:admin_reservas_lista' %}?usuario={{ usuario.username }}" class="btn-action-primary">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-                            </svg>
-                            Ver Todas las Reservas
-                        </a>
-                        <a href="mailto:{{ usuario.email }}" class="btn-action-secondary">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                            </svg>
-                            Enviar Email
-                        </a>
-                        {% if usuario.is_active %}
-                            <button class="btn-action-primary" onclick="toggleUserStatus('{{ usuario.id }}', false)">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
-                                </svg>
-                                Desactivar Usuario
-                            </button>
-                        {% else %}
-                            <button class="btn-action-secondary" onclick="toggleUserStatus('{{ usuario.id }}', true)">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                Activar Usuario
-                            </button>
-                        {% endif %}
-                        <button class="btn-action-secondary" onclick="openAddNoteModal()">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                            </svg>
-                            Agregar Nota
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Planes Activos -->
-            <div class="mb-6">
-                <div class="info-card">
-                    <h6 class="text-sm uppercase text-gray-500 font-semibold mb-3 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
-                        </svg>
-                        Planes Activos ({{ planes_activos_usuario|length }})
-                    </h6>
-
-                    {% if planes_activos_usuario %}
-                        {% for plan_u in planes_activos_usuario %}
-                            <div class="reserva-item" style="border-left-color: var(--secundario);">
-                                <div class="flex items-center justify-between gap-4">
-                                    <div class="flex-1 min-w-0">
-                                        <h6 class="font-semibold text-gray-900 mb-1 truncate">
-                                            {{ plan_u.plan.nombre }}
-                                        </h6>
-                                        <div class="text-sm text-gray-600">
-                                            {{ plan_u.plan.clases_por_semana }} clase{{ plan_u.plan.clases_por_semana|pluralize }} por semana
-                                            &nbsp;·&nbsp;
-                                            ${{ plan_u.plan.precio_mensual|floatformat:0 }}/mes
-                                        </div>
-                                        <div class="text-xs text-gray-400 mt-1">
-                                            Activo desde {{ plan_u.fecha_inicio|date:"d/m/Y" }}
-                                            {% if plan_u.creado_por %}
-                                                · Asignado por {{ plan_u.creado_por.get_full_name|default:plan_u.creado_por.username }}
-                                            {% else %}
-                                                · Seleccionado por el usuario
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2 flex-shrink-0">
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                            </svg>
-                                            Activo
-                                        </span>
-                                        <button onclick="confirmarCancelarPlan('{{ plan_u.id }}', '{{ plan_u.plan.nombre|escapejs }}')"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 border border-red-300 rounded-md text-xs font-medium text-red-700 bg-white hover:bg-red-50 transition-colors whitespace-nowrap"
-                                                title="Cancelar este plan">
-                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                            </svg>
-                                            Cancelar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">
-                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
-                            </svg>
-                            <h5 class="text-lg font-medium text-gray-500 mb-2">Sin Planes Activos</h5>
-                            <p class="text-gray-500">Este usuario no tiene planes activos.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Reservas Activas -->
-            <div class="mb-6">
-                <div class="info-card">
-                    <h6 class="text-sm uppercase text-gray-500 font-semibold mb-3 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-                        </svg>
-                        Reservas Activas ({{ total_reservas_activas }})
-                    </h6>
-                    
-                    {% if reservas_activas %}
-                        {% for reserva in reservas_activas %}
-                            <div class="reserva-item">
-                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                                    <div class="md:col-span-6">
-                                        <h6 class="font-semibold text-gray-900 mb-1 flex items-center gap-2 flex-wrap">
-                                            {{ reserva.clase.get_tipo_display }}
-                                            {% if reserva.es_recupero %}
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-secundario text-principal text-xs font-medium rounded-full border border-secundario">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
-                                                        <path fill-rule="evenodd" d="M12 5.25c1.213 0 2.415.046 3.605.135a3.256 3.256 0 0 1 3.01 3.01c.044.583.077 1.17.1 1.759L17.03 8.47a.75.75 0 1 0-1.06 1.06l3 3a.75.75 0 0 0 1.06 0l3-3a.75.75 0 0 0-1.06-1.06l-1.752 1.751c-.023-.65-.06-1.296-.108-1.939a4.756 4.756 0 0 0-4.392-4.392 49.422 49.422 0 0 0-7.436 0A4.756 4.756 0 0 0 3.89 8.282c-.017.224-.033.448-.046.673a.75.75 0 1 0 1.497.092c.013-.217.028-.434.044-.651a3.256 3.256 0 0 1 3.01-3.01c1.19-.09 2.392-.135 3.605-.135Zm-6.97 6.22a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l1.752-1.751c.023.65.06 1.296.108 1.939a4.756 4.756 0 0 0 4.392 4.392 49.413 49.413 0 0 0 7.436 0 4.756 4.756 0 0 0 4.392-4.392c.017-.223.032-.447.046-.672a.75.75 0 0 0-1.497-.092c-.013.217-.028.434-.044.651a3.256 3.256 0 0 1-3.01 3.01 47.953 47.953 0 0 1-7.21 0 3.256 3.256 0 0 1-3.01-3.01 47.759 47.759 0 0 1-.1-1.759L5.03 15.53a.75.75 0 0 0 1.06-1.06l-3-3Z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Recupera clase — {{ reserva.fecha_unica|date:"d/m/Y" }}
-                                                </span>
-                                            {% elif reserva.fecha_unica %}
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
-                                                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clip-rule="evenodd" />
-                                                    </svg>
-                                                    Clase única — {{ reserva.fecha_unica|date:"d/m/Y" }}
-                                                </span>
-                                            {% endif %}
-                                        </h6>
-                                        <div class="text-sm text-gray-600 flex items-center">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v4m-6 0h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-                                            </svg>
-                                            {{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }}
-                                        </div>
-                                    </div>
-                                    <div class="md:col-span-4">
-                                        <div class="text-sm text-gray-600 flex items-center mb-1">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            Reservada {{ reserva.fecha_reserva|timesince }} atrás
-                                        </div>
-                                        <div class="text-sm text-blue-600">
-                                            Nº {{ reserva.numero_reserva }}
-                                        </div>
-                                    </div>
-                                    <div class="md:col-span-2 flex justify-end">
-                                        <div class="flex space-x-1">
-                                            <a href="{% url 'gravity:admin_reserva_modificar' reserva.id %}" 
-                                            class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blanco text-principal border border-principal rounded hover:bg-principal/10" 
-                                            title="Modificar reserva">
-                                                <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-                                                </svg>
-                                            </a>
-                                            <a href="{% url 'gravity:admin_reserva_cancelar' reserva.id %}" 
-                                               class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                                               title="Cancelar reserva">
-                                                <svg class="size-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <div class="text-sm text-green-600 flex items-center">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                                        </svg>
-                                        {{ reserva.get_proxima_clase_info }}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">
-                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-                            </svg>
-                            <h5 class="text-lg font-medium text-gray-500 mb-2">Sin Reservas Activas</h5>
-                            <p class="text-gray-500">Este usuario no tiene reservas activas en este momento.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Historial de Reservas -->
+<header class="ad-head fa-head">
+    <div class="ad-head__text">
+        <a class="ad-back" href="{% url 'gravity:admin_usuarios_lista' %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Alumnos</a>
+        <div class="fa-identidad">
+            {% include 'gravity/admin/_avatar.html' with persona=usuario clase='ad-avatar--lg' %}
             <div>
-                <div class="info-card">
-                    <h6 class="text-sm uppercase text-gray-500 font-semibold mb-3 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Historial Reciente (Últimas 10 canceladas)
-                    </h6>
-                    
-                    {% if reservas_canceladas %}
-                        {% for reserva in reservas_canceladas %}
-                            <div class="reserva-item reserva-cancelada">
-                                <div class="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
-                                    <div class="md:col-span-6">
-                                        <h6 class="font-semibold text-gray-900 mb-1">{{ reserva.clase.get_tipo_display }}</h6>
-                                        <div class="text-sm text-gray-600 flex items-center">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 6v4m-6 0h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-                                            </svg>
-                                            {{ reserva.clase.dia }} a las {{ reserva.clase.horario|time:"H:i" }}
-                                            • Cancelada {{ reserva.fecha_modificacion|timesince }} atrás
-                                        </div>
-                                    </div>
-                                    <div class="md:col-span-2 text-right">
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                                            </svg>
-                                            Cancelada
-                                        </span>
-                                        <div class="text-xs text-gray-500 mt-1">Nº {{ reserva.numero_reserva }}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="empty-state">
-                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <h5 class="text-lg font-medium text-gray-500 mb-2">Sin Historial de Cancelaciones</h5>
-                            <p class="text-gray-500">Este usuario no ha cancelado ninguna reserva.</p>
-                        </div>
-                    {% endif %}
-                </div>
+                <h1 class="ad-head__title">{{ usuario.get_full_name|default:usuario.username }}</h1>
+                <p class="fa-badges">
+                    <span class="ad-badge ad-badge--{{ estado.2 }}">{{ estado.1 }}</span>
+                    {% if perfil.tiene_lesiones %}<span class="ad-badge ad-badge--danger">Salud</span>{% endif %}
+                    <span class="fa-usuario">Usuario: {{ usuario.username }}</span>
+                </p>
             </div>
         </div>
     </div>
+    <div class="ad-head__actions">
+        {% if whatsapp %}<a class="ad-btn ad-btn--ghost" href="{{ whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+        {% if usuario.is_active %}
+        <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_usuario_editar' usuario.id %}">{% include 'gravity/admin/_icono.html' with i='editar' %} Editar datos</a>
+        <a class="ad-btn" href="{% url 'gravity:admin_reservar_para_usuario_cliente' usuario.id %}?next={{ aqui|urlencode }}">{% include 'gravity/admin/_icono.html' with i='mas_signo' %} Reservar</a>
+        {% endif %}
+    </div>
+</header>
 
-    <!-- Notas Administrativas -->
-    {% if profile.notas_admin %}
-        <div class="grid grid-cols-1 gap-4 mt-6">
-            <div class="w-full">
-                <div class="info-card">
-                    <h6 class="text-sm uppercase text-gray-500 font-semibold mb-3 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                        </svg>
-                        Notas Administrativas
-                    </h6>
-                    <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
-                        <p class="text-blue-800 mb-0">{{ profile.notas_admin|linebreaks }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+{% if clave_inicial %}
+<div class="ad-alert ad-alert--ok fa-aviso" role="status">
+    {% include 'gravity/admin/_icono.html' with i='tilde' %}
+    <div>
+        <p><strong>Pasale estos datos por WhatsApp.</strong> La contraseña no se vuelve a mostrar; puede cambiarla desde su perfil.</p>
+        <p class="fa-clave">Usuario <code>{{ usuario.username }}</code> · Contraseña <code>{{ clave_inicial }}</code>
+            <button type="button" class="ad-btn ad-btn--sm ad-btn--ghost" data-copiar="Hola {{ usuario.first_name }}! Ya tenés tu cuenta en Pilates Gravity. Entrá en {{ request.scheme }}://{{ request.get_host }}/accounts/login/ con el usuario {{ usuario.username }} y la contraseña {{ clave_inicial }}">Copiar mensaje</button>
+        </p>
+    </div>
+</div>
+{% elif invitacion_pendiente %}
+<div class="ad-alert fa-aviso">
+    {% include 'gravity/admin/_icono.html' with i='mail' %}
+    <div>
+        <p><strong>Todavía no creó su contraseña.</strong> {% if usuario.email %}La invitación se mandó a {{ usuario.email }} y vale 7 días.{% else %}No tiene email: agregalo en «Editar datos» para mandarle la invitación.{% endif %}</p>
+        {% if usuario.email %}
+        <form method="post" action="{% url 'gravity:admin_usuario_reenviar_invitacion' usuario.id %}" class="fa-aviso__form">
+            {% csrf_token %}
+            <button type="submit" class="ad-btn ad-btn--sm ad-btn--ghost">Reenviar invitación</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 
-    <!-- Historial de Ausencias e Inasistencias -->
-    <div class="grid grid-cols-1 gap-4 mt-6">
-        <div class="w-full">
-            <div class="info-card">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                    <h6 class="text-sm uppercase text-gray-500 font-semibold flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        Historial de Ausencias
-                    </h6>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                        {% if total_ausencias_30d >= 3 %}bg-red-100 text-red-700{% elif total_ausencias_30d >= 1 %}bg-yellow-100 text-yellow-700{% else %}bg-green-100 text-green-700{% endif %}">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        {{ total_ausencias_30d }} ausencia{{ total_ausencias_30d|pluralize }} en los últimos 30 días
+{% if perfil.tiene_lesiones %}
+<div class="ad-alert ad-alert--danger fa-aviso">
+    {% include 'gravity/admin/_icono.html' with i='alerta' %}
+    <p><strong>Salud:</strong> {{ perfil.descripcion_lesiones|default:"Avisó que tiene una lesión o condición." }}</p>
+</div>
+{% endif %}
+
+<div class="ad-kpis">
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">Plan</p>
+        <p class="ad-kpi__value fa-kpi-texto">{{ info.plan|default:"Sin plan" }}</p>
+        {% if info.clases_plan %}<p class="ad-kpi__detail">usa {{ info.usadas }} de {{ info.clases_plan }} esta semana</p>{% endif %}
+    </div>
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">Horarios fijos</p>
+        <p class="ad-kpi__value">{{ horarios|length }}</p>
+    </div>
+    <div class="ad-kpi">
+        <p class="ad-kpi__label">Recuperos</p>
+        <p class="ad-kpi__value">{{ info.recuperos }}</p>
+        {% if info.recuperos %}<p class="ad-kpi__detail">hasta el {{ info.limite_recupero|date:"d/m" }}</p>{% endif %}
+    </div>
+    <a class="ad-kpi{% if saldo is not None and saldo < 0 %} ad-kpi--danger{% elif saldo %} ad-kpi--ok{% endif %}" href="{% url 'gravity:admin_pagos_editar_estado_cliente' usuario.id %}">
+        <p class="ad-kpi__label">Cuenta</p>
+        <p class="ad-kpi__value">{% if saldo is None or saldo == 0 %}Al día{% elif saldo < 0 %}Debe ${{ saldo|pesos|cut:"-" }}{% else %}A favor ${{ saldo|pesos }}{% endif %}</p>
+        <p class="ad-kpi__detail">Ver cuenta {% include 'gravity/admin/_icono.html' with i='flecha' %}</p>
+    </a>
+</div>
+
+<div class="cd-grid">
+    <div class="cd-col">
+        {% if usuario.is_active %}
+        <section class="ad-card" aria-labelledby="fa-proximas">
+            <div class="ad-card__head"><div><h2 class="ad-card__title" id="fa-proximas">Próximas clases</h2><p class="ad-card__sub">Las próximas 2 semanas</p></div></div>
+            {% if proximas %}
+            <ul class="ad-list">
+                {% for p in proximas %}
+                <li class="ad-row">
+                    <span class="hy-clase__hora">{{ p.hora }}</span>
+                    <span class="ad-row__body">
+                        <span class="ad-row__title">{{ p.cuando }} · {{ p.clase }}</span>
+                        <span class="ad-row__sub">{{ p.sede.nombre }}</span>
                     </span>
-                </div>
+                    <span class="ad-row__end">
+                        {% if p.ausencia %}<span class="ad-badge ad-badge--warn">Avisó que no va</span>
+                        {% elif p.es_recupero %}<span class="ad-badge ad-badge--ok">Recupero</span>
+                        {% elif p.es_puntual %}<span class="ad-badge ad-badge--ok">Clase única</span>{% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="hy-ok">No tiene clases reservadas en las próximas 2 semanas.</p>{% endif %}
+        </section>
 
-                {% if historial_ausencias %}
-                <div class="space-y-2">
-                    {% for entrada in historial_ausencias %}
-                    <div class="flex items-start gap-3 p-3 rounded-lg border
-                        {% if entrada.tipo == 'avisada' %}bg-yellow-50 border-yellow-200{% else %}bg-red-50 border-red-200{% endif %}">
-                        <div class="shrink-0 mt-0.5">
-                            {% if entrada.tipo == 'avisada' %}
-                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-200">
-                                <svg class="w-4 h-4 text-yellow-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                                </svg>
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-200">
-                                <svg class="w-4 h-4 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                </svg>
-                            </span>
-                            {% endif %}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                                <div>
-                                    <span class="font-medium text-gray-800 text-sm">
-                                        {{ entrada.obj.reserva.clase.get_nombre_display }}
-                                    </span>
-                                    <span class="text-gray-500 text-xs ml-1">
-                                        — {{ entrada.obj.reserva.clase.dia }} {{ entrada.obj.reserva.clase.horario|time:"H:i" }}
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-medium
-                                        {% if entrada.tipo == 'avisada' %}text-yellow-700{% else %}text-red-700{% endif %}">
-                                        {% if entrada.tipo == 'avisada' %}Avisó ausencia{% else %}Sin aviso{% endif %}
-                                    </span>
-                                    <span class="text-xs text-gray-400">{{ entrada.fecha|date:"d/m/Y" }}</span>
-                                </div>
-                            </div>
-                            {% if entrada.tipo == 'inasistencia' and entrada.obj.observacion %}
-                            <p class="text-xs text-gray-500 mt-1 italic">{{ entrada.obj.observacion }}</p>
-                            {% endif %}
-                            {% if entrada.tipo == 'inasistencia' and entrada.obj.registrado_por %}
-                            <p class="text-xs text-gray-400 mt-0.5">
-                                Registrado por {{ entrada.obj.registrado_por.get_full_name|default:entrada.obj.registrado_por.username }}
-                            </p>
-                            {% endif %}
-                        </div>
-                    </div>
+        <section class="ad-card" aria-labelledby="fa-fijos">
+            <div class="ad-card__head"><h2 class="ad-card__title" id="fa-fijos">Horarios fijos</h2></div>
+            {% if horarios %}
+            <ul class="ad-list">
+                {% for h in horarios %}
+                <li class="cd-alumno">
+                    <a class="cd-alumno__link" href="{% url 'gravity:admin_clase_detalle' h.reserva.clase.id %}">
+                        <span class="hy-clase__hora">{{ h.hora }}</span>
+                        <span class="ad-row__body">
+                            <span class="ad-row__title">{{ h.reserva.clase.dia }} · {{ h.clase }}</span>
+                            <span class="ad-row__sub">{{ h.sede.nombre }}{% if h.pausada %} · Clase en pausa{% elif h.ausencia %} · No va el {{ h.proxima|date:"d/m" }}{% elif h.proxima_txt %} · Próxima: {{ h.proxima_txt|lower }}{% endif %}</span>
+                        </span>
+                    </a>
+                    <span class="cd-alumno__acciones">
+                        <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_reserva_modificar' h.reserva.id %}?next={{ aqui|urlencode }}">Cambiar</a>
+                        <a class="ad-btn ad-btn--sm ad-btn--quiet cd-cancelar" href="{% url 'gravity:admin_reserva_cancelar' h.reserva.id %}?next={{ aqui|urlencode }}">Ausencia o baja</a>
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="hy-ok">No tiene horarios fijos.</p>{% endif %}
+        </section>
+
+        {% if extras %}
+        <section class="ad-card" aria-labelledby="fa-extras">
+            <div class="ad-card__head"><h2 class="ad-card__title" id="fa-extras">Recuperos y clases únicas</h2></div>
+            <ul class="ad-list">
+                {% for x in extras %}
+                <li class="cd-alumno">
+                    <a class="cd-alumno__link" href="{% url 'gravity:admin_clase_detalle' x.reserva.clase.id %}">
+                        <span class="cd-fecha"><strong>{{ x.fecha|date:"d" }}</strong>{{ x.fecha|date:"M"|lower }}</span>
+                        <span class="ad-row__body">
+                            <span class="ad-row__title">{{ x.hora }} · {{ x.clase }}</span>
+                            <span class="ad-row__sub">{% if x.es_recupero %}Recupero{% else %}Clase única{% endif %} · {{ x.sede.nombre }}</span>
+                        </span>
+                    </a>
+                    <span class="cd-alumno__acciones">
+                        <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_reserva_modificar' x.reserva.id %}?next={{ aqui|urlencode }}">Cambiar</a>
+                        <a class="ad-btn ad-btn--sm ad-btn--quiet cd-cancelar" href="{% url 'gravity:admin_reserva_cancelar' x.reserva.id %}?next={{ aqui|urlencode }}">Cancelar</a>
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+        {% endif %}
+
+        <section class="ad-card" aria-labelledby="fa-historial">
+            <div class="ad-card__head"><div><h2 class="ad-card__title" id="fa-historial">Historial de reservas</h2><p class="ad-card__sub">Las últimas 10</p></div>
+                <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_reservas_lista' %}?ver=historial&usuario={{ usuario.username|urlencode }}">Ver todo</a></div>
+            {% if historial %}
+            <ul class="ad-list">
+                {% for h in historial %}
+                <li class="ad-row">
+                    <span class="ad-row__body">
+                        <span class="ad-row__title">{{ h.reserva.clase.get_nombre_display }} · {% if h.reserva.fecha_unica %}{{ h.reserva.fecha_unica|date:"d/m/Y" }}{% else %}{{ h.reserva.clase.dia }}{% endif %} {{ h.reserva.clase.horario|time:"H:i" }}</span>
+                        <span class="ad-row__sub">{% if h.reserva.es_recupero %}Recupero{% elif h.reserva.fecha_unica %}Clase única{% else %}Horario fijo{% endif %} · {{ h.reserva.clase.get_direccion_corta }}</span>
+                    </span>
+                    <span class="ad-row__end"><span class="ad-badge ad-badge--{{ h.estado.1 }}">{{ h.estado.0 }}</span></span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="hy-ok">Sin historial todavía.</p>{% endif %}
+        </section>
+    </div>
+
+    <div class="cd-col">
+        <section class="ad-card" aria-labelledby="fa-plan">
+            <div class="ad-card__head">
+                <h2 class="ad-card__title" id="fa-plan">Plan</h2>
+                <a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_pagos_registrar_pago' usuario.id %}">Registrar pago</a>
+            </div>
+            {% if planes %}
+            <ul class="ad-list">
+                {% for pu in planes %}
+                <li class="ad-row">
+                    <span class="ad-row__body">
+                        <span class="ad-row__title">{{ pu.plan.nombre }}</span>
+                        <span class="ad-row__sub">{{ pu.plan.clases_por_semana }} por semana · ${{ pu.plan.precio_mensual|pesos }}/mes · desde el {{ pu.fecha_inicio|date:"d/m/Y" }}</span>
+                    </span>
+                    {% if panel.superadmin %}
+                    <a class="ad-btn ad-btn--sm ad-btn--quiet cd-cancelar" href="{% url 'gravity:admin_cancelar_plan_usuario' pu.id %}">Cancelar</a>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="hy-ok">Sin plan.{% if panel.superadmin %} <a href="{% url 'gravity:admin_pagos_editar_estado_cliente' usuario.id %}">Asignarle uno</a>{% else %} Pedile a Nico o Cami que le asignen uno.{% endif %}</p>
+            {% endif %}
+        </section>
+
+        <section class="ad-card" aria-labelledby="fa-datos">
+            <div class="ad-card__head">
+                <h2 class="ad-card__title" id="fa-datos">Datos</h2>
+                {% if usuario.is_active %}<a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_usuario_editar' usuario.id %}">Editar</a>{% endif %}
+            </div>
+            <div class="ad-card__body">
+                <dl class="ad-data">
+                    <div><dt>Teléfono</dt><dd>{% if perfil.telefono %}{% if whatsapp %}<a href="{{ whatsapp }}" target="_blank" rel="noopener">{{ perfil.telefono }}</a>{% else %}{{ perfil.telefono }}{% endif %}{% else %}—{% endif %}</dd></div>
+                    <div><dt>Email</dt><dd>{% if usuario.email %}<a href="mailto:{{ usuario.email }}">{{ usuario.email }}</a>{% else %}—{% endif %}</dd></div>
+                    <div><dt>Nacimiento</dt><dd>{% if perfil.fecha_nacimiento %}{{ perfil.fecha_nacimiento|date:"d/m/Y" }} ({{ perfil.get_edad }} años){% else %}—{% endif %}</dd></div>
+                    <div><dt>Primera clase</dt><dd>{% if perfil.fecha_primera_clase %}{{ perfil.fecha_primera_clase|date:"d/m/Y" }}{% if perfil.sede_primera_clase %} · {% if perfil.sede_primera_clase == 'sede_2' %}9 de Julio 3696{% else %}La Rioja 3044{% endif %}{% endif %}{% else %}—{% endif %}</dd></div>
+                    <div><dt>Alta en la web</dt><dd>{{ usuario.date_joined|date:"d/m/Y" }}</dd></div>
+                    <div><dt>Recordatorios</dt><dd>{% if perfil.acepta_recordatorios %}Los recibe{% else %}No los quiere{% endif %}</dd></div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="ad-card" id="notas" aria-labelledby="fa-notas">
+            <div class="ad-card__head"><div><h2 class="ad-card__title" id="fa-notas">Notas internas</h2><p class="ad-card__sub">Solo las ve el equipo</p></div></div>
+            <div class="ad-card__body">
+                <form method="post" action="{% url 'gravity:admin_usuario_add_note' usuario.id %}" class="fa-nota-form">
+                    {% csrf_token %}
+                    <label class="ad-sr" for="fa-nota">Nueva nota</label>
+                    <textarea class="ad-textarea" name="nota" id="fa-nota" rows="2" maxlength="500" placeholder="Escribí una nota para el equipo" required></textarea>
+                    <button type="submit" class="ad-btn ad-btn--sm">Guardar nota</button>
+                </form>
+                {% if notas %}
+                <ul class="fa-notas">
+                    {% for n in notas %}
+                    <li><p class="fa-nota__texto">{{ n.texto|linebreaksbr }}</p>{% if n.cuando %}<p class="fa-nota__meta">{{ n.cuando }} · {{ n.quien }}</p>{% endif %}</li>
                     {% endfor %}
-                </div>
-                {% else %}
-                <div class="text-center py-6 text-gray-400">
-                    <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <p class="text-sm">Sin ausencias registradas.</p>
-                </div>
+                </ul>
                 {% endif %}
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Modal de Confirmación -->
-    <div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md md:max-w-xl shadow-lg rounded-md bg-blanco">
-            <div class="mt-3 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
-                    <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-xl leading-6 font-medium text-gray-900" id="modal-title">Confirmar Acción</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-lg text-gray-500" id="modal-message">
-                        ¿Estás seguro de que quieres realizar esta acción?
-                    </p>
-                    <div class="mt-3 p-3 bg-gray-50 rounded-md">
-                        <p class="text-md text-gray-600 text-left" id="modal-explanation">
-                            <!-- El texto se llenará dinámicamente con JavaScript -->
-                        </p>
-                    </div>
-                </div>
-                <div class="items-center px-4 py-3">
-                    <button id="modal-confirm" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
-                        Confirmar
-                    </button>
-                    <button id="modal-cancel" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-24 hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                        Cancelar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+        <section class="ad-card" aria-labelledby="fa-asistencia">
+            <div class="ad-card__head"><div><h2 class="ad-card__title" id="fa-asistencia">Faltas</h2><p class="ad-card__sub">{{ faltas_30 }} en los últimos 30 días</p></div>{% if ausencias %}<a class="ad-btn ad-btn--sm ad-btn--quiet" href="{% url 'gravity:admin_asistencia_ausencias' %}?alumno={{ usuario.id }}&periodo=90">Ver todas</a>{% endif %}</div>
+            {% if ausencias %}
+            <ul class="ad-list">
+                {% for a in ausencias %}
+                <li class="ad-row">
+                    <span class="ad-row__body"><span class="ad-row__title">{{ a.fecha|date:"D d/m"|capfirst }} · {{ a.clase.get_nombre_display }} {{ a.clase.horario|time:"H:i" }}</span></span>
+                    <span class="ad-row__end"><span class="ad-badge ad-badge--{% if a.tipo == 'avisada' %}warn{% else %}danger{% endif %}">{% if a.tipo == 'avisada' %}Avisó{% else %}Sin aviso{% endif %}</span></span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}<p class="hy-ok">No faltó nunca.</p>{% endif %}
+        </section>
 
-    <!-- Modal para Agregar Notas -->
-    <div id="addNoteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md md:max-w-2xl shadow-lg rounded-md bg-blanco">
-            <div class="mt-3">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
-                    </svg>
-                </div>
-                <h3 class="text-2xl leading-6 font-medium text-gray-900 text-center mb-4">Agregar Nota Administrativa</h3>
-                <div class="px-4">
-                    <p class="text-lg text-gray-600 text-center mb-4">
-                        Para: <strong>{{ usuario.get_full_name|default:usuario.username }}</strong>
-                    </p>
-                    <div class="mb-4">
-                        <label for="note-text" class="block text-md font-medium text-gray-700 mb-2">Nota:</label>
-                        <textarea 
-                            id="note-text" 
-                            rows="4" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Escribe tu nota administrativa aquí..."
-                            maxlength="500"
-                        ></textarea>
-                        <div class="text-right text-xs text-gray-500 mt-1">
-                            <span id="char-count">0</span>/500 caracteres
-                        </div>
-                    </div>
-                    <div class="text-md text-gray-500 bg-gray-50 p-3 rounded-md mb-4">
-                        <strong>Información automática:</strong><br>
-                        • Fecha y hora: Se agregará automáticamente<br>
-                        • Administrador: {{ user.get_full_name|default:user.username }}<br>
-                        • La nota será visible para todos los administradores
-                    </div>
-                </div>
-                <div class="flex justify-center gap-3 px-4 py-3">
-                    <button 
-                        id="save-note-btn" 
-                        class="px-6 py-2 bg-principal text-fondo text-base font-medium rounded-md hover:bg-fondo hover:text-principal focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                        Guardar Nota
-                    </button>
-                    <button 
-                        id="cancel-note-btn" 
-                        class="px-6 py-2 bg-secundario text-prindipal text-base font-medium rounded-md hover:bg-principal hover:text-fondo focus:outline-none focus:ring-2 focus:ring-gray-300"
-                    >
-                        Cancelar
-                    </button>
-                </div>
-            </div>
-        </div>
+        {% if panel.superadmin and estado.0 != 'eliminado' %}
+        <section class="ad-card" aria-labelledby="fa-cuenta">
+            <div class="ad-card__head"><h2 class="ad-card__title" id="fa-cuenta">Cuenta</h2></div>
+            <ul class="ad-list">
+                <li><a class="ad-row" href="{% url 'gravity:admin_usuario_toggle_status' usuario.id %}">
+                    <span class="ad-note-item__icon{% if usuario.is_active %} cd-icono-peligro{% endif %}">{% include 'gravity/admin/_icono.html' with i='baja' %}</span>
+                    <span class="ad-row__body"><span class="ad-row__title">{% if usuario.is_active %}Desactivar la cuenta{% else %}Reactivar la cuenta{% endif %}</span>
+                        <span class="ad-row__sub">{% if usuario.is_active %}Cancela sus reservas y su plan; la deuda queda{% else %}Vuelve a poder entrar; después asignale un plan{% endif %}</span></span>
+                </a></li>
+            </ul>
+        </section>
+        {% endif %}
     </div>
-
-    <!-- Modal de cancelación de plan (admin) -->
-    <div id="cancelarPlanModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                    </svg>
-                </div>
-                <h3 class="text-xl font-medium text-gray-900 mb-2">Cancelar Plan</h3>
-                <p class="text-gray-600 mb-1">Vas a cancelar el plan:</p>
-                <p class="font-semibold text-gray-900 mb-4" id="modal-plan-nombre"></p>
-                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-left">
-                    <p class="text-sm text-red-700">
-                        ⚠️ Esta acción cancelará el plan <strong>inmediatamente</strong> y eliminará todas las reservas permanentes activas del usuario.
-                    </p>
-                </div>
-                <div class="flex justify-center gap-3">
-                    <button onclick="document.getElementById('cancelarPlanModal').classList.add('hidden')"
-                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                        Cancelar
-                    </button>
-                    <form id="form-cancelar-plan" method="POST" action="">
-                        {% csrf_token %}
-                        <button type="submit"
-                                class="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700">
-                            Sí, cancelar plan
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Agregar funcionalidad de tooltips para elementos con el atributo title
-            const tooltipElements = document.querySelectorAll('[title]');
-            tooltipElements.forEach(function(element) {
-                element.addEventListener('mouseenter', function() {
-                    // Simple tooltip implementación sin Bootstrap
-                    const title = this.getAttribute('title');
-                    if (title) {
-                        const tooltip = document.createElement('div');
-                        tooltip.className = 'absolute z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg pointer-events-none';
-                        tooltip.textContent = title;
-                        tooltip.id = 'custom-tooltip';
-                        
-                        document.body.appendChild(tooltip);
-                        
-                        const rect = this.getBoundingClientRect();
-                        tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-                        tooltip.style.top = rect.top - tooltip.offsetHeight - 5 + 'px';
-                    }
-                });
-                
-                element.addEventListener('mouseleave', function() {
-                    const tooltip = document.getElementById('custom-tooltip');
-                    if (tooltip) {
-                        tooltip.remove();
-                    }
-                });
-            });
+<script>
+    document.querySelectorAll('[data-copiar]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            navigator.clipboard.writeText(b.dataset.copiar).then(function () { b.textContent = '¡Copiado!'; });
         });
-
-        // Función para alternar el estado del usuario (activar/desactivar)
-        function toggleUserStatus(userId, activate) {
-            const action = activate ? 'activar' : 'desactivar';
-            const userName = '{{ usuario.get_full_name|default:usuario.username }}';
-            const message = `¿Estás seguro de que quieres ${action} al usuario "${userName}"?`;
-            
-            // Configurar el modal
-            document.getElementById('modal-title').textContent = activate ? 'Activar Usuario' : 'Desactivar Usuario';
-            document.getElementById('modal-message').textContent = message;
-
-            // Configurar el texto explicativo
-            const explanationElement = document.getElementById('modal-explanation');
-            if (activate) {
-                explanationElement.innerHTML = `
-                    <strong>Activar usuario:</strong><br>
-                    • El usuario podrá iniciar sesión normalmente<br>
-                    • Podrá hacer nuevas reservas<br>
-                    • Recibirá notificaciones si las tiene habilitadas<br>
-                    • Sus reservas existentes seguirán activas
-                `;
-            } else {
-                explanationElement.innerHTML = `
-                    <strong>Desactivar usuario:</strong><br>
-                    • El usuario NO podrá iniciar sesión<br>
-                    • Sus reservas activas serán canceladas y recibirá un email por cada una<br>
-                    • Se le quitará el plan asignado<br>
-                    • No se le generarán nuevas deudas mensuales<br>
-                    • Sus deudas y créditos actuales se conservan
-                `;
-            }
-            
-            const confirmButton = document.getElementById('modal-confirm');
-            confirmButton.textContent = activate ? 'Activar' : 'Desactivar';
-            confirmButton.className = activate 
-                ? 'px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300'
-                : 'px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300';
-            
-            // Mostrar el modal
-            document.getElementById('confirmModal').classList.remove('hidden');
-            
-            // Configurar el evento del botón confirmar
-            confirmButton.onclick = function() {
-                // Ocultar el modal
-                document.getElementById('confirmModal').classList.add('hidden');
-                
-                // Realizar la petición AJAX
-                fetch(`/admin-panel/usuarios/${userId}/toggle-status/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || getCookie('csrftoken'),
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ activate: activate })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Mostrar mensaje de éxito y recargar
-                        showSuccessMessage(data.message);
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1500);
-                    } else {
-                        showErrorMessage(data.error || 'Error al cambiar el estado del usuario');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showErrorMessage('Error de conexión. Por favor intenta nuevamente.');
-                });
-            };
-            
-            // Configurar el evento del botón cancelar
-            document.getElementById('modal-cancel').onclick = function() {
-                document.getElementById('confirmModal').classList.add('hidden');
-            };
-        }
-
-        // Función para obtener el CSRF token de las cookies
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
-        // Funciones para mostrar mensajes
-        function showSuccessMessage(message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-            alertDiv.innerHTML = `
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    ${message}
-                </div>
-            `;
-            document.body.appendChild(alertDiv);
-            setTimeout(() => alertDiv.remove(), 3000);
-        }
-
-        function showErrorMessage(message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-            alertDiv.innerHTML = `
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
-                    ${message}
-                </div>
-            `;
-            document.body.appendChild(alertDiv);
-            setTimeout(() => alertDiv.remove(), 4000);
-        }
-
-        // Función para abrir el modal de agregar notas
-        function openAddNoteModal() {
-            document.getElementById('addNoteModal').classList.remove('hidden');
-            document.getElementById('note-text').focus();
-            updateCharCount();
-        }
-
-        // Función para actualizar el contador de caracteres
-        function updateCharCount() {
-            const textarea = document.getElementById('note-text');
-            const charCount = document.getElementById('char-count');
-            const saveBtn = document.getElementById('save-note-btn');
-            
-            textarea.addEventListener('input', function() {
-                const currentLength = this.value.length;
-                charCount.textContent = currentLength;
-                
-                // Deshabilitar el botón si está vacío
-                if (currentLength === 0 || this.value.trim() === '') {
-                    saveBtn.disabled = true;
-                } else {
-                    saveBtn.disabled = false;
-                }
-                
-                // Cambiar color si se acerca al límite
-                if (currentLength > 450) {
-                    charCount.classList.add('text-red-500');
-                } else {
-                    charCount.classList.remove('text-red-500');
-                }
-            });
-        }
-
-        // Event listeners para el modal de notas
-        document.addEventListener('DOMContentLoaded', function() {
-            // Botón cancelar
-            document.getElementById('cancel-note-btn').addEventListener('click', function() {
-                closeNoteModal();
-            });
-
-            // Botón guardar
-            document.getElementById('save-note-btn').addEventListener('click', function() {
-                saveAdminNote();
-            });
-
-            // Cerrar modal con Escape
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeNoteModal();
-                }
-            });
-        });
-
-        function closeNoteModal() {
-            document.getElementById('addNoteModal').classList.add('hidden');
-            document.getElementById('note-text').value = '';
-            document.getElementById('char-count').textContent = '0';
-            document.getElementById('save-note-btn').disabled = true;
-        }
-
-        function saveAdminNote() {
-            const noteText = document.getElementById('note-text').value.trim();
-            const saveBtn = document.getElementById('save-note-btn');
-            
-            if (!noteText) {
-                showErrorMessage('La nota no puede estar vacía.');
-                return;
-            }
-
-            // Deshabilitar botón mientras se guarda
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Guardando...';
-
-            fetch(`/admin-panel/usuarios/{{ usuario.id }}/add-note/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value || getCookie('csrftoken'),
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ nota: noteText })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showSuccessMessage(data.message);
-                    closeNoteModal();
-                    // Recargar después de un momento para mostrar la nueva nota
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    showErrorMessage(data.error || 'Error al guardar la nota');
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = 'Guardar Nota';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showErrorMessage('Error de conexión. Por favor intenta nuevamente.');
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Guardar Nota';
-            });
-        }
-
-        // Auto-refresh cada 5 minutos para mostrar el estado actualizado de las reservas
-        setInterval(function() {
-            // Solo refrescar si no hay modales abiertos o acciones en curso
-            if (!document.querySelector('.modal.show')) {
-                location.reload();
-            }
-        }, 300000); // 5 minutos
-
-        // Modal para cancelar plan
-        function confirmarCancelarPlan(planId, planNombre) {
-            document.getElementById('modal-plan-nombre').textContent = planNombre;
-            document.getElementById('form-cancelar-plan').action = `/admin-panel/planes/${planId}/cancelar/`;
-            document.getElementById('cancelarPlanModal').classList.remove('hidden');
-        }
-        
-    </script>
+    });
+</script>
 {% endblock %}

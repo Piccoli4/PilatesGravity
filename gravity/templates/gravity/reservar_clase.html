@@ -1,1095 +1,312 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Reservar Clase - Pilates Gravity{% endblock %}
+{% block title %}Reservar clase - Pilates Gravity{% endblock %}
 
 {% block extra_css %}
-    <style>
-        .form-floating-label {
-            position: relative;
-        }
-        
-        .form-floating-label label {
-            position: absolute;
-            top: 50%;
-            left: 12px;
-            transform: translateY(-50%);
-            color: #6C757D;
-            transition: all 0.3s ease;
-            pointer-events: none;
-            background: white;
-            padding: 0 4px;
-        }
-        
-        .form-floating-label select:focus + label,
-        .form-floating-label select:not(:invalid) + label {
-            top: 0;
-            font-size: 0.75rem;
-            color: #5D768B;
-            transform: translateY(-50%);
-        }
-        
-        .availability-success {
-            background: linear-gradient(135deg, #4A5F73 0%, #5D768B 100%);
-            color: #F8EFE5 !important;
-        }
-        
-        .availability-warning {
-            background: linear-gradient(135deg, #FFC107 0%, #FD7E14 100%);
-        }
-        
-        .availability-danger {
-            background: linear-gradient(135deg, #DC3545 0%, #E74C3C 100%);
-        }
-        
-        .availability-info {
-            background: linear-gradient(135deg, #17A2B8 0%, #6F42C1 100%);
-        }
-
-        .form-step {
-            opacity: 0.5;
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-        
-        .form-step.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-        
-        /* Estilos para la sección de planes */
-        .plan-progress-bar {
-            transition: width 0.5s ease-in-out;
-        }
-        
-        .plan-stat-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .plan-stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(93, 118, 139, 0.15);
-        }
-
-        /* Estilos para stat-label responsive */
-        .stat-label {
-            font-size: 10px;
-        }
-        @media (min-width: 640px) {
-            .stat-label {
-                font-size: 0.75rem;
-            }
-        }
-    </style>
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261011o">
 {% endblock %}
 
 {% block content %}
-    <!-- Data container para JavaScript (invisible) -->
-    <div id="page-data" 
-         data-tiene-planes="{% if planes_activos %}true{% else %}false{% endif %}"
-         data-clases-restantes="{{ clases_restantes|default:0 }}"
-         data-reservas-actuales="{{ reservas_actuales|default:0 }}"
-         data-clases-disponibles="{{ clases_disponibles|default:1 }}"
-         style="display: none;">
-    </div>
+<section class="me rc">
+    <div class="g-container me__wrap pl__wide">
 
-    <section class="min-h-screen bg-fondo pt-10 pb-12">
-        <div class="container mx-auto px-4">
-            <div class="max-w-4xl mx-auto">
-                <!-- Encabezado de la página -->
-                <div class="text-center mb-6 sm:mb-12">
-                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-cinzel font-bold text-principal mb-3 sm:mb-4 animate-fadeInUp">
-                        Reservá tu Clase
-                    </h1>
-                    <div class="w-20 sm:w-24 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-4 sm:mb-6"></div>
-                    <p class="text-base sm:text-lg text-gris-oscuro max-w-2xl mx-auto animate-fadeInUp" style="animation-delay: 0.2s;">
-                        Completá el formulario para reservar tu lugar fijo. Tu reserva será recurrente, 
-                        asistirás todas las semanas al mismo día y horario en la sede elegida.
-                    </p>
+        <header class="mr-head me-in">
+            <div class="mr-head__text">
+                <a href="{% url 'accounts:profile' %}" class="pc-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    Mi espacio
+                </a>
+                <h1 class="mr-head__title">Reservar clase</h1>
+                <p class="rc-lead">Elegí un horario de la grilla: queda tuyo todas las semanas, o lo reservás una sola vez.</p>
+            </div>
+            <a href="{% url 'accounts:mis_reservas' %}" class="g-btn g-btn--ghost">Mis reservas</a>
+        </header>
+
+        <!-- ================= Estado del plan ================= -->
+        {% if not clases_plan %}
+            <article class="me-alert me-alert--sand rc-state me-in">
+                <span class="me-alert__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></span>
+                <span class="me-alert__text">
+                    {% if solicitud_pendiente %}
+                        <strong>Tu plan está en revisión</strong>
+                        <small>Pediste {{ solicitud_pendiente.plan_solicitado.nombre }}. Cuando lo aprobemos vas a poder reservar; mientras tanto podés mirar los horarios.</small>
+                    {% else %}
+                        <strong>Para reservar necesitás un plan</strong>
+                        <small>Elegí cuántas veces por semana querés venir. Mientras tanto podés mirar los horarios.</small>
+                    {% endif %}
+                </span>
+                {% if not solicitud_pendiente %}<a href="{% url 'gravity:seleccionar_plan' %}" class="me-alert__cta">Elegir plan</a>{% endif %}
+            </article>
+        {% elif not clases_restantes %}
+            <article class="me-alert me-alert--sand rc-state me-in">
+                <span class="me-alert__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="me-alert__text">
+                    <strong>Ya reservaste las {{ clases_plan }} clase{{ clases_plan|pluralize }} de tu plan</strong>
+                    <small>{% if n_recuperos %}Igual podés usar tu recupero en los horarios marcados con "Recupero". {% endif %}Para sumar otro horario podés cambiar de plan, o liberar uno desde Mis reservas.</small>
+                </span>
+                <a href="{% url 'gravity:modificar_plan' %}" class="me-alert__cta">Cambiar de plan</a>
+            </article>
+        {% else %}
+            <article class="me-card rc-plan me-in">
+                <div class="rc-plan__text">
+                    <strong>Te queda{{ clases_restantes|pluralize:"n" }} {{ clases_restantes }} de {{ clases_plan }} clase{{ clases_plan|pluralize }} esta semana</strong>
+                    <small>Cada horario fijo y cada clase de una sola vez usa una clase de tu plan.</small>
                 </div>
+                <div class="me-meter rc-plan__meter" role="img" aria-label="{{ reservas_semana }} de {{ clases_plan }} clases usadas"><span style="width: {{ porcentaje_plan }}%"></span></div>
+            </article>
+        {% endif %}
 
-                <!-- Formulario de reserva -->
-                <div class="bg-white rounded-2xl shadow-wizard p-4 sm:p-8 animate-fadeInUp" style="animation-delay: 0.4s;">
-                    <form method="post" novalidate class="space-y-8">
-                        {% csrf_token %}
-                        
-                        <!-- Datos del Usuario -->
-                        <div class="space-y-6">
-                            <h2 class="text-2xl font-bold text-principal border-b-2 border-gris-claro pb-3">
-                                Datos Personales
-                            </h2>
-                            
-                            <div class="bg-gris-claro rounded-xl p-4 sm:p-6">
-                                <!-- Primera fila: Nombre y Apellido -->
-                                <div class="grid md:grid-cols-2 gap-6 mb-4">
-                                    <div class="space-y-2">
-                                        <label class="text-sm font-medium text-gris-oscuro">Nombre:</label>
-                                        <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
-                                            <span class="text-principal font-medium">
-                                                {{ user_info.first_name|default:"No registrado" }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="text-sm font-medium text-gris-oscuro">Apellido:</label>
-                                        <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
-                                            <span class="text-principal font-medium">
-                                                {{ user_info.last_name|default:"No registrado" }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Segunda fila: Usuario -->
-                                <div class="mb-4">
-                                    <div class="space-y-2">
-                                        <label class="text-sm font-medium text-gris-oscuro">Usuario:</label>
-                                        <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
-                                            <span class="text-principal font-medium">{{ user_info.username }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Tercera fila: Email y Teléfono -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="space-y-2">
-                                        <label class="text-sm font-medium text-gris-oscuro">Email:</label>
-                                        <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
-                                            <span class="text-principal font-medium block truncate" title="{{ user_info.email|default:'No registrado' }}">
-                                                {{ user_info.email|default:"No registrado" }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <label class="text-sm font-medium text-gris-oscuro">Teléfono:</label>
-                                        <div class="bg-white rounded-lg p-3 border border-gris-medio/30">
-                                            <span class="text-principal font-medium">
-                                                {{ user_info.telefono|default:"No registrado" }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {% if not user_info.telefono or not user_info.email %}
-                            <div class="bg-info/10 border border-info/30 rounded-lg p-4 flex items-start space-x-3">
-                                <div class="text-info text-xl">ℹ️</div>
-                                <div>
-                                    <p class="text-info font-medium mb-1">Información incompleta</p>
-                                    <p class="text-gris-oscuro text-sm">
-                                        Te recomendamos completar tu información en tu 
-                                        <a href="{% url 'accounts:profile' %}" class="text-principal hover:text-principal/80 font-medium underline">
-                                            perfil de usuario
-                                        </a> 
-                                        para recibir notificaciones sobre tus clases.
-                                    </p>
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
+        {% if n_recuperos %}
+        <a href="{% url 'gravity:reservar_recupero' %}" class="me-alert me-alert--blue me-in">
+            <span class="me-alert__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+            <span class="me-alert__text">
+                <strong>¿Querés recuperar una clase?</strong>
+                <small>Tenés {{ n_recuperos }} para recuperar. Los recuperos no usan clases de tu plan.</small>
+            </span>
+            <span class="me-alert__cta">Recuperar</span>
+        </a>
+        {% endif %}
 
-                        <!-- Estado de Planes del Usuario -->
-                        <div class="space-y-6">
-                            <h2 class="text-2xl font-bold text-principal border-b-2 border-gris-claro pb-3 flex items-center">
-                                <i class="fas fa-credit-card mr-3"></i>
-                                Tu Plan Actual
-                            </h2>
-                            
-                            <!-- Estado del plan activo -->
-                            <div class="bg-gradient-to-r from-fondo to-white rounded-xl border border-secundario/20 p-4 sm:p-6">
-                            {% if planes_activos %}
-                                <!-- Nombre del plan y fecha -->
-                                <div class="flex items-center space-x-3 mb-4">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-10 h-10 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center">
-                                            <i class="fas fa-check text-white text-sm"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="text-base sm:text-lg font-semibold text-principal truncate">
-                                            {{ planes_activos.first.plan.nombre }}
-                                        </h3>
-                                        <p class="text-sm text-gris-medio">
-                                            Válido hasta {{ planes_activos.first.fecha_fin|date:"d/m/Y" }}
-                                        </p>
-                                    </div>
-                                </div>
+        <form method="post" id="reservaForm" class="rc-form me-in" novalidate
+              data-puede="{% if puede_reservar %}1{% endif %}"
+              data-pre-tipo="{{ preseleccion.tipo }}" data-pre-sede="{{ preseleccion.sede }}"
+              data-pre-dia="{{ preseleccion.dia }}" data-pre-horario="{{ preseleccion.horario }}"
+              data-pre-temporal="{% if preseleccion.temporal %}1{% endif %}">
+            {% csrf_token %}
+            <input type="hidden" name="tipo_clase" id="fTipo">
+            <input type="hidden" name="sede" id="fSede">
+            <input type="hidden" name="dia" id="fDia">
+            <input type="hidden" name="horario" id="fHorario">
 
-                                <!-- Estadísticas en grid de 3 columnas -->
-                                <div class="grid grid-cols-3 gap-2 sm:gap-4">
-                                    <div class="text-center p-2 sm:p-3 bg-white/80 rounded-lg border border-principal/20 plan-stat-card overflow-hidden">
-                                        <div class="text-xl sm:text-2xl font-bold text-principal">{{ clases_disponibles|default:0 }}</div>
-                                        <div class="stat-label text-gris-medio font-medium leading-tight break-words">Disponibles</div>
-                                    </div>
-                                    <div class="text-center p-2 sm:p-3 bg-white/80 rounded-lg border border-gris-medio/20 plan-stat-card overflow-hidden">
-                                        <div class="text-xl sm:text-2xl font-bold text-gris-oscuro">{{ reservas_actuales|default:0 }}</div>
-                                        <div class="stat-label text-gris-medio font-medium leading-tight break-words">Usadas</div>
-                                    </div>
-                                    <div class="text-center p-2 sm:p-3 bg-white/80 rounded-lg border border-exito/20 plan-stat-card overflow-hidden">
-                                        <div class="text-xl sm:text-2xl font-bold {% if clases_restantes > 0 %}text-exito{% else %}text-error{% endif %}">{{ clases_restantes|default:0 }}</div>
-                                        <div class="stat-label text-gris-medio font-medium leading-tight break-words">Restantes</div>
-                                    </div>
-                                </div>
-                                    
-                                    <!-- Barra de progreso visual -->
-                                    <div class="mt-4">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-sm font-medium text-gris-oscuro">Uso semanal</span>
-                                            <span class="text-sm text-gris-medio">
-                                                {{ reservas_actuales|default:0 }}/{{ clases_disponibles|default:0 }} clases
-                                            </span>
-                                        </div>
-                                        <div class="w-full bg-gris-claro rounded-full h-2">
-                                            <div id="progress-bar" class="bg-gradient-to-r from-principal to-secundario h-2 rounded-full plan-progress-bar" 
-                                                 style="width: 0%;">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Enlace a gestión de planes -->
-                                    <div class="mt-4 text-center">
-                                        <a href="{% url 'gravity:mis_planes' %}" 
-                                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-principal hover:text-secundario transition-colors duration-200 group">
-                                            <i class="fas fa-cog mr-2"></i>
-                                            Gestionar mis planes
-                                            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform duration-200"></i>
-                                        </a>
-                                    </div>
-                                    
-                                {% else %}
-                                    <!-- No tiene planes activos -->
-                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                                        <div class="text-center">
-                                            <div class="w-16 h-16 bg-gradient-to-br from-principal to-secundario rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <i class="fas fa-info text-white text-xl"></i>
-                                            </div>
-                                            <h3 class="text-lg font-semibold text-principal mb-2">
-                                                Necesitas seleccionar un plan
-                                            </h3>
-                                            <p class="text-gris-oscuro text-sm mb-4">
-                                                Para poder reservar clases, primero debes seleccionar un plan de pago que se ajuste a tus necesidades.
-                                            </p>
-                                            <a href="{% url 'gravity:seleccionar_plan' %}?next=reservar" 
-                                               class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-principal to-secundario text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200">
-                                                <i class="fas fa-credit-card mr-2"></i>
-                                                Seleccionar Plan
-                                                <i class="fas fa-arrow-right ml-2"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- Advertencia si no puede reservar -->
-                            {% if planes_activos and clases_restantes == 0 %}
-                                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="flex-shrink-0">
-                                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h4 class="text-amber-800 font-semibold mb-1">Límite de clases alcanzado</h4>
-                                            <p class="text-amber-700 text-sm mb-3">
-                                                Ya has usado todas las clases disponibles en tu plan para esta semana. 
-                                                Tu plan se renovará el {{ planes_activos.first.fecha_fin|date:"d/m/Y" }}.
-                                            </p>
-                                            <div class="flex flex-wrap gap-2">
-                                                <a href="{% url 'gravity:seleccionar_plan' %}" 
-                                                   class="inline-flex items-center px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors duration-200">
-                                                    <i class="fas fa-plus mr-1"></i>
-                                                    Agregar plan adicional
-                                                </a>
-                                                <a href="{% url 'gravity:mis_planes' %}" 
-                                                   class="inline-flex items-center px-3 py-1 bg-white border border-amber-600 text-amber-600 text-sm font-medium rounded-lg hover:bg-amber-50 transition-colors duration-200">
-                                                    <i class="fas fa-cog mr-1"></i>
-                                                    Gestionar planes
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Selección de Clase -->
-                        <div class="space-y-6" id="seccion-formulario">
-                            <h2 class="text-2xl font-bold text-principal border-b-2 border-gris-claro pb-3">
-                                Selección de Clase
-                                <span id="form-status-indicator" class="text-sm font-normal text-error ml-2 hidden">(Requiere plan activo)</span>
-                            </h2>
-                            
-                            <!-- Indicador de progreso -->
-                            <div class="flex items-center w-full mb-6">
-                                <div class="flex flex-col items-center flex-1">
-                                    <div class="w-8 h-8 rounded-full bg-principal text-white text-sm font-bold flex items-center justify-center" data-step-circle="1">1</div>
-                                    <span class="text-xs text-principal font-medium mt-1 hidden sm:block">Tipo de Clase</span>
-                                    <span class="text-xs text-principal font-medium mt-1 sm:hidden">Tipo</span>
-                                </div>
-                                <div class="flex-1 h-0.5 bg-gris-claro" data-step-line="1"></div>
-                                <div class="flex flex-col items-center flex-1">
-                                    <div class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio text-sm font-bold flex items-center justify-center" data-step-circle="2">2</div>
-                                    <span class="text-xs text-gris-medio font-medium mt-1">Sede</span>
-                                </div>
-                                <div class="flex-1 h-0.5 bg-gris-claro" data-step-line="2"></div>
-                                <div class="flex flex-col items-center flex-1">
-                                    <div class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio text-sm font-bold flex items-center justify-center" data-step-circle="3">3</div>
-                                    <span class="text-xs text-gris-medio font-medium mt-1">Día</span>
-                                </div>
-                                <div class="flex-1 h-0.5 bg-gris-claro" data-step-line="3"></div>
-                                <div class="flex flex-col items-center flex-1">
-                                    <div class="w-8 h-8 rounded-full bg-gris-claro text-gris-medio text-sm font-bold flex items-center justify-center" data-step-circle="4">4</div>
-                                    <span class="text-xs text-gris-medio font-medium mt-1 hidden sm:block">Horario</span>
-                                    <span class="text-xs text-gris-medio font-medium mt-1 sm:hidden">Hora</span>
-                                </div>
-                            </div>
-
-                            <!-- Formulario de selección -->
-                            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                                <!-- Tipo de Clase -->
-                                <div class="form-step active" data-form-step="1">
-                                    <label for="id_tipo_clase" class="block text-sm font-medium text-gris-oscuro mb-2">
-                                        Tipo de Clase
-                                    </label>
-                                    {{ form.tipo_clase }}
-                                    {% if form.tipo_clase.errors %}
-                                        <div class="mt-2 text-error text-sm">
-                                            {% for error in form.tipo_clase.errors %}
-                                                <span class="block">{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Sede -->
-                                <div class="form-step" data-form-step="2">
-                                    <label for="id_sede" class="block text-sm font-medium text-gris-oscuro mb-2">
-                                        Sede
-                                    </label>
-                                    {{ form.sede }}
-                                    {% if form.sede.errors %}
-                                        <div class="mt-2 text-error text-sm">
-                                            {% for error in form.sede.errors %}
-                                                <span class="block">{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Día -->
-                                <div class="form-step" data-form-step="3">
-                                    <label for="id_dia" class="block text-sm font-medium text-gris-oscuro mb-2">
-                                        Día de la Semana
-                                    </label>
-                                    {{ form.dia }}
-                                    {% if form.dia.errors %}
-                                        <div class="mt-2 text-error text-sm">
-                                            {% for error in form.dia.errors %}
-                                                <span class="block">{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Horario -->
-                                <div class="form-step" data-form-step="4">
-                                    <label for="id_horario" class="block text-sm font-medium text-gris-oscuro mb-2">
-                                        Horario
-                                    </label>
-                                    {{ form.horario }}
-                                    {% if form.horario.errors %}
-                                        <div class="mt-2 text-error text-sm">
-                                            {% for error in form.horario.errors %}
-                                                <span class="block">{{ error }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <!-- Información de disponibilidad -->
-                            <div id="disponibilidad-info" class="hidden mt-6">
-                                <div id="disponibilidad-mensaje" class="rounded-lg p-4 text-principal font-medium flex items-center space-x-3">
-                                    <div>
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <span id="disponibilidad-text"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Toggle Recurrente / Una sola vez -->
-                            <div class="space-y-3 pt-2">
-                                <label class="block text-sm font-medium text-gris-oscuro">Tipo de reserva</label>
-                                <div class="flex gap-2 bg-gris-claro rounded-xl p-1">
-                                    <button type="button" data-loading-text="Reservando..." id="btn-recurrente"
-                                        class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 bg-white text-principal shadow-sm">
-                                        🔁 Recurrente
-                                    </button>
-                                    <button type="button" data-loading-text="Reservando..." id="btn-temporal"
-                                        class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 text-gris-medio">
-                                        📅 Una sola vez
-                                    </button>
-                                </div>
-                                <input type="hidden" name="es_temporal" id="es_temporal" value="false">
-
-                                <!-- Descripción contextual -->
-                                <div id="desc-recurrente" class="text-sm text-gris-medio">
-                                    Asistirás todas las semanas al mismo día y horario.
-                                </div>
-                                <div id="desc-temporal" class="hidden">
-                                    <div class="bg-secundario/10 border border-secundario/30 rounded-lg px-4 py-3 text-sm text-gris-oscuro">
-                                        <span class="font-medium text-principal">Reserva de una sola vez.</span>
-                                        Irás únicamente el próximo
-                                        <span id="fecha-temporal-display" class="font-semibold text-principal">—</span>.
-                                        Consume una clase de tu plan.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Botón de envío -->
-                            <div class="text-center pt-6">
-                                <button type="submit" data-loading-text="Reservando..." id="btn-reservar"
-                                        class="inline-flex items-center px-8 py-4 text-white font-bold rounded-md transition-all duration-300 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-principal/25 relative overflow-hidden group"
-                                        style="background: linear-gradient(135deg, #C8B39B, #5D768B);">
-                                    <!-- Ícono y texto en la misma fila -->
-                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                    <span id="btn-text">Confirmar Reserva</span>
-                                    
-                                    <!-- Efecto de brillo -->
-                                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                                </button>
-                            </div>
-
-                            <!-- Información importante -->
-                            <div id="info-importante" class="bg-gradient-to-r from-info/5 to-blue-50 border border-info/20 rounded-xl p-4 mt-6">
-                                <div class="flex items-start space-x-3">
-                                    <div class="text-info text-xl">💡</div>
-                                    <div>
-                                        <p class="text-info font-medium mb-1">Información importante</p>
-                                        <ul class="text-gris-oscuro text-sm space-y-1">
-                                            <li>• Tu reserva podrá ser:
-                                                <ul class="mt-1 ml-4 space-y-0.5">
-                                                    <li><strong>Recurrente:</strong> asistirás cada semana al mismo día y horario</li>
-                                                    <li><strong>Una sola vez:</strong> asistirás únicamente el turno seleccionado</li>
-                                                </ul>
-                                            </li>
-                                            <li>• Puedes modificar o cancelar con 3 horas de anticipación</li>
-                                            <li>• Recibirás un recordatorio 24 horas antes de cada clase</li>
-                                            <li id="limite-clases-info">• Esta reserva contará contra tu límite semanal</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+            <!-- ================= Filtros ================= -->
+            <div class="rc-filters">
+                <div class="rc-chips" role="radiogroup" aria-label="Tipo de clase">
+                    {% for valor, nombre in grilla.tipos %}
+                    <label class="rc-chip"><input type="radio" name="filtro_tipo" value="{{ valor }}" {% if forloop.first %}checked{% endif %}><span>{{ nombre }}</span></label>
+                    {% endfor %}
                 </div>
+                {% if grilla.sedes|length > 1 %}
+                <div class="rc-chips rc-chips--soft" role="radiogroup" aria-label="Sede">
+                    <label class="rc-chip"><input type="radio" name="filtro_sede" value="" checked><span>Ambas sedes</span></label>
+                    {% for valor, nombre in grilla.sedes %}
+                    <label class="rc-chip"><input type="radio" name="filtro_sede" value="{{ valor }}"><span>{{ nombre }}</span></label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
 
-                <!-- Enlaces de navegación adicionales -->
-                <div class="text-center mt-8 space-y-2">
-                    <p class="text-gris-medio">
-                        ¿Necesitas ajustar tu plan?
-                        <a href="{% url 'gravity:mis_planes' %}" class="text-principal hover:text-secundario font-medium underline">
-                            Gestiona tus planes aquí
-                        </a>
-                    </p>
-                    <p class="text-gris-medio text-sm">
-                        ¿Dudas?
-                        <a href="{% url 'gravity:conoce_mas' %}#contacto" class="text-principal hover:text-secundario font-medium underline">
-                            Contáctanos
-                        </a>
-                    </p>
+            <!-- ================= Grilla semanal ================= -->
+            {% if grilla.columnas %}
+            <div class="rc-grid" id="rcGrid">
+                {% for col in grilla.columnas %}
+                <section class="rc-day" data-dia="{{ col.dia }}">
+                    <h2 class="rc-day__name"><span class="rc-day__short">{{ col.corto }}</span><span class="rc-day__long">{{ col.dia }}</span></h2>
+                    <div class="rc-day__slots">
+                        {% for s in col.slots %}
+                        <button type="button" class="rc-slot rc-slot--{{ s.estado }}"
+                                data-tipo="{{ s.tipo }}" data-sede="{{ s.sede }}" data-dia="{{ col.dia }}" data-hora="{{ s.hora }}"
+                                data-estado="{{ s.estado }}" data-nombre="{{ s.nombre }}" data-sede-nombre="{{ s.sede_nombre }}"
+                                data-fecha="{{ s.fecha|date:'d/m' }}" data-dia-corto="{{ col.corto|lower }}" data-libres="{{ s.libres }}"
+                                {% if s.recupero %}data-recupero="1"{% endif %}
+                                {% if s.estado == 'tuya' or s.estado == 'completa' %}aria-disabled="true"{% endif %}>
+                            <span class="rc-slot__hora">{{ s.hora }}</span>
+                            <span class="rc-slot__sede">{{ s.sede_nombre }}</span>
+                            {% if s.recupero %}<span class="rc-slot__rec" title="Podés usarla como recupero">Recupero</span>{% endif %}
+                            <span class="rc-slot__estado">
+                                {% if s.estado == 'tuya' %}{% if s.es_puntual_mia %}Reservada{% else %}Tu horario{% endif %}
+                                {% elif s.estado == 'libre' %}Quedan {{ s.libres }}
+                                {% elif s.estado == 'solo_fecha' %}Libre el {{ s.fecha|date:"d/m" }}
+                                {% else %}Completa{% endif %}
+                            </span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <p class="rc-day__empty" hidden>Sin clases</p>
+                </section>
+                {% endfor %}
+            </div>
+            <p class="rc-empty" id="rcVacio" hidden>No hay clases con estos filtros. Probá con otra sede.</p>
+            {% else %}
+            <article class="me-card mr-empty"><p class="me-empty__title">Todavía no hay horarios cargados</p></article>
+            {% endif %}
+
+            <ul class="rc-legend" aria-label="Referencias">
+                <li><span class="rc-dot rc-dot--libre"></span>Con lugar</li>
+                <li><span class="rc-dot rc-dot--solo_fecha"></span>Lugar suelto, solo esa fecha</li>
+                <li><span class="rc-dot rc-dot--completa"></span>Completa</li>
+                <li><span class="rc-dot rc-dot--tuya"></span>Ya es tuya</li>
+                {% if n_recuperos %}<li><span class="rc-slot__rec rc-slot__rec--legend">Recupero</span>Podés tomarla con tu recupero</li>{% endif %}
+            </ul>
+
+            <!-- ================= Resumen y confirmación ================= -->
+            <div class="rc-summary" id="rcResumen" hidden>
+                {% if form.non_field_errors %}
+                <p class="rc-summary__error" role="alert">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</p>
+                {% endif %}
+                <div class="rc-summary__main">
+                    <div class="rc-summary__what">
+                        <span class="me-label">Tu reserva</span>
+                        <strong id="rsTitulo"></strong>
+                        <small id="rsLugar"></small>
+                    </div>
+                    <div class="rc-modes" role="radiogroup" aria-label="Frecuencia">
+                        <label class="rc-mode" id="modoFijo">
+                            <input type="radio" name="es_temporal" value="false" checked>
+                            <span><strong>Todas las semanas</strong><small id="rsFijoTxt">Queda como tu horario fijo</small></span>
+                        </label>
+                        <label class="rc-mode">
+                            <input type="radio" name="es_temporal" value="true">
+                            <span><strong id="rsSoloTxt">Una sola vez</strong><small>Solo esa fecha</small></span>
+                        </label>
+                    </div>
+                    <p class="rc-summary__note" id="rsNota" hidden></p>
+                    <div class="rc-summary__actions">
+                        <button type="button" class="g-btn g-btn--ghost" id="rsCancelar">Cambiar</button>
+                        <button type="submit" class="g-btn g-btn--primary" data-loading-text="Reservando...">Confirmar reserva</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </form>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Obtener datos desde data attributes
-            const pageData = document.getElementById('page-data');
-            const tienePlanesActivos = pageData.dataset.tienePlanes === 'true';
-            const clasesRestantes = parseInt(pageData.dataset.clasesRestantes) || 0;
-            const reservasActuales = parseInt(pageData.dataset.reservasActuales) || 0;
-            const clasesDisponibles = parseInt(pageData.dataset.clasesDisponibles) || 1;
+        <!-- ================= Cómo funciona ================= -->
+        <article class="me-card mr-rules me-in">
+            <span class="me-label">Cómo funciona</span>
+            <ul>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+                    <span><strong>Horario fijo o una vez</strong><small>Un horario fijo es tuyo todas las semanas. "Una sola vez" vale solo para la próxima fecha.</small></span>
+                </li>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <span><strong>Hasta 3 horas antes</strong><small>Podés reservar y avisar que no venís hasta 3 horas antes de la clase.</small></span>
+                </li>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+                    <span><strong>Te lo recordamos</strong><small>Te mandamos la confirmación por email y un recordatorio el día anterior a cada clase.</small></span>
+                </li>
+            </ul>
+        </article>
+    </div>
+</section>
+{% endblock %}
 
-            // Elementos del DOM
-            const tipoClase = document.getElementById('id_tipo_clase');
-            const sede = document.getElementById('id_sede');
-            const dia = document.getElementById('id_dia');
-            const horario = document.getElementById('id_horario');
-            const btnReservar = document.getElementById('btn-reservar');
-            const btnText = document.getElementById('btn-text');
-            const disponibilidadInfo = document.getElementById('disponibilidad-info');
-            const disponibilidadMensaje = document.getElementById('disponibilidad-mensaje');
-            const disponibilidadText = document.getElementById('disponibilidad-text');
-            const seccionFormulario = document.getElementById('seccion-formulario');
-            const formStatusIndicator = document.getElementById('form-status-indicator');
-            const infoImportante = document.getElementById('info-importante');
-            const limiteClasesInfo = document.getElementById('limite-clases-info');
+{% block extra_js %}
+<script>
+    (function () {
+        const form = document.getElementById('reservaForm');
+        const grid = document.getElementById('rcGrid');
+        if (!form || !grid) return;
 
-            // Params preseleccionados desde clases_disponibles
-            const urlParams = new URLSearchParams(window.location.search);
-            const preselectedSede = urlParams.get('sede');
-            const preselectedDia = urlParams.get('dia');
-            const preselectedHorario = urlParams.get('horario');
+        const puede = form.dataset.puede === '1';
+        const slots = [...grid.querySelectorAll('.rc-slot')];
+        const resumen = document.getElementById('rcResumen');
+        const $ = id => document.getElementById(id);
+        const campos = { tipo: $('fTipo'), sede: $('fSede'), dia: $('fDia'), horario: $('fHorario') };
+        const modoFijo = document.getElementById('modoFijo');
+        const radioFijo = form.querySelector('input[name="es_temporal"][value="false"]');
+        const radioSolo = form.querySelector('input[name="es_temporal"][value="true"]');
+        let elegido = null;
 
-            // Configurar estado inicial del formulario
-            function configurarEstadoFormulario() {
-                if (!tienePlanesActivos || clasesRestantes <= 0) {
-                    // Deshabilitar formulario
-                    seccionFormulario.style.opacity = '0.5';
-                    seccionFormulario.style.pointerEvents = 'none';
-                    formStatusIndicator.classList.remove('hidden');
-                    
-                    // Cambiar texto del botón
-                    if (!tienePlanesActivos) {
-                        btnText.innerHTML = 'Selecciona un plan primero';
-                    } else if (clasesRestantes <= 0) {
-                        btnText.innerHTML = 'Sin clases disponibles';
-                    }
-                    
-                    btnReservar.disabled = true;
-                    btnReservar.classList.add('opacity-50', 'cursor-not-allowed');
-                    
-                    // Ocultar información importante
-                    if (infoImportante) {
-                        infoImportante.style.display = 'none';
-                    }
-                    
-                    // Deshabilitar campos del formulario
-                    const formElements = document.querySelectorAll('select');
-                    formElements.forEach(element => {
-                        element.disabled = true;
-                        element.classList.add('opacity-50');
-                    });
-                } else {
-                    // Actualizar información de límite de clases
-                    if (limiteClasesInfo) {
-                        limiteClasesInfo.textContent = `• Esta reserva contará contra tu límite semanal de ${clasesDisponibles} clases`;
-                    }
-                }
-            }
-
-            // Actualizar barra de progreso
-            function actualizarBarraProgreso() {
-                const progressBar = document.getElementById('progress-bar');
-                if (progressBar && clasesDisponibles > 0) {
-                    const percentage = Math.min((reservasActuales / clasesDisponibles) * 100, 100);
-                    progressBar.style.width = percentage + '%';
-                }
-            }
-
-            // Clase principal para manejar el formulario
-            class ReservaFormHandler {
-                constructor() {
-                    this.currentStep = 1;
-                    this.initEventListeners();
-                    this.updateStepVisual(1);
-                }
-
-                initEventListeners() {
-                    // Event listeners para los selects
-                    tipoClase?.addEventListener('change', () => this.onTipoClaseChange());
-                    sede?.addEventListener('change', () => this.onSedeChange());
-                    dia?.addEventListener('change', () => this.onDiaChange());
-                    horario?.addEventListener('change', () => this.onHorarioChange());
-
-                    // Listeners del toggle
-                    document.getElementById('btn-recurrente')?.addEventListener('click', () => this.setModoReserva(false));
-                    document.getElementById('btn-temporal')?.addEventListener('click', () => this.setModoReserva(true));
-                    
-                    // Event listener para el formulario
-                    document.querySelector('form')?.addEventListener('submit', (e) => this.onFormSubmit(e));
-                }
-
-                // Paso 1: Cambio de tipo de clase
-                onTipoClaseChange() {
-                    if (tipoClase.value) {
-                        this.mostrarCargando('Cargando sedes disponibles...');
-                        this.currentStep = 2;
-                        this.updateStepVisual(2);
-                        
-                        // Cargar sedes para el tipo seleccionado
-                        this.cargarSedes(tipoClase.value);
-                    } else {
-                        this.resetearFormulario();
-                    }
-                }
-
-                // Paso 2: Cambio de sede
-                onSedeChange() {
-                    if (sede.value) {
-                        this.mostrarCargando('Cargando días disponibles...');
-                        this.currentStep = 3;
-                        this.updateStepVisual(3);
-                        
-                        // Cargar días para la combinación tipo-sede
-                        this.cargarDias(tipoClase.value, sede.value);
-                    } else {
-                        this.resetearDiasYHorarios();
-                    }
-                }
-
-                // Paso 3: Cambio de día
-                onDiaChange() {
-                    if (dia.value) {
-                        this.mostrarCargando('Cargando horarios disponibles...');
-                        this.currentStep = 4;
-                        this.updateStepVisual(4);
-                        
-                        // Cargar horarios para la combinación tipo-sede-día
-                        this.cargarHorarios(tipoClase.value, sede.value, dia.value);
-                    } else {
-                        this.resetearSelectHorario();
-                        this.currentStep = 3;
-                        this.updateStepVisual(3);
-                    }
-                    if (document.getElementById('es_temporal')?.value === 'true') {
-                        this.actualizarFechaTemporal();
-                    }
-                }
-
-                // Paso 4: Cambio de horario
-                onHorarioChange() {
-                    if (horario.value) {
-                        this.mostrarCargando('Verificando disponibilidad...');
-                        
-                        // Verificar disponibilidad de la combinación completa
-                        this.verificarDisponibilidad(tipoClase.value, sede.value, dia.value, horario.value);
-                    } else {
-                        this.ocultarDisponibilidad();
-                    }
-                    if (document.getElementById('es_temporal')?.value === 'true') {
-                        this.actualizarFechaTemporal();
-                    }
-                }
-
-                // Actualizar indicador visual de pasos
-                updateStepVisual(stepActivo) {
-                    for (let i = 1; i <= 4; i++) {
-                        const circle = document.querySelector(`[data-step-circle="${i}"]`);
-                        const line = document.querySelector(`[data-step-line="${i}"]`);
-                        const formStep = document.querySelector(`[data-form-step="${i}"]`);
-                        const labels = circle.parentElement.querySelectorAll('span');
-                        if (i <= stepActivo) {
-                            circle.classList.remove('bg-gris-claro', 'text-gris-medio');
-                            circle.classList.add('bg-principal', 'text-white');
-                            labels.forEach(l => { l.classList.remove('text-gris-medio'); l.classList.add('text-principal'); });
-                            if (line) { line.classList.remove('bg-gris-claro'); line.classList.add('bg-principal'); }
-                            if (formStep) { formStep.classList.add('active'); }
-                        } else {
-                            circle.classList.remove('bg-principal', 'text-white');
-                            circle.classList.add('bg-gris-claro', 'text-gris-medio');
-                            labels.forEach(l => { l.classList.remove('text-principal'); l.classList.add('text-gris-medio'); });
-                            if (line) { line.classList.remove('bg-principal'); line.classList.add('bg-gris-claro'); }
-                            if (formStep) { formStep.classList.remove('active'); }
-                        }
-                    }
-                }
-
-                // Método para cargar sedes via AJAX
-                async cargarSedes(tipo) {
-                    try {
-                        const response = await fetch('/api/sedes-disponibles/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': this.getCSRFToken()
-                            },
-                            body: JSON.stringify({tipo: tipo})
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`Error HTTP: ${response.status}`);
-                        }
-
-                        const data = await response.json();
-                        this.actualizarSelectSedes(data.sedes);
-                        this.ocultarDisponibilidad();
-
-                    } catch (error) {
-                        console.error('Error cargando sedes:', error);
-                        this.mostrarError('Error al cargar las sedes. Intenta nuevamente.');
-                    }
-                }
-
-                // Método para cargar días via AJAX
-                async cargarDias(tipo, sedeSeleccionada) {
-                    try {
-                        const response = await fetch('/api/dias-disponibles/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': this.getCSRFToken()
-                            },
-                            body: JSON.stringify({
-                                tipo: tipo,
-                                sede: sedeSeleccionada
-                            })
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`Error HTTP: ${response.status}`);
-                        }
-
-                        const data = await response.json();
-                        this.actualizarSelectDias(data.dias);
-                        this.ocultarDisponibilidad();
-
-                    } catch (error) {
-                        console.error('Error cargando días:', error);
-                        this.mostrarError('Error al cargar los días disponibles. Intenta nuevamente.');
-                    }
-                }
-
-                // Método para cargar horarios via AJAX
-                async cargarHorarios(tipo, sedeSeleccionada, diaSeleccionado) {
-                    try {
-                        const response = await fetch('/api/horarios-disponibles/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': this.getCSRFToken()
-                            },
-                            body: JSON.stringify({
-                                tipo: tipo,
-                                sede: sedeSeleccionada,
-                                dia: diaSeleccionado
-                            })
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`Error HTTP: ${response.status}`);
-                        }
-
-                        const data = await response.json();
-                        this.actualizarSelectHorarios(data.horarios);
-                        this.ocultarDisponibilidad();
-
-                    } catch (error) {
-                        console.error('Error cargando horarios:', error);
-                        this.mostrarError('Error al cargar los horarios disponibles. Intenta nuevamente.');
-                    }
-                }
-
-                // Método para verificar disponibilidad via AJAX
-                async verificarDisponibilidad(tipo, sedeSeleccionada, diaSeleccionado, horarioSeleccionado) {
-                    try {
-                        const response = await fetch('/api/verificar-disponibilidad/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': this.getCSRFToken()
-                            },
-                            body: JSON.stringify({
-                                tipo: tipo,
-                                sede: sedeSeleccionada,
-                                dia: diaSeleccionado,
-                                horario: horarioSeleccionado
-                            })
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`Error HTTP: ${response.status}`);
-                        }
-
-                        const data = await response.json();
-                        this.mostrarDisponibilidad(data);
-
-                    } catch (error) {
-                        console.error('Error verificando disponibilidad:', error);
-                        this.mostrarError('Error al verificar disponibilidad. Intenta nuevamente.');
-                    }
-                }
-
-                actualizarSelectSedes(sedes) {
-                    this.limpiarSelect(sede, 'Selecciona la sede');
-                    
-                    sedes.forEach(sedeInfo => {
-                        const option = document.createElement('option');
-                        option.value = sedeInfo.value;
-                        option.textContent = sedeInfo.text;
-                        sede.appendChild(option);
-                    });
-
-                    // Preseleccionar sede si viene desde clases_disponibles
-                    if (preselectedSede) {
-                        const matchingSede = sede.querySelector(`option[value="${preselectedSede}"]`);
-                        if (matchingSede) {
-                            sede.value = preselectedSede;
-                            sede.dispatchEvent(new Event('change'));
-                        }
-                    }
-                }
-
-                actualizarSelectDias(diasDisponibles) {
-                    this.limpiarSelect(dia, 'Selecciona el día');
-                    
-                    diasDisponibles.forEach(diaDisponible => {
-                        const option = document.createElement('option');
-                        option.value = diaDisponible;
-                        option.textContent = diaDisponible;
-                        dia.appendChild(option);
-                    });
-
-                    // Preseleccionar día si viene desde clases_disponibles
-                    if (preselectedDia) {
-                        const matchingDia = dia.querySelector(`option[value="${preselectedDia}"]`);
-                        if (matchingDia) {
-                            dia.value = preselectedDia;
-                            dia.dispatchEvent(new Event('change'));
-                        }
-                    }
-                }
-
-                actualizarSelectHorarios(horariosDisponibles) {
-                    this.limpiarSelect(horario, 'Selecciona el horario');
-                    
-                    horariosDisponibles.forEach(horarioInfo => {
-                        const option = document.createElement('option');
-                        option.value = horarioInfo.value;
-                        option.textContent = horarioInfo.text;
-                        option.disabled = !horarioInfo.disponible;
-                        if (!horarioInfo.disponible) {
-                            option.classList.add('text-gris-medio');
-                        }
-                        horario.appendChild(option);
-                    });
-
-                    // Preseleccionar horario si viene desde clases_disponibles
-                    if (preselectedHorario) {
-                        const matchingHorario = horario.querySelector(`option[value="${preselectedHorario}"]`);
-                        if (matchingHorario) {
-                            horario.value = preselectedHorario;
-                            horario.dispatchEvent(new Event('change'));
-                        }
-                    }
-                }
-
-                limpiarSelect(selectElement, placeholderText) {
-                    selectElement.innerHTML = '';
-                    const placeholderOption = document.createElement('option');
-                    placeholderOption.value = '';
-                    placeholderOption.textContent = placeholderText;
-                    selectElement.appendChild(placeholderOption);
-                }
-
-                resetearSelectHorario() {
-                    this.limpiarSelect(horario, 'Selecciona el horario');
-                }
-
-                resetearDiasYHorarios() {
-                    this.limpiarSelect(dia, 'Selecciona el día');
-                    this.resetearSelectHorario();
-                    this.currentStep = 1;
-                    this.updateStepVisual(1);
-                }
-
-                resetearFormulario() {
-                    sede.selectedIndex = 0;
-                    dia.selectedIndex = 0;
-                    horario.selectedIndex = 0;
-                    this.resetearSelectHorario();
-                    this.ocultarDisponibilidad();
-                    this.currentStep = 1;
-                    this.updateStepVisual(0);
-                }
-
-                // Estados de disponibilidad
-                mostrarDisponibilidad(disponibilidad) {
-                    disponibilidadInfo.classList.remove('hidden');
-                    
-                    // Remover clases anteriores
-                    disponibilidadMensaje.className = 'rounded-lg p-4 font-medium flex items-center space-x-3';
-                    
-                    if (disponibilidad.disponible) {
-                        disponibilidadMensaje.classList.add('availability-success');
-                        const sedeText = disponibilidad.sede ? ` en ${disponibilidad.sede}` : '';
-                        disponibilidadText.textContent = `¡Clase Disponible! ${disponibilidad.cupos_disponibles} lugares restantes${sedeText}`;
-                    } else {
-                        disponibilidadMensaje.classList.add('availability-warning');
-                        disponibilidadText.textContent = disponibilidad.mensaje;
-                    }
-                }
-
-                mostrarCargando(mensaje) {
-                    disponibilidadInfo.classList.remove('hidden');
-                    disponibilidadMensaje.className = 'rounded-lg p-4 text-principal font-medium flex items-center space-x-3 availability-info';
-                    disponibilidadText.textContent = mensaje;
-                }
-
-                mostrarError(mensaje) {
-                    disponibilidadInfo.classList.remove('hidden');
-                    disponibilidadMensaje.className = 'rounded-lg p-4 text-principal font-medium flex items-center space-x-3 availability-danger';
-                    disponibilidadText.textContent = mensaje;
-                }
-
-                ocultarDisponibilidad() {
-                    disponibilidadInfo.classList.add('hidden');
-                }
-
-                // Maneja el envío del formulario
-                onFormSubmit(e) {
-                    if (!this.validarFormulario()) {
-                        e.preventDefault();
-                        return false;
-                    }
-
-                    // Deshabilita el botón y muestra indicador de carga
-                    btnReservar.disabled = true;
-                    btnText.innerHTML = '⏳ Procesando reserva...';
-                    btnReservar.classList.add('opacity-75', 'cursor-not-allowed');
-                }
-
-                // Validación
-                validarFormulario() {
-                    const campos = [
-                        { element: tipoClase, nombre: 'tipo de clase' },
-                        { element: sede, nombre: 'sede' },
-                        { element: dia, nombre: 'día' },
-                        { element: horario, nombre: 'horario' }
-                    ];
-
-                    for (const campo of campos) {
-                        if (!campo.element.value) {
-                            // Mostrar error visual
-                            campo.element.classList.add('border-error', 'animate-errorShake');
-                            setTimeout(() => {
-                                campo.element.classList.remove('border-error', 'animate-errorShake');
-                            }, 3000);
-                            
-                            campo.element.focus();
-                            this.mostrarError(`Por favor selecciona ${campo.nombre}.`);
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
-
-                // Reserva por un día
-                setModoReserva(esTemporal) {
-                    const btnRec = document.getElementById('btn-recurrente');
-                    const btnTemp = document.getElementById('btn-temporal');
-                    const inputTemporal = document.getElementById('es_temporal');
-                    const descRec = document.getElementById('desc-recurrente');
-                    const descTemp = document.getElementById('desc-temporal');
-
-                    inputTemporal.value = esTemporal ? 'true' : 'false';
-
-                    if (esTemporal) {
-                        btnTemp.classList.add('bg-white', 'text-principal', 'shadow-sm');
-                        btnTemp.classList.remove('text-gris-medio');
-                        btnRec.classList.remove('bg-white', 'text-principal', 'shadow-sm');
-                        btnRec.classList.add('text-gris-medio');
-                        descTemp.classList.remove('hidden');
-                        descRec.classList.add('hidden');
-                        this.actualizarFechaTemporal();
-                    } else {
-                        btnRec.classList.add('bg-white', 'text-principal', 'shadow-sm');
-                        btnRec.classList.remove('text-gris-medio');
-                        btnTemp.classList.remove('bg-white', 'text-principal', 'shadow-sm');
-                        btnTemp.classList.add('text-gris-medio');
-                        descRec.classList.remove('hidden');
-                        descTemp.classList.add('hidden');
-                    }
-                }
-
-                // actualiza la fecha de la reserva por un día
-                actualizarFechaTemporal() {
-                    const diaSeleccionado = dia?.value;
-                    const displayEl = document.getElementById('fecha-temporal-display');
-                    if (!diaSeleccionado || !displayEl) return;
-
-                    const diasMap = {
-                        'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
-                        'Jueves': 4, 'Viernes': 5, 'Sábado': 6
-                    };
-                    const hoy = new Date();
-                    const diaHoyJS = hoy.getDay(); // 0=Dom, 1=Lun, ...
-                    const diaObjetivo = diasMap[diaSeleccionado];
-                    if (diaObjetivo === undefined) return;
-
-                    let diasHasta = (diaObjetivo - diaHoyJS + 7) % 7;
-
-                    // Si el día es hoy, permitir reservar mientras la clase no haya comenzado
-                    if (diasHasta === 0) {
-                        const horarioVal = horario?.value; // formato "HH:MM"
-                        if (horarioVal) {
-                            const [hh, mm] = horarioVal.split(':').map(Number);
-                            const claseHoy = new Date(hoy);
-                            claseHoy.setHours(hh, mm, 0, 0);
-                            if (hoy >= claseHoy) diasHasta = 7; // la clase ya comenzó
-                        }
-                    }
-
-                    const fechaProxima = new Date(hoy);
-                    fechaProxima.setDate(hoy.getDate() + diasHasta);
-
-                    const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
-                    displayEl.textContent = fechaProxima.toLocaleDateString('es-AR', opciones);
-                }
-
-                getCSRFToken() {
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-                    return csrfToken ? csrfToken.value : '';
-                }
-            }
-
-            // Configurar estado inicial
-            configurarEstadoFormulario();
-            actualizarBarraProgreso();
-
-            // Inicializar formulario solo si tiene planes activos y clases disponibles
-            if (tienePlanesActivos && clasesRestantes > 0) {
-                new ReservaFormHandler();
-                // Si hay tipo preseleccionado desde la URL, disparar la cascada de pasos
-                if (tipoClase && tipoClase.value) {
-                    tipoClase.dispatchEvent(new Event('change'));
-                }
-            }
-
-            // Validación en tiempo real
-            const selectFields = document.querySelectorAll('select');
-            selectFields.forEach(field => {
-                field.addEventListener('change', function() {
-                    this.classList.remove('border-error');
+        // ---------- Filtros ----------
+        function filtrar() {
+            const tipo = (form.querySelector('input[name="filtro_tipo"]:checked') || {}).value || '';
+            const sede = (form.querySelector('input[name="filtro_sede"]:checked') || {}).value || '';
+            let total = 0;
+            grid.querySelectorAll('.rc-day').forEach(dia => {
+                let visibles = 0;
+                dia.querySelectorAll('.rc-slot').forEach(s => {
+                    const ok = (!tipo || s.dataset.tipo === tipo) && (!sede || s.dataset.sede === sede);
+                    s.hidden = !ok;
+                    if (ok) visibles++;
                 });
-                
-                field.addEventListener('focus', function() {
-                    if (!this.disabled) {
-                        this.classList.add('ring-2', 'ring-principal/20', 'border-principal');
-                    }
-                });
-                
-                field.addEventListener('blur', function() {
-                    this.classList.remove('ring-2', 'ring-principal/20', 'border-principal');
-                });
+                dia.querySelector('.rc-day__empty').hidden = visibles > 0;
+                dia.classList.toggle('is-empty', visibles === 0);
+                total += visibles;
             });
+            document.getElementById('rcVacio').hidden = total > 0;
+            if (elegido && elegido.hidden) deseleccionar();
+        }
+        form.querySelectorAll('input[name="filtro_tipo"], input[name="filtro_sede"]').forEach(r => r.addEventListener('change', filtrar));
 
-            // Smooth scroll para evitar problemas con header fijo
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        const headerHeight = 80;
-                        const targetPosition = target.offsetTop - headerHeight;
-                        
-                        window.scrollTo({
-                            top: targetPosition,
-                            behavior: 'smooth'
-                        });
-                    }
-                });
-            });
-        });
-    </script>
+        // ---------- Elegir un horario ----------
+        // Sin clases del plan disponibles solo se puede tomar un horario como recupero
+        const habilitado = slot => {
+            const estado = slot.dataset.estado;
+            if (estado === 'tuya' || estado === 'completa') return false;
+            return puede || slot.dataset.recupero === '1';
+        };
+
+        function actualizarNota() {
+            const nota = $('rsNota');
+            const unaVez = radioSolo.checked;
+            if (elegido && unaVez && elegido.dataset.recupero === '1') {
+                nota.textContent = 'Se toma como recupero: no usa clases de tu plan.';
+                nota.className = 'rc-summary__note is-rec';
+            } else if (elegido) {
+                nota.textContent = unaVez ? 'Usa 1 clase de tu plan de esa semana.' : 'Usa 1 clase de tu plan todas las semanas.';
+                nota.className = 'rc-summary__note';
+            }
+            nota.hidden = !elegido;
+        }
+        [radioFijo, radioSolo].forEach(r => r.addEventListener('change', actualizarNota));
+
+        function seleccionar(slot, temporal) {
+            const estado = slot.dataset.estado;
+            if (!habilitado(slot)) return;
+            if (elegido) elegido.classList.remove('is-selected');
+            elegido = slot;
+            slot.classList.add('is-selected');
+            campos.tipo.value = slot.dataset.tipo;
+            campos.sede.value = slot.dataset.sede;
+            campos.dia.value = slot.dataset.dia;
+            campos.horario.value = slot.dataset.hora;
+
+            document.getElementById('rsTitulo').textContent = slot.dataset.nombre + ' · ' + slot.dataset.dia + ' ' + slot.dataset.hora;
+            document.getElementById('rsLugar').textContent = slot.dataset.sedeNombre + (estado === 'libre' ? ' · quedan ' + slot.dataset.libres + ' lugar' + (slot.dataset.libres === '1' ? '' : 'es') : '');
+            document.getElementById('rsSoloTxt').textContent = 'Solo el ' + slot.dataset.diaCorto + ' ' + slot.dataset.fecha;
+
+            // Solo una vez: sin lugares fijos, o sin clases del plan (va como recupero)
+            const soloFecha = estado === 'solo_fecha';
+            const sinPlan = !puede;
+            radioFijo.disabled = soloFecha || sinPlan;
+            modoFijo.classList.toggle('is-disabled', soloFecha || sinPlan);
+            document.getElementById('rsFijoTxt').textContent = soloFecha ? 'No hay lugares fijos en este horario'
+                : sinPlan ? 'Ya usaste las clases de tu plan' : 'Queda como tu horario fijo';
+            (soloFecha || sinPlan || temporal ? radioSolo : radioFijo).checked = true;
+
+            resumen.hidden = false;
+            actualizarNota();
+        }
+        function deseleccionar() {
+            if (elegido) elegido.classList.remove('is-selected');
+            elegido = null;
+            Object.values(campos).forEach(c => { c.value = ''; });
+            resumen.hidden = true;
+        }
+        slots.forEach(s => s.addEventListener('click', () => seleccionar(s, false)));
+        document.getElementById('rsCancelar').addEventListener('click', deseleccionar);
+
+        // Sin plan o sin clases disponibles: solo se pueden tocar los horarios de recupero
+        if (!puede) grid.classList.add('is-readonly');
+        slots.forEach(s => { if (!habilitado(s)) s.setAttribute('aria-disabled', 'true'); });
+
+        // ---------- Preselección (desde Clases disponibles o después de un error) ----------
+        const d = form.dataset;
+        if (d.preTipo) {
+            const chip = form.querySelector('input[name="filtro_tipo"][value="' + d.preTipo + '"]');
+            if (chip) chip.checked = true;
+        }
+        filtrar();
+        if (d.preTipo && d.preDia && d.preHorario) {
+            const slot = slots.find(s => s.dataset.tipo === d.preTipo && s.dataset.dia === d.preDia &&
+                s.dataset.hora === d.preHorario && (!d.preSede || s.dataset.sede === d.preSede));
+            if (slot) {
+                seleccionar(slot, d.preTemporal === '1');
+                slot.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }
+        }
+        {% if form.non_field_errors %}resumen.hidden = false;{% endif %}
+    })();
+</script>
 {% endblock %}

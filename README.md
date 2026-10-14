@@ -74,7 +74,7 @@ Se envían 8 tipos de emails transaccionales vía **Gmail SMTP**:
 
 **`Clase`** — clase con horario fijo semanal
 - Tipos: Reformer, Cadillac, Especial (con nombre personalizado)
-- Sedes: Sede Principal (La Rioja 3044) y Sede 2 (9 de julio 3698)
+- Sedes: Sede Principal (La Rioja 3044) y Sede 2 (9 de julio 3696)
 - Días: lunes a viernes; sábados solo para clases especiales
 - Control de cupo y estado activo/inactivo
 

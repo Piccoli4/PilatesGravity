@@ -404,3 +404,210 @@ def liquidacion_del_mes(profesora, primer_dia_mes):
         profesora=profesora,
         mes_año=primer_dia_mes,
     ).select_related('registrado_por').first()
+
+
+# ==============================================================================
+# EQUIPO: QUIÉNES SON Y EN QUÉ ESTADO ESTÁ SU ACCESO
+# ==============================================================================
+
+def _con_historial_de_equipo():
+    """Q() de usuarios que alguna vez tuvieron horario, valor hora o pagos como equipo."""
+    return (Q(bloques_horario__isnull=False) | Q(valores_hora__isnull=False)
+            | Q(liquidaciones__isnull=False) | Q(ajustes_horario__isnull=False))
+
+
+def integrantes_equipo(estado='con_acceso'):
+    """
+    Integrantes del equipo (nunca los superadministradores).
+
+    - 'con_acceso': staff activo.
+    - 'sin_acceso': staff con la cuenta desactivada, o quien dejó el equipo y siguió
+      como alumna pero tiene historial (horarios, valores hora o pagos).
+    - 'todos': las dos cosas.
+    """
+    staff = Q(is_staff=True, is_superuser=False)
+    con_acceso = staff & Q(is_active=True)
+    sin_acceso = (staff & Q(is_active=False)) | (Q(is_staff=False, is_superuser=False) & _con_historial_de_equipo())
+    filtro = {'con_acceso': con_acceso, 'sin_acceso': sin_acceso}.get(estado, con_acceso | sin_acceso)
+    return (User.objects.filter(filtro).distinct()
+            .select_related('profile').order_by('first_name', 'last_name'))
+
+
+def estado_acceso(usuario):
+    """(clave, texto, tono) del acceso al panel de alguien del equipo."""
+    if usuario.is_staff and usuario.is_active:
+        if not usuario.has_usable_password():
+            return ('invitacion', 'Invitación pendiente', 'warn')
+        return ('activo', 'Con acceso', 'ok')
+    if usuario.is_staff:
+        return ('desactivada', 'Cuenta desactivada', 'muted')
+    return ('alumna', 'Sigue como alumna', 'muted')
+
+
+# ==============================================================================
+# HECHO HASTA HOY Y PROYECCIÓN
+# ==============================================================================
+
+def resumen_hasta_hoy(profesora, desde, hasta, fecha_hoy=None):
+    """
+    Horas de un período separando lo ya trabajado (hasta hoy, inclusive) de lo que
+    falta. Devuelve el resumen de lo hecho, con `proyeccion_horas` y
+    `proyeccion_monto` (el período completo) y `en_curso` si el período no terminó.
+    El detalle por día (`dias`) incluye también los días que faltan.
+    """
+    fecha_hoy = fecha_hoy or hoy()
+    completo = resumen_profesora(profesora, desde, hasta)
+    if hasta <= fecha_hoy:
+        hecho = completo
+    elif desde > fecha_hoy:
+        hecho = dict(completo, horas=CERO, monto=CERO, semanas=[], por_sede=[])
+    else:
+        hecho = resumen_profesora(profesora, desde, fecha_hoy)
+    resultado = dict(hecho)
+    resultado.update({
+        'en_curso': hasta > fecha_hoy,
+        'proyeccion_horas': completo['horas'],
+        'proyeccion_monto': completo['monto'],
+        'dias': completo['dias'],
+        'sin_valor_hora': completo['sin_valor_hora'],
+        'valor_hora_actual': completo['valor_hora_actual'],
+    })
+    return resultado
+
+
+def mes_terminado(primer_dia, fecha_hoy=None):
+    """El pago de un mes se registra desde su último día."""
+    fecha_hoy = fecha_hoy or hoy()
+    return fecha_hoy >= rango_mes(primer_dia.year, primer_dia.month)[1]
+
+
+def meses_pagados(profesora):
+    """Meses ('YYYY-MM') que ya tienen el pago registrado."""
+    return sorted(f'{m:%Y-%m}' for m in LiquidacionProfesora.objects.filter(
+        profesora=profesora).values_list('mes_año', flat=True))
+
+
+def diferencia_liquidacion(liquidacion):
+    """
+    Si algo cambió después de pagar un mes: (lo que calcula hoy, diferencia con lo
+    calculado al pagar). None si coincide.
+    """
+    if not liquidacion:
+        return None
+    mes = liquidacion.mes_año
+    desde, hasta = rango_mes(mes.year, mes.month)
+    hoy_calcula = resumen_profesora(liquidacion.profesora, desde, hasta)['monto']
+    diferencia = hoy_calcula - liquidacion.monto_calculado
+    return (hoy_calcula, diferencia) if diferencia else None
+
+
+def mes_pagado_desde(profesora, desde, hasta=None):
+    """Primer mes ya pagado entre dos fechas (sin `hasta`: de `desde` en adelante)."""
+    qs = LiquidacionProfesora.objects.filter(profesora=profesora, mes_año__gte=desde.replace(day=1))
+    if hasta:
+        qs = qs.filter(mes_año__lte=hasta)
+    return qs.order_by('mes_año').first()
+
+
+# ==============================================================================
+# SUPERPOSICIÓN DE TURNOS DE UN DÍA
+# ==============================================================================
+
+def turnos_del_dia(profesora, fecha):
+    """Turnos de una profesora en una fecha (habituales con sus cambios, y sueltos)."""
+    bloques = list(BloqueHorarioProfesora.objects.filter(
+        profesora=profesora, vigente_desde__lte=fecha).filter(vigente_en(fecha)))
+    ajustes = list(AjusteHorarioProfesora.objects.filter(profesora=profesora, fecha=fecha))
+    return _turnos_de_fecha(fecha, bloques, ajustes)
+
+
+def turno_superpuesto(profesora, fecha, hora_inicio, hora_fin, ignorar_bloque=None, ignorar_ajuste=None):
+    """Turno de ese día que se pisa con el horario pedido, o None."""
+    for turno in turnos_del_dia(profesora, fecha):
+        if ignorar_ajuste and turno['ajuste_id'] == ignorar_ajuste:
+            continue
+        if ignorar_bloque and turno['bloque_id'] == ignorar_bloque and turno['origen'] != 'extra':
+            continue
+        if hora_inicio < turno['hora_fin'] and turno['hora_inicio'] < hora_fin:
+            return turno
+    return None
+
+
+# ==============================================================================
+# TURNOS QUE SIGUEN A SU CLASE
+# ==============================================================================
+
+def turnos_de_la_clase(clase, fecha_hoy=None):
+    """Turnos del horario semanal vigentes (o que empiezan más adelante) de esta clase."""
+    fecha_hoy = fecha_hoy or hoy()
+    return list(BloqueHorarioProfesora.objects.filter(clase=clase).filter(vigente_en(fecha_hoy))
+                .select_related('profesora').order_by('profesora__first_name'))
+
+
+def _misma_duracion(bloque, nueva_hora):
+    minutos = max(
+        (bloque.hora_fin.hour * 60 + bloque.hora_fin.minute)
+        - (bloque.hora_inicio.hour * 60 + bloque.hora_inicio.minute), 15)
+    total = nueva_hora.hour * 60 + nueva_hora.minute + minutos
+    if total >= 24 * 60:
+        return nueva_hora.replace(hour=23, minute=59)
+    return nueva_hora.replace(hour=total // 60, minute=total % 60)
+
+
+def mover_turnos_de_la_clase(clase, ahora=None):
+    """
+    Cuando una clase cambia de día, horario o sede, sus turnos de profesora pasan al
+    horario nuevo: el turno viejo se cierra y se abre uno nuevo con la misma duración
+    (así los meses ya trabajados no cambian). Si el turno viejo ya se dio hoy, cuenta
+    hoy y el nuevo empieza mañana. Devuelve las profesoras movidas.
+    """
+    from datetime import datetime
+
+    ahora = timezone.localtime(ahora or timezone.now())
+    fecha_hoy = ahora.date()
+    movidas = []
+    for bloque in turnos_de_la_clase(clase, fecha_hoy):
+        nuevo_fin = _misma_duracion(bloque, clase.horario)
+        if bloque.vigente_desde > fecha_hoy:
+            # Todavía no empezó a regir: se corrige en el lugar
+            bloque.dia, bloque.hora_inicio, bloque.hora_fin, bloque.sede = (
+                clase.dia, clase.horario, nuevo_fin, clase.direccion)
+            bloque.save(update_fields=['dia', 'hora_inicio', 'hora_fin', 'sede'])
+            movidas.append(bloque.profesora)
+            continue
+
+        ya_se_dio_hoy = (
+            bloque.dia == nombre_dia(fecha_hoy)
+            and timezone.make_aware(datetime.combine(fecha_hoy, bloque.hora_inicio)) <= ahora
+        )
+        cierre = fecha_hoy if ya_se_dio_hoy else fecha_hoy - timedelta(days=1)
+        # Los cambios puntuales de días que vienen eran para el horario viejo
+        bloque.ajustes.filter(fecha__gt=cierre).delete()
+        if cierre < bloque.vigente_desde:
+            bloque.delete()
+        else:
+            bloque.vigente_hasta = cierre
+            bloque.save(update_fields=['vigente_hasta'])
+        BloqueHorarioProfesora.objects.create(
+            profesora=bloque.profesora, dia=clase.dia, hora_inicio=clase.horario, hora_fin=nuevo_fin,
+            sede=clase.direccion, clase=clase, vigente_desde=cierre + timedelta(days=1),
+            creado_por=bloque.creado_por,
+        )
+        movidas.append(bloque.profesora)
+    return movidas
+
+
+def cerrar_turnos(profesora, ultimo_dia):
+    """Al dejar el equipo: cierra los turnos abiertos y borra los sueltos posteriores."""
+    cerrados = 0
+    abiertos = BloqueHorarioProfesora.objects.filter(profesora=profesora).filter(
+        vigente_en(ultimo_dia + timedelta(days=1)))
+    for bloque in abiertos:
+        if bloque.vigente_desde > ultimo_dia:
+            bloque.delete()
+        else:
+            bloque.vigente_hasta = ultimo_dia
+            bloque.save(update_fields=['vigente_hasta'])
+        cerrados += 1
+    AjusteHorarioProfesora.objects.filter(profesora=profesora, fecha__gt=ultimo_dia).delete()
+    return cerrados

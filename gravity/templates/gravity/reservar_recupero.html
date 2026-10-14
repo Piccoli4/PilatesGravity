@@ -1,240 +1,202 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Reservar Recupero - Pilates Gravity{% endblock %}
+{% block title %}Recuperar clase - Pilates Gravity{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261011o">
+{% endblock %}
 
 {% block content %}
-<section class="min-h-screen bg-fondo py-7">
-    <div class="container mx-auto px-4">
-        <div class="max-w-3xl mx-auto">
+<section class="me rc">
+    <div class="g-container me__wrap pl__wide">
 
-            <!-- Header -->
-            <div class="text-center mb-4">
-                <h1 class="text-3xl font-cinzel font-bold text-principal mb-3">Reserva de Recupero</h1>
-                <div class="w-20 h-1 bg-gradient-to-r from-principal to-secundario mx-auto mb-4"></div>
-                <p class="text-gris-medio">
-                    Tenés {{ n_disponibles }} recupero{{ n_disponibles|pluralize }} disponible{{ n_disponibles|pluralize }} esta semana.
-                    Elegí la clase a la que querés asistir en reemplazo.
-                </p>
+        <header class="mr-head me-in">
+            <div class="mr-head__text">
+                <a href="{% url 'accounts:mis_reservas' %}" class="pc-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    Mis reservas
+                </a>
+                <h1 class="mr-head__title">Recuperar clase</h1>
+                <p class="rc-lead">Elegí otro horario para recuperar la{{ n_disponibles|pluralize:"s" }} clase{{ n_disponibles|pluralize }} que faltaste. Es solo para ese día y no usa clases de tu plan.</p>
             </div>
+        </header>
 
-            <!-- Ausencias registradas -->
-            {% if ausencias %}
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6">
-                <h3 class="font-semibold text-amber-800 mb-3 flex items-center gap-2 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
-                        <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
-                    </svg>
-                    Tus ausencias esta semana:
-                </h3>
-                {% for ausencia in ausencias %}
-                <div class="flex items-center gap-2 text-sm text-amber-700 mb-1">
-                    <span>📅</span>
-                    <span>
-                        {{ ausencia.reserva.clase.get_nombre_display }} —
-                        {{ ausencia.reserva.clase.dia }} {{ ausencia.reserva.clase.horario|time:"H:i" }} —
-                        ausente el {{ ausencia.fecha|date:"d/m" }}
+        <!-- ================= Clases para recuperar ================= -->
+        <article class="me-card rv-pending me-in">
+            <span class="me-label">Tenés {{ n_disponibles }} clase{{ n_disponibles|pluralize }} para recuperar</span>
+            <ul class="rv-pending__list">
+                {% for p in pendientes %}
+                <li>
+                    <span class="rv-pending__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
                     </span>
-                </div>
+                    <span class="rv-pending__text">
+                        <strong>{{ p.clase.get_tipo_display }} del {{ p.ausencia.fecha|date:"l d/m"|lower }} a las {{ p.clase.horario|time:"H:i" }}</strong>
+                        <small>
+                            Recuperala hasta el {{ p.ausencia.fecha_limite_recupero|date:"d/m" }}
+                            · en {% for t in p.permitidos %}{{ t }}{% if not forloop.last %} o {% endif %}{% endfor %}
+                        </small>
+                    </span>
+                </li>
                 {% endfor %}
+            </ul>
+        </article>
+
+        <form method="post" id="recuperoForm" class="rc-form me-in" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="clase_id" id="fClase">
+            <input type="hidden" name="fecha" id="fFecha">
+
+            {% if grilla.columnas %}
+            <!-- ================= Filtros ================= -->
+            {% if grilla.tipos|length > 1 or grilla.sedes|length > 1 %}
+            <div class="rc-filters">
+                {% if grilla.tipos|length > 1 %}
+                <div class="rc-chips" role="radiogroup" aria-label="Tipo de clase">
+                    <label class="rc-chip"><input type="radio" name="filtro_tipo" value="" checked><span>Todas</span></label>
+                    {% for valor, nombre in grilla.tipos %}
+                    <label class="rc-chip"><input type="radio" name="filtro_tipo" value="{{ valor }}"><span>{{ nombre }}</span></label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if grilla.sedes|length > 1 %}
+                <div class="rc-chips rc-chips--soft" role="radiogroup" aria-label="Sede">
+                    <label class="rc-chip"><input type="radio" name="filtro_sede" value="" checked><span>Ambas sedes</span></label>
+                    {% for valor, nombre in grilla.sedes %}
+                    <label class="rc-chip"><input type="radio" name="filtro_sede" value="{{ valor }}"><span>{{ nombre }}</span></label>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% endif %}
 
-            <!-- Clases disponibles para recupero -->
-            {% if clases_para_recupero %}
-
-            <!-- Filtros -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-                <h3 class="text-xs font-bold text-gris-medio uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-                        <path fill-rule="evenodd" d="M3.792 2.938A49.069 49.069 0 0 1 12 2.25c2.797 0 5.54.236 8.209.688a1.857 1.857 0 0 1 1.541 1.836v1.044a3 3 0 0 1-.879 2.121l-6.182 6.182a1.5 1.5 0 0 0-.439 1.061v2.927a3 3 0 0 1-1.658 2.684l-1.757.878A.75.75 0 0 1 9.75 21v-5.818a1.5 1.5 0 0 0-.44-1.06L3.13 7.938a3 3 0 0 1-.879-2.121V4.774c0-.897.64-1.683 1.542-1.836Z" clip-rule="evenodd" />
-                    </svg>
-                    Filtros
-                </h3>
-                <div class="space-y-3">
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <span class="text-xs font-semibold text-gris-medio w-10">Sede:</span>
-                        <div id="pg-btns-sede" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <span class="text-xs font-semibold text-gris-medio w-10">Día:</span>
-                        <div id="pg-btns-dia" class="flex flex-wrap gap-2"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="pg-sin-resultados" class="hidden text-center py-8 text-gris-medio text-sm">
-                No hay clases que coincidan con los filtros seleccionados.
-            </div>
-
-            <div class="grid sm:grid-cols-2 gap-4" id="pg-grid-recupero">
-                {% for item in clases_para_recupero %}
-                <div class="bg-white rounded-xl shadow-wizard p-5 border border-gray-100 hover:shadow-lg transition-shadow duration-300 pg-card-recupero"
-                     data-sede="{{ item.clase.get_direccion_corta }}"
-                     data-dia="{{ item.fecha|date:'l' }}"
-                >
-                    <!-- Header de la clase -->
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-principal to-secundario flex items-center justify-center flex-shrink-0">
-                            {% if item.clase.tipo == 'Reformer' %}
-                                <img src="{% static 'icons/reformer.png' %}" class="w-6 h-6 object-contain" alt="Reformer">
-                            {% elif item.clase.tipo == 'Cadillac' %}
-                                <img src="{% static 'icons/cadillac.png' %}" class="w-6 h-6 object-contain" alt="Cadillac">
-                            {% else %}
-                                <img src="{% static 'icons/especial.png' %}" class="w-6 h-6 object-contain" alt="Especial">
-                            {% endif %}
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-principal">{{ item.clase.get_nombre_display }}</h4>
-                            <p class="text-xs text-gris-medio">{{ item.clase.get_direccion_corta }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Info de la clase -->
-                    <div class="space-y-2 mb-4 text-sm text-gris-oscuro">
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-principal flex-shrink-0">
-                                <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
-                            </svg>
-                            <span>{{ item.fecha|date:"l d/m/Y" }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-principal flex-shrink-0">
-                                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
-                            </svg>
-                            <span>{{ item.clase.horario|time:"H:i" }} hs</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-principal flex-shrink-0">
-                                <path fill-rule="evenodd" d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z" clip-rule="evenodd" />
-                            </svg>
-                            <span>{{ item.cupos }} cupo{{ item.cupos|pluralize }} disponible{{ item.cupos|pluralize }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Badge solo por ese día -->
-                    <div class="bg-teal-50 border border-teal-200 rounded-lg px-3 py-2 mb-4 text-center">
-                        <p class="text-xs text-teal-700 font-medium">Solo por el {{ item.fecha|date:"d/m/Y" }}</p>
-                    </div>
-
-                    <!-- Formulario de confirmación -->
-                    <form method="post" action="{% url 'gravity:reservar_recupero' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="clase_id" value="{{ item.clase.id }}">
-                        <input type="hidden" name="fecha" value="{{ item.fecha_str }}">
-                        <button type="submit" data-loading-text="Reservando..."
-                                class="w-full bg-principal hover:bg-principal/90 text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 hover:-translate-y-0.5">
-                            Reservar este recupero
+            <!-- ================= Grilla por fecha ================= -->
+            <div class="rc-grid rv-grid" id="rcGrid" style="--cols: {{ grilla.columnas|length }}">
+                {% for col in grilla.columnas %}
+                <section class="rc-day">
+                    <h2 class="rc-day__name rv-day__name">
+                        <span>{{ col.corto }} {{ col.fecha|date:"d/m" }}</span>
+                        {% if col.relativo %}<small>{{ col.relativo }}</small>{% endif %}
+                    </h2>
+                    <div class="rc-day__slots">
+                        {% for s in col.slots %}
+                        <button type="button" class="rc-slot rc-slot--{{ s.estado }}"
+                                data-clase="{{ s.clase.id }}" data-fecha="{{ col.fecha_iso }}" data-tipo="{{ s.tipo }}" data-sede="{{ s.sede }}"
+                                data-estado="{{ s.estado }}" data-titulo="{{ s.nombre }} · {{ col.corto }} {{ col.fecha|date:'d/m' }} {{ s.hora }}"
+                                data-lugar="{{ s.sede_nombre }}{% if s.estado == 'libre' %} · queda{{ s.libres|pluralize:'n' }} {{ s.libres }} lugar{{ s.libres|pluralize:'es' }}{% endif %}"
+                                {% if s.estado == 'completa' %}aria-disabled="true"{% endif %}>
+                            <span class="rc-slot__hora">{{ s.hora }}</span>
+                            <span class="rc-slot__sede">{{ s.nombre }} · {{ s.sede_nombre }}</span>
+                            <span class="rc-slot__estado">{% if s.estado == 'libre' %}Quedan {{ s.libres }}{% else %}Completa{% endif %}</span>
                         </button>
-                    </form>
-                </div>
+                        {% endfor %}
+                    </div>
+                    <p class="rc-day__empty" hidden>Sin clases</p>
+                </section>
                 {% endfor %}
             </div>
+            <p class="rc-empty" id="rcVacio" hidden>No hay clases con estos filtros.</p>
 
+            <!-- ================= Resumen ================= -->
+            <div class="rc-summary" id="rcResumen" hidden>
+                <div class="rc-summary__main">
+                    <div class="rc-summary__what">
+                        <span class="me-label">Tu recupero</span>
+                        <strong id="rsTitulo"></strong>
+                        <small id="rsLugar"></small>
+                    </div>
+                    <p class="rv-note">Solo para ese día · no usa clases de tu plan</p>
+                    <div class="rc-summary__actions">
+                        <button type="button" class="g-btn g-btn--ghost" id="rsCancelar">Cambiar</button>
+                        <button type="submit" class="g-btn g-btn--primary" data-loading-text="Reservando...">Confirmar recupero</button>
+                    </div>
+                </div>
+            </div>
             {% else %}
-            <div class="bg-white rounded-xl shadow-wizard p-12 text-center">
-                <div class="text-5xl mb-4">😔</div>
-                <h3 class="text-xl font-bold text-gris-oscuro mb-2">No hay clases disponibles</h3>
-                <p class="text-gris-medio mb-6">
-                    No encontramos clases con cupos disponibles para los días restantes de esta semana.
-                </p>
-                <a href="{% url 'accounts:mis_reservas' %}"
-                   class="inline-block bg-principal hover:bg-principal/90 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300">
-                    Volver a Mis Reservas
-                </a>
-            </div>
+            <article class="me-card mr-empty">
+                <p class="me-empty__title">No hay lugares para recuperar hasta el {{ fecha_limite|date:"d/m" }}</p>
+                <p class="me-empty__text">Todas las clases donde podés recuperar están completas. Si se libera un lugar va a aparecer acá; también podés escribirnos por WhatsApp.</p>
+                <a href="{% url 'accounts:mis_reservas' %}" class="g-btn g-btn--ghost g-btn--sm">Volver a Mis reservas</a>
+            </article>
             {% endif %}
+        </form>
 
-            <div class="text-center mt-8">
-                <a href="{% url 'accounts:mis_reservas' %}" class="text-principal hover:text-principal/80 font-medium text-sm transition-colors">
-                    ← Volver a Mis Reservas
-                </a>
-            </div>
-
-        </div>
+        <!-- ================= Reglas ================= -->
+        <article class="me-card mr-rules me-in">
+            <span class="me-label">Cómo funciona el recupero</span>
+            <ul>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+                    <span><strong>Una clase por cada ausencia</strong><small>Hasta el día anterior a tu próxima clase de ese horario.</small></span>
+                </li>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>
+                    <span><strong>Según la clase que faltaste</strong><small>Si faltaste a Cadillac recuperás en Cadillac o Reformer; si faltaste a Reformer, en Reformer.</small></span>
+                </li>
+                <li>
+                    <span class="me-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                    <span><strong>Hasta que empiece</strong><small>Podés tomar un lugar libre incluso el mismo día, hasta el horario de la clase.</small></span>
+                </li>
+            </ul>
+        </article>
     </div>
 </section>
+{% endblock %}
 
 {% block extra_js %}
 <script>
-    var pgFiltroSede = '';
-    var pgFiltroDia  = '';
+    (function () {
+        const form = document.getElementById('recuperoForm');
+        const grid = document.getElementById('rcGrid');
+        if (!grid) return;
+        const $ = id => document.getElementById(id);
+        const resumen = $('rcResumen');
+        const slots = [...grid.querySelectorAll('.rc-slot')];
+        let elegido = null;
 
-    var ESTILO_ACTIVO_SEDE = ['bg-principal', 'text-white', 'border-principal'];
-    var ESTILO_INAC_SEDE   = ['bg-white', 'text-principal', 'border-principal/40', 'hover:bg-principal/10'];
-    var ESTILO_ACTIVO_DIA  = ['bg-secundario', 'text-white', 'border-secundario'];
-    var ESTILO_INAC_DIA    = ['bg-white', 'text-secundario', 'border-secundario/40', 'hover:bg-secundario/10'];
-
-    function pgCrearBtn(label, valor, grupo, estilosActivo, estilosInac) {
-        var btn = document.createElement('button');
-        btn.textContent = label;
-        btn.dataset.valor = valor;
-        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ' +
-            (valor === '' ? estilosActivo.join(' ') : estilosInac.join(' '));
-        btn.addEventListener('click', function () {
-            if (grupo === 'sede') {
-                pgFiltroSede = valor;
-                document.querySelectorAll('#pg-btns-sede button').forEach(function (b) {
-                    b.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ' +
-                        (b.dataset.valor === valor ? estilosActivo.join(' ') : estilosInac.join(' '));
+        function filtrar() {
+            const tipo = (form.querySelector('input[name="filtro_tipo"]:checked') || {}).value || '';
+            const sede = (form.querySelector('input[name="filtro_sede"]:checked') || {}).value || '';
+            let total = 0;
+            grid.querySelectorAll('.rc-day').forEach(dia => {
+                let visibles = 0;
+                dia.querySelectorAll('.rc-slot').forEach(s => {
+                    const ok = (!tipo || s.dataset.tipo === tipo) && (!sede || s.dataset.sede === sede);
+                    s.hidden = !ok;
+                    if (ok) visibles++;
                 });
-            } else {
-                pgFiltroDia = valor;
-                document.querySelectorAll('#pg-btns-dia button').forEach(function (b) {
-                    b.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 ' +
-                        (b.dataset.valor === valor ? estilosActivo.join(' ') : estilosInac.join(' '));
-                });
-            }
-            pgAplicarFiltros();
-        });
-        return btn;
-    }
-
-    function pgAplicarFiltros() {
-        var cards   = document.querySelectorAll('.pg-card-recupero');
-        var visibles = 0;
-        cards.forEach(function (card) {
-            var okSede = !pgFiltroSede || card.dataset.sede === pgFiltroSede;
-            var okDia  = !pgFiltroDia  || card.dataset.dia  === pgFiltroDia;
-            card.style.display = (okSede && okDia) ? '' : 'none';
-            if (okSede && okDia) visibles++;
-        });
-        document.getElementById('pg-sin-resultados').classList.toggle('hidden', visibles > 0);
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        var cards = document.querySelectorAll('.pg-card-recupero');
-        var sedes = [], dias = [];
-        var contSede = document.getElementById('pg-btns-sede');
-        var contDia  = document.getElementById('pg-btns-dia');
-        if (contSede.dataset.init) return;   // evita doble ejecución
-        contSede.dataset.init = '1';
-        contSede.innerHTML = '';
-        contDia.innerHTML  = '';
-
-        cards.forEach(function (card) {
-            if (!sedes.includes(card.dataset.sede)) sedes.push(card.dataset.sede);
-            if (!dias.includes(card.dataset.dia))   dias.push(card.dataset.dia);
-        });
-
-        // Botón "Todas las sedes"
-        contSede.appendChild(pgCrearBtn('Todas las sedes', '', 'sede', ESTILO_ACTIVO_SEDE, ESTILO_INAC_SEDE));
-        sedes.forEach(function (s) {
-            contSede.appendChild(pgCrearBtn(s, s, 'sede', ESTILO_ACTIVO_SEDE, ESTILO_INAC_SEDE));
-        });
-
-        // Botón "Todos los días"
-        contDia.appendChild(pgCrearBtn('Todos los días', '', 'dia', ESTILO_ACTIVO_DIA, ESTILO_INAC_DIA));
-        dias.forEach(function (d) {
-            contDia.appendChild(pgCrearBtn(d, d, 'dia', ESTILO_ACTIVO_DIA, ESTILO_INAC_DIA));
-        });
-
-        // Ocultar filtros si todo es único (solo 1 sede y 1 día)
-        if (sedes.length <= 1 && dias.length <= 1) {
-            document.querySelector('.mb-5.space-y-3').style.display = 'none';
+                dia.querySelector('.rc-day__empty').hidden = visibles > 0;
+                dia.classList.toggle('is-empty', visibles === 0);
+                total += visibles;
+            });
+            $('rcVacio').hidden = total > 0;
+            if (elegido && elegido.hidden) deseleccionar();
         }
-    });
-</script>
-{% endblock %}
 
+        function seleccionar(slot) {
+            if (slot.dataset.estado !== 'libre') return;
+            if (elegido) elegido.classList.remove('is-selected');
+            elegido = slot;
+            slot.classList.add('is-selected');
+            $('fClase').value = slot.dataset.clase;
+            $('fFecha').value = slot.dataset.fecha;
+            $('rsTitulo').textContent = slot.dataset.titulo;
+            $('rsLugar').textContent = slot.dataset.lugar;
+            resumen.hidden = false;
+        }
+        function deseleccionar() {
+            if (elegido) elegido.classList.remove('is-selected');
+            elegido = null;
+            $('fClase').value = '';
+            $('fFecha').value = '';
+            resumen.hidden = true;
+        }
+
+        form.querySelectorAll('input[name="filtro_tipo"], input[name="filtro_sede"]').forEach(r => r.addEventListener('change', filtrar));
+        slots.forEach(s => s.addEventListener('click', () => seleccionar(s)));
+        $('rsCancelar').addEventListener('click', deseleccionar);
+        filtrar();
+    })();
+</script>
 {% endblock %}

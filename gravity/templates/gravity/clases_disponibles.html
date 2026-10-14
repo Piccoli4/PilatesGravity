@@ -145,7 +145,7 @@
                             <div class="cd-card__action">
                                 {% if user.is_authenticated %}
                                     {% if clase_info.cupo_temporal %}
-                                        <a href="{% url 'gravity:reservar_cupo_temporal' clase_info.clase.id clase_info.cupo_temporal.fecha_str %}"
+                                        <a href="{% url 'gravity:reservar_clase' %}?tipo={{ clase_info.clase.tipo }}&sede={{ clase_info.clase.direccion }}&dia={{ clase_info.clase.dia }}&horario={{ clase_info.clase.horario|time:'H:i' }}&es_temporal=1"
                                            class="g-btn g-btn--sand g-btn--block">
                                             Reservar el {{ clase_info.cupo_temporal.fecha|date:"d/m" }}
                                         </a>

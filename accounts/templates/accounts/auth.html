@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/brittany-font.css' %}">
-    <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261010f">
-    <link rel="stylesheet" href="{% static 'css/accounts/auth.css' %}?v=20261010c">
+    <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261013a">
+    <link rel="stylesheet" href="{% static 'css/accounts/auth.css' %}?v=20261011c">
     <meta name="theme-color" content="#4A5F73">
 </head>
 <body class="auth-body">
@@ -121,9 +121,19 @@
                 <button type="button" class="auth-ghost" data-auth-switch="login" tabindex="-1">Iniciar sesión</button>
             </div>
         </aside>
+
+        <!-- Velo de carga: aparece si el servidor tarda en responder -->
+        <div class="auth-loader" id="authLoader" role="status" aria-live="polite" aria-hidden="true">
+            <div class="auth-loader__mark">
+                <span class="auth-loader__ring"></span>
+                <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="">
+            </div>
+            <p class="auth-loader__text" id="authLoaderText">Ingresando…</p>
+            <span class="auth-loader__bar"></span>
+        </div>
     </main>
 
-    <script src="{% static 'js/form_submit.js' %}?v=20261007"></script>
+    <script src="{% static 'js/form_submit.js' %}?v=20261011a"></script>
     <script>
         (function () {
             const auth = document.getElementById('auth');
@@ -160,6 +170,31 @@
                 input.addEventListener('keydown', check);
                 input.addEventListener('keyup', check);
                 input.addEventListener('blur', () => aviso.classList.remove('is-on'));
+            });
+
+            // Al enviar: spinner en el botón (form_submit.js) y, si tarda, el velo con el logo
+            const loader = document.getElementById('authLoader');
+            const loaderText = document.getElementById('authLoaderText');
+            let loaderTimer = null;
+            document.addEventListener('submit', e => {
+                const form = e.target;
+                if (e.defaultPrevented || !auth.contains(form)) return;
+                const btn = form.querySelector('[type=submit]');
+                loaderText.textContent = (btn && btn.dataset.loadingText || 'Cargando...').replace('...', '…');
+                clearTimeout(loaderTimer);
+                loaderTimer = setTimeout(() => {
+                    loader.classList.add('is-on');
+                    loader.parentElement.classList.add('is-loading');
+                    loader.setAttribute('aria-hidden', 'false');
+                }, 350);
+            });
+            // Volver con "atrás" desde el perfil: la página se restaura sin el velo
+            window.addEventListener('pageshow', e => {
+                if (!e.persisted) return;
+                clearTimeout(loaderTimer);
+                loader.classList.remove('is-on');
+                loader.parentElement.classList.remove('is-loading');
+                loader.setAttribute('aria-hidden', 'true');
             });
 
             // Los mensajes se ocultan solos

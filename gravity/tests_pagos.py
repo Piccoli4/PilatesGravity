@@ -458,7 +458,7 @@ class PagosPorAdministradoraTests(TestCase):
         respuesta = self.pedir()
 
         self.assertEqual(respuesta.status_code, 200)
-        self.assertContains(respuesta, 'Pagos por Administradora')
+        self.assertContains(respuesta, 'Cobros por administradora')
         self.assertContains(respuesta, 'Ana Gómez')
         self.assertContains(respuesta, 'Bea López')
 

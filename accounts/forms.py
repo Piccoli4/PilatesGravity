@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User
+from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 from .models import UserProfile, Testimonio
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
@@ -234,102 +235,108 @@ class ProfileUpdateForm(forms.Form):
 
 class UserProfileForm(forms.ModelForm):
     """
-    Formulario completo para el perfil del usuario.
-    Incluye toda la información adicional del UserProfile.
+    Ficha del alumno (/accounts/profile/complete/): datos personales, salud,
+    foto y avisos. La fecha de primera clase la carga el estudio.
     """
-    
+
+    # Pregunta de salud con respuesta explícita (Sí/No)
+    tiene_lesiones = forms.TypedChoiceField(
+        choices=[('False', 'No tengo lesiones ni condiciones a tener en cuenta'),
+                 ('True', 'Sí, tengo algo para contarles')],
+        coerce=lambda valor: valor == 'True',
+        widget=forms.RadioSelect,
+        error_messages={'required': 'Elegí una opción para continuar.'},
+    )
+
+    quitar_avatar = forms.BooleanField(required=False)
+
+    NIVEL_AYUDA = {
+        'principiante': 'Es mi primera vez o hice pocas clases',
+        'intermedio': 'Ya entreno hace un tiempo',
+        'avanzado': 'Domino la técnica y busco más desafío',
+        'instructor': 'Doy clases o me formé en Pilates',
+    }
+    SEDE_AYUDA = {
+        'cualquiera': 'Me da igual',
+        'sede_principal': 'La Rioja 3044',
+        'sede_2': '9 de Julio 3696',
+    }
+
     class Meta:
         model = UserProfile
         fields = (
-            'telefono', 'fecha_nacimiento', 'tiene_lesiones', 'descripcion_lesiones',
-            'nivel_experiencia', 'acepta_marketing', 'acepta_recordatorios',
-            'fecha_primera_clase', 'avatar'
+            'telefono', 'fecha_nacimiento', 'nivel_experiencia',
+            'tiene_lesiones', 'descripcion_lesiones',
+            'avatar', 'acepta_recordatorios', 'sede_preferida',
         )
         widgets = {
             'telefono': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Teléfono',
-                'type': 'tel'
+                'type': 'tel', 'class': 'pc-input', 'autocomplete': 'tel',
+                'inputmode': 'tel', 'placeholder': 'Ej: 3425114448',
             }),
-            'fecha_nacimiento': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
+            'fecha_nacimiento': forms.DateInput(format='%Y-%m-%d', attrs={
+                'type': 'date', 'class': 'pc-input', 'autocomplete': 'bday',
             }),
-            'tiene_lesiones': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
+            'nivel_experiencia': forms.RadioSelect,
             'descripcion_lesiones': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Describe brevemente cualquier lesión o condición médica relevante...'
+                'rows': 4, 'class': 'pc-input', 'maxlength': '500',
+                'placeholder': 'Ej: hernia de disco lumbar, operación de rodilla en 2024, embarazo de 20 semanas…',
             }),
-            'nivel_experiencia': forms.Select(attrs={
-                'class': 'form-control'
-            }),
-            'acepta_marketing': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
-            'acepta_recordatorios': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
-            'fecha_primera_clase': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'avatar': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': 'image/*'
-            }),
+            'avatar': forms.FileInput(attrs={'accept': 'image/jpeg,image/png,image/webp'}),
+            'sede_preferida': forms.RadioSelect,
+        }
+        error_messages = {
+            'telefono': {'invalid': 'Ingresá solo números (entre 9 y 15), sin espacios ni guiones.'},
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        # Hacer algunos campos condicionales
         self.fields['descripcion_lesiones'].required = False
-        
-        # Agregar JavaScript condicional para lesiones
-        self.fields['tiene_lesiones'].widget.attrs['onchange'] = '''
-            const descripcion = document.querySelector('[name="descripcion_lesiones"]');
-            if (this.checked) {
-                descripcion.required = true;
-                descripcion.parentElement.style.display = 'block';
-            } else {
-                descripcion.required = false;
-                descripcion.value = '';
-                descripcion.parentElement.style.display = 'none';
-            }
-        '''
+        self.fields['sede_preferida'].choices = [
+            ('cualquiera', 'Cualquier sede'),
+            ('sede_principal', 'Sede Central'),
+            ('sede_2', 'Sede 2'),
+        ]
+        # La primera vez no damos por hecho que no tiene lesiones: tiene que elegir
+        if self.instance and not self.instance.perfil_completado and not self.is_bound:
+            self.initial['tiene_lesiones'] = None
+
+    def opciones_nivel(self):
+        """(valor, nombre, ayuda) para las tarjetas de nivel."""
+        # 'Instructor/Profesional' no tiene dónde cortar y desborda la tarjeta
+        return [(v, n.replace('/', ' / '), self.NIVEL_AYUDA.get(v, '')) for v, n in self.fields['nivel_experiencia'].choices]
+
+    def opciones_sede(self):
+        return [(v, n, self.SEDE_AYUDA.get(v, '')) for v, n in self.fields['sede_preferida'].choices]
 
     def clean(self):
-        """Validaciones personalizadas del formulario"""
         cleaned_data = super().clean()
-        tiene_lesiones = cleaned_data.get('tiene_lesiones')
-        descripcion_lesiones = cleaned_data.get('descripcion_lesiones')
-        
-        # Validar que si tiene lesiones, debe describir
-        if tiene_lesiones and not descripcion_lesiones:
-            raise ValidationError({
-                'descripcion_lesiones': 'Si tienes lesiones o condiciones médicas, por favor descríbelas brevemente.'
-            })
-        
+        # Si dice que no tiene lesiones, no guardamos una descripción vieja.
+        # (Si dice que sí y no describe nada, lo rechaza UserProfile.clean().)
+        if cleaned_data.get('tiene_lesiones') is False:
+            cleaned_data['descripcion_lesiones'] = ''
         return cleaned_data
-    
+
     def clean_avatar(self):
-        """Validar tamaño y formato de la foto de perfil"""
+        """Validar tamaño y formato de la foto nueva (la que ya estaba no se revisa)."""
         avatar = self.cleaned_data.get('avatar')
-        
-        if avatar:
-            # Validar tamaño: máximo 5MB
+        if avatar and hasattr(avatar, 'content_type'):
             if avatar.size > 5 * 1024 * 1024:
-                raise ValidationError('La imagen no puede superar los 5MB.')
-            
-            # Validar formato
-            tipos_permitidos = ['image/jpeg', 'image/png', 'image/webp']
-            if avatar.content_type not in tipos_permitidos:
-                raise ValidationError('Solo se permiten imágenes en formato JPG, PNG o WebP.')
-        
+                raise ValidationError('La imagen no puede superar los 5 MB.')
+            if avatar.content_type not in ('image/jpeg', 'image/png', 'image/webp'):
+                raise ValidationError('Subí una imagen JPG, PNG o WebP.')
         return avatar
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        nueva = self.files.get('avatar')
+        if self.cleaned_data.get('quitar_avatar') and not nueva:
+            if profile.avatar:
+                profile.avatar.delete(save=False)
+            profile.avatar = None
+        if commit:
+            profile.save()
+        return profile
 
 class CustomUserChangeForm(UserChangeForm):
     """
@@ -350,30 +357,26 @@ class CustomUserChangeForm(UserChangeForm):
 
 class CambiarPasswordForm(forms.Form):
     """
-    Formulario para cambiar la contraseña del usuario actual.
+    Cambio de contraseña del usuario actual. La contraseña nueva pasa por las mismas
+    reglas que al crear la cuenta (AUTH_PASSWORD_VALIDATORS).
     """
     password_actual = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Contraseña actual'
-        }),
-        label='Contraseña actual'
+        label='Contraseña actual',
+        strip=False,
+        widget=forms.PasswordInput(attrs={'class': 'pc-input', 'autocomplete': 'current-password'}),
+        error_messages={'required': 'Escribí tu contraseña actual.'},
     )
     password_nueva = forms.CharField(
-        min_length=8,
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Nueva contraseña'
-        }),
         label='Nueva contraseña',
-        help_text='La contraseña debe tener al menos 6 caracteres.'
+        strip=False,
+        widget=forms.PasswordInput(attrs={'class': 'pc-input', 'autocomplete': 'new-password'}),
+        error_messages={'required': 'Escribí la nueva contraseña.'},
     )
     password_confirmacion = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Confirmar nueva contraseña'
-        }),
-        label='Confirmar nueva contraseña'
+        label='Repetila',
+        strip=False,
+        widget=forms.PasswordInput(attrs={'class': 'pc-input', 'autocomplete': 'new-password'}),
+        error_messages={'required': 'Repetí la nueva contraseña.'},
     )
 
     def __init__(self, user, *args, **kwargs):
@@ -381,63 +384,87 @@ class CambiarPasswordForm(forms.Form):
         super().__init__(*args, **kwargs)
 
     def clean_password_actual(self):
-        """Validar que la contraseña actual sea correcta"""
         password_actual = self.cleaned_data.get('password_actual')
         if not self.user.check_password(password_actual):
-            raise ValidationError('La contraseña actual es incorrecta.')
+            raise ValidationError('La contraseña actual no es correcta.')
         return password_actual
 
+    def clean_password_nueva(self):
+        password_nueva = self.cleaned_data.get('password_nueva')
+        if password_nueva:
+            password_validation.validate_password(password_nueva, self.user)
+        return password_nueva
+
     def clean(self):
-        """Validar que las contraseñas nuevas coincidan"""
         cleaned_data = super().clean()
-        password_nueva = cleaned_data.get('password_nueva')
-        password_confirmacion = cleaned_data.get('password_confirmacion')
+        actual = cleaned_data.get('password_actual')
+        nueva = cleaned_data.get('password_nueva')
+        confirmacion = cleaned_data.get('password_confirmacion')
 
-        if password_nueva and password_confirmacion:
-            if password_nueva != password_confirmacion:
-                raise ValidationError({
-                    'password_confirmacion': 'Las contraseñas no coinciden.'
-                })
-
+        if nueva and confirmacion and nueva != confirmacion:
+            self.add_error('password_confirmacion', 'Las contraseñas no coinciden.')
+        if actual and nueva and actual == nueva:
+            self.add_error('password_nueva', 'La nueva contraseña tiene que ser distinta de la actual.')
         return cleaned_data
 
     def save(self):
-        """Guardar la nueva contraseña"""
-        password_nueva = self.cleaned_data['password_nueva']
-        self.user.set_password(password_nueva)
+        self.user.set_password(self.cleaned_data['password_nueva'])
         self.user.save()
+
+class EliminarCuentaForm(forms.Form):
+    """Confirmación para eliminar la cuenta: contraseña y escribir ELIMINAR."""
+    password = forms.CharField(
+        label='Tu contraseña',
+        strip=False,
+        widget=forms.PasswordInput(attrs={'class': 'pc-input', 'autocomplete': 'current-password'}),
+        error_messages={'required': 'Escribí tu contraseña.'},
+    )
+    confirmacion = forms.CharField(
+        label='Escribí ELIMINAR para confirmar',
+        widget=forms.TextInput(attrs={'class': 'pc-input', 'autocomplete': 'off', 'autocapitalize': 'characters',
+                                      'spellcheck': 'false', 'placeholder': 'ELIMINAR'}),
+        error_messages={'required': 'Escribí ELIMINAR para confirmar.'},
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if not self.user.check_password(password):
+            raise ValidationError('La contraseña no es correcta.')
+        return password
+
+    def clean_confirmacion(self):
+        texto = (self.cleaned_data.get('confirmacion') or '').strip().upper()
+        if texto != 'ELIMINAR':
+            raise ValidationError('Escribí ELIMINAR (tal cual) para confirmar.')
+        return texto
 
 class CustomPasswordResetForm(PasswordResetForm):
     """
-    Formulario personalizado para solicitar reset de contraseña.
+    Pedir el enlace para crear una contraseña nueva. No avisa si el email no está
+    registrado (no revela quién es alumno): Django solo envía el email si existe una
+    cuenta activa con ese email.
     """
     email = forms.EmailField(
         max_length=254,
-        widget=forms.EmailInput(attrs={
-            'class': 'login-input',
-            'placeholder': 'Ingresa tu correo electrónico',
-            'autocomplete': 'email'
-        }),
-        label='Correo electrónico'
+        label='Tu email',
+        widget=forms.EmailInput(attrs={'placeholder': ' ', 'autocomplete': 'email', 'autofocus': True}),
+        error_messages={'required': 'Escribí tu email.', 'invalid': 'Ese email no parece válido. Revisalo.'},
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Personalizar el campo email para que coincida con el diseño
-        self.fields['email'].help_text = (
-            'Te enviaremos un enlace para restablecer tu contraseña.'
-        )
-
-    def clean_email(self):
-        """Validar que el email esté registrado en el sistema"""
-        email = self.cleaned_data.get('email')
-        if email:
-            if not User.objects.filter(email=email).exists():
-                raise ValidationError(
-                    'No existe ningún usuario registrado con este correo electrónico.'
-                )
-        return email
+    def get_users(self, email):
+        """
+        Cuentas activas con ese email, aunque todavía no tengan contraseña: los
+        alumnos que crea el estudio la eligen con una invitación y, si se les vence,
+        la crean desde acá.
+        """
+        from django.contrib.auth import get_user_model
+        modelo = get_user_model()
+        campo = modelo.get_email_field_name()
+        return modelo._default_manager.filter(**{f'{campo}__iexact': email, 'is_active': True})
 
     def save(self, domain_override=None,
              subject_template_name='accounts/password_reset_subject.txt',
@@ -483,49 +510,20 @@ class CustomPasswordResetForm(PasswordResetForm):
         )
 
 class CustomSetPasswordForm(SetPasswordForm):
-    """
-    Formulario personalizado para establecer nueva contraseña.
-    """
+    """Elegir la contraseña nueva desde el enlace del email (mismas reglas que el registro)."""
     new_password1 = forms.CharField(
-        label="Nueva contraseña",
+        label='Nueva contraseña',
         strip=False,
-        widget=forms.PasswordInput(attrs={
-            'class': 'login-input',
-            'placeholder': 'Ingresa tu nueva contraseña',
-            'autocomplete': 'new-password'
-        }),
-        help_text='La contraseña debe tener al menos 6 caracteres.'
+        widget=forms.PasswordInput(attrs={'placeholder': ' ', 'autocomplete': 'new-password', 'autofocus': True}),
+        error_messages={'required': 'Escribí la nueva contraseña.'},
     )
-    
     new_password2 = forms.CharField(
-        label="Confirmar nueva contraseña",
+        label='Repetila',
         strip=False,
-        widget=forms.PasswordInput(attrs={
-            'class': 'login-input',
-            'placeholder': 'Confirma tu nueva contraseña',
-            'autocomplete': 'new-password'
-        })
+        widget=forms.PasswordInput(attrs={'placeholder': ' ', 'autocomplete': 'new-password'}),
+        error_messages={'required': 'Repetí la nueva contraseña.'},
     )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Personalizar mensajes de ayuda
-        self.fields['new_password1'].help_text = (
-            'Tu contraseña debe tener al menos 6 caracteres y te recomendamos que no sea '
-            'demasiado común o similar a tu información personal.'
-        )
-
-    def clean_new_password2(self):
-        """Validar que las contraseñas coincidan con mensaje personalizado"""
-        password1 = self.cleaned_data.get('new_password1')
-        password2 = self.cleaned_data.get('new_password2')
-        
-        if password1 and password2:
-            if password1 != password2:
-                raise ValidationError('Las contraseñas no coinciden.')
-        
-        return password2
+    error_messages = {'password_mismatch': 'Las contraseñas no coinciden.'}
 
 class TestimonioForm(forms.ModelForm):
     """

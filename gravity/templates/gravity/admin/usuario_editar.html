@@ -1,0 +1,82 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Editar datos{% endblock %}
+{% block breadcrumb %}
+<li><span aria-hidden="true">/</span> <a href="{% url 'gravity:admin_usuarios_lista' %}">Alumnos</a></li>
+<li><span aria-hidden="true">/</span> <a href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">{{ usuario.get_full_name|default:usuario.username }}</a></li>
+<li><span aria-hidden="true">/</span> <span>Editar</span></li>
+{% endblock %}
+
+{% block content %}
+<header class="ad-head">
+    <div class="ad-head__text">
+        <a class="ad-back" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver a la ficha</a>
+        <h1 class="ad-head__title">Editar datos</h1>
+        <p class="ad-head__sub">{{ usuario.get_full_name|default:usuario.username }} · usuario {{ usuario.username }}</p>
+    </div>
+</header>
+
+<form method="post" class="cl-form" novalidate>
+    {% csrf_token %}
+    {% if form.errors %}
+    <div class="ad-alert ad-alert--danger" role="alert">{% include 'gravity/admin/_icono.html' with i='alerta' %}<p>Revisá los campos marcados.</p></div>
+    {% endif %}
+
+    <section class="ad-card">
+        <div class="ad-card__head"><h2 class="ad-card__title">Contacto</h2></div>
+        <div class="ad-card__body ad-form">
+            <div class="ad-form__row ad-form__row--2">
+                {% include 'gravity/admin/_campo.html' with campo=form.first_name %}
+                {% include 'gravity/admin/_campo.html' with campo=form.last_name %}
+            </div>
+            <div class="ad-form__row ad-form__row--2">
+                {% include 'gravity/admin/_campo.html' with campo=form.telefono ayuda='Con característica, sin el 15. Ej.: 342 511 4448' %}
+                {% include 'gravity/admin/_campo.html' with campo=form.email ayuda='Si todavía no creó su contraseña y le cargás un email, le mandamos la invitación.' %}
+            </div>
+            {% include 'gravity/admin/_campo.html' with campo=form.fecha_nacimiento %}
+        </div>
+    </section>
+
+    <section class="ad-card">
+        <div class="ad-card__head"><h2 class="ad-card__title">Salud</h2></div>
+        <div class="ad-card__body ad-form">
+            <fieldset class="ad-field{% if form.tiene_lesiones.errors %} has-error{% endif %}">
+                <legend class="ad-label">{{ form.tiene_lesiones.label }}</legend>
+                <div class="cl-seg fa-seg-2">
+                    {% for r in form.tiene_lesiones %}<label class="cl-seg__op">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}
+                </div>
+            </fieldset>
+            <div id="fa-lesiones">{% include 'gravity/admin/_campo.html' with campo=form.descripcion_lesiones ayuda='Lo ven las profesoras en la lista de cada clase.' %}</div>
+        </div>
+    </section>
+
+    <section class="ad-card">
+        <div class="ad-card__head"><h2 class="ad-card__title">En el estudio</h2></div>
+        <div class="ad-card__body ad-form">
+            <div class="ad-form__row ad-form__row--2">
+                {% include 'gravity/admin/_campo.html' with campo=form.fecha_primera_clase %}
+                {% include 'gravity/admin/_campo.html' with campo=form.sede_primera_clase %}
+            </div>
+        </div>
+    </section>
+
+    <div class="ad-form__actions">
+        <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">Cancelar</a>
+        <button type="submit" class="ad-btn" data-loading-text="Guardando...">Guardar datos</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        const caja = document.getElementById('fa-lesiones');
+        function actualizar() {
+            const si = document.querySelector('input[name="tiene_lesiones"][value="si"]');
+            caja.hidden = !(si && si.checked);
+        }
+        document.querySelectorAll('input[name="tiene_lesiones"]').forEach(function (r) { r.addEventListener('change', actualizar); });
+        actualizar();
+    })();
+</script>
+{% endblock %}

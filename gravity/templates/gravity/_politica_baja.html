@@ -1,0 +1,12 @@
+{# Política de cobro al dar de baja un plan; resalta el tramo de hoy (politica.tipo). #}
+<ol class="pl-timeline">
+    <li class="pl-timeline__item pl-timeline__item--ok {% if politica.tipo == 'sin_cargo' %}is-now{% endif %}">
+        <strong>Del 1 al 4</strong><span>No se cobra el mes en curso</span>
+    </li>
+    <li class="pl-timeline__item pl-timeline__item--warn {% if politica.tipo == 'medio_mes' %}is-now{% endif %}">
+        <strong>Del 5 al 9</strong><span>Se cobra la mitad del mes</span>
+    </li>
+    <li class="pl-timeline__item pl-timeline__item--full {% if politica.tipo == 'mes_completo' %}is-now{% endif %}">
+        <strong>Desde el 10</strong><span>Se cobra el mes completo</span>
+    </li>
+</ol>

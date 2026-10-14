@@ -1,0 +1,22 @@
+{% comment %}
+Alumnos de una clase en una fecha, con sus marcas (Recupero, Avisó que no viene, Salud…).
+Recibe `alumnos` (de gravity/hoy.py: clases_del_dia). Lo usan "Hoy" y el detalle de la clase.
+{% endcomment %}{% if alumnos %}
+<ul class="hy-alumnos">
+    {% for a in alumnos %}
+    <li class="hy-alumno{% if a.avisaron %} hy-alumno--falta{% endif %}">
+        {% include 'gravity/admin/_avatar.html' with persona=a.usuario %}
+        <span class="hy-alumno__body">
+            <a href="{{ a.url }}" class="hy-alumno__nombre">{{ a.nombre }}</a>
+            {% if a.marcas %}
+            <span class="hy-alumno__marcas">
+                {% for texto, tono in a.marcas %}<span class="ad-badge ad-badge--{{ tono }}">{{ texto }}</span>{% endfor %}
+            </span>
+            {% endif %}
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="hy-vacio">Todavía no hay alumnos anotados.</p>
+{% endif %}

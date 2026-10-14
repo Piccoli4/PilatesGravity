@@ -1,0 +1,49 @@
+{% extends 'gravity/admin/base_admin.html' %}
+
+{% block title %}Cancelar plan{% endblock %}
+{% block breadcrumb %}
+<li><span aria-hidden="true">/</span> <a href="{% url 'gravity:admin_usuarios_lista' %}">Alumnos</a></li>
+<li><span aria-hidden="true">/</span> <a href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">{{ usuario.get_full_name|default:usuario.username }}</a></li>
+<li><span aria-hidden="true">/</span> <span>Cancelar plan</span></li>
+{% endblock %}
+
+{% block content %}
+<div class="cd-eliminar">
+    <a class="ad-back" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">{% include 'gravity/admin/_icono.html' with i='volver' %} Volver a la ficha</a>
+    <section class="ad-card">
+        <form method="post" class="ad-card__body" data-confirm="Se cancela el plan {{ plan.plan.nombre }} y las reservas tildadas. La cuota del mes se ajusta según el día de la baja." data-confirm-titulo="¿Cancelar el plan?" data-confirm-boton="Cancelar plan" data-confirm-peligro>
+            {% csrf_token %}
+            <input type="hidden" name="elegir" value="1">
+            <div class="ad-modal__icon cd-icono-peligro">{% include 'gravity/admin/_icono.html' with i='plan' %}</div>
+            <h1 class="ad-modal__title">Cancelar el plan {{ plan.plan.nombre }}</h1>
+            <p class="ad-modal__text">
+                {{ usuario.get_full_name|default:usuario.username }}.
+                {% if otros %}Le queda {% for o in otros %}{{ o.plan.nombre }}{% if not forloop.last %} y {% endif %}{% endfor %}, que cubre {{ cupo_otros }} clase{{ cupo_otros|pluralize }} por semana: vienen tildados los horarios que sobran.
+                {% else %}No le queda otro plan: vienen tildadas todas sus reservas.{% endif %}
+            </p>
+
+            {% if fijas or sueltas %}
+            <fieldset class="pc-reservas">
+                <legend class="ad-label">Qué reservas se cancelan</legend>
+                {% for r in fijas %}
+                <label class="ad-check"><input type="checkbox" name="reservas" value="{{ r.id }}"{% if r.id in sugeridas %} checked{% endif %}>
+                    <span class="ad-check__text">{{ r.clase.get_nombre_display }} · {{ r.clase.dia }} {{ r.clase.horario|time:"H:i" }}<small>Horario fijo desde el {{ r.fecha_reserva|date:"d/m/Y" }} · {{ r.clase.get_direccion_corta }}</small></span></label>
+                {% endfor %}
+                {% for r in sueltas %}
+                <label class="ad-check"><input type="checkbox" name="reservas" value="{{ r.id }}"{% if r.id in sugeridas %} checked{% endif %}>
+                    <span class="ad-check__text">{{ r.clase.get_nombre_display }} · {{ r.fecha_unica|date:"d/m" }} {{ r.clase.horario|time:"H:i" }}<small>{% if r.es_recupero %}Recupero{% else %}Clase única{% endif %} · {{ r.clase.get_direccion_corta }}</small></span></label>
+                {% endfor %}
+            </fieldset>
+            {% else %}
+            <p class="cd-eliminar__texto">No tiene reservas activas.</p>
+            {% endif %}
+
+            <p class="ad-help pc-nota">Cuota del mes: hasta el día 4 no se cobra, del 5 al 9 se cobra medio mes y desde el 10 el mes completo{% if otros %} (solo si no le queda ningún plan){% endif %}. Hoy es {{ hoy|date:"j" }}.</p>
+            <div class="ad-modal__actions">
+                <a class="ad-btn ad-btn--ghost" href="{% url 'gravity:admin_usuario_detalle' usuario.id %}">Volver</a>
+                <button type="submit" class="ad-btn ad-btn--danger" data-loading-text="Cancelando...">Cancelar plan</button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

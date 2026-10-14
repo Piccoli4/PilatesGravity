@@ -35,16 +35,16 @@ SEDES = [
     {
         'id': 'sede-2',
         'nombre': 'Pilates Gravity · Sede 2',
-        'calle': '9 de Julio 3698',
+        'calle': '9 de Julio 3696',
         'cp': 'S3002',
-        'mapa': 'https://www.google.com/maps/search/?api=1&query=9+de+Julio+3698,+Santa+Fe',
+        'mapa': 'https://www.google.com/maps/search/?api=1&query=9+de+Julio+3696,+Santa+Fe',
         'foto': 'scroll_world/stills/06_final.webp',
     },
 ]
 
 DESCRIPCION_GENERAL = (
     'Pilates Reformer y Cadillac en Santa Fe Capital. Dos sedes: La Rioja 3044 y '
-    '9 de Julio 3698. Grupos reducidos, instructores certificados y reserva online.'
+    '9 de Julio 3696. Grupos reducidos, instructores certificados y reserva online.'
 )
 
 # url_name → textos de la página. 'prioridad' y 'frecuencia' van al sitemap.

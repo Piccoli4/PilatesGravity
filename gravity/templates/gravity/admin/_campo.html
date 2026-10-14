@@ -1,0 +1,9 @@
+{% comment %}
+Un campo de formulario del panel con su etiqueta, ayuda y errores. Uso:
+{% include 'gravity/admin/_campo.html' with campo=form.email ayuda='Texto opcional' %}
+{% endcomment %}<div class="ad-field{% if campo.errors %} has-error{% endif %}">
+    <label class="ad-label" for="{{ campo.id_for_label }}">{{ campo.label }}{% if not campo.field.required %} <small>(opcional)</small>{% endif %}</label>
+    {{ campo }}
+    {% if ayuda %}<p class="ad-help">{{ ayuda }}</p>{% endif %}
+    {% for e in campo.errors %}<p class="ad-error">{{ e }}</p>{% endfor %}
+</div>

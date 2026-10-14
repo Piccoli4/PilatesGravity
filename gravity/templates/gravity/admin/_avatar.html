@@ -1,0 +1,4 @@
+{% comment %}
+Avatar redondo con foto o iniciales. Uso:
+{% include 'gravity/admin/_avatar.html' with persona=usuario clase='ad-avatar--lg' %}
+{% endcomment %}<span class="ad-avatar {{ clase }}" aria-hidden="true">{% if persona.profile.avatar %}<img src="{{ persona.profile.avatar.url }}" alt="" loading="lazy">{% elif persona.first_name %}{{ persona.first_name|first|upper }}{{ persona.last_name|first|upper }}{% else %}{{ persona.username|first|upper }}{% endif %}</span>

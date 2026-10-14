@@ -1,0 +1,56 @@
+{% comment %}
+Modal para confirmar acciones sobre una reserva. Se abre con botones que tienen
+data-accion, data-url, data-titulo, data-texto, data-ok y opcionalmente data-tipo
+(temporal / permanente) y data-peligro. Vuelve a la página actual con 'next'.
+{% endcomment %}
+<!-- ================= Confirmación de acciones (se completa por JS) ================= -->
+<div class="me-modal" id="mrModal" role="dialog" aria-modal="true" aria-labelledby="mrModalTitulo" hidden>
+    <form method="post" class="me-modal__panel" id="mrModalForm">
+        {% csrf_token %}
+        <input type="hidden" name="confirmar_cancelacion" value="confirmar">
+        <input type="hidden" name="tipo_cancelacion" id="mrModalTipo" disabled>
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <span class="me-modal__icon mr-modal__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        </span>
+        <h2 id="mrModalTitulo"></h2>
+        <p id="mrModalTexto"></p>
+        <div class="mr-modal__actions">
+            <button type="button" class="g-btn g-btn--ghost" data-cerrar>Volver</button>
+            <button type="submit" class="g-btn g-btn--primary" id="mrModalOk" data-loading-text="Un momento...">Confirmar</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        // ---------- Modal de confirmación de acciones ----------
+        const modal = document.getElementById('mrModal');
+        const form = document.getElementById('mrModalForm');
+        const tipo = document.getElementById('mrModalTipo');
+        const ok = document.getElementById('mrModalOk');
+        let origen = null;
+
+        function abrir(btn) {
+            origen = btn;
+            form.action = btn.dataset.url;
+            if (btn.dataset.tipo) { tipo.value = btn.dataset.tipo; tipo.disabled = false; } else { tipo.disabled = true; }
+            document.getElementById('mrModalTitulo').textContent = btn.dataset.titulo;
+            document.getElementById('mrModalTexto').textContent = btn.dataset.texto;
+            ok.textContent = btn.dataset.ok;
+            ok.classList.toggle('mr-btn--danger', btn.hasAttribute('data-peligro'));
+            modal.hidden = false;
+            document.body.style.overflow = 'hidden';
+            ok.focus();
+        }
+        function cerrar() {
+            modal.hidden = true;
+            document.body.style.overflow = '';
+            if (origen) origen.focus();
+        }
+        document.querySelectorAll('[data-accion]').forEach(btn => btn.addEventListener('click', () => abrir(btn)));
+        modal.querySelector('[data-cerrar]').addEventListener('click', cerrar);
+        modal.addEventListener('click', e => { if (e.target === modal) cerrar(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) cerrar(); });
+    })();
+</script>

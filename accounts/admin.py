@@ -14,6 +14,8 @@ class UserProfileInline(admin.StackedInline):
         'fecha_nacimiento',
         'sede_preferida',
         'nivel_experiencia',
+        'fecha_primera_clase',
+        'sede_primera_clase',
         'acepta_recordatorios',
         'acepta_marketing',
         'tiene_lesiones',

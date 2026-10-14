@@ -1,611 +1,355 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Completar Perfil - Pilates Gravity{% endblock %}
+{% block title %}{% if es_primera_vez %}Completá tu ficha{% else %}Mi ficha{% endif %} - Pilates Gravity{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261011o">
+{% endblock %}
 
 {% block content %}
-    <div class="max-w-4xl mx-auto p-4 bg-fondo min-h-screen">
-        
-        {% if is_new_profile %}
-        <div class="text-center p-10 bg-gradient-to-br from-blanco to-gray-50 rounded-3xl mb-8 border-2 border-principal/10 shadow-xl custom-fade-in">
-            <div class="w-24 h-24 rounded-full mx-auto mb-6 bg-gradient-to-br from-secundario to-principal flex items-center justify-center text-white text-3xl font-bold shadow-xl border-4 border-white hover:scale-105 transition-transform duration-300">
-                {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
-            </div>
-            <h3 class="text-principal text-3xl font-semibold mb-4">¡Bienvenido {{ user.first_name }}!</h3>
-            <p class="text-gray-600 text-lg leading-relaxed">Completa tu perfil para personalizar tu experiencia en Pilates Gravity</p>
-        </div>
+<section class="me pc">
+    <div class="g-container pc__wrap">
+
+        {% if not es_primera_vez %}
+        <a href="{% url 'accounts:profile' %}" class="pc-back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            Volver a Mi espacio
+        </a>
         {% endif %}
 
-        <div class="text-center mb-6">
-            <h2 class="text-principal text-4xl mt-3 mb-4 font-semibold opacity-0 custom-slide-up-delayed-1">
-                {% if is_new_profile %}Completar Perfil{% else %}Actualizar Perfil{% endif %}
-            </h2>
-            <p class="text-gray-600 text-lg opacity-0 custom-slide-up-delayed-2">
-                Ayúdanos a conocerte mejor para brindarte la mejor experiencia
+        <header class="pc-head me-in">
+            <span class="g-eyebrow">{% if es_primera_vez %}Tu ficha · 3 pasos{% else %}Mi ficha{% endif %}</span>
+            <h1 class="pc-head__title">
+                {% if es_primera_vez %}Contanos un poco de vos{% if user.first_name %}, {{ user.first_name }}{% endif %}{% else %}Mi ficha{% endif %}
+            </h1>
+            <p class="pc-head__lead">
+                {% if es_primera_vez %}
+                    Nos ayuda a preparar tus clases y a cuidarte. Te lleva un par de minutos.
+                {% else %}
+                    Tus datos, tu información de salud, tu foto y tus avisos.
+                {% endif %}
             </p>
-        </div>
+        </header>
 
-        <!-- Barra de progreso del wizard -->
-        <div class="flex justify-center items-center mb-12 relative opacity-0 custom-fade-in-delayed">
-            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent active" data-step="1">1</div>
-            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
-            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="2">2</div>
-            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
-            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="3">3</div>
-            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
-            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="4">4</div>
-            <div class="wizard-step-line h-1 bg-gray-200 flex-1 mx-4 transition-all duration-500 rounded-full relative overflow-hidden"></div>
-            <div class="wizard-step w-12 h-12 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-bold text-lg relative z-10 transition-all duration-500 border-2 border-transparent" data-step="5">5</div>
-        </div>
+        {% if es_primera_vez %}
+        <ol class="pc-steps me-in" id="fichaPasos" aria-label="Progreso">
+            <li data-step="1"><span>1</span><em>Sobre vos</em></li>
+            <li data-step="2"><span>2</span><em>Tu salud</em></li>
+            <li data-step="3"><span>3</span><em>Foto y avisos</em></li>
+        </ol>
+        {% endif %}
 
-        <form method="post" enctype="multipart/form-data" id="profileForm">
+        <form method="post" enctype="multipart/form-data" id="fichaForm" novalidate
+              class="pc-form me-in {% if es_primera_vez %}is-wizard{% endif %}" data-paso="{{ paso_inicial }}">
             {% csrf_token %}
-            
-            <div class="bg-blanco rounded-3xl p-10 shadow-2xl border border-principal/10 mb-8 relative overflow-hidden">
-                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-secundario to-principal"></div>
-                
-                <!-- Paso 1: Información básica -->
-                <div class="step-content active opacity-0 translate-x-8 transition-all duration-500" data-step="1">
-                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2">
-                        Información Básica
-                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
-                    </h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
-                        Empecemos con tu información de contacto y datos básicos.
-                    </p>
-                    
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="mb-8 relative">
-                            <label for="{{ form.telefono.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
-                                <img src="{% static 'icons/celular.png' %}" alt="Icono de Celular" class="w-[23px] h-auto">
-                                Teléfono
-                            </label>
-                            <input type="tel" name="{{ form.telefono.name }}" id="{{ form.telefono.id_for_label }}" 
-                                   class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
-                                   value="{{ form.telefono.value|default:'' }}"
-                                   placeholder="Tu número de teléfono">
-                            {% if form.telefono.errors %}
-                                <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
-                                    ⚠️ {% for error in form.telefono.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="mb-8 relative">
-                            <label for="{{ form.fecha_nacimiento.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
-                                <img src="{% static 'icons/fecha_nacimiento.png' %}" alt="Icono de Fecha Nacimiento" class="w-[23px] h-auto">
-                                Fecha de Nacimiento
-                            </label>
-                            <input type="date" name="{{ form.fecha_nacimiento.name }}" id="{{ form.fecha_nacimiento.id_for_label }}" 
-                                   class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
-                                   value="{{ form.fecha_nacimiento.value|default:'' }}">
-                            {% if form.fecha_nacimiento.errors %}
-                                <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
-                                    ⚠️ {% for error in form.fecha_nacimiento.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
 
-                    <div class="mb-8 relative">
-                        <label for="{{ form.nivel_experiencia.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
-                            <img src="{% static 'icons/pilates.png' %}" alt="Icono de Pilates" class="w-[23px] h-auto">
-                            Nivel de Experiencia en Pilates
-                        </label>
-                        <select name="{{ form.nivel_experiencia.name }}" id="{{ form.nivel_experiencia.id_for_label }}" 
-                                class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5">
-                            {% for value, label in form.nivel_experiencia.field.choices %}
-                                <option value="{{ value }}" {% if form.nivel_experiencia.value == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                        {% if form.nivel_experiencia.errors %}
-                            <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
-                                ⚠️ {% for error in form.nivel_experiencia.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
+            <!-- ================= 1. Sobre vos ================= -->
+            <section class="me-card pc-sec" data-step="1" aria-labelledby="sec1">
+                <header class="pc-sec__head">
+                    <span class="pc-sec__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+                    </span>
+                    <div>
+                        <h2 id="sec1">Sobre vos</h2>
+                        <p>Para poder contactarte y saber desde dónde arrancás.</p>
+                    </div>
+                </header>
+
+                <div class="pc-grid">
+                    <div class="pc-field {% if form.telefono.errors %}has-error{% endif %}">
+                        <label for="{{ form.telefono.id_for_label }}">Celular <small>opcional</small></label>
+                        {{ form.telefono }}
+                        <small class="pc-hint">Para avisarte si cambia algo de tu clase.</small>
+                        {% for error in form.telefono.errors %}<small class="pc-error">{{ error }}</small>{% endfor %}
+                    </div>
+                    <div class="pc-field {% if form.fecha_nacimiento.errors %}has-error{% endif %}">
+                        <label for="{{ form.fecha_nacimiento.id_for_label }}">Fecha de nacimiento <small>opcional</small></label>
+                        {{ form.fecha_nacimiento }}
+                        <small class="pc-hint">Así te saludamos en tu cumpleaños.</small>
+                        {% for error in form.fecha_nacimiento.errors %}<small class="pc-error">{{ error }}</small>{% endfor %}
                     </div>
                 </div>
 
-                <!-- Paso 2: Información médica -->
-                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="2">
-                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2">
-                        Información de Salud
-                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
-                    </h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
-                        Esta información nos ayuda a adaptar las clases a tus necesidades específicas.
-                    </p>
-                    
-                    <div class="p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl mb-6 border-2 border-transparent transition-all duration-300 relative cursor-pointer hover:border-secundario hover:-translate-y-1 hover:shadow-lg">
-                        <input type="checkbox" name="{{ form.tiene_lesiones.name }}" id="{{ form.tiene_lesiones.id_for_label }}" 
-                               class="w-6 h-6 mr-4 border-2 border-principal rounded-lg transition-all duration-300 cursor-pointer"
-                               {% if form.tiene_lesiones.value %}checked{% endif %}>
-                        <label for="{{ form.tiene_lesiones.id_for_label }}" class="text-principal font-medium text-lg cursor-pointer leading-relaxed">
-                            {{ form.tiene_lesiones.label }}
-                        </label>
-                        {% if form.tiene_lesiones.errors %}
-                            <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
-                                ⚠️ {% for error in form.tiene_lesiones.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="lesiones-container hidden mt-6 p-8 bg-gradient-to-br from-secundario to-amber-500 border-2 border-amber-800 rounded-2xl custom-slide-down relative overflow-hidden" id="lesionesContainer">
-                        <div class="absolute top-4 right-4 text-2xl opacity-70">⚠️</div>
-                        <label for="{{ form.descripcion_lesiones.id_for_label }}" class="text-amber-900 font-semibold mb-3 block">
-                            Descripción de Lesiones
-                        </label>
-                        <textarea name="{{ form.descripcion_lesiones.name }}" id="{{ form.descripcion_lesiones.id_for_label }}" 
-                                  rows="4"
-                                  class="bg-white/90 border-amber-800 border-2 rounded-xl p-4 text-base text-gray-800 transition-all duration-300 w-full hover:bg-white focus:border-amber-900 focus:outline-none focus:ring-4 focus:ring-amber-900/25 focus:bg-white"
-                                  placeholder="Describe brevemente cualquier lesión o condición médica que debamos conocer...">{{ form.descripcion_lesiones.value|default:'' }}</textarea>
-                        <small class="text-amber-800 text-sm italic leading-relaxed block mt-2">
-                            Por favor describe brevemente cualquier lesión o condición médica que debamos conocer.
-                        </small>
-                        {% if form.descripcion_lesiones.errors %}
-                            <div class="text-amber-900 text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
-                                ⚠️ {% for error in form.descripcion_lesiones.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Paso 3: Preferencias -->
-                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="3">
-                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2">
-                        Preferencias de Comunicación
-                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
-                    </h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
-                        Configura cómo te gustaría que nos comuniquemos contigo.
-                    </p>
-                    
-                    <div class="p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl mb-6 border-2 border-transparent transition-all duration-300 relative cursor-pointer hover:border-secundario hover:-translate-y-1 hover:shadow-lg">
-                        <input type="checkbox" name="{{ form.acepta_recordatorios.name }}" id="{{ form.acepta_recordatorios.id_for_label }}" 
-                               class="w-6 h-6 mr-4 border-2 border-principal rounded-lg transition-all duration-300 cursor-pointer"
-                               {% if form.acepta_recordatorios.value %}checked{% endif %}>
-                        <label for="{{ form.acepta_recordatorios.id_for_label }}" class="text-principal font-medium text-lg cursor-pointer leading-relaxed">
-                            {{ form.acepta_recordatorios.label }}
-                        </label>
-                        <small class="text-gray-500 text-sm block mt-2 ml-10 italic">
-                            Te enviaremos recordatorios de tus clases reservadas.
-                        </small>
-                    </div>
-
-                    <div class="p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl mb-6 border-2 border-transparent transition-all duration-300 relative cursor-pointer hover:border-secundario hover:-translate-y-1 hover:shadow-lg">
-                        <input type="checkbox" name="{{ form.acepta_marketing.name }}" id="{{ form.acepta_marketing.id_for_label }}" 
-                               class="w-6 h-6 mr-4 border-2 border-principal rounded-lg transition-all duration-300 cursor-pointer"
-                               {% if form.acepta_marketing.value %}checked{% endif %}>
-                        <label for="{{ form.acepta_marketing.id_for_label }}" class="text-principal font-medium text-lg cursor-pointer leading-relaxed">
-                            {{ form.acepta_marketing.label }}
-                        </label>
-                        <small class="text-gray-500 text-sm block mt-2 ml-10 italic">
-                            Recibe información sobre promociones, eventos especiales y novedades del estudio.
-                        </small>
-                    </div>
-                </div>
-
-                <!-- Paso 4: Historial en el Estudio -->
-                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="4">
-                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2 flex items-center gap-3">
-                        📅 Tu Historial en Pilates Gravity
-                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
-                    </h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
-                        Completa tu información histórica y revisa tus estadísticas.
-                    </p>
-                    
-                    <div class="mb-8 relative">
-                        <label for="{{ form.fecha_primera_clase.id_for_label }}" class="text-principal font-semibold mb-3 flex items-center gap-2 text-base">
-                            📅 Fecha de Primera Clase (opcional)
-                        </label>
-                        <input type="date" name="{{ form.fecha_primera_clase.name }}" id="{{ form.fecha_primera_clase.id_for_label }}" 
-                               class="border-2 border-gray-200 rounded-xl p-4 text-base bg-gris-claro text-gray-800 transition-all duration-300 w-full hover:border-secundario focus:border-principal focus:outline-none focus:ring-4 focus:ring-principal/25 focus:bg-white focus:-translate-y-0.5"
-                               value="{{ form.fecha_primera_clase.value|default:'' }}">
-                        <small class="text-gray-600 text-sm italic leading-relaxed block mt-2">
-                            Si ya has tomado clases con nosotros, indica cuándo fue tu primera vez.
-                        </small>
-                        {% if form.fecha_primera_clase.errors %}
-                            <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
-                                ⚠️ {% for error in form.fecha_primera_clase.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Estadísticas del usuario -->
-                    {% if user.profile %}
-                    <div class="flex flex-wrap justify-center gap-6 mt-8">
-                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
-                            <span class="text-3xl font-bold text-principal block mb-2">{{ user.profile.get_total_reservas }}</span>
-                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Total Reservas</span>
-                        </div>
-                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
-                            <span class="text-3xl font-bold text-principal block mb-2">{{ user.profile.get_reservas_activas.count }}</span>
-                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Reservas Activas</span>
-                        </div>
-                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
-                            <span class="text-3xl font-bold text-principal block mb-2">
-                                {% if user.profile.get_tiempo_en_estudio %}
-                                    {{ user.profile.get_tiempo_en_estudio }}
-                                {% else %}
-                                    Nuevo
-                                {% endif %}
+                <fieldset class="pc-fieldset {% if form.nivel_experiencia.errors %}has-error{% endif %}">
+                    <legend>¿Cuánta experiencia tenés en Pilates?</legend>
+                    <div class="pc-choices pc-choices--4">
+                        {% for valor, nombre, ayuda in form.opciones_nivel %}
+                        <label class="pc-choice">
+                            <input type="radio" name="{{ form.nivel_experiencia.html_name }}" value="{{ valor }}"
+                                   {% if form.nivel_experiencia.value|stringformat:"s" == valor %}checked{% endif %}>
+                            <span class="pc-choice__box">
+                                <strong>{{ nombre }}</strong>
+                                <small>{{ ayuda }}</small>
                             </span>
-                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Tiempo en el Estudio</span>
-                        </div>
-                        {% if user.profile.get_edad %}
-                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
-                            <span class="text-3xl font-bold text-principal block mb-2">{{ user.profile.get_edad }}</span>
-                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Años</span>
-                        </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% for error in form.nivel_experiencia.errors %}<small class="pc-error">{{ error }}</small>{% endfor %}
+                </fieldset>
+            </section>
+
+            <!-- ================= 2. Tu salud ================= -->
+            <section class="me-card pc-sec" data-step="2" aria-labelledby="sec2">
+                <header class="pc-sec__head">
+                    <span class="pc-sec__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+                    </span>
+                    <div>
+                        <h2 id="sec2">Tu salud</h2>
+                        <p>¿Tenés alguna lesión, operación, embarazo o condición que tengamos que tener en cuenta?</p>
+                    </div>
+                </header>
+
+                <fieldset class="pc-fieldset {% if form.tiene_lesiones.errors %}has-error{% endif %}" id="lesionesOpciones">
+                    <legend class="pc-sr">¿Tenés alguna lesión o condición?</legend>
+                    <div class="pc-choices pc-choices--2">
+                        {% for valor, nombre in form.fields.tiene_lesiones.choices %}
+                        <label class="pc-choice pc-choice--row">
+                            <input type="radio" name="{{ form.tiene_lesiones.html_name }}" value="{{ valor }}"
+                                   {% if form.tiene_lesiones.value|stringformat:"s" == valor %}checked{% endif %}>
+                            <span class="pc-choice__box">
+                                <span class="pc-choice__radio" aria-hidden="true"></span>
+                                <strong>{{ nombre }}</strong>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% for error in form.tiene_lesiones.errors %}<small class="pc-error">{{ error }}</small>{% endfor %}
+                    <small class="pc-error" data-error-paso hidden>Elegí una opción para continuar.</small>
+                </fieldset>
+
+                <div class="pc-field pc-lesion {% if form.descripcion_lesiones.errors %}has-error{% endif %}" id="lesionDetalle">
+                    <label for="{{ form.descripcion_lesiones.id_for_label }}">Contanos qué tenés</label>
+                    {{ form.descripcion_lesiones }}
+                    {% for error in form.descripcion_lesiones.errors %}<small class="pc-error">{{ error }}</small>{% endfor %}
+                    <small class="pc-error" data-error-detalle hidden>Contanos brevemente qué lesión o condición tenés.</small>
+                </div>
+
+                <p class="pc-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>
+                    Solo lo ve el equipo de Pilates Gravity, para adaptar los ejercicios a vos. Si algo cambia, podés actualizarlo cuando quieras.
+                </p>
+            </section>
+
+            <!-- ================= 3. Foto y avisos ================= -->
+            <section class="me-card pc-sec" data-step="3" aria-labelledby="sec3">
+                <header class="pc-sec__head">
+                    <span class="pc-sec__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    </span>
+                    <div>
+                        <h2 id="sec3">Foto y avisos</h2>
+                        <p>Todo es opcional y lo podés cambiar cuando quieras.</p>
+                    </div>
+                </header>
+
+                <!-- Foto -->
+                <div class="pc-photo {% if form.avatar.errors %}has-error{% endif %}">
+                    <div class="pc-photo__preview" id="avatarPreview" data-iniciales="{{ user.first_name|default:user.username|first|upper }}{{ user.last_name|first|upper }}">
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" alt="Tu foto de perfil">
+                        {% else %}
+                            {{ user.first_name|default:user.username|first|upper }}{{ user.last_name|first|upper }}
                         {% endif %}
                     </div>
-                    {% else %}
-                    <div class="flex flex-wrap justify-center gap-6 mt-8">
-                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
-                            <span class="text-3xl font-bold text-principal block mb-2">0</span>
-                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Total Reservas</span>
+                    <div class="pc-photo__body">
+                        <strong>Foto de perfil</strong>
+                        <small>Ayuda al equipo a reconocerte. JPG, PNG o WebP, hasta 5 MB.</small>
+                        <div class="pc-photo__actions">
+                            <label class="g-btn g-btn--ghost g-btn--sm pc-upload">
+                                {{ form.avatar }}
+                                <span id="avatarLabel">{% if profile.avatar %}Cambiar foto{% else %}Subir foto{% endif %}</span>
+                            </label>
+                            <label class="pc-remove" id="avatarQuitar" {% if not profile.avatar %}hidden{% endif %}>
+                                <input type="checkbox" name="{{ form.quitar_avatar.html_name }}" id="quitarAvatar">
+                                <span>Quitar foto</span>
+                            </label>
                         </div>
-                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
-                            <span class="text-3xl font-bold text-principal block mb-2">0</span>
-                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">Reservas Activas</span>
-                        </div>
-                        <div class="text-center p-6 bg-gradient-to-br from-gris-claro to-gray-200 rounded-2xl border-2 border-transparent transition-all duration-300 relative overflow-hidden hover:border-secundario hover:-translate-y-2 hover:shadow-xl custom-stat-item">
-                            <span class="text-3xl font-bold text-principal block mb-2">Nuevo</span>
-                            <span class="text-sm text-gray-600 font-medium uppercase tracking-wide">En el Estudio</span>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Paso 5: Foto de Perfil -->
-                <div class="step-content hidden opacity-0 translate-x-8 transition-all duration-500" data-step="5">
-                    <h3 class="text-principal text-3xl mb-4 font-semibold relative pb-2 flex items-center gap-3">
-                        📸 Foto de Perfil
-                        <div class="absolute bottom-0 left-0 w-16 h-1 bg-gradient-to-r from-secundario to-principal rounded-full"></div>
-                    </h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed text-lg opacity-90">
-                        Opcional: Agrega una foto para personalizar tu perfil y que nuestro equipo te reconozca fácilmente.
-                    </p>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <div class="relative overflow-hidden w-full">
-                            <div class="file-input-custom bg-gradient-to-br from-gris-claro to-gray-200 border-4 border-dashed border-secundario rounded-2xl p-10 text-center cursor-pointer transition-all duration-300 relative overflow-hidden hover:border-principal hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 hover:scale-95 hover:shadow-xl" onclick="document.getElementById('{{ form.avatar.id_for_label }}').click()">
-                                <input type="file" name="{{ form.avatar.name }}" id="{{ form.avatar.id_for_label }}" 
-                                       class="absolute -left-96 opacity-0" accept="image/*">
-                                <div>
-                                    <div class="text-5xl mb-4 text-principal">📷</div>
-                                    <div class="font-semibold text-principal text-xl mb-2">
-                                        Hacer clic para seleccionar imagen
-                                    </div>
-                                    <div class="text-base text-gray-600 leading-relaxed">
-                                        JPG, PNG o GIF<br>
-                                        <strong>Máximo 5MB</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            {% if form.avatar.errors %}
-                                <div class="text-error text-sm mt-2 font-medium flex items-center gap-2 custom-shake">
-                                    ⚠️ {% for error in form.avatar.errors %}{{ error }}{% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="text-center mt-6">
-                            <div class="w-24 h-24 rounded-full mx-auto mb-4 bg-gradient-to-br from-secundario to-principal flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-4 border-white shadow-xl transition-all duration-300 hover:scale-105" id="avatarPreview">
-                                {% if user.profile.avatar %}
-                                    <img src="{{ user.profile.avatar.url }}" alt="Avatar actual" class="w-full h-full object-cover rounded-full">
-                                {% else %}
-                                    {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
-                                {% endif %}
-                            </div>
-                            <div class="mt-4 text-base text-gray-600 font-medium">
-                                {% if user.profile.avatar %}
-                                    Imagen actual
-                                {% else %}
-                                    Vista previa
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mensaje de finalización -->
-                    <div class="mt-8 p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl border-2 border-green-200">
-                        <h5 class="text-green-800 text-xl font-semibold mb-2">¡Ya casi terminamos!</h5>
-                        <p class="text-green-700 leading-relaxed">
-                            Una vez completado tu perfil, podrás empezar a reservar tus clases de Pilates y 
-                            disfrutar de una experiencia personalizada en nuestro estudio.
-                        </p>
+                        {% for error in form.avatar.errors %}<small class="pc-error">{{ error }}</small>{% endfor %}
+                        <small class="pc-error" id="avatarError" hidden></small>
                     </div>
                 </div>
 
-            </div>
+                <!-- Recordatorios -->
+                <label class="pc-switch">
+                    <span class="pc-switch__text">
+                        <strong>Recordatorios de clase</strong>
+                        <small>Te mandamos un email el día anterior a cada clase.</small>
+                    </span>
+                    <input type="checkbox" name="{{ form.acepta_recordatorios.html_name }}" {% if form.acepta_recordatorios.value %}checked{% endif %}>
+                    <span class="pc-switch__track" aria-hidden="true"></span>
+                </label>
 
-            <!-- Navegación -->
-            <div class="flex justify-between items-center mt-8 gap-4">
-                <button type="button" class="btn-wizard-prev px-10 py-4 border-none rounded-full font-semibold text-lg cursor-pointer transition-all duration-300 text-white inline-flex items-center gap-3 relative overflow-hidden hidden" id="prevBtn">
-                    ← Anterior
-                </button>
-                <button type="button" class="btn-wizard-next px-10 py-4 border-none rounded-full font-semibold text-lg cursor-pointer transition-all duration-300 text-white inline-flex items-center gap-3 relative overflow-hidden ml-auto" id="nextBtn">
-                    Siguiente →
-                </button>
-                <button type="submit" class="btn-wizard-submit px-12 py-5 border-none rounded-full font-semibold text-xl cursor-pointer transition-all duration-300 text-white inline-flex items-center gap-3 relative overflow-hidden hidden" id="submitBtn">
-                    ✓ Completar Perfil
-                </button>
+                <!-- Sede preferida -->
+                <fieldset class="pc-fieldset">
+                    <legend>¿Qué sede te queda más cómoda?</legend>
+                    <div class="pc-choices pc-choices--3">
+                        {% for valor, nombre, ayuda in form.opciones_sede %}
+                        <label class="pc-choice">
+                            <input type="radio" name="{{ form.sede_preferida.html_name }}" value="{{ valor }}"
+                                   {% if form.sede_preferida.value|stringformat:"s" == valor %}checked{% endif %}>
+                            <span class="pc-choice__box">
+                                <strong>{{ nombre }}</strong>
+                                <small>{{ ayuda }}</small>
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+            </section>
+
+            <!-- ================= Botones ================= -->
+            {% if es_primera_vez %}
+            <div class="pc-nav">
+                <a href="{% url 'accounts:profile' %}" class="pc-skip">Omitir por ahora</a>
+                <div class="pc-nav__main">
+                    <button type="button" class="g-btn g-btn--ghost" data-atras hidden>Atrás</button>
+                    <button type="button" class="g-btn g-btn--primary" data-seguir hidden>Seguir</button>
+                    <button type="submit" class="g-btn g-btn--primary" data-terminar data-loading-text="Guardando...">Terminar</button>
+                </div>
             </div>
+            {% else %}
+            <div class="pc-savebar">
+                <a href="{% url 'accounts:profile' %}" class="g-btn g-btn--ghost">Cancelar</a>
+                <button type="submit" class="g-btn g-btn--primary" data-loading-text="Guardando...">Guardar cambios</button>
+            </div>
+            {% endif %}
         </form>
     </div>
+</section>
+{% endblock %}
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let currentStep = 1;
-            const totalSteps = 5;
-            
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const submitBtn = document.getElementById('submitBtn');
-            const lesionesCheckbox = document.getElementById('{{ form.tiene_lesiones.id_for_label }}');
-            const lesionesContainer = document.getElementById('lesionesContainer');
-            const avatarInput = document.getElementById('{{ form.avatar.id_for_label }}');
-            const avatarPreview = document.getElementById('avatarPreview');
+{% block extra_js %}
+<script>
+    (function () {
+        const form = document.getElementById('fichaForm');
 
-            // Manejar checkbox de lesiones
-            if (lesionesCheckbox) {
-                lesionesCheckbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        lesionesContainer.classList.remove('hidden');
-                        lesionesContainer.classList.add('block');
-                    } else {
-                        lesionesContainer.classList.add('hidden');
-                        lesionesContainer.classList.remove('block');
-                        document.getElementById('{{ form.descripcion_lesiones.id_for_label }}').value = '';
-                    }
-                });
-                
-                // Verificar estado inicial
-                if (lesionesCheckbox.checked) {
-                    lesionesContainer.classList.remove('hidden');
-                    lesionesContainer.classList.add('block');
-                }
+        // ---------- Salud: el detalle aparece solo si responde "Sí" ----------
+        const detalle = document.getElementById('lesionDetalle');
+        const radiosLesion = form.querySelectorAll('input[name="tiene_lesiones"]');
+        const textoLesion = detalle.querySelector('textarea');
+        function actualizarLesion() {
+            const si = form.querySelector('input[name="tiene_lesiones"]:checked');
+            detalle.hidden = !(si && si.value === 'True');
+        }
+        radiosLesion.forEach(r => r.addEventListener('change', () => {
+            actualizarLesion();
+            form.querySelector('[data-error-paso]').hidden = true;
+            if (!detalle.hidden) textoLesion.focus();
+        }));
+        actualizarLesion();
+
+        // ---------- Foto: vista previa, validación y quitar ----------
+        const inputFoto = form.querySelector('input[name="avatar"]');
+        const preview = document.getElementById('avatarPreview');
+        const quitar = document.getElementById('quitarAvatar');
+        const quitarLabel = document.getElementById('avatarQuitar');
+        const fotoError = document.getElementById('avatarError');
+        const fotoOriginal = preview.innerHTML;
+        inputFoto.addEventListener('change', () => {
+            const archivo = inputFoto.files[0];
+            fotoError.hidden = true;
+            if (!archivo) return;
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type)) {
+                fotoError.textContent = 'Subí una imagen JPG, PNG o WebP.';
+                fotoError.hidden = false;
+                inputFoto.value = '';
+                return;
             }
-
-            // Manejar preview del avatar
-            if (avatarInput && avatarPreview) {
-                avatarInput.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        // Validar tipo de archivo
-                        if (!file.type.match('image.*')) {
-                            alert('Por favor selecciona una imagen válida (JPG, PNG, GIF)');
-                            this.value = '';
-                            return;
-                        }
-
-                        // Validar tamaño (5MB máximo)
-                        if (file.size > 5 * 1024 * 1024) {
-                            alert('La imagen es demasiado grande. El tamaño máximo es 5MB.');
-                            this.value = '';
-                            return;
-                        }
-
-                        // Mostrar preview
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Preview del avatar" class="w-full h-full object-cover rounded-full">`;
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
+            if (archivo.size > 5 * 1024 * 1024) {
+                fotoError.textContent = 'La imagen no puede superar los 5 MB.';
+                fotoError.hidden = false;
+                inputFoto.value = '';
+                return;
             }
-
-            function updateWizard() {
-                // Actualizar pasos visuales
-                document.querySelectorAll('.wizard-step').forEach((step, index) => {
-                    const stepNumber = index + 1;
-                    step.classList.remove('active', 'completed');
-                    
-                    if (stepNumber < currentStep) {
-                        step.classList.add('completed');
-                    } else if (stepNumber === currentStep) {
-                        step.classList.add('active');
-                    }
-                });
-
-                // Actualizar líneas de progreso
-                document.querySelectorAll('.wizard-step-line').forEach((line, index) => {
-                    if (index + 1 < currentStep) {
-                        line.classList.add('completed');
-                    } else {
-                        line.classList.remove('completed');
-                    }
-                });
-
-                // Mostrar/ocultar contenido de pasos
-                document.querySelectorAll('.step-content').forEach((content, index) => {
-                    const stepNumber = index + 1;
-                    if (stepNumber === currentStep) {
-                        content.classList.remove('hidden');
-                        content.classList.add('active');
-                        setTimeout(() => {
-                            content.style.opacity = '1';
-                            content.style.transform = 'translateX(0)';
-                        }, 150);
-                    } else {
-                        content.classList.add('hidden');
-                        content.classList.remove('active');
-                        content.style.opacity = '0';
-                        content.style.transform = 'translateX(30px)';
-                    }
-                });
-
-                // Actualizar botones de navegación
-                const prevBtnVisible = currentStep > 1;
-                const isLastStep = currentStep === totalSteps;
-                
-                if (prevBtnVisible) {
-                    prevBtn.classList.remove('hidden');
-                    prevBtn.classList.add('inline-flex');
-                } else {
-                    prevBtn.classList.add('hidden');
-                    prevBtn.classList.remove('inline-flex');
-                }
-                
-                if (isLastStep) {
-                    nextBtn.classList.add('hidden');
-                    nextBtn.classList.remove('inline-flex');
-                    submitBtn.classList.remove('hidden');
-                    submitBtn.classList.add('inline-flex');
-                } else {
-                    nextBtn.classList.remove('hidden');
-                    nextBtn.classList.add('inline-flex');
-                    submitBtn.classList.add('hidden');
-                    submitBtn.classList.remove('inline-flex');
-                }
-            }
-
-            function validateCurrentStep() {
-                const currentStepContent = document.querySelector(`.step-content[data-step="${currentStep}"]`);
-                const inputs = currentStepContent.querySelectorAll('input[required], select[required], textarea[required]');
-                
-                for (let input of inputs) {
-                    if (!input.value.trim()) {
-                        input.focus();
-                        // Agregar efecto visual de error
-                        input.style.borderColor = '#dc3545';
-                        setTimeout(() => {
-                            input.style.borderColor = '';
-                        }, 3000);
-                        return false;
-                    }
-                }
-                
-                // Validación especial para lesiones
-                if (currentStep === 2) {
-                    const lesionesCheckbox = document.getElementById('{{ form.tiene_lesiones.id_for_label }}');
-                    const descripcionLesiones = document.getElementById('{{ form.descripcion_lesiones.id_for_label }}');
-                    
-                    if (lesionesCheckbox && lesionesCheckbox.checked && !descripcionLesiones.value.trim()) {
-                        descripcionLesiones.focus();
-                        descripcionLesiones.style.borderColor = '#dc3545';
-                        setTimeout(() => {
-                            descripcionLesiones.style.borderColor = '';
-                        }, 3000);
-                        return false;
-                    }
-                }
-                
-                return true;
-            }
-
-            // Event listeners para navegación
-            nextBtn.addEventListener('click', function() {
-                if (validateCurrentStep() && currentStep < totalSteps) {
-                    currentStep++;
-                    updateWizard();
-                }
-            });
-
-            prevBtn.addEventListener('click', function() {
-                if (currentStep > 1) {
-                    currentStep--;
-                    updateWizard();
-                }
-            });
-
-            // Permitir navegación con teclado
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && e.target.type !== 'textarea') {
-                    e.preventDefault();
-                    if (currentStep < totalSteps && validateCurrentStep()) {
-                        nextBtn.click();
-                    } else if (currentStep === totalSteps) {
-                        submitBtn.click();
-                    }
-                } else if (e.key === 'ArrowLeft' && currentStep > 1) {
-                    prevBtn.click();
-                } else if (e.key === 'ArrowRight' && currentStep < totalSteps && validateCurrentStep()) {
-                    nextBtn.click();
-                }
-            });
-
-            // Validación en tiempo real para mejorar UX
-            document.querySelectorAll('input, select, textarea').forEach(input => {
-                input.addEventListener('input', function() {
-                    // Remover estilo de error cuando el usuario empiece a escribir
-                    if (this.style.borderColor === 'rgb(220, 53, 69)') {
-                        this.style.borderColor = '';
-                    }
-                });
-
-                input.addEventListener('blur', function() {
-                    // Validación suave al perder el foco
-                    if (this.hasAttribute('required') && !this.value.trim()) {
-                        this.style.borderColor = '#ffc107';
-                    }
-                });
-
-                input.addEventListener('focus', function() {
-                    // Limpiar estilos de validación al enfocar
-                    this.style.borderColor = '';
-                });
-            });
-
-            // Prevenir envío accidental del formulario
-            document.getElementById('profileForm').addEventListener('submit', function(e) {
-                if (currentStep !== totalSteps) {
-                    e.preventDefault();
-                    return false;
-                }
-                
-                // Mostrar indicador de carga
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '⏳ Guardando perfil...';
-                
-                // Timeout para re-habilitar el botón si falla
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '✓ Completar Perfil';
-                }, 10000);
-            });
-
-            // Auto-scroll suave al cambiar de paso
-            function scrollToTop() {
-                window.scrollTo({ 
-                    top: 0, 
-                    behavior: 'smooth' 
-                });
-            }
-
-            // Agregar scroll suave a los event listeners
-            nextBtn.addEventListener('click', function() {
-                setTimeout(scrollToTop, 200);
-            });
-
-            prevBtn.addEventListener('click', function() {
-                setTimeout(scrollToTop, 200);
-            });
-
-            // Mostrar progreso en el título de la página
-            function updatePageTitle() {
-                const stepTitles = [
-                    'Información Básica',
-                    'Información de Salud', 
-                    'Preferencias',
-                    'Historial',
-                    'Foto de Perfil'
-                ];
-                document.title = `${stepTitles[currentStep - 1]} - Completar Perfil - Pilates Gravity`;
-            }
-
-            // Mejorar la función updateWizard para incluir actualización de título
-            const originalUpdateWizard = updateWizard;
-            updateWizard = function() {
-                originalUpdateWizard();
-                updatePageTitle();
-            };
-
-            // Inicialización
-            updateWizard();
+            const lector = new FileReader();
+            lector.onload = e => { preview.innerHTML = '<img src="' + e.target.result + '" alt="Vista previa de tu foto">'; };
+            lector.readAsDataURL(archivo);
+            quitar.checked = false;
+            quitarLabel.hidden = false;
+            document.getElementById('avatarLabel').textContent = 'Cambiar foto';
         });
-    </script>
+        quitar.addEventListener('change', () => {
+            if (quitar.checked) {
+                inputFoto.value = '';
+                preview.textContent = preview.dataset.iniciales;
+                preview.classList.add('is-removed');
+            } else {
+                preview.innerHTML = fotoOriginal;
+                preview.classList.remove('is-removed');
+            }
+        });
 
+        // ---------- Recorrido guiado (solo la primera vez) ----------
+        if (!form.classList.contains('is-wizard')) return;
+
+        const pasos = [...form.querySelectorAll('.pc-sec')];
+        const indicador = [...document.querySelectorAll('#fichaPasos li')];
+        const btnAtras = form.querySelector('[data-atras]');
+        const btnSeguir = form.querySelector('[data-seguir]');
+        const btnTerminar = form.querySelector('[data-terminar]');
+        const total = pasos.length;
+        let actual = parseInt(form.dataset.paso, 10) || 1;
+
+        form.classList.add('js-wizard');
+
+        function mostrar(n, desplazar) {
+            actual = n;
+            pasos.forEach(p => p.classList.toggle('is-current', +p.dataset.step === n));
+            indicador.forEach(li => {
+                const s = +li.dataset.step;
+                li.classList.toggle('is-current', s === n);
+                li.classList.toggle('is-done', s < n);
+            });
+            btnAtras.hidden = n === 1;
+            btnSeguir.hidden = n === total;
+            btnTerminar.hidden = n !== total;
+            document.title = ['Sobre vos', 'Tu salud', 'Foto y avisos'][n - 1] + ' - Completá tu ficha - Pilates Gravity';
+            if (desplazar) {
+                const y = document.getElementById('fichaPasos').getBoundingClientRect().top + window.scrollY - 110;
+                window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            }
+        }
+
+        function pasoValido(n) {
+            if (n !== 2) return true;
+            const elegido = form.querySelector('input[name="tiene_lesiones"]:checked');
+            if (!elegido) {
+                form.querySelector('[data-error-paso]').hidden = false;
+                radiosLesion[0].focus();
+                return false;
+            }
+            if (elegido.value === 'True' && !textoLesion.value.trim()) {
+                detalle.querySelector('[data-error-detalle]').hidden = false;
+                textoLesion.focus();
+                return false;
+            }
+            return true;
+        }
+        textoLesion.addEventListener('input', () => { detalle.querySelector('[data-error-detalle]').hidden = true; });
+
+        btnSeguir.addEventListener('click', () => { if (pasoValido(actual)) mostrar(actual + 1, true); });
+        btnAtras.addEventListener('click', () => mostrar(actual - 1, true));
+
+        // Enter en un campo avanza de paso en vez de enviar el formulario a mitad de camino
+        form.addEventListener('keydown', e => {
+            if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA' || e.target.type === 'submit' || actual === total) return;
+            if (e.target.tagName === 'INPUT') {
+                e.preventDefault();
+                btnSeguir.click();
+            }
+        });
+
+        // Por si se envía desde un paso anterior (no debería pasar), validar salud
+        form.addEventListener('submit', e => {
+            if (!pasoValido(2)) {
+                e.preventDefault();
+                mostrar(2, true);
+            }
+        });
+
+        mostrar(actual, false);
+    })();
+</script>
 {% endblock %}

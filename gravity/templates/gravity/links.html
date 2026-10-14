@@ -2,204 +2,95 @@
 <!DOCTYPE html>
 <html lang="es-AR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pilates Gravity — Links</title>
-  {% include 'components/base/seo_meta.html' %}
-
-  <!-- Tailwind compilado -->
-  <link rel="stylesheet" href="{% static 'css/tailwind-output.css' %}" />
-
-  <!-- Fuente Cinzel -->
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet" />
-
-  <style>
-    body {
-        background-color: #F8EFE5;
-        min-height: 100vh;
-    }
-    .btn-link {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .btn-link:active {
-        transform: scale(0.97);
-    }
-    .btn-link:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(93, 118, 139, 0.25);
-    }
-    .logo-circle {
-        background-color: #5D768B;
-        box-shadow: 0 8px 30px rgba(93, 118, 139, 0.15);
-    }
-
-    @font-face {
-        font-family: 'BrittanySignature';
-        src: url("{% static 'fonts/BrittanySignature.ttf' %}") format('truetype');
-        font-weight: normal;
-        font-style: normal;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Pilates Gravity · Links</title>
+    {% include 'components/base/seo_meta.html' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preload" as="image" href="{% static 'scroll_world/stills/05_equipo.webp' %}">
+    <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261013a">
+    <link rel="stylesheet" href="{% static 'css/gravity/links.css' %}?v=20261012a">
+    <meta name="theme-color" content="#2F3B47">
 </head>
-<body class="flex items-center justify-center py-6 px-4">
+{# Página para la bio de redes: todo entra en una pantalla de teléfono, sin scroll #}
+<body class="lk">
+    <main class="lk__wrap">
 
-  <div class="w-full max-w-sm mx-auto flex flex-col items-center gap-3 animate-fadeIn">
+        <header class="lk-head">
+            <img src="{% static 'img/solo_logo_blanco.webp' %}" alt="" class="lk-head__logo" width="120" height="120">
+            <h1 class="lk-head__title">Pilates Gravity</h1>
+            <p class="lk-head__sub">Tu lugar para moverte mejor · Santa Fe</p>
+        </header>
 
-    <!-- Logo + Nombre -->
-    <div class="flex flex-col items-center gap-4">
-      <div class="logo-circle w-28 h-28 rounded-full flex items-center justify-center p-4">
-        <img
-          src="{% static 'img/solo_logo_blanco.webp' %}"
-          alt="Pilates Gravity"
-          class="w-full h-full object-contain"
-        />
-      </div>
-      <div class="text-center">
-        <h1 class="font-brittany text-3xl text-principal font-bold tracking-wide">
-            Pilates Gravity
-        </h1>
-        <p class="text-sm text-gris-oscuro mt-4 tracking-wide">
-          Tu espacio de movimiento y bienestar
-        </p>
-      </div>
-    </div>
-
-    <!-- Íconos sociales -->
-    <div class="flex items-center gap-4">
-      <!-- Instagram -->
-      <a href="https://www.instagram.com/pilatesgravity/" target="_blank" rel="noopener"
-         class="text-principal hover:text-principal-dark transition-colors duration-200"
-         aria-label="Instagram">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
-          <circle cx="12" cy="12" r="4" stroke="currentColor" fill="none"/>
-          <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor"/>
-        </svg>
-      </a>
-      <!-- WhatsApp -->
-      <a href="https://wa.me/5493425114448" target="_blank" rel="noopener"
-         class="text-principal hover:text-principal-dark transition-colors duration-200"
-         aria-label="WhatsApp">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-        </svg>
-      </a>
-      <!-- Mail -->
-      <a href="mailto:pilatesgravity@gmail.com"
-         class="text-principal hover:text-principal-dark transition-colors duration-200"
-         aria-label="Email">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-        </svg>
-      </a>
-    </div>
-
-    <!-- Divisor decorativo -->
-    <div class="w-12 h-0.5 bg-secundario rounded-full"></div>
-
-    <!-- Botones de acceso -->
-    <div class="w-full flex flex-col gap-3">
-
-      <!-- WhatsApp -->
-      <a href="https://wa.me/5493425114448" target="_blank" rel="noopener"
-         class="btn-link w-full flex items-center gap-4 bg-secundario border border-secundario/30 rounded-2xl px-5 py-4 shadow-sm">
-        <span class="w-10 h-10 rounded-xl bg-secundario-dark flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-principal" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-          </svg>
-        </span>
-        <div class="flex-1">
-          <p class="font-cinzel text-sm font-semibold text-gris-oscuro tracking-wider uppercase">WhatsApp</p>
-          <p class="text-xs text-gris-medio mt-0.5">Consultanos por WhatsApp</p>
-        </div>
-        <svg class="w-4 h-4 text-secundario-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
-      </a>
-
-      <!-- Página web -->
-      <a href="{% url 'gravity:home' %}"
-         class="btn-link w-full flex items-center gap-4 bg-secundario border border-secundario/30 rounded-2xl px-5 py-4 shadow-sm">
-        <span class="w-10 h-10 rounded-xl bg-secundario-dark flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-principal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-          </svg>
-        </span>
-        <div class="flex-1">
-          <p class="font-cinzel text-sm font-semibold text-gris-oscuro tracking-wider uppercase">Página Web</p>
-          <p class="text-xs text-gris-medio mt-0.5">Conocé el estudio</p>
-        </div>
-        <svg class="w-4 h-4 text-secundario-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
-      </a>
-
-      <!-- Iniciar sesión / Portal -->
-      <a href="{% url 'accounts:login' %}"
-         class="btn-link w-full flex items-center gap-4 bg-principal rounded-2xl px-5 py-4 shadow-btn-primary">
-        <span class="w-10 h-10 rounded-xl bg-principal-dark flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-          </svg>
-        </span>
-        <div class="flex-1">
-          <p class="font-cinzel text-sm font-semibold text-white tracking-wider uppercase">Socios</p>
-          <p class="text-xs text-blue-100 mt-0.5">Ingresá a tu cuenta</p>
-        </div>
-        <svg class="w-4 h-4 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
-      </a>
-
-      <!-- Nuestras Sedes -->
-        <div class="w-full">
-            <p class="font-cinzel text-xs font-semibold text-gris-medio tracking-widest uppercase text-center mb-3">Nuestras Sedes</p>
-
-            <!-- Sede La Rioja -->
-            <a href="https://maps.google.com/?q=La+Rioja+3044+Santa+Fe+Argentina" target="_blank" rel="noopener"
-                class="btn-link w-full flex items-center gap-4 bg-secundario border border-secundario/30 rounded-2xl px-5 py-4 shadow-sm mb-3">
-                <span class="w-10 h-10 rounded-xl bg-secundario-dark flex items-center justify-center flex-shrink-0">
-                <svg class="w-5 h-5 text-principal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                </span>
-                <div class="flex-1">
-                <p class="font-cinzel text-sm font-semibold text-gris-oscuro tracking-wider uppercase">Sede Centro</p>
-                <p class="text-xs text-gris-medio mt-0.5">La Rioja 3044, Santa Fe</p>
-                </div>
-                <svg class="w-4 h-4 text-secundario-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
+        <nav class="lk-links" aria-label="Links de Pilates Gravity">
+            <a href="{% url 'gravity:reservar_clase' %}" class="lk-btn lk-btn--main">
+                <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M12 14v4M10 16h4"/></svg>
+                <span class="lk-btn__text">Reservar clase</span>
+                <svg class="lk-btn__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
             </a>
 
-            <!-- Sede 9 de Julio -->
-            <a href="https://maps.google.com/?q=9+de+Julio+3698+Santa+Fe+Argentina" target="_blank" rel="noopener"
-                class="btn-link w-full flex items-center gap-4 bg-secundario border border-secundario/30 rounded-2xl px-5 py-4 shadow-sm">
-                <span class="w-10 h-10 rounded-xl bg-secundario-dark flex items-center justify-center flex-shrink-0">
-                <svg class="w-5 h-5 text-principal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                </span>
-                <div class="flex-1">
-                <p class="font-cinzel text-sm font-semibold text-gris-oscuro tracking-wider uppercase">Sede Norte</p>
-                <p class="text-xs text-gris-medio mt-0.5">9 de Julio 3698, Santa Fe</p>
-                </div>
-                <svg class="w-4 h-4 text-secundario-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                </svg>
+            <div class="lk-row">
+                <a href="{% url 'gravity:clases_disponibles' %}" class="lk-btn">
+                    <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <span class="lk-btn__text">Horarios</span>
+                </a>
+                <a href="{% url 'gravity:precios_publicos' %}" class="lk-btn">
+                    <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+                    <span class="lk-btn__text">Precios</span>
+                </a>
+            </div>
+
+            <a href="https://wa.me/5493425114448?text={{ 'Hola! Vengo desde las redes y quiero hacer una consulta.'|urlencode }}" target="_blank" rel="noopener noreferrer" class="lk-btn">
+                <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2a9.9 9.9 0 0 0-8.5 15l-1.5 5 5.1-1.4A9.9 9.9 0 1 0 12.04 2Zm0 18.1c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3a8.2 8.2 0 1 1 7 3.8Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3c.2-.6.2-1.1.2-1.3l-.2-.3Z"/></svg>
+                <span class="lk-btn__text">Escribinos por WhatsApp</span>
+                <svg class="lk-btn__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
             </a>
-        </div>
 
-    </div>
+            {% if user.is_authenticated %}
+            <a href="{% url 'accounts:profile' %}" class="lk-btn">
+                <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+                <span class="lk-btn__text">Mi espacio<small>Hola, {{ user.first_name|default:user.username }}</small></span>
+                <svg class="lk-btn__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+            </a>
+            {% else %}
+            <a href="{% url 'accounts:login' %}" class="lk-btn">
+                <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+                <span class="lk-btn__text">Ingresar<small>o creá tu cuenta</small></span>
+                <svg class="lk-btn__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+            </a>
+            {% endif %}
 
-    <!-- Footer mínimo -->
-    <p class="text-xs text-gris-medio/60 tracking-widest uppercase mt-2">
-      © {% now "Y" %} Pilates Gravity
-    </p>
+            <a href="{% url 'gravity:home' %}" class="lk-btn">
+                <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+                <span class="lk-btn__text">Sitio web</span>
+                <svg class="lk-btn__go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+            </a>
 
-  </div>
+            <div class="lk-row">
+                <a href="https://www.google.com/maps/search/?api=1&query=La+Rioja+3044,+Santa+Fe" target="_blank" rel="noopener noreferrer" class="lk-btn lk-btn--sede">
+                    <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                    <span class="lk-btn__text">Sede Central<small>La Rioja 3044</small></span>
+                </a>
+                <a href="https://www.google.com/maps/search/?api=1&query=9+de+Julio+3696,+Santa+Fe" target="_blank" rel="noopener noreferrer" class="lk-btn lk-btn--sede">
+                    <svg class="lk-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                    <span class="lk-btn__text">Sede 2<small>9 de Julio 3696</small></span>
+                </a>
+            </div>
+        </nav>
 
+        <footer class="lk-foot">
+            <a href="https://www.instagram.com/pilatesgravity/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>
+            </a>
+            <a href="https://wa.me/5493425114448" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2a9.9 9.9 0 0 0-8.5 15l-1.5 5 5.1-1.4A9.9 9.9 0 1 0 12.04 2Zm0 18.1c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3a8.2 8.2 0 1 1 7 3.8Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3c.2-.6.2-1.1.2-1.3l-.2-.3Z"/></svg>
+            </a>
+            <a href="mailto:pilatesgravity@gmail.com" aria-label="Email">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            </a>
+        </footer>
+    </main>
 </body>
 </html>
