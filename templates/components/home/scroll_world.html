@@ -46,7 +46,7 @@
 
 <div id="gravity-world"></div>
 
-<script src="{% static 'js/scroll_world.js' %}?v=20261012a"></script>
+<script src="{% static 'js/scroll_world.js' %}?v=20261015a"></script>
 <script>
     mountScrollWorld(document.getElementById('gravity-world'), {
         nav: false,
@@ -60,6 +60,7 @@
                 still: "{% static 'scroll_world/stills/01_llegada.webp' %}?v=2",
                 clip: "{% static 'scroll_world/vid/leg0.mp4' %}?v=1080",
                 clipMobile: "{% static 'scroll_world/vid/leg0-m.mp4' %}?v=1080",
+                framesMobile: { url: "{% static 'scroll_world/frames/leg0/' %}f%03d.webp?v=1", count: 97 },
                 accent: '#5D768B', scroll: 1.6,
                 eyebrow: 'Pilates Gravity · Santa Fe',
                 title: 'Tu lugar para moverte mejor.',
@@ -71,6 +72,7 @@
                 still: "{% static 'scroll_world/stills/02_reformer.webp' %}?v=2",
                 clip: "{% static 'scroll_world/vid/leg1.mp4' %}?v=1080",
                 clipMobile: "{% static 'scroll_world/vid/leg1-m.mp4' %}?v=1080",
+                framesMobile: { url: "{% static 'scroll_world/frames/leg1/' %}f%03d.webp?v=1", count: 97 },
                 accent: '#5D768B', linger: 0.4,
                 eyebrow: 'Pilates Reformer · Deportivo · Prenatal',
                 title: 'Fuerza, control y movilidad.',
@@ -82,6 +84,7 @@
                 still: "{% static 'scroll_world/stills/03_cadillac.webp' %}?v=2",
                 clip: "{% static 'scroll_world/vid/leg2.mp4' %}?v=1080",
                 clipMobile: "{% static 'scroll_world/vid/leg2-m.mp4' %}?v=1080",
+                framesMobile: { url: "{% static 'scroll_world/frames/leg2/' %}f%03d.webp?v=1", count: 97 },
                 accent: '#A79178', linger: 0.4,
                 eyebrow: 'Cadillac',
                 title: 'Más allá del suelo.',
@@ -93,6 +96,7 @@
                 still: "{% static 'scroll_world/stills/04_calma.webp' %}?v=2",
                 clip: "{% static 'scroll_world/vid/leg3.mp4' %}?v=1080",
                 clipMobile: "{% static 'scroll_world/vid/leg3-m.mp4' %}?v=1080",
+                framesMobile: { url: "{% static 'scroll_world/frames/leg3/' %}f%03d.webp?v=1", count: 97 },
                 accent: '#A79178', linger: 0.45,
                 eyebrow: 'Beneficios del método',
                 title: 'Respirá. Alineá. Soltá.',
@@ -104,6 +108,7 @@
                 still: "{% static 'scroll_world/stills/05_equipo.webp' %}?v=2",
                 clip: "{% static 'scroll_world/vid/leg4.mp4' %}?v=1080",
                 clipMobile: "{% static 'scroll_world/vid/leg4-m.mp4' %}?v=1080",
+                framesMobile: { url: "{% static 'scroll_world/frames/leg4/' %}f%03d.webp?v=1", count: 97 },
                 accent: '#5D768B', scroll: 1.7, linger: 0.5,
                 eyebrow: 'Nuestro equipo',
                 title: 'Te guían quienes aman el movimiento.',
@@ -118,6 +123,7 @@
                 still: "{% static 'scroll_world/stills/06_final.webp' %}?v=2",
                 clip: "{% static 'scroll_world/vid/leg5.mp4' %}?v=1080",
                 clipMobile: "{% static 'scroll_world/vid/leg5-m.mp4' %}?v=1080",
+                framesMobile: { url: "{% static 'scroll_world/frames/leg5/' %}f%03d.webp?v=1", count: 61 },
                 accent: '#5D768B', scroll: 1.6,
                 eyebrow: 'Tu lugar te espera',
                 title: 'Reservá tu clase.',

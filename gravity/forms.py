@@ -939,6 +939,14 @@ class RegistroPagoForm(forms.ModelForm):
         self.fields['comprobante'].required = False
         self.fields['observaciones'].required = False
 
+        # El tipo arranca vacío: que lo elijan a conciencia (o lo complete un monto sugerido)
+        self.fields['tipo_pago'].choices = [('', 'Elegí cómo pagó')] + list(RegistroPago.TIPOS_PAGO)
+        self.fields['tipo_pago'].error_messages['required'] = 'Elegí el tipo de pago.'
+        if not self.instance.pk:
+            # El modelo trae 'efectivo' por defecto
+            self.fields['tipo_pago'].initial = None
+            self.initial.pop('tipo_pago', None)
+
     def clean_monto(self):
         monto = self.cleaned_data.get('monto')
         if monto and monto <= 0:

@@ -69,6 +69,18 @@ class RegistrarPagoTests(PagosBase):
         self.client.post(url, dict(datos, enviar_recibo='on'))
         self.assertEqual(len(mail.outbox), 1)
 
+    def test_monto_y_tipo_arrancan_vacios(self):
+        ana = self.alumno('Ana', '-60000')
+        url = reverse('gravity:admin_pagos_registrar_pago', args=[ana.id])
+        form = self.client.get(url).context['form']
+        self.assertIsNone(form['monto'].value())
+        self.assertIsNone(form['tipo_pago'].value())
+
+        r = self.client.post(url, {'monto': '30000', 'fecha_pago': self.hoy.isoformat(), 'concepto': 'Cuota'})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('tipo_pago', r.context['form'].errors)
+        self.assertFalse(RegistroPago.objects.filter(cliente=ana).exists())
+
 
 class CancelarPlanTests(PagosBase):
     def setUp(self):

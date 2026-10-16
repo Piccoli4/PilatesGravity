@@ -86,7 +86,8 @@ function mountScrollWorld(container, config) {
   // ---- build the interleaved segment chain: dive0, conn0, dive1, … diveN-1 ----
   const SEGMENTS = [];
   SECTIONS.forEach((s, i) => {
-    const dive = { kind: 'dive', si: i, clip: s.clip, clipM: s.clipMobile, still: s.still, stillM: s.stillMobile,
+    const dive = { kind: 'dive', si: i, clip: s.clip, clipM: s.clipMobile, framesM: s.framesMobile,
+                   still: s.still, stillM: s.stillMobile,
                    accent: s.accent, w: s.scroll || DIVE_W, linger: s.linger || 0 };
     SEGMENTS.push(dive);
     s._seg = dive;
@@ -209,6 +210,10 @@ function mountScrollWorld(container, config) {
     // and simply cross-dissolve as you scroll. No scrubbed video motion, no decode cost.
     if (reduce || s.loading || !s.clip) return;
     s.loading = true;
+    // Gravity: en celular y tablet, si hay secuencia de cuadros, se usa en vez del video.
+    if (isMobile() && s.framesM && s.framesM.count && typeof createImageBitmap === 'function') {
+      loadFrames(s); return;
+    }
     // Serve the lighter mobile encode on phones when one was provided.
     const url = (isMobile() && s.clipM) ? s.clipM : s.clip;
     fetch(url).then(r => r.ok ? r.blob() : Promise.reject(new Error('404')))
@@ -226,6 +231,79 @@ function mountScrollWorld(container, config) {
         v.addEventListener('loadeddata', () => { try { v.pause(); } catch (e) {} if (userReady) primeVideo(v); });
         s.el.appendChild(v); s.video = v; s.hasClip = true;
       }).catch(() => { s.loading = false; });
+  }
+
+  // ---- Gravity: modo secuencia de cuadros (celular y tablet) ----
+  // Los decodificadores de los teléfonos no siguen el ritmo de un currentTime que
+  // cambia en cada cuadro: el video queda congelado y salta. Acá cada escena es una
+  // tira de imágenes livianas (12 fps) que se dibujan en un canvas: los blobs
+  // comprimidos se guardan todos, pero solo se decodifica (createImageBitmap, fuera
+  // del hilo principal) una ventana chica alrededor del cuadro actual, y entre dos
+  // cuadros se funde el siguiente para que el movimiento se vea continuo.
+  const FR_AHEAD = 6, FR_KEEP = 10, FR_DECODING = 3;
+
+  function loadFrames(s) {
+    const F = s.framesM, n = F.count;
+    const cv = el('canvas', 'sw-scene__video');
+    cv.width = F.width || 960; cv.height = F.height || 540;
+    const ctx = cv.getContext('2d', { alpha: false });
+    s.fr = { n, blobs: new Array(n), bmps: new Map(), pending: new Set(), cv, ctx, drawn: '' };
+    s.el.appendChild(cv); s.hasClip = true;   // s.ready llega con el primer cuadro dibujado
+    // Primero cuadros espaciados y después los intermedios: con poco descargado
+    // ya se puede recorrer la escena (se muestra el cuadro más cercano).
+    const order = [], seen = new Uint8Array(n);
+    for (let step = 16; step >= 1; step >>= 1)
+      for (let i = 0; i < n; i += step) if (!seen[i]) { seen[i] = 1; order.push(i); }
+    if (!seen[n - 1]) order.push(n - 1);
+    let next = 0;
+    const pump = () => {
+      if (next >= order.length) return;
+      const i = order[next++];
+      fetch(F.url.replace('%03d', String(i + 1).padStart(3, '0')))
+        .then(r => r.ok ? r.blob() : Promise.reject(new Error(r.status)))
+        .then(b => { s.fr.blobs[i] = b; s.fr.drawn = ''; })
+        .catch(() => {})
+        .then(pump);
+    };
+    for (let k = 0; k < 4; k++) pump();
+  }
+
+  function stepFrames(s) {
+    const fr = s.fr;
+    s.cur += (s.target - s.cur) * (reduce ? 1 : 0.18);
+    const p = clamp(s.cur) * (fr.n - 1);
+    const i0 = Math.floor(p), f = p - i0;
+    // Las escenas que no se ven guardan solo un par de cuadros alrededor de donde
+    // van a aparecer, así la memoria no crece con cada escena visitada.
+    const ahead = s.visible ? FR_AHEAD : 1, keep = s.visible ? FR_KEEP : 2;
+    for (let d = 0; d <= ahead; d++) { wantBitmap(fr, i0 + d); if (d) wantBitmap(fr, i0 - d); }
+    fr.bmps.forEach((b, k) => { if (k < i0 - keep || k > i0 + 1 + keep) { if (b.close) b.close(); fr.bmps.delete(k); } });
+    if (!s.visible && fr.drawn) return;
+
+    // Cuadro exacto si ya está; si no, el más cercano disponible.
+    let ia = -1;
+    for (let d = 0; d <= keep && ia < 0; d++) {
+      if (fr.bmps.has(i0 - d)) ia = i0 - d; else if (fr.bmps.has(i0 + d)) ia = i0 + d;
+    }
+    if (ia < 0) return;
+    const ib = (ia === i0 && f > 0.02 && fr.bmps.has(i0 + 1)) ? i0 + 1 : -1;
+    const key = ia + ':' + (ib < 0 ? 0 : Math.round(f * 24));
+    if (key === fr.drawn) return;
+    fr.drawn = key;
+    const w = fr.cv.width, h = fr.cv.height;
+    fr.ctx.globalAlpha = 1;
+    fr.ctx.drawImage(fr.bmps.get(ia), 0, 0, w, h);
+    if (ib >= 0) { fr.ctx.globalAlpha = f; fr.ctx.drawImage(fr.bmps.get(ib), 0, 0, w, h); fr.ctx.globalAlpha = 1; }
+    if (!s.ready) { s.ready = true; s.el.classList.add('has-clip'); }
+  }
+
+  function wantBitmap(fr, k) {
+    if (k < 0 || k >= fr.n || fr.bmps.has(k) || fr.pending.has(k) || !fr.blobs[k]) return;
+    if (fr.pending.size >= FR_DECODING) return;
+    fr.pending.add(k);
+    createImageBitmap(fr.blobs[k])
+      .then(b => { fr.pending.delete(k); fr.bmps.set(k, b); fr.drawn = ''; })
+      .catch(() => { fr.pending.delete(k); });
   }
 
   function read() {
@@ -288,6 +366,7 @@ function mountScrollWorld(container, config) {
     const eps = isMobile() ? 0.02 : 0.008;   // coarser seek step on phones = fewer decodes
     for (let i = 0; i < NSEG; i++) {
       const s = SEGMENTS[i];
+      if (s.fr) { stepFrames(s); continue; }
       if (!s.hasClip || !s.ready || !s.video) continue;
       // Never queue a seek while the decoder is still resolving the last one.
       // On phones a fast flick would otherwise pile up seeks and freeze the clip;

@@ -3349,12 +3349,10 @@ def admin_pagos_registrar_pago(request, cliente_id):
             messages.success(request, texto)
             return _volver(request, reverse('gravity:admin_pagos_editar_estado_cliente', args=[cliente.id]))
     else:
-        deuda = -estado_pago.saldo_actual if estado_pago.saldo_actual < 0 else None
+        # Monto y tipo arrancan vacíos: se completan con un monto sugerido o a mano
         form = estilo_panel(RegistroPagoForm(initial={
             'fecha_pago': hoy,
             'concepto': f'Cuota {MESES_LARGOS[hoy.month - 1]} {hoy.year}',
-            'monto': deuda or (plan.precio_mensual if plan else None),
-            'tipo_pago': 'efectivo',
         }))
 
     sugerencias = []
