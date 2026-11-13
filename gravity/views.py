@@ -16,6 +16,7 @@ from .models import (
     AjusteDeudaEspecial,
     NotificacionPlanAdicional,
     CancelacionAdmin,
+    SuscripcionPush,
     DIAS_SEMANA,
     DIAS_SEMANA_COMPLETOS
 )
@@ -61,7 +62,8 @@ from .models import (
     AjusteSaldo, recalcular_estado_pagos, aplicar_precio_a_cuotas_del_mes
 )
 from .templatetags.formato import pesos
-from .panel import ve_ingresos_estudio, puede_corregir_cuentas
+from .panel import ve_ingresos_estudio, puede_corregir_cuentas, avisar_cancelacion_al_equipo
+from .push import guardar_suscripcion, enviar_push_prueba, push_configurado
 from .hoy import datos_hoy, fecha_larga, clases_del_dia
 from .asistencia_admin import (datos_pasar_lista, puede_marcar_fecha, reserva_en_fecha, inicio_clase,
                                faltas, completar_filas, DIAS_PARA_MARCAR, TIPOS_FALTA,
@@ -442,26 +444,23 @@ def cancelar_reserva(request, numero_reserva):
 
 def notificar_admins_cancelacion(reserva, tipo, fecha=None):
     """
-    Notifica a los administradores cuando un cliente cancela una clase.
-    Guarda en base de datos y envía email.
+    Avisa al equipo cuando un cliente cancela una clase: lo deja en la bandeja del
+    panel y manda el aviso push a los celulares que lo activaron. No manda correo.
     """
-    from .email_service import enviar_notificacion_cancelacion_a_admins
-
-    # Guardar en base de datos para el panel
     try:
-        NotificacionCancelacion.objects.create(
+        aviso = NotificacionCancelacion.objects.create(
             reserva=reserva,
             tipo=tipo,
             fecha_ausencia=fecha if tipo == 'temporal' else None,
         )
     except Exception as e:
         logger.error(f"Error guardando notificación de cancelación: {e}")
+        return
 
-    # Enviar email
     try:
-        enviar_notificacion_cancelacion_a_admins(reserva, tipo=tipo, fecha=fecha)
+        avisar_cancelacion_al_equipo(aviso)
     except Exception as e:
-        logger.error(f"Error notificando admins por cancelación de {reserva.numero_reserva}: {e}")
+        logger.error(f"Error enviando el aviso push de {reserva.numero_reserva}: {e}")
 
 @login_required
 @require_http_methods(["POST"])
@@ -957,6 +956,57 @@ def admin_marcar_notificaciones_leidas(request):
         return JsonResponse({'ok': True})
 
     return JsonResponse({'ok': False}, status=400)
+
+# ------------------------------------------------------------------------------
+# Avisos push: cada persona del equipo los activa en su celular desde la campana
+# ------------------------------------------------------------------------------
+
+def _json_del_pedido(request):
+    try:
+        datos = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError, UnicodeDecodeError):
+        return {}
+    return datos if isinstance(datos, dict) else {}
+
+
+@admin_required
+@require_http_methods(["POST"])
+def admin_push_activar(request):
+    """Guarda el dispositivo desde el que se activaron los avisos (lo manda admin_push.js)."""
+    if not push_configurado():
+        return JsonResponse({'ok': False, 'error': 'Los avisos no están configurados.'}, status=503)
+    suscripcion = guardar_suscripcion(
+        request.user, _json_del_pedido(request), request.META.get('HTTP_USER_AGENT', '')
+    )
+    if not suscripcion:
+        return JsonResponse({'ok': False, 'error': 'No se pudo activar en este dispositivo.'}, status=400)
+    return JsonResponse({'ok': True})
+
+
+@admin_required
+@require_http_methods(["POST"])
+def admin_push_desactivar(request):
+    """Deja de mandar avisos a este dispositivo."""
+    endpoint = _json_del_pedido(request).get('endpoint')
+    if isinstance(endpoint, str) and endpoint:
+        SuscripcionPush.objects.filter(usuario=request.user, endpoint=endpoint).delete()
+    return JsonResponse({'ok': True})
+
+
+@admin_required
+@require_http_methods(["POST"])
+def admin_push_probar(request):
+    """Manda un aviso de prueba a los dispositivos de quien lo pide."""
+    if not push_configurado():
+        return JsonResponse({'ok': False, 'error': 'Los avisos no están configurados.'}, status=503)
+    try:
+        enviados = enviar_push_prueba(request.user)
+    except Exception as e:
+        logger.error(f"Error enviando el aviso push de prueba: {e}")
+        enviados = 0
+    if not enviados:
+        return JsonResponse({'ok': False, 'error': 'No se pudo enviar. Desactivá los avisos y volvé a activarlos.'})
+    return JsonResponse({'ok': True})
 
 # ==============================================================================
 # GESTIÓN DE CLASES
@@ -5220,6 +5270,36 @@ def service_worker_js(request):
                 event.respondWith(fetch(req).catch(() => caches.match(req)));
             }}
             // El resto (videos, imágenes, CSS/JS versionados) va directo a la red
+        }});
+
+        // Avisos push del panel (los manda gravity/push.py): se muestran aunque la app esté cerrada
+        self.addEventListener('push', (event) => {{
+            let aviso = {{}};
+            try {{ aviso = event.data ? event.data.json() : {{}}; }} catch (err) {{ aviso = {{}}; }}
+            const opciones = {{
+                body: aviso.cuerpo || '',
+                icon: '/static/icons/icon-192x192.png',
+                badge: '/static/icons/icon-192x192.png',
+                data: {{ url: aviso.url || '/admin-panel/' }},
+            }};
+            if (aviso.etiqueta) opciones.tag = aviso.etiqueta;
+            event.waitUntil(self.registration.showNotification(aviso.titulo || 'Pilates Gravity', opciones));
+        }});
+
+        // Al tocar el aviso: se abre esa página, en la app si ya estaba abierta
+        self.addEventListener('notificationclick', (event) => {{
+            event.notification.close();
+            const destino = new URL((event.notification.data && event.notification.data.url) || '/admin-panel/', self.location.origin);
+            if (destino.origin !== self.location.origin) return;
+            event.waitUntil(
+                self.clients.matchAll({{ type: 'window', includeUncontrolled: true }}).then((clients) => {{
+                    const abierta = clients.find((c) => 'navigate' in c && 'focus' in c);
+                    if (abierta) {{
+                        return abierta.focus().then((c) => c.navigate(destino.href)).catch(() => self.clients.openWindow(destino.href));
+                    }}
+                    return self.clients.openWindow(destino.href);
+                }})
+            );
         }});
     """
     response = HttpResponse(sw_content, content_type='application/javascript')

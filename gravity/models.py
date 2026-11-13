@@ -2928,3 +2928,35 @@ class LiquidacionProfesora(models.Model):
         verbose_name_plural = "Liquidaciones de profesoras"
         ordering = ['-mes_año']
         unique_together = ['profesora', 'mes_año']
+
+
+# ==============================================================================
+# AVISOS PUSH AL EQUIPO
+# ==============================================================================
+
+class SuscripcionPush(models.Model):
+    """
+    Un celular o navegador de alguien del equipo que activó los avisos del panel.
+    Cada dispositivo tiene su propia dirección de envío (endpoint); si la persona
+    deja de ser del equipo, no se le manda nada aunque la suscripción siga guardada.
+    """
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='suscripciones_push',
+        verbose_name="Usuario"
+    )
+    endpoint = models.URLField(max_length=1000, unique=True, verbose_name="Dirección de envío")
+    p256dh = models.CharField(max_length=200, verbose_name="Clave del dispositivo")
+    auth = models.CharField(max_length=100, verbose_name="Secreto del dispositivo")
+    dispositivo = models.CharField(max_length=300, blank=True, verbose_name="Navegador")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        nombre = self.usuario.get_full_name() or self.usuario.username
+        return f"Avisos de {nombre}"
+
+    class Meta:
+        verbose_name = "Suscripción a avisos"
+        verbose_name_plural = "Suscripciones a avisos"
+        ordering = ['-fecha_creacion']

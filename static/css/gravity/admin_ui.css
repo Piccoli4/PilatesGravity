@@ -437,6 +437,34 @@ a.pn-note-item:hover { background: var(--pn-soft); }
 .pn-note-item__time { display: block; margin: 3px 0 0; font-size: 0.74rem; color: var(--pn-faint); }
 .pn-inbox.is-read .pn-note-item__title { font-weight: 400; }
 
+/* Avisos push en este dispositivo (arriba de la bandeja; lo maneja admin_push.js) */
+.pn-push {
+    margin: 0 4px 14px;
+    padding: 12px;
+    border-radius: var(--pn-radius-sm);
+    background: var(--pn-soft);
+}
+.pn-push[hidden], .pn-push [hidden] { display: none !important; }
+.pn-push__head { display: flex; align-items: flex-start; gap: 12px; }
+.pn-push__icon {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--pn-surface);
+    color: var(--pn-muted);
+}
+.pn-push__icon .pn-ic { width: 18px; height: 18px; }
+.pn-push.is-on .pn-push__icon { background: var(--pn-ok-soft); color: var(--pn-ok); }
+.pn-push__body { flex: 1; min-width: 0; }
+.pn-push__title { margin: 0; font-size: 0.9rem; font-weight: 500; line-height: 1.35; color: var(--pn-text); }
+.pn-push__text { margin: 2px 0 0; font-size: 0.8rem; line-height: 1.45; color: var(--pn-muted); }
+.pn-push__text:empty { display: none; }
+.pn-push__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.pn-push__actions:not(:has(button:not([hidden]))) { display: none; }
+
 /* ---------- Avisos (g-toast del sitio, ubicados para el panel) ---------- */
 .pn-body .g-toasts { top: calc(var(--pn-top) + 12px); z-index: 900; }
 

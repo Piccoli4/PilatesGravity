@@ -194,6 +194,11 @@ PASSWORD_RESET_TIMEOUT = 900  # 15 minutos en segundos
 # URL pública del sitio: emails, URL canónicas, Open Graph, sitemap.xml y robots.txt
 SITE_URL = config('SITE_URL', default='https://pilatesgravity.com.ar')
 
+# Avisos push al equipo (gravity/push.py). Las claves se generan con
+# `python manage.py generar_claves_push`; sin ellas los avisos quedan apagados.
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY', default='')
+VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
+
 # Configuración de logging
 LOGGING = {
     'version': 1,

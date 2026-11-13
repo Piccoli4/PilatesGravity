@@ -7,6 +7,11 @@
     {% include 'components/base/seo_meta.html' %}
     <title>{% block title %}Panel{% endblock %} · Pilates Gravity</title>
     <meta name="theme-color" content="#F7F2EB">
+    {% comment %} PWA: el iPhone solo permite avisos push en la app agregada a la pantalla de inicio {% endcomment %}
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Pilates Gravity">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +20,7 @@
 
     {% comment %} gravity_ui.css aporta los tokens --g-* y los avisos (g-toast); el panel es admin_ui.css {% endcomment %}
     <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261014a">
-    <link rel="stylesheet" href="{% static 'css/gravity/admin_ui.css' %}?v=20261014b">
+    <link rel="stylesheet" href="{% static 'css/gravity/admin_ui.css' %}?v=20261112a">
 
     {% block extra_css %}{% endblock %}
 </head>
@@ -154,6 +159,27 @@
             <button type="button" class="pn-iconbtn" data-cerrar aria-label="Cerrar actividad">{% include 'gravity/admin/_icono.html' with i='cerrar' %}</button>
         </div>
         <div class="pn-sheet__body pn-inbox">
+            {% if panel.push_clave %}
+            {% comment %} Avisos push en este dispositivo: lo maneja admin_push.js, que lo muestra cuando sabe el estado {% endcomment %}
+            <div class="pn-push" id="pn-push" hidden
+                data-clave="{{ panel.push_clave }}" data-csrf="{{ csrf_token }}"
+                data-activar="{% url 'gravity:admin_push_activar' %}"
+                data-desactivar="{% url 'gravity:admin_push_desactivar' %}"
+                data-probar="{% url 'gravity:admin_push_probar' %}">
+                <div class="pn-push__head">
+                    <span class="pn-push__icon">{% include 'gravity/admin/_icono.html' with i='campana' %}</span>
+                    <div class="pn-push__body">
+                        <p class="pn-push__title" data-push-titulo>Avisos en este dispositivo</p>
+                        <p class="pn-push__text" data-push-texto aria-live="polite"></p>
+                    </div>
+                </div>
+                <div class="pn-push__actions">
+                    <button type="button" class="pn-btn pn-btn--sm" data-push-activar hidden>Activar avisos</button>
+                    <button type="button" class="pn-btn pn-btn--sm pn-btn--ghost" data-push-probar hidden>Enviar una prueba</button>
+                    <button type="button" class="pn-btn pn-btn--sm pn-btn--quiet" data-push-desactivar hidden>Desactivar</button>
+                </div>
+            </div>
+            {% endif %}
             {% if panel.pendientes_total %}
             <div class="pn-inbox__group">
                 <p class="pn-inbox__label">Para resolver</p>
@@ -224,6 +250,7 @@
 
     <script src="{% static 'js/form_submit.js' %}?v=20261011a"></script>
     <script src="{% static 'js/admin_panel.js' %}?v=20261014pn"></script>
+    {% if panel.push_clave %}<script src="{% static 'js/admin_push.js' %}?v=20261112a"></script>{% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 

@@ -13,6 +13,7 @@ usen las mismas reglas.
 """
 from datetime import timedelta
 
+from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timesince import timesince
@@ -163,6 +164,34 @@ def _clase_corta(clase):
     return f'{clase.get_nombre_display()} · {clase.dia} {clase.horario:%H:%M} · {clase.get_direccion_corta()}'
 
 
+def texto_cancelacion(n):
+    """
+    Cómo se cuenta una NotificacionCancelacion: (título, tipo, ícono).
+    Lo usan la bandeja del panel y el aviso push, para que digan lo mismo.
+    """
+    alumno = n.reserva.usuario
+    if n.tipo == 'permanente' and n.reserva.fecha_unica:
+        que = 'su recupero' if n.reserva.es_recupero else 'su clase única'
+        return f'{_nombre(alumno)} canceló {que} del {n.reserva.fecha_unica:%d/%m}', 'baja', 'baja'
+    if n.tipo == 'permanente':
+        return f'{_nombre(alumno)} dejó su horario fijo', 'baja', 'baja'
+    fecha = f' el {n.fecha_ausencia:%d/%m}' if n.fecha_ausencia else ''
+    return f'{_nombre(alumno)} avisó que no va{fecha}', 'aviso', 'ausencia'
+
+
+def avisar_cancelacion_al_equipo(n):
+    """Aviso push al equipo por una cancelación o ausencia que cargó el alumno."""
+    from .push import enviar_push_equipo
+
+    titulo, _tipo, _icono = texto_cancelacion(n)
+    return enviar_push_equipo(
+        titulo,
+        _clase_corta(n.reserva.clase),
+        url=_url_alumno(n.reserva.usuario) or reverse('gravity:admin_dashboard'),
+        etiqueta=f'cancelacion-{n.pk}',
+    )
+
+
 def pendientes_panel(user):
     """Cosas para resolver (solo el superadmin las resuelve)."""
     if not es_superadmin(user):
@@ -192,17 +221,7 @@ def notificaciones_panel(request, limite=40):
     ).exclude(leida_por=user).select_related('reserva__clase', 'reserva__usuario')
     for n in cancelaciones:
         alumno = n.reserva.usuario
-        if n.tipo == 'permanente' and n.reserva.fecha_unica:
-            que = 'su recupero' if n.reserva.es_recupero else 'su clase única'
-            titulo = f'{_nombre(alumno)} canceló {que} del {n.reserva.fecha_unica:%d/%m}'
-            tipo, icono = 'baja', 'baja'
-        elif n.tipo == 'permanente':
-            titulo = f'{_nombre(alumno)} dejó su horario fijo'
-            tipo, icono = 'baja', 'baja'
-        else:
-            fecha = f' el {n.fecha_ausencia:%d/%m}' if n.fecha_ausencia else ''
-            titulo = f'{_nombre(alumno)} avisó que no va{fecha}'
-            tipo, icono = 'aviso', 'ausencia'
+        titulo, tipo, icono = texto_cancelacion(n)
         items.append({
             'tipo': tipo, 'icono': icono, 'titulo': titulo,
             'detalle': _clase_corta(n.reserva.clase),
@@ -295,5 +314,7 @@ def contexto_panel(request):
             'pendientes': pendientes,
             'pendientes_total': pendientes['solicitudes'] + pendientes['testimonios'],
             'notificaciones': notificaciones_panel(request),
+            # Clave pública para activar los avisos push ('' = avisos apagados en este servidor)
+            'push_clave': settings.VAPID_PUBLIC_KEY if settings.VAPID_PRIVATE_KEY else '',
         }
     }

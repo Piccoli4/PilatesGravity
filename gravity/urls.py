@@ -9,6 +9,7 @@ from .views import (
     cerrar_modal_reserva_exitosa, cerrar_modal_ausencia_registrada, 
     # IMPORTACIONES PARA ADMINISTRADOR
     admin_dashboard, admin_marcar_notificaciones_leidas, admin_clases_lista, admin_clase_crear,
+    admin_push_activar, admin_push_desactivar, admin_push_probar,
     admin_clase_editar, admin_clase_eliminar, admin_clase_detalle, admin_clase_toggle_status,
     admin_reservas_lista, admin_reservar_para_usuario, admin_reserva_cancelar, admin_reserva_modificar,
     admin_usuarios_lista, admin_usuario_detalle, admin_usuario_toggle_status, admin_usuario_add_note,
@@ -81,6 +82,10 @@ urlpatterns = [
     # Dashboard principal del administrador
     path('admin-panel/', admin_dashboard, name='admin_dashboard'),
     path('admin-panel/notificaciones/marcar-leidas/', admin_marcar_notificaciones_leidas, name='admin_marcar_notificaciones_leidas'),
+    # Avisos push en el celular del equipo
+    path('admin-panel/avisos/activar/', admin_push_activar, name='admin_push_activar'),
+    path('admin-panel/avisos/desactivar/', admin_push_desactivar, name='admin_push_desactivar'),
+    path('admin-panel/avisos/probar/', admin_push_probar, name='admin_push_probar'),
     
     # Gestión de clases
     path('admin-panel/clases/', admin_clases_lista, name='admin_clases_lista'),
