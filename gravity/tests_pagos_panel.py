@@ -140,3 +140,20 @@ class PlanesTests(PagosBase):
         self.assertContains(self.client.get(url), 'id="dlg-saldo"')
         self.client.force_login(self.equipo)
         self.assertNotContains(self.client.get(url), 'id="dlg-saldo"')
+
+
+class RegistrarPagoIncompletoTests(PagosBase):
+    """Sin monto o sin fecha, el formulario avisa el error (antes daba error 500)."""
+
+    def test_sin_monto_ni_fecha(self):
+        ana = self.alumno('Ana', '-60000')
+        url = reverse('gravity:admin_pagos_registrar_pago', args=[ana.id])
+        for datos in (
+            {'monto': '', 'fecha_pago': self.hoy.isoformat(), 'tipo_pago': 'efectivo', 'concepto': 'Cuota'},
+            {'monto': '30000', 'fecha_pago': '', 'tipo_pago': 'efectivo', 'concepto': 'Cuota'},
+        ):
+            with self.subTest(datos=datos):
+                r = self.client.post(url, datos)
+                self.assertEqual(r.status_code, 200)
+                self.assertTrue(r.context['form'].errors)
+        self.assertFalse(RegistroPago.objects.filter(cliente=ana).exists())

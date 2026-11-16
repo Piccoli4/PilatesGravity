@@ -481,3 +481,25 @@ class ComentariosDePlantillaTests(TestCase):
         alumna = User.objects.create_user(username='alumna', password='clave-de-prueba-123')
         self.client.force_login(alumna)
         self.assertNotContains(self.client.get(reverse('accounts:mis_reservas')), 'Modal para confirmar acciones')
+
+
+class RegistroTelefonoTests(TestCase):
+    """El teléfono del registro se guarda limpio; uno inválido es un error del formulario, no un 500."""
+
+    def datos(self, telefono):
+        return {
+            'username': 'nueva', 'first_name': 'ana', 'last_name': 'paz', 'email': 'nueva@test.com',
+            'telefono': telefono, 'password1': 'Clave-segura-2026', 'password2': 'Clave-segura-2026',
+        }
+
+    def test_telefono_con_espacios_guiones_y_parentesis(self):
+        r = self.client.post(reverse('accounts:signup'), self.datos('(0342) 511-4448'))
+        self.assertRedirects(r, reverse('accounts:profile_complete'), fetch_redirect_response=False)
+        self.assertEqual(User.objects.get(username='nueva').profile.telefono, '03425114448')
+
+    def test_telefono_invalido_no_crea_la_cuenta(self):
+        for telefono in ('342-ABC', '12345'):
+            with self.subTest(telefono=telefono):
+                r = self.client.post(reverse('accounts:signup'), self.datos(telefono))
+                self.assertEqual(r.status_code, 200)
+                self.assertFalse(User.objects.filter(username='nueva').exists())

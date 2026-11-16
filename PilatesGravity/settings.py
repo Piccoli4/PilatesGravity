@@ -203,11 +203,20 @@ VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY', default='')
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        # Fecha y hora en cada entrada: sin eso no se sabe si un error es de hoy o de hace meses
+        'con_fecha': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+            'style': '{',
+        },
+    },
     'handlers': {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'logs' / 'email.log',
+            'formatter': 'con_fecha',
         },
         'console': {
             'level': 'INFO',
@@ -217,6 +226,10 @@ LOGGING = {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'logs' / 'django_errors.log',
+            'formatter': 'con_fecha',
+        },
+        'nada': {
+            'class': 'logging.NullHandler',
         },
     },
     'loggers': {
@@ -225,9 +238,26 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        # Errores de la app (avisos push, cancelaciones, pagos...): al mismo archivo que los de Django
+        'gravity': {
+            'handlers': ['django_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'accounts': {
+            'handlers': ['django_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
         'django': {
             'handlers': ['django_file', 'console'],
             'level': 'ERROR',
+            'propagate': False,
+        },
+        # Pedidos para dominios ajenos que llegan a la IP del servidor: Django ya los
+        # rechaza (400); anotarlos llenaba el log (7 MB, más del 99 % de las entradas)
+        'django.security.DisallowedHost': {
+            'handlers': ['nada'],
             'propagate': False,
         },
     },
