@@ -11,6 +11,7 @@ cancelación (aviso del alumno o cancelación del estudio).
 """
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
@@ -57,6 +58,10 @@ def dar_de_baja_reservas(reservas):
         NotificacionCancelacion.objects.bulk_create(
             [NotificacionCancelacion(reserva_id=i, tipo='permanente') for i in ids]
         )
+        # Los lugares quedaron libres: se avisa a quienes los esperaban
+        from .avisos_alumno import avisar_lugar_por_reserva
+        for reserva in Reserva.objects.filter(id__in=ids).select_related('clase'):
+            transaction.on_commit(lambda r=reserva: avisar_lugar_por_reserva(r))
     return len(ids)
 
 

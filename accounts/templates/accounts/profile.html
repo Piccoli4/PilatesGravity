@@ -5,7 +5,7 @@
 {% block title %}Mi espacio - Pilates Gravity{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261011o">
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261115b">
 {% endblock %}
 
 {% block content %}
@@ -253,7 +253,8 @@
                     <dl class="me-data__list">
                         <div><dt>Nivel</dt><dd>{{ user_profile.get_nivel_experiencia_display }}</dd></div>
                         <div><dt>Sede preferida</dt><dd>{{ sede_preferida }}</dd></div>
-                        <div><dt>Recordatorios de clase</dt><dd>{% if user_profile.acepta_recordatorios %}<span class="me-on">Activados</span>{% else %}<span class="me-off">Desactivados</span>{% endif %}</dd></div>
+                        <div><dt>Avisos en el celular</dt><dd><a href="{% url 'gravity:avisos' %}" class="me-link">Elegir cuáles recibir</a></dd></div>
+                        <div><dt>Recordatorios por email</dt><dd>{% if user_profile.acepta_recordatorios %}<span class="me-on">Activados</span>{% else %}<span class="me-off">Desactivados</span>{% endif %}</dd></div>
                         <div><dt>Salud</dt><dd>{% if not user_profile.perfil_completado %}<span class="me-off">Sin completar</span>{% elif user_profile.tiene_lesiones %}Lesión o condición informada{% else %}Nada para tener en cuenta{% endif %}</dd></div>
                     </dl>
                 </article>

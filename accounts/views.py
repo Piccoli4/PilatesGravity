@@ -12,6 +12,7 @@ from .forms import SignUpForm, ProfileUpdateForm, UserProfileForm, CambiarPasswo
 from .models import UserProfile, Testimonio
 from .mi_espacio import resumen_alumno, reservas_alumno, SEDE_PREFERIDA
 from gravity.email_service import enviar_email_bienvenida_completo, enviar_email_despedida_completo
+from gravity.push import clave_publica
 from gravity.models import AusenciaTemporal
 from datetime import date, timedelta
 from django.db import IntegrityError, transaction
@@ -235,6 +236,8 @@ def mis_reservas(request):
         # Avisos de una sola vez que deja la acción anterior (se cierran por AJAX)
         'reserva_exitosa': request.session.get('reserva_exitosa'),
         'ausencia_registrada': request.session.get('ausencia_registrada'),
+        # Clave para activar los recordatorios push en este celular ('' = apagados)
+        'push_clave': clave_publica(),
     }
     return render(request, 'accounts/mis_reservas.html', context)
 
@@ -254,6 +257,9 @@ def guardar_testimonio(request):
         nuevo = form.save(commit=False)
         nuevo.usuario = request.user
         nuevo.save()
+        # Queda pendiente de aprobación: se avisa a quienes lo revisan
+        from gravity.panel import avisar_testimonio
+        avisar_testimonio(nuevo)
         messages.success(request, 'Tu comentario fue guardado y está pendiente de aprobación.')
     else:
         messages.error(request, 'Por favor corrige los errores en el formulario.')

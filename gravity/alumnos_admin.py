@@ -124,6 +124,7 @@ def desactivar_alumno(usuario, admin, avisar=True):
     Desactiva la cuenta: cancela sus reservas (queda registrado como cancelación del
     estudio) y sus planes. Las deudas y los pagos se conservan.
     """
+    from .avisos_alumno import avisar_lugar_por_reserva
     from .email_service import enviar_email_cancelacion_reserva
 
     with transaction.atomic():
@@ -135,6 +136,7 @@ def desactivar_alumno(usuario, admin, avisar=True):
                 reserva=reserva, admin_user=admin, motivo=MOTIVO_BAJA,
                 motivo_detalle='Se desactivó la cuenta del alumno.', email_enviado=False,
             )
+            transaction.on_commit(lambda r=reserva: avisar_lugar_por_reserva(r))
         PlanUsuario.objects.filter(usuario=usuario, activo=True).update(activo=False)
         EstadoPagoCliente.objects.filter(usuario=usuario).update(plan_actual=None, activo=False)
         usuario.is_active = False

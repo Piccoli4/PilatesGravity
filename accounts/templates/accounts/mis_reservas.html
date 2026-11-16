@@ -4,7 +4,7 @@
 {% block title %}Mis reservas - Pilates Gravity{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261011o">
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261115b">
 {% endblock %}
 
 {% block content %}
@@ -89,6 +89,33 @@
             <p class="mr-muted">No tenés clases en los próximos 14 días.</p>
             {% endif %}
         </article>
+        {% endif %}
+
+        {% if push_clave %}
+        <!-- ================= Avisos en este celular (lo maneja push_avisos.js) ================= -->
+        <div class="me-push" hidden data-push
+            data-clave="{{ push_clave }}" data-csrf="{{ csrf_token }}"
+            data-activar="{% url 'gravity:push_activar' %}"
+            data-desactivar="{% url 'gravity:push_desactivar' %}"
+            data-probar="{% url 'gravity:push_probar' %}"
+            data-titulo="Avisos en este celular"
+            data-titulo-activo="Avisos activados en este celular"
+            data-texto-inactivo="Te recordamos cada clase unas horas antes y te avisamos si el estudio cambia algo o se libera un lugar."
+            data-texto-activo="Te recordamos cada clase y te avisamos los cambios.">
+            <span class="me-push__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </span>
+            <div class="me-push__body">
+                <strong data-push-titulo>Avisos en este celular</strong>
+                <small data-push-texto aria-live="polite"></small>
+                <div class="me-push__actions">
+                    <button type="button" class="g-btn g-btn--primary g-btn--sm" data-push-activar hidden>Activar avisos</button>
+                    <button type="button" class="mr-mini" data-push-probar hidden>Enviar una prueba</button>
+                    <button type="button" class="mr-mini" data-push-desactivar hidden>Desactivar</button>
+                </div>
+                <a href="{% url 'gravity:avisos' %}" class="me-push__link">Elegir qué avisos recibir</a>
+            </div>
+        </div>
         {% endif %}
 
         <!-- ================= Horarios fijos ================= -->
@@ -293,6 +320,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if push_clave %}<script src="{% static 'js/push_avisos.js' %}?v=20261115a"></script>{% endif %}
 <script>
     (function () {
         const csrf = '{{ csrf_token }}';

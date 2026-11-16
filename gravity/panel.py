@@ -11,9 +11,9 @@ Hay dos niveles:
 El menú y la bandeja salen de acá para que la base del panel y las vistas
 usen las mismas reglas.
 """
+import logging
 from datetime import timedelta
 
-from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timesince import timesince
@@ -27,6 +27,9 @@ from .models import (
     Reserva,
     SolicitudCambioPlan,
 )
+from .push import aviso_seguro, clave_publica, enviar_push_equipo
+
+logger = logging.getLogger(__name__)
 
 
 def es_superadmin(user):
@@ -179,16 +182,74 @@ def texto_cancelacion(n):
     return f'{_nombre(alumno)} avisó que no va{fecha}', 'aviso', 'ausencia'
 
 
-def avisar_cancelacion_al_equipo(n):
-    """Aviso push al equipo por una cancelación o ausencia que cargó el alumno."""
-    from .push import enviar_push_equipo
+# ------------------------------------------------------------------------------
+# Avisos push al equipo (el envío está en push.py; acá, qué dice cada uno)
+# ------------------------------------------------------------------------------
 
+def _url_o_panel(usuario):
+    return _url_alumno(usuario) or reverse('gravity:admin_dashboard')
+
+
+@aviso_seguro
+def avisar_cancelacion_al_equipo(n):
+    """Un alumno dejó su horario, canceló un recupero o avisó que no va (NotificacionCancelacion)."""
     titulo, _tipo, _icono = texto_cancelacion(n)
     return enviar_push_equipo(
-        titulo,
-        _clase_corta(n.reserva.clase),
-        url=_url_alumno(n.reserva.usuario) or reverse('gravity:admin_dashboard'),
-        etiqueta=f'cancelacion-{n.pk}',
+        'eq_cancelaciones', titulo, _clase_corta(n.reserva.clase),
+        url=_url_o_panel(n.reserva.usuario), etiqueta=f'cancelacion-{n.pk}',
+    )
+
+
+@aviso_seguro
+def avisar_reserva_suelta_al_equipo(reserva):
+    """Un alumno reservó un recupero o una clase única (cambia quién viene ese día)."""
+    if not reserva.fecha_unica:
+        return 0
+    accion = 'recupera' if reserva.es_recupero else 'tomó una clase única'
+    return enviar_push_equipo(
+        'eq_recuperos', f'{_nombre(reserva.usuario)} {accion} el {reserva.fecha_unica:%d/%m}',
+        _clase_corta(reserva.clase),
+        url=_url_o_panel(reserva.usuario), etiqueta=f'reserva-{reserva.pk}',
+    )
+
+
+@aviso_seguro
+def avisar_plan_cancelado_al_equipo(n):
+    """Un alumno canceló su plan (NotificacionCancelacionPlan)."""
+    return enviar_push_equipo(
+        'eq_planes', f'{_nombre(n.usuario)} canceló su plan',
+        n.plan.nombre if n.plan else '',
+        url=_url_o_panel(n.usuario), etiqueta=f'plan-baja-{n.pk}',
+    )
+
+
+@aviso_seguro
+def avisar_solicitud_plan(solicitud):
+    """Un alumno pidió un plan o un cambio de plan: lo resuelven los superadmins."""
+    plan = solicitud.plan_solicitado.nombre if solicitud.plan_solicitado else 'un plan'
+    if solicitud.plan_actual:
+        titulo = f'{_nombre(solicitud.usuario)} pidió cambiar de plan'
+        cuerpo = f'De "{solicitud.plan_actual.nombre}" a "{plan}". Espera tu aprobación.'
+    else:
+        titulo = f'{_nombre(solicitud.usuario)} pidió un plan'
+        cuerpo = f'{plan}. Espera tu aprobación.'
+    return enviar_push_equipo(
+        'eq_solicitudes', titulo, cuerpo,
+        url=reverse('gravity:admin_solicitudes_plan_lista') + '?estado=pendiente',
+        etiqueta=f'solicitud-{solicitud.pk}',
+    )
+
+
+@aviso_seguro
+def avisar_testimonio(testimonio):
+    """Un alumno dejó (o editó) un testimonio que espera aprobación: lo revisan los superadmins."""
+    if testimonio.aprobado:
+        return 0
+    return enviar_push_equipo(
+        'eq_testimonios', f'{_nombre(testimonio.usuario)} dejó un testimonio',
+        'No se publica hasta que lo apruebes.',
+        url=reverse('gravity:admin_testimonios_lista') + '?estado=pendientes',
+        etiqueta=f'testimonio-{testimonio.pk}',
     )
 
 
@@ -315,6 +376,6 @@ def contexto_panel(request):
             'pendientes_total': pendientes['solicitudes'] + pendientes['testimonios'],
             'notificaciones': notificaciones_panel(request),
             # Clave pública para activar los avisos push ('' = avisos apagados en este servidor)
-            'push_clave': settings.VAPID_PUBLIC_KEY if settings.VAPID_PRIVATE_KEY else '',
+            'push_clave': clave_publica(),
         }
     }

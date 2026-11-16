@@ -2960,3 +2960,108 @@ class SuscripcionPush(models.Model):
         verbose_name = "Suscripción a avisos"
         verbose_name_plural = "Suscripciones a avisos"
         ordering = ['-fecha_creacion']
+
+
+class RecordatorioPush(models.Model):
+    """
+    Recordatorio de clase que ya se le mandó a un alumno, para no repetirlo:
+    uno por reserva y por fecha de clase (lo usa gravity/recordatorios.py).
+    """
+    reserva = models.ForeignKey(
+        Reserva,
+        on_delete=models.CASCADE,
+        related_name='recordatorios_push',
+        verbose_name="Reserva"
+    )
+    fecha = models.DateField(verbose_name="Fecha de la clase")
+    fecha_envio = models.DateTimeField(auto_now_add=True, verbose_name="Enviado el")
+
+    def __str__(self):
+        return f"Recordatorio de {self.reserva.numero_reserva} para el {self.fecha:%d/%m/%Y}"
+
+    class Meta:
+        verbose_name = "Recordatorio enviado"
+        verbose_name_plural = "Recordatorios enviados"
+        ordering = ['-fecha_envio']
+        constraints = [
+            models.UniqueConstraint(fields=['reserva', 'fecha'], name='recordatorio_push_unico'),
+        ]
+
+
+class PreferenciasAvisos(models.Model):
+    """
+    Qué avisos push eligió NO recibir cada persona (los tipos están en gravity/push.py).
+    Se guardan solo los apagados: un tipo de aviso nuevo nace encendido para todos.
+    """
+    usuario = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='preferencias_avisos',
+        verbose_name="Usuario"
+    )
+    desactivados = models.JSONField(default=list, blank=True, verbose_name="Avisos apagados")
+
+    def __str__(self):
+        return f"Avisos de {self.usuario.get_full_name() or self.usuario.username}"
+
+    class Meta:
+        verbose_name = "Preferencias de avisos"
+        verbose_name_plural = "Preferencias de avisos"
+
+
+class AvisoPushEnviado(models.Model):
+    """
+    Avisos programados que ya salieron, para no repetirlos (recupero por vencer,
+    cumpleaños). La clave identifica el aviso: 'recupero-<id de la ausencia>', 'cumple-2026'.
+    """
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='avisos_push_enviados',
+        verbose_name="Usuario"
+    )
+    clave = models.CharField(max_length=80, verbose_name="Aviso")
+    fecha_envio = models.DateTimeField(auto_now_add=True, verbose_name="Enviado el")
+
+    def __str__(self):
+        return f"{self.clave} a {self.usuario.username}"
+
+    class Meta:
+        verbose_name = "Aviso enviado"
+        verbose_name_plural = "Avisos enviados"
+        ordering = ['-fecha_envio']
+        constraints = [
+            models.UniqueConstraint(fields=['usuario', 'clave'], name='aviso_push_enviado_unico'),
+        ]
+
+
+class ListaEspera(models.Model):
+    """
+    Un alumno que quiere un lugar en una clase completa: cuando se libera uno (fijo
+    o solo para una fecha) se le avisa por push. No reserva nada: el lugar es del
+    primero que lo toma. Sale de la lista cuando consigue el horario fijo o cuando quiere.
+    """
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='listas_espera',
+        verbose_name="Usuario"
+    )
+    clase = models.ForeignKey(
+        Clase,
+        on_delete=models.CASCADE,
+        related_name='lista_espera',
+        verbose_name="Clase"
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Anotado el")
+
+    def __str__(self):
+        return f"{self.usuario.username} espera {self.clase}"
+
+    class Meta:
+        verbose_name = "Lista de espera"
+        verbose_name_plural = "Listas de espera"
+        ordering = ['fecha_creacion']
+        constraints = [
+            models.UniqueConstraint(fields=['usuario', 'clase'], name='lista_espera_unica'),
+        ]

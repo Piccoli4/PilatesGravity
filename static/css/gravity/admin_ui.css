@@ -464,6 +464,7 @@ a.pn-note-item:hover { background: var(--pn-soft); }
 .pn-push__text:empty { display: none; }
 .pn-push__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .pn-push__actions:not(:has(button:not([hidden]))) { display: none; }
+.pn-push__more { margin-top: 10px; }
 
 /* ---------- Avisos (g-toast del sitio, ubicados para el panel) ---------- */
 .pn-body .g-toasts { top: calc(var(--pn-top) + 12px); z-index: 900; }

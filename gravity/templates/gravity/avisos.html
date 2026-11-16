@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Avisos - Pilates Gravity{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261115b">
+{% endblock %}
+
+{% block content %}
+<section class="me mr">
+    <div class="g-container me__wrap av">
+
+        <header class="mr-head me-in">
+            <div class="mr-head__text">
+                <a href="{% if user.is_staff %}{% url 'gravity:admin_dashboard' %}{% else %}{% url 'accounts:profile' %}{% endif %}" class="pc-back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    {% if user.is_staff %}Panel{% else %}Mi espacio{% endif %}
+                </a>
+                <h1 class="mr-head__title">Avisos</h1>
+                <p class="av-lead">Notificaciones que te llegan al celular aunque la app esté cerrada. Vos elegís cuáles.</p>
+            </div>
+        </header>
+
+        {% if push_clave %}
+        <!-- ================= Este dispositivo (lo maneja push_avisos.js) ================= -->
+        <div class="me-push me-in" hidden data-push
+            data-clave="{{ push_clave }}" data-csrf="{{ csrf_token }}"
+            data-activar="{% url 'gravity:push_activar' %}"
+            data-desactivar="{% url 'gravity:push_desactivar' %}"
+            data-probar="{% url 'gravity:push_probar' %}"
+            data-titulo="Avisos en este celular"
+            data-titulo-activo="Avisos activados en este celular"
+            data-texto-inactivo="Activalos para recibir los avisos que elijas abajo. Se activan una vez en cada celular o computadora."
+            data-texto-activo="Este dispositivo recibe los avisos que tenés encendidos abajo.">
+            <span class="me-push__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </span>
+            <div class="me-push__body">
+                <strong data-push-titulo>Avisos en este celular</strong>
+                <small data-push-texto aria-live="polite"></small>
+                <div class="me-push__actions">
+                    <button type="button" class="g-btn g-btn--primary g-btn--sm" data-push-activar hidden>Activar avisos</button>
+                    <button type="button" class="mr-mini" data-push-probar hidden>Enviar una prueba</button>
+                    <button type="button" class="mr-mini" data-push-desactivar hidden>Desactivar en este celular</button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <article class="me-card me-in"><p class="mr-muted">Los avisos todavía no están disponibles.</p></article>
+        {% endif %}
+
+        <!-- ================= Qué avisos recibir ================= -->
+        <form method="post" class="me-card av-card me-in">
+            {% csrf_token %}
+            <div class="me-card__head">
+                <h2 class="me-h3">Qué avisos querés recibir</h2>
+            </div>
+            {% for grupo in grupos %}
+            <fieldset class="av-group">
+                {% if grupo.titulo %}<legend class="me-label">{{ grupo.titulo }}</legend>{% endif %}
+                {% for a in grupo.avisos %}
+                <label class="av-item">
+                    <span class="av-item__text">
+                        <strong>{{ a.nombre }}</strong>
+                        <small>{{ a.explicacion }}</small>
+                    </span>
+                    <input type="checkbox" class="av-switch" name="avisos" value="{{ a.clave }}" {% if a.encendido %}checked{% endif %}>
+                </label>
+                {% endfor %}
+            </fieldset>
+            {% endfor %}
+            <div class="av-actions">
+                <small class="mr-muted">Vale para todos tus dispositivos.</small>
+                <button type="submit" class="g-btn g-btn--primary" data-loading-text="Guardando...">Guardar</button>
+            </div>
+        </form>
+
+        <!-- ================= Lista de espera ================= -->
+        <article class="me-card av-card me-in">
+            <div class="me-card__head">
+                <h2 class="me-h3">Clases en las que esperás lugar</h2>
+            </div>
+            {% if en_espera %}
+            <ul class="av-wait">
+                {% for e in en_espera %}
+                <li>
+                    <span class="av-item__text">
+                        <strong>{{ e.clase.get_nombre_display }} · {{ e.clase.dia }} {{ e.clase.horario|time:"H:i" }}</strong>
+                        <small>{{ e.clase.get_direccion_corta }} · Te avisamos si se libera un lugar</small>
+                    </span>
+                    <form method="post" action="{% url 'gravity:lista_espera_salir' e.clase.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{% url 'gravity:avisos' %}">
+                        <button type="submit" class="mr-mini">Salir</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="mr-muted">No estás en ninguna lista de espera. Si una clase está completa, tocala en <a href="{% url 'gravity:reservar_clase' %}">Reservar clase</a> y te avisamos cuando se libere un lugar.</p>
+            {% endif %}
+        </article>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{% if push_clave %}<script src="{% static 'js/push_avisos.js' %}?v=20261115a"></script>{% endif %}
+{% endblock %}

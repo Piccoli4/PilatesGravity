@@ -1,25 +1,84 @@
 """
-Avisos push al equipo: la notificación que aparece en el celular aunque el panel
-esté cerrado (como las de WhatsApp).
+Avisos push: la notificación que aparece en el celular aunque la app esté cerrada
+(como las de WhatsApp).
 
-Cada persona del equipo activa los avisos desde la campana del panel, una vez por
-dispositivo; eso guarda una SuscripcionPush. Acá se arma y se manda el aviso a
-todos los dispositivos suscriptos de quienes hoy son del equipo.
+Cada persona los activa una vez por dispositivo y eso guarda una SuscripcionPush:
+el equipo, desde la campana del panel; los alumnos, desde "Mis reservas".
+- Al equipo le llegan las novedades de los alumnos (los textos se arman en panel.py).
+- A los alumnos, el recordatorio de su clase (gravity/recordatorios.py).
 
 Necesita las claves VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY en el .env (se generan
-con `python manage.py generar_claves_push`). Sin ellas no se manda nada y el
-panel no ofrece activar los avisos.
+con `python manage.py generar_claves_push`). Sin ellas no se manda nada y no se
+ofrece activar los avisos.
 """
 import json
 import logging
 import threading
+from functools import wraps
 
 from django.conf import settings
 from django.db import connection
 
-from .models import SuscripcionPush
+from .models import PreferenciasAvisos, SuscripcionPush
 
 logger = logging.getLogger(__name__)
+
+# ------------------------------------------------------------------------------
+# Tipos de aviso. Cada persona puede apagar los que no quiere desde "Avisos"
+# (PreferenciasAvisos guarda solo los apagados: uno nuevo nace encendido).
+# (clave, nombre, explicación)
+# ------------------------------------------------------------------------------
+AVISOS_ALUMNO = [
+    ('recordatorio', 'Recordatorio de clase', 'Unas horas antes de cada clase.'),
+    ('cambios', 'Cambios en mis clases', 'Si el estudio cancela o cambia una de tus clases.'),
+    ('lugar', 'Se liberó un lugar', 'Cuando se libera un lugar en una clase en la que estás en lista de espera.'),
+    ('recupero', 'Recupero por vencer', 'Unos días antes de que se te venza una clase para recuperar.'),
+    ('plan', 'Respuesta a mis pedidos de plan', 'Cuando aprobamos o rechazamos un cambio de plan que pediste.'),
+    ('pago', 'Pago registrado', 'Cuando cargamos un pago tuyo.'),
+    ('cumple', 'Saludo de cumpleaños', 'Un saludo el día de tu cumpleaños.'),
+]
+AVISOS_EQUIPO = [
+    ('eq_cancelaciones', 'Cancelaciones y ausencias', 'Cuando un alumno deja un horario o avisa que no va.'),
+    ('eq_recuperos', 'Recuperos y clases únicas', 'Cuando un alumno reserva un recupero o una clase única.'),
+    ('eq_planes', 'Planes cancelados', 'Cuando un alumno cancela su plan.'),
+]
+AVISOS_SUPERADMIN = [
+    ('eq_solicitudes', 'Solicitudes de plan', 'Cuando un alumno pide un plan o un cambio de plan.'),
+    ('eq_testimonios', 'Testimonios para revisar', 'Cuando un alumno deja un testimonio.'),
+]
+_SOLO_SUPERADMIN = {clave for clave, _n, _e in AVISOS_SUPERADMIN}
+
+
+def grupos_de_avisos(usuario):
+    """Los avisos que puede recibir una persona, agrupados: [(título, [(clave, nombre, explicación)])]."""
+    grupos = []
+    if usuario.is_staff:
+        del_panel = AVISOS_EQUIPO + (AVISOS_SUPERADMIN if usuario.is_superuser else [])
+        grupos.append(('Del panel', del_panel))
+        grupos.append(('De mis clases', AVISOS_ALUMNO))
+    else:
+        grupos.append(('', AVISOS_ALUMNO))
+    return grupos
+
+
+def avisos_apagados(usuario):
+    preferencias = PreferenciasAvisos.objects.filter(usuario=usuario).first()
+    return set(preferencias.desactivados) if preferencias else set()
+
+
+def guardar_avisos(usuario, encendidos):
+    """Guarda qué avisos quiere recibir: los que no están en `encendidos` quedan apagados."""
+    disponibles = [clave for _t, avisos in grupos_de_avisos(usuario) for clave, _n, _e in avisos]
+    apagados = [clave for clave in disponibles if clave not in set(encendidos)]
+    PreferenciasAvisos.objects.update_or_create(usuario=usuario, defaults={'desactivados': apagados})
+    return apagados
+
+
+def _quienes_apagaron(tipo):
+    return [
+        p.usuario_id for p in PreferenciasAvisos.objects.exclude(desactivados=[])
+        if tipo in p.desactivados
+    ]
 
 # Cuánto guarda el aviso el servicio de Google/Apple si el celular está apagado
 # o sin señal. Pasado ese tiempo ya no sirve: se ve en el panel.
@@ -29,6 +88,11 @@ ESPERA_SEGUNDOS = 8
 
 def push_configurado():
     return bool(settings.VAPID_PUBLIC_KEY and settings.VAPID_PRIVATE_KEY)
+
+
+def clave_publica():
+    """Clave con la que el navegador se suscribe ('' = avisos apagados en este servidor)."""
+    return settings.VAPID_PUBLIC_KEY if push_configurado() else ''
 
 
 def _contacto():
@@ -117,7 +181,7 @@ def _enviar(suscripciones, titulo, cuerpo, url, etiqueta, esperar):
     mensaje = json.dumps({
         'titulo': titulo,
         'cuerpo': cuerpo,
-        'url': url or '/admin-panel/',
+        'url': url or '/',
         'etiqueta': etiqueta or '',
     })
     if esperar or not getattr(settings, 'PUSH_EN_SEGUNDO_PLANO', True):
@@ -128,24 +192,59 @@ def _enviar(suscripciones, titulo, cuerpo, url, etiqueta, esperar):
     return len(suscripciones)
 
 
-def _del_equipo():
-    return SuscripcionPush.objects.filter(usuario__is_staff=True, usuario__is_active=True)
+def _del_equipo(tipo):
+    suscripciones = SuscripcionPush.objects.filter(usuario__is_staff=True, usuario__is_active=True)
+    if tipo in _SOLO_SUPERADMIN:
+        suscripciones = suscripciones.filter(usuario__is_superuser=True)
+    return suscripciones.exclude(usuario_id__in=_quienes_apagaron(tipo))
 
 
-def enviar_push_equipo(titulo, cuerpo='', url='', etiqueta=''):
-    """Aviso a todos los dispositivos suscriptos del equipo. No falla nunca: si algo sale mal, queda en el log."""
+def enviar_push_equipo(tipo, titulo, cuerpo='', url='', etiqueta=''):
+    """
+    Aviso a los dispositivos del equipo que tienen encendido ese tipo de aviso (los de
+    AVISOS_SUPERADMIN, solo a los superadmins, que son quienes los resuelven).
+    No falla nunca: si algo sale mal, queda en el log.
+    """
     try:
-        return _enviar(_del_equipo(), titulo, cuerpo, url, etiqueta, esperar=False)
+        return _enviar(_del_equipo(tipo), titulo, cuerpo, url, etiqueta, esperar=False)
     except Exception as e:
         logger.error(f"Error preparando el aviso push al equipo: {e}")
         return 0
 
 
+def enviar_push_usuario(usuario, tipo, titulo, cuerpo='', url='', etiqueta='', esperar=False):
+    """
+    Aviso a los dispositivos de una persona, si tiene encendido ese tipo de aviso.
+    Devuelve a cuántos salió. No falla nunca.
+    """
+    try:
+        if not usuario.is_active or tipo in avisos_apagados(usuario):
+            return 0
+        return _enviar(SuscripcionPush.objects.filter(usuario=usuario), titulo, cuerpo, url, etiqueta, esperar)
+    except Exception as e:
+        logger.error(f"Error preparando el aviso push para el usuario {usuario.pk}: {e}")
+        return 0
+
+
 def enviar_push_prueba(usuario):
     """Aviso de prueba a los dispositivos de una persona. Devuelve a cuántos llegó el envío."""
+    if usuario.is_staff:
+        cuerpo, url = 'Así te va a llegar cada novedad de los alumnos.', '/admin-panel/'
+    else:
+        cuerpo, url = 'Así te va a llegar el recordatorio antes de cada clase.', '/'
     return _enviar(
-        _del_equipo().filter(usuario=usuario),
-        'Los avisos funcionan',
-        'Así te va a llegar cuando un alumno cancele o avise que no va.',
-        '/admin-panel/', 'prueba', esperar=True,
+        SuscripcionPush.objects.filter(usuario=usuario),
+        'Los avisos funcionan', cuerpo, url, 'prueba', esperar=True,
     )
+
+
+def aviso_seguro(funcion):
+    """Para las funciones que arman un aviso: si fallan, no rompen la acción que lo disparó."""
+    @wraps(funcion)
+    def envoltura(*args, **kwargs):
+        try:
+            return funcion(*args, **kwargs)
+        except Exception as e:
+            logger.error(f"Error enviando el aviso push ({funcion.__name__}): {e}")
+            return 0
+    return envoltura

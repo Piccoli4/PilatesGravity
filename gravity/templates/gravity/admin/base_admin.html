@@ -20,7 +20,7 @@
 
     {% comment %} gravity_ui.css aporta los tokens --g-* y los avisos (g-toast); el panel es admin_ui.css {% endcomment %}
     <link rel="stylesheet" href="{% static 'css/gravity/gravity_ui.css' %}?v=20261014a">
-    <link rel="stylesheet" href="{% static 'css/gravity/admin_ui.css' %}?v=20261112a">
+    <link rel="stylesheet" href="{% static 'css/gravity/admin_ui.css' %}?v=20261115a">
 
     {% block extra_css %}{% endblock %}
 </head>
@@ -160,12 +160,14 @@
         </div>
         <div class="pn-sheet__body pn-inbox">
             {% if panel.push_clave %}
-            {% comment %} Avisos push en este dispositivo: lo maneja admin_push.js, que lo muestra cuando sabe el estado {% endcomment %}
-            <div class="pn-push" id="pn-push" hidden
+            {% comment %} Avisos push en este dispositivo: lo maneja push_avisos.js, que lo muestra cuando sabe el estado {% endcomment %}
+            <div class="pn-push" id="pn-push" hidden data-push
                 data-clave="{{ panel.push_clave }}" data-csrf="{{ csrf_token }}"
-                data-activar="{% url 'gravity:admin_push_activar' %}"
-                data-desactivar="{% url 'gravity:admin_push_desactivar' %}"
-                data-probar="{% url 'gravity:admin_push_probar' %}">
+                data-activar="{% url 'gravity:push_activar' %}"
+                data-desactivar="{% url 'gravity:push_desactivar' %}"
+                data-probar="{% url 'gravity:push_probar' %}"
+                data-texto-inactivo="Recibí una notificación con cada novedad de los alumnos (cancelaciones, ausencias, recuperos{% if panel.superadmin %}, solicitudes{% endif %}), aunque el panel esté cerrado."
+                data-texto-activo="Te avisamos cada novedad de los alumnos: cancelaciones, ausencias, recuperos{% if panel.superadmin %}, planes, solicitudes y testimonios{% else %} y planes{% endif %}.">
                 <div class="pn-push__head">
                     <span class="pn-push__icon">{% include 'gravity/admin/_icono.html' with i='campana' %}</span>
                     <div class="pn-push__body">
@@ -178,6 +180,7 @@
                     <button type="button" class="pn-btn pn-btn--sm pn-btn--ghost" data-push-probar hidden>Enviar una prueba</button>
                     <button type="button" class="pn-btn pn-btn--sm pn-btn--quiet" data-push-desactivar hidden>Desactivar</button>
                 </div>
+                <p class="pn-help pn-push__more"><a href="{% url 'gravity:avisos' %}">Elegir qué avisos recibir</a></p>
             </div>
             {% endif %}
             {% if panel.pendientes_total %}
@@ -250,7 +253,7 @@
 
     <script src="{% static 'js/form_submit.js' %}?v=20261011a"></script>
     <script src="{% static 'js/admin_panel.js' %}?v=20261014pn"></script>
-    {% if panel.push_clave %}<script src="{% static 'js/admin_push.js' %}?v=20261112a"></script>{% endif %}
+    {% if panel.push_clave %}<script src="{% static 'js/push_avisos.js' %}?v=20261115a"></script>{% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 

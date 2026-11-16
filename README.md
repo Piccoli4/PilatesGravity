@@ -251,6 +251,9 @@ Las variables sensibles se gestionan con `python-decouple` a través de un archi
 
 # Enviar emails de cumpleaños diariamente a las 3:00 AM
 0 3 * * * /ruta/al/entorno/python /ruta/al/proyecto/manage.py enviar_emails_cumpleanos
+
+# Recordatorio de clase por aviso push, cada 15 minutos (cada recordatorio sale una sola vez)
+*/15 * * * * /ruta/al/entorno/python /ruta/al/proyecto/manage.py enviar_recordatorios_push
 ```
 
 ---

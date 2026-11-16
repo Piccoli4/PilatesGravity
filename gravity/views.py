@@ -17,6 +17,7 @@ from .models import (
     NotificacionPlanAdicional,
     CancelacionAdmin,
     SuscripcionPush,
+    ListaEspera,
     DIAS_SEMANA,
     DIAS_SEMANA_COMPLETOS
 )
@@ -62,8 +63,13 @@ from .models import (
     AjusteSaldo, recalcular_estado_pagos, aplicar_precio_a_cuotas_del_mes
 )
 from .templatetags.formato import pesos
-from .panel import ve_ingresos_estudio, puede_corregir_cuentas, avisar_cancelacion_al_equipo
-from .push import guardar_suscripcion, enviar_push_prueba, push_configurado
+from .panel import (ve_ingresos_estudio, puede_corregir_cuentas, avisar_cancelacion_al_equipo,
+                    avisar_reserva_suelta_al_equipo, avisar_plan_cancelado_al_equipo, avisar_solicitud_plan)
+from .push import (guardar_suscripcion, enviar_push_prueba, push_configurado, clave_publica,
+                   grupos_de_avisos, avisos_apagados, guardar_avisos)
+from .avisos_alumno import (avisar_reserva_cancelada, avisar_reserva_modificada, avisar_solicitud_resuelta,
+                            avisar_pago_registrado, avisar_lugar_liberado, avisar_lugar_por_reserva,
+                            anotar_en_espera, salir_de_espera)
 from .hoy import datos_hoy, fecha_larga, clases_del_dia
 from .asistencia_admin import (datos_pasar_lista, puede_marcar_fecha, reserva_en_fecha, inicio_clase,
                                faltas, completar_filas, DIAS_PARA_MARCAR, TIPOS_FALTA,
@@ -115,6 +121,8 @@ def grilla_reservas(usuario, recuperos=None):
         if not r.fecha_unica or r.fecha_unica >= hoy
     }
 
+    en_espera = set(ListaEspera.objects.filter(usuario=usuario).values_list('clase_id', flat=True))
+
     clases = Clase.objects.filter(activa=True, dia__in=DIAS_GRILLA)
     dias = {dia: [] for dia in DIAS_GRILLA}
     for clase in clases:
@@ -131,6 +139,7 @@ def grilla_reservas(usuario, recuperos=None):
             estado = 'completa'
         dias[clase.dia].append({
             'clase': clase,
+            'en_espera': clase.id in en_espera,
             'tipo': clase.tipo,
             'nombre': clase.nombre_personalizado if clase.tipo == 'Especial' and clase.nombre_personalizado else clase.tipo,
             'sede': clase.direccion,
@@ -206,6 +215,12 @@ def reservar_clase(request):
                 # Doble envío: dos POST simultáneos pueden pasar la validación del form
                 messages.error(request, 'Ya tenés una reserva para esta clase. Revisá "Mis reservas".')
                 return redirect('accounts:mis_reservas')
+
+            # Recupero o clase única: cambia quién viene ese día, el equipo se entera al momento
+            avisar_reserva_suelta_al_equipo(reserva)
+            if not reserva.fecha_unica:
+                # Consiguió el horario fijo: ya no espera lugar ahí
+                salir_de_espera(request.user, clase)
 
             try:
                 if enviar_email_confirmacion_reserva_detallado(reserva):
@@ -309,8 +324,11 @@ def modificar_reserva(request, numero_reserva):
                 nueva_clase = form.cleaned_data['nueva_clase']
                 
                 # Actualizar la reserva
+                clase_anterior = reserva.clase
                 reserva.clase = nueva_clase
                 reserva.save()
+                if clase_anterior != nueva_clase:
+                    avisar_lugar_liberado(clase_anterior, fecha=reserva.fecha_unica)
                 
                 messages.success(
                     request,
@@ -457,10 +475,9 @@ def notificar_admins_cancelacion(reserva, tipo, fecha=None):
         logger.error(f"Error guardando notificación de cancelación: {e}")
         return
 
-    try:
-        avisar_cancelacion_al_equipo(aviso)
-    except Exception as e:
-        logger.error(f"Error enviando el aviso push de {reserva.numero_reserva}: {e}")
+    avisar_cancelacion_al_equipo(aviso)
+    # El lugar quedó libre (ese día, o para siempre): se avisa a quienes lo esperaban
+    avisar_lugar_por_reserva(reserva, fecha=fecha if tipo == 'temporal' else None)
 
 @login_required
 @require_http_methods(["POST"])
@@ -958,7 +975,9 @@ def admin_marcar_notificaciones_leidas(request):
     return JsonResponse({'ok': False}, status=400)
 
 # ------------------------------------------------------------------------------
-# Avisos push: cada persona del equipo los activa en su celular desde la campana
+# Avisos push: cada persona los activa en su celular (el equipo desde la campana
+# del panel, los alumnos desde "Mis reservas"). Lo que recibe cada uno depende de
+# su rol, no de dónde los activó.
 # ------------------------------------------------------------------------------
 
 def _json_del_pedido(request):
@@ -969,10 +988,10 @@ def _json_del_pedido(request):
     return datos if isinstance(datos, dict) else {}
 
 
-@admin_required
+@login_required
 @require_http_methods(["POST"])
-def admin_push_activar(request):
-    """Guarda el dispositivo desde el que se activaron los avisos (lo manda admin_push.js)."""
+def push_activar(request):
+    """Guarda el dispositivo desde el que se activaron los avisos (lo manda push_avisos.js)."""
     if not push_configurado():
         return JsonResponse({'ok': False, 'error': 'Los avisos no están configurados.'}, status=503)
     suscripcion = guardar_suscripcion(
@@ -983,9 +1002,9 @@ def admin_push_activar(request):
     return JsonResponse({'ok': True})
 
 
-@admin_required
+@login_required
 @require_http_methods(["POST"])
-def admin_push_desactivar(request):
+def push_desactivar(request):
     """Deja de mandar avisos a este dispositivo."""
     endpoint = _json_del_pedido(request).get('endpoint')
     if isinstance(endpoint, str) and endpoint:
@@ -993,9 +1012,9 @@ def admin_push_desactivar(request):
     return JsonResponse({'ok': True})
 
 
-@admin_required
+@login_required
 @require_http_methods(["POST"])
-def admin_push_probar(request):
+def push_probar(request):
     """Manda un aviso de prueba a los dispositivos de quien lo pide."""
     if not push_configurado():
         return JsonResponse({'ok': False, 'error': 'Los avisos no están configurados.'}, status=503)
@@ -1007,6 +1026,71 @@ def admin_push_probar(request):
     if not enviados:
         return JsonResponse({'ok': False, 'error': 'No se pudo enviar. Desactivá los avisos y volvé a activarlos.'})
     return JsonResponse({'ok': True})
+
+# ------------------------------------------------------------------------------
+# "Avisos": cada persona elige qué avisos push recibe y ve sus listas de espera
+# ------------------------------------------------------------------------------
+
+@login_required
+def avisos(request):
+    """Activar los avisos en este dispositivo, elegir cuáles recibir y ver las listas de espera."""
+    if request.method == 'POST':
+        guardar_avisos(request.user, request.POST.getlist('avisos'))
+        messages.success(request, 'Guardamos tus avisos.')
+        return redirect('gravity:avisos')
+
+    apagados = avisos_apagados(request.user)
+    grupos = [
+        {
+            'titulo': titulo,
+            'avisos': [
+                {'clave': clave, 'nombre': nombre, 'explicacion': explicacion, 'encendido': clave not in apagados}
+                for clave, nombre, explicacion in tipos
+            ],
+        }
+        for titulo, tipos in grupos_de_avisos(request.user)
+    ]
+    en_espera = ListaEspera.objects.filter(usuario=request.user, clase__activa=True).select_related('clase')
+    return render(request, 'gravity/avisos.html', {
+        'grupos': grupos,
+        'push_clave': clave_publica(),
+        'en_espera': en_espera,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def lista_espera_anotar(request, clase_id):
+    """El alumno pide que le avisen si se libera un lugar en una clase completa."""
+    clase = get_object_or_404(Clase, id=clase_id)
+    ok, mensaje = anotar_en_espera(request.user, clase)
+    if not ok:
+        messages.error(request, mensaje)
+        return redirect('gravity:reservar_clase')
+    if not clave_publica():
+        messages.success(request, mensaje)
+        return redirect('gravity:reservar_clase')
+    if not SuscripcionPush.objects.filter(usuario=request.user).exists():
+        # Sin avisos activados no se va a enterar: se lo lleva a activarlos
+        messages.success(request, mensaje + ' Para enterarte, activá los avisos en este celular.')
+        return redirect('gravity:avisos')
+    if 'lugar' in avisos_apagados(request.user):
+        messages.warning(request, mensaje + ' Tenés apagado el aviso "Se liberó un lugar": encendelo para enterarte.')
+        return redirect('gravity:avisos')
+    messages.success(request, mensaje)
+    return redirect('gravity:reservar_clase')
+
+
+@login_required
+@require_http_methods(["POST"])
+def lista_espera_salir(request, clase_id):
+    clase = get_object_or_404(Clase, id=clase_id)
+    salir_de_espera(request.user, clase)
+    messages.success(request, f'Saliste de la lista de espera de {clase.get_nombre_display()} ({clase.dia} {clase.horario:%H:%M}).')
+    destino = request.POST.get('next')
+    if destino and url_has_allowed_host_and_scheme(destino, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(destino)
+    return redirect('gravity:reservar_clase')
 
 # ==============================================================================
 # GESTIÓN DE CLASES
@@ -1652,6 +1736,9 @@ def admin_reserva_cancelar(request, reserva_id):
                     logger.error(f'Error cancelando la reserva {reserva.numero_reserva}: {e}')
                     messages.error(request, 'No se pudo cancelar la reserva. Probá de nuevo.')
                 else:
+                    if notificar_usuario:
+                        avisar_reserva_cancelada(reserva)
+                    avisar_lugar_por_reserva(reserva)
                     email_enviado = False
                     if notificar_usuario and reserva.usuario.email:
                         try:
@@ -1757,6 +1844,10 @@ def admin_reserva_modificar(request, reserva_id):
                 reserva.clase, reserva.fecha_unica = clase_anterior, fecha_anterior
                 messages.error(request, ' '.join(getattr(e, 'messages', [])) or 'El alumno ya tiene una reserva en esa clase.')
             else:
+                if notificar:
+                    avisar_reserva_modificada(reserva, clase_anterior)
+                if clase_anterior != nueva:
+                    avisar_lugar_liberado(clase_anterior, fecha=fecha_anterior)
                 email_enviado = False
                 if notificar and reserva.usuario.email:
                     try:
@@ -1878,20 +1969,23 @@ def reservar_recupero(request):
             return redirect('gravity:reservar_recupero')
 
         try:
-            Reserva(
+            reserva = Reserva(
                 usuario=request.user,
                 clase=clase,
                 es_recupero=True,
                 fecha_unica=fecha_recupero,
                 notas=f'Recupero por ausencia temporal — {fecha_recupero.strftime("%d/%m/%Y")}',
                 creado_por=request.user,
-            ).save()  # save() ya ejecuta full_clean()
+            )
+            reserva.save()  # save() ya ejecuta full_clean()
         except IntegrityError:
             messages.error(request, 'Ya tenés una reserva para esa clase en esa fecha.')
             return redirect('accounts:mis_reservas')
         except ValidationError as e:
             messages.error(request, ' '.join(e.messages))
             return redirect('gravity:reservar_recupero')
+
+        avisar_reserva_suelta_al_equipo(reserva)
 
         request.session['reserva_exitosa'] = {
             'tipo': 'recupero',
@@ -3385,6 +3479,7 @@ def admin_pagos_registrar_pago(request, cliente_id):
             pago.cliente = cliente
             pago.registrado_por = request.user
             pago.save()
+            avisar_pago_registrado(pago)
             texto = f'Registraste un pago de ${fmt_pesos(pago.monto)} de {cliente.get_full_name() or cliente.username}.'
             if request.POST.get('enviar_recibo') == 'on' and cliente.email:
                 try:
@@ -3741,6 +3836,7 @@ def admin_cancelar_plan_usuario(request, plan_id):
                         reserva=reserva, admin_user=request.user, motivo='Baja del plan',
                         motivo_detalle=f'Se canceló el plan {plan.plan.nombre}.', email_enviado=False,
                     )
+                    transaction.on_commit(lambda r=reserva: avisar_lugar_por_reserva(r))
             plan.activo = False
             plan.reservas_canceladas = bool(elegidas)
             plan.save()
@@ -4510,12 +4606,13 @@ def seleccionar_plan(request):
         try:
             plan_seleccionado = PlanPago.objects.get(id=plan_id, activo=True)
 
-            SolicitudCambioPlan.objects.create(
+            solicitud = SolicitudCambioPlan.objects.create(
                 usuario=request.user,
                 plan_actual=None,
                 plan_solicitado=plan_seleccionado,
                 estado='pendiente'
             )
+            avisar_solicitud_plan(solicitud)
 
             messages.success(
                 request,
@@ -4617,6 +4714,7 @@ def modificar_plan(request):
             )
             if elegidas:
                 solicitud.reservas_a_cancelar.set(elegidas)
+            avisar_solicitud_plan(solicitud)
             messages.success(
                 request,
                 f'Enviamos tu solicitud para pasar a "{plan_solicitado.nombre}". '
@@ -4818,10 +4916,11 @@ def cancelar_plan(request, plan_id):
                     pass
 
             # Crear notificación para administradores
-            NotificacionCancelacionPlan.objects.create(
+            aviso_plan = NotificacionCancelacionPlan.objects.create(
                 usuario=request.user,
                 plan=plan.plan,
             )
+            avisar_plan_cancelado_al_equipo(aviso_plan)
 
             # Si tenía una solicitud de cambio de plan pendiente, ya no aplica
             # porque el plan_actual que referenciaba dejó de existir
@@ -5028,6 +5127,7 @@ def admin_solicitud_plan_aprobar(request, solicitud_id):
         for reserva in solicitud.reservas_a_cancelar.filter(activa=True):
             reserva.activa = False
             reserva.save()
+            transaction.on_commit(lambda r=reserva: avisar_lugar_por_reserva(r))
             aviso = NotificacionCancelacion.objects.create(reserva=reserva, tipo='permanente')
             aviso.leida_por.add(request.user)
 
@@ -5036,6 +5136,7 @@ def admin_solicitud_plan_aprobar(request, solicitud_id):
         solicitud.resuelto_por = request.user
         solicitud.save(update_fields=['estado', 'fecha_resolucion', 'resuelto_por'])
 
+    avisar_solicitud_resuelta(solicitud)
     try:
         enviar_email_cambio_plan_aprobado(solicitud)
     except Exception as e:
@@ -5068,6 +5169,7 @@ def admin_solicitud_plan_rechazar(request, solicitud_id):
     if motivo:
         solicitud.observaciones = motivo
     solicitud.save(update_fields=['estado', 'fecha_resolucion', 'resuelto_por', 'observaciones'])
+    avisar_solicitud_resuelta(solicitud)
 
     texto = f'Rechazaste la solicitud de {solicitud.usuario.get_full_name() or solicitud.usuario.username}.'
     if solicitud.usuario.email:

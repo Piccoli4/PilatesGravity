@@ -1,10 +1,13 @@
-// Avisos push del panel: el bloque "Avisos en este dispositivo" de la bandeja.
-// Cada persona los activa una vez por celular; el envío lo hace gravity/push.py
-// y la notificación la muestra el service worker (/sw.js).
+// Avisos push en este dispositivo: el bloque para activarlos, probarlos y desactivarlos.
+// Lo usan el panel (campana) y la cuenta del alumno ("Mis reservas"); cada plantilla
+// pone sus textos en el bloque [data-push]:
+//   data-clave, data-csrf, data-activar, data-desactivar, data-probar (rutas)
+//   data-titulo, data-titulo-activo, data-texto-inactivo, data-texto-activo
+// El envío lo hace gravity/push.py y la notificación la muestra el service worker (/sw.js).
 (function () {
     'use strict';
 
-    const caja = document.getElementById('pn-push');
+    const caja = document.querySelector('[data-push]');
     if (!caja) return;
 
     const titulo = caja.querySelector('[data-push-titulo]');
@@ -12,7 +15,12 @@
     const btnActivar = caja.querySelector('[data-push-activar]');
     const btnProbar = caja.querySelector('[data-push-probar]');
     const btnDesactivar = caja.querySelector('[data-push-desactivar]');
-    const SINCRONIZADO = 'pn-push-sincronizado';
+    const SINCRONIZADO = 'push-sincronizado';
+
+    const TITULO = caja.dataset.titulo || 'Avisos en este dispositivo';
+    const TITULO_ACTIVO = caja.dataset.tituloActivo || 'Avisos activados en este dispositivo';
+    const TEXTO_INACTIVO = caja.dataset.textoInactivo || '';
+    const TEXTO_ACTIVO = caja.dataset.textoActivo || '';
 
     let registro = null;
 
@@ -25,16 +33,13 @@
     function mostrar(estado, mensaje) {
         caja.hidden = false;
         caja.classList.toggle('is-on', estado === 'activo');
-        titulo.textContent = estado === 'activo' ? 'Avisos activados en este dispositivo' : 'Avisos en este dispositivo';
+        titulo.textContent = estado === 'activo' ? TITULO_ACTIVO : TITULO;
         texto.textContent = mensaje || '';
         btnActivar.hidden = estado !== 'inactivo';
         btnProbar.hidden = estado !== 'activo';
         btnDesactivar.hidden = estado !== 'activo';
         [btnActivar, btnProbar, btnDesactivar].forEach(function (b) { b.disabled = false; });
     }
-
-    const TEXTO_INACTIVO = 'Recibí una notificación cuando un alumno cancela o avisa que no va, aunque el panel esté cerrado.';
-    const TEXTO_ACTIVO = 'Te avisamos cuando un alumno cancela o avisa que no va.';
 
     function enviar(url, datos) {
         return fetch(url, {

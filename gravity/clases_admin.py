@@ -17,6 +17,7 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 
+from .avisos_alumno import avisar_reserva_cancelada, avisar_reserva_modificada
 from .horarios import mover_turnos_de_la_clase
 from .models import AusenciaTemporal, CancelacionAdmin, Reserva
 
@@ -74,6 +75,9 @@ def guardar_cambios(form, admin, avisar=True):
                     motivo_detalle=f'La clase pasó del {original.dia} al {clase.dia}.',
                     email_enviado=False,
                 )
+                if avisar:
+                    transaction.on_commit(lambda r=reserva: avisar_reserva_cancelada(
+                        r, f'La clase pasó del {original.dia} al {clase.dia}. Podés reservar otra fecha.'))
                 if avisar and reserva.usuario.email:
                     transaction.on_commit(lambda r=reserva: _avisar_cancelacion(r, original, clase))
             resumen['sueltas_canceladas'] = len(sueltas)
@@ -86,6 +90,7 @@ def guardar_cambios(form, admin, avisar=True):
             # Los recuperos y clases únicas siguen en pie si no cambió el día: también se les avisa
             a_avisar = fijas + ([] if 'dia' in cambios else sueltas)
             for reserva in a_avisar:
+                transaction.on_commit(lambda r=reserva: avisar_reserva_modificada(r, original))
                 if reserva.usuario.email:
                     transaction.on_commit(lambda r=reserva: _avisar_cambio(r, original))
                     resumen['avisados'] += 1

@@ -4,7 +4,7 @@
 {% block title %}Reservar clase - Pilates Gravity{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261011o">
+<link rel="stylesheet" href="{% static 'css/accounts/mi_espacio.css' %}?v=20261115b">
 {% endblock %}
 
 {% block content %}
@@ -104,12 +104,13 @@
                     <h2 class="rc-day__name"><span class="rc-day__short">{{ col.corto }}</span><span class="rc-day__long">{{ col.dia }}</span></h2>
                     <div class="rc-day__slots">
                         {% for s in col.slots %}
-                        <button type="button" class="rc-slot rc-slot--{{ s.estado }}"
+                        <button type="button" class="rc-slot rc-slot--{{ s.estado }}{% if s.estado == 'completa' and s.en_espera %} is-waiting{% endif %}"
+                                data-clase-id="{{ s.clase.id }}" {% if s.en_espera %}data-espera="1"{% endif %}
                                 data-tipo="{{ s.tipo }}" data-sede="{{ s.sede }}" data-dia="{{ col.dia }}" data-hora="{{ s.hora }}"
                                 data-estado="{{ s.estado }}" data-nombre="{{ s.nombre }}" data-sede-nombre="{{ s.sede_nombre }}"
                                 data-fecha="{{ s.fecha|date:'d/m' }}" data-dia-corto="{{ col.corto|lower }}" data-libres="{{ s.libres }}"
                                 {% if s.recupero %}data-recupero="1"{% endif %}
-                                {% if s.estado == 'tuya' or s.estado == 'completa' %}aria-disabled="true"{% endif %}>
+                                {% if s.estado == 'tuya' %}aria-disabled="true"{% endif %}>
                             <span class="rc-slot__hora">{{ s.hora }}</span>
                             <span class="rc-slot__sede">{{ s.sede_nombre }}</span>
                             {% if s.recupero %}<span class="rc-slot__rec" title="Podés usarla como recupero">Recupero</span>{% endif %}
@@ -117,7 +118,7 @@
                                 {% if s.estado == 'tuya' %}{% if s.es_puntual_mia %}Reservada{% else %}Tu horario{% endif %}
                                 {% elif s.estado == 'libre' %}Quedan {{ s.libres }}
                                 {% elif s.estado == 'solo_fecha' %}Libre el {{ s.fecha|date:"d/m" }}
-                                {% else %}Completa{% endif %}
+                                {% elif s.en_espera %}En lista de espera{% else %}Completa{% endif %}
                             </span>
                         </button>
                         {% endfor %}
@@ -134,7 +135,7 @@
             <ul class="rc-legend" aria-label="Referencias">
                 <li><span class="rc-dot rc-dot--libre"></span>Con lugar</li>
                 <li><span class="rc-dot rc-dot--solo_fecha"></span>Lugar suelto, solo esa fecha</li>
-                <li><span class="rc-dot rc-dot--completa"></span>Completa</li>
+                <li><span class="rc-dot rc-dot--completa"></span>Completa (tocala y te avisamos si se libera)</li>
                 <li><span class="rc-dot rc-dot--tuya"></span>Ya es tuya</li>
                 {% if n_recuperos %}<li><span class="rc-slot__rec rc-slot__rec--legend">Recupero</span>Podés tomarla con tu recupero</li>{% endif %}
             </ul>
@@ -165,6 +166,23 @@
                         <button type="button" class="g-btn g-btn--ghost" id="rsCancelar">Cambiar</button>
                         <button type="submit" class="g-btn g-btn--primary" data-loading-text="Reservando...">Confirmar reserva</button>
                     </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- ================= Lista de espera (al tocar una clase completa) ================= -->
+        <form method="post" class="rc-summary" id="rcEspera" hidden
+              data-anotar="{% url 'gravity:lista_espera_anotar' 0 %}" data-salir="{% url 'gravity:lista_espera_salir' 0 %}">
+            {% csrf_token %}
+            <div class="rc-summary__main">
+                <div class="rc-summary__what">
+                    <span class="me-label">Clase completa</span>
+                    <strong id="reTitulo"></strong>
+                    <small id="reTexto"></small>
+                </div>
+                <div class="rc-summary__actions">
+                    <button type="button" class="g-btn g-btn--ghost" id="reCerrar">Cerrar</button>
+                    <button type="submit" class="g-btn g-btn--primary" id="reBoton">Avisarme</button>
                 </div>
             </div>
         </form>
@@ -285,11 +303,30 @@
             resumen.hidden = true;
         }
         slots.forEach(s => s.addEventListener('click', () => seleccionar(s, false)));
+
+        // ---------- Lista de espera: al tocar una clase completa ----------
+        const espera = $('rcEspera');
+        function cerrarEspera() { if (espera) espera.hidden = true; }
+        if (espera) {
+            slots.filter(s => s.dataset.estado === 'completa').forEach(s => s.addEventListener('click', () => {
+                deseleccionar();
+                const anotado = s.dataset.espera === '1';
+                espera.action = (anotado ? espera.dataset.salir : espera.dataset.anotar).replace('/0/', '/' + s.dataset.claseId + '/');
+                $('reTitulo').textContent = s.dataset.nombre + ' · ' + s.dataset.dia + ' ' + s.dataset.hora;
+                $('reTexto').textContent = anotado
+                    ? s.dataset.sedeNombre + ' · Estás en la lista de espera: te avisamos si se libera un lugar.'
+                    : s.dataset.sedeNombre + ' · ¿Te avisamos al celular si se libera un lugar?';
+                $('reBoton').textContent = anotado ? 'Salir de la lista' : 'Avisarme';
+                espera.hidden = false;
+            }));
+            $('reCerrar').addEventListener('click', cerrarEspera);
+            slots.filter(s => s.dataset.estado !== 'completa').forEach(s => s.addEventListener('click', cerrarEspera));
+        }
         document.getElementById('rsCancelar').addEventListener('click', deseleccionar);
 
         // Sin plan o sin clases disponibles: solo se pueden tocar los horarios de recupero
         if (!puede) grid.classList.add('is-readonly');
-        slots.forEach(s => { if (!habilitado(s)) s.setAttribute('aria-disabled', 'true'); });
+        slots.forEach(s => { if (!habilitado(s) && s.dataset.estado !== 'completa') s.setAttribute('aria-disabled', 'true'); });
 
         // ---------- Preselección (desde Clases disponibles o después de un error) ----------
         const d = form.dataset;
